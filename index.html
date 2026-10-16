@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Hospital Escape</title>
+<title>Hospital Escape 3D</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,479 +12,1074 @@
 <meta name="theme-color" content="#0b1513">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;800&family=VT323&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;800&family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap">
 <style>
-/* Layout: one-screen app. Pager HUD on top, the floor plan fills the rest, overlays look like hospital wayfinding signs. Night-shift look, single dark theme by choice. */
+/* Layout: full-screen first-person view. Pager HUD and minimap float on top, popups look like hospital paperwork, menus like green wayfinding signs. Single dark look by choice. */
 :root {
-  --night: #0b1513;      /* page ground: corridor at night */
-  --wall: #34514c;       /* institutional green-grey walls */
-  --wall-edge: #4d6e67;
-  --lino-a: #dbe7e1;     /* linoleum tiles */
-  --lino-b: #cfdfd8;
-  --sign: #0f6b4f;       /* wayfinding sign green */
+  --night: #0b1513;
+  --sign: #0f6b4f;
+  --sign-deep: #0b4c38;
   --sign-ink: #f3f8f1;
-  --pager: #121c17;
+  --pager: rgba(18, 28, 23, .92);
   --lcd: #a6e38f;
   --lcd-dim: #5e8a52;
   --alert: #e2483d;
   --amber: #f2b33d;
+  --paper: #fbfaf4;
+  --paper-ink: #1d2622;
   --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
   --lcd-font: "VT323", ui-monospace, "SF Mono", Menlo, monospace;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   color-scheme: dark;
 }
 [hidden] { display: none !important; }
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
-  margin: 0;
-  background: var(--night);
-  color: var(--sign-ink);
+  margin: 0; background: var(--night); color: var(--sign-ink);
   font-family: var(--display);
   -webkit-user-select: none; user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
 }
-.app {
-  height: 100%;
-  display: flex; flex-direction: column; gap: 10px;
-  box-sizing: border-box;
-  padding-block: 10px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  max-width: 560px; margin: 0 auto;
-}
+#game { position: fixed; inset: 0; overflow: hidden; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#touch { position: absolute; inset: 0; touch-action: none; }
 
-/* Pager HUD */
+/* HUD */
+.hud {
+  position: absolute; left: 0; right: 0; top: 0; pointer-events: none;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
+}
 .pager {
-  background: var(--pager);
-  border: 2px solid #26332d;
-  border-radius: 10px;
+  background: var(--pager); border: 2px solid #26332d; border-radius: 10px;
   box-shadow: inset 0 0 18px rgba(166, 227, 143, .08);
-  padding: 6px 12px;
-  font-family: var(--lcd-font);
-  color: var(--lcd);
-  font-size: 21px; line-height: 1.05;
-  display: grid; gap: 2px;
+  padding: 5px 10px; font-family: var(--lcd-font); color: var(--lcd);
+  font-size: 19px; line-height: 1.05; display: grid; gap: 2px; min-width: 0;
 }
-.pager-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; }
+.pager-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-width: 0; }
 .pager-row > span { min-width: 0; }
-#hudClock { font-size: 26px; font-variant-numeric: tabular-nums; }
-#hudMsg { color: var(--lcd); min-height: 2.1em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#hudClock { font-size: 25px; font-variant-numeric: tabular-nums; }
+#hudMsg { min-height: 2.1em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #hudMsg.alert { color: #ffd27a; }
-#hudSanity { letter-spacing: 2px; white-space: nowrap; }
-#hudSanity .lost { color: var(--lcd-dim); }
-
-/* Stage */
-#stage {
-  position: relative; flex: 1; min-height: 0;
-  display: grid; place-items: center;
-  touch-action: none;
+#hudNerves { white-space: nowrap; }
+#hudNerves .lost { color: var(--lcd-dim); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.chip {
+  pointer-events: auto; appearance: none; border: 1px solid #2f4038; background: #0d1611; color: var(--lcd);
+  font: 18px/1 var(--lcd-font); padding: 3px 7px; border-radius: 5px; cursor: pointer; touch-action: manipulation;
 }
-#cv { display: block; border-radius: 6px; box-shadow: 0 0 0 2px #1c2a26, 0 12px 40px rgba(0,0,0,.5); }
-#stage.shake #cv { animation: shake .3s linear; }
-@keyframes shake {
-  20% { transform: translate(-5px, 2px); } 40% { transform: translate(4px, -3px); }
-  60% { transform: translate(-3px, -2px); } 80% { transform: translate(3px, 3px); }
+.chip.warn { color: #ffd27a; border-color: #6b5a2a; }
+.chip.good { color: #9fe0ff; border-color: #2c5468; }
+#mini { width: 104px; height: 104px; border-radius: 8px; border: 2px solid #26332d; background: rgba(11,21,19,.8); display: block; }
+
+#crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+  background: rgba(255,255,255,.7); box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+#flash { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(226,72,61,0) 35%, rgba(226,72,61,.75) 100%); }
+#flash.on { animation: flash .6s ease-out; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+#hideVeil { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(40,70,120,0) 30%, rgba(30,50,90,.85) 100%); }
+
+#stick { position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%;
+  border: 2px solid rgba(243,248,241,.45); background: rgba(243,248,241,.08); pointer-events: none; }
+#knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: rgba(243,248,241,.55); }
+.hint {
+  position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; text-align: center;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-size: 15px; letter-spacing: .04em; color: rgba(243,248,241,.8); text-shadow: 0 1px 2px rgba(0,0,0,.6);
 }
-.flash { position: absolute; inset: 0; pointer-events: none; background: var(--alert); opacity: 0; border-radius: 6px; }
-.flash.on { animation: flash .45s ease-out; }
-@keyframes flash { from { opacity: .35; } to { opacity: 0; } }
 
-#stick { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%;
-  border: 2px solid rgba(243, 248, 241, .35); background: rgba(243, 248, 241, .06); pointer-events: none; }
-#knob { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
-  background: rgba(243, 248, 241, .5); }
+/* Encounter toast */
+#toast {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+  width: min(calc(100% - 32px), 380px); box-sizing: border-box; pointer-events: none;
+  background: var(--paper); color: var(--paper-ink); border-radius: 10px; padding: 14px 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45); display: grid; grid-template-columns: 54px 1fr; gap: 6px 12px;
+}
+#toast.pop { animation: pop .25s ease-out; }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
+#toastAvatar { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; grid-row: span 2; }
+#toastWho { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 15px; opacity: .75; }
+#toastLine { font-size: 21px; line-height: 1.15; font-weight: 600; }
+#toastStamps { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.stamp { font: 800 15px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; padding: 5px 7px; border-radius: 4px;
+  border: 2px solid var(--alert); color: var(--alert); transform: rotate(-2deg); }
+.stamp.good { border-color: #1f9d55; color: #1f9d55; }
 
-.hint { text-align: center; font-size: 15px; letter-spacing: .04em; color: #8fa9a1; }
+/* Lab printout */
+#lab {
+  position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 44px);
+  width: min(calc(100% - 24px), 330px); box-sizing: border-box;
+  background: var(--paper); color: var(--paper-ink); border-radius: 3px; padding: 12px 14px 10px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.35;
+  box-shadow: 0 14px 36px rgba(0,0,0,.45); transform: rotate(-1.5deg); pointer-events: auto;
+}
+#lab.pop { animation: slide .3s ease-out; }
+@keyframes slide { from { transform: translateY(40px) rotate(4deg); opacity: 0; } }
+#lab h3 { margin: 0 0 4px; font: 600 13px/1.2 var(--mono); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px dashed #9aa; padding-bottom: 4px; }
+#lab table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+#lab td { padding: 1px 0; }
+#lab td.v { text-align: right; padding-right: 6px; font-weight: 600; }
+#lab td.f { color: #c0322a; font-weight: 600; width: 2.2em; }
+#lab .foot { margin-top: 6px; font-size: 12px; color: #c0322a; font-weight: 600; }
+#lab svg { display: block; width: 100%; height: auto; }
 
-/* Overlays: wayfinding signs */
+/* Incoming call */
+#call {
+  position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 150px); transform: translateX(-50%);
+  width: min(calc(100% - 32px), 360px); box-sizing: border-box; pointer-events: auto;
+  background: rgba(28, 32, 36, .94); color: #fff; border-radius: 22px; padding: 14px 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.5); display: grid; gap: 10px; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+#call.ring { animation: ring .5s ease-in-out infinite; }
+#call.loud { box-shadow: 0 0 0 3px var(--alert), 0 16px 40px rgba(0,0,0,.5); }
+@keyframes ring { 25% { transform: translateX(calc(-50% - 3px)); } 75% { transform: translateX(calc(-50% + 3px)); } }
+.call-top { display: flex; gap: 12px; align-items: center; }
+#callAvatar { width: 46px; height: 46px; border-radius: 50%; background: #556; display: grid; place-items: center; font-size: 24px; flex: none; }
+#callFrom { font-size: 19px; font-weight: 700; }
+#callSub { font-size: 14px; opacity: .7; }
+#callText { font-size: 15px; line-height: 1.3; opacity: .92; }
+.call-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.call-btns button { appearance: none; border: 0; border-radius: 999px; padding: 11px 0; font: 700 16px/1 -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color: #fff; cursor: pointer; touch-action: manipulation; }
+#btnDecline { background: #e5483e; }
+#btnAccept { background: #2fb457; }
+
+/* Task list */
+#tasks {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 120px);
+  width: min(calc(100% - 24px), 320px); box-sizing: border-box; max-height: 55%; overflow-y: auto; pointer-events: auto;
+  background: #fff8cf; color: #2a2610; border-radius: 3px; padding: 12px 14px; box-shadow: 0 12px 30px rgba(0,0,0,.4);
+  font-family: var(--mono); font-size: 13px; line-height: 1.35; transform: rotate(1deg);
+}
+#tasks h3 { margin: 0 0 6px; font: 800 18px/1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
+#tasks ol { margin: 0; padding-left: 1.4em; display: grid; gap: 3px; }
+#tasks .empty { opacity: .7; }
+#tasks button { margin-top: 8px; appearance: none; border: 1px solid #8a8160; background: transparent; border-radius: 4px; font: 600 13px var(--mono); padding: 5px 8px; color: inherit; cursor: pointer; }
+
+/* Overlays */
 .overlay {
-  position: absolute; inset: 0; z-index: 5;
-  display: grid; place-items: center;
-  background: rgba(11, 21, 19, .72);
-  overflow-y: auto; padding: 12px 0;
-  touch-action: pan-y;
+  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
+  background: rgba(11, 21, 19, .62); overflow-y: auto; touch-action: pan-y;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 16px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
 }
 .card {
-  width: min(100%, 420px); box-sizing: border-box;
-  background: var(--sign); color: var(--sign-ink);
-  border-radius: 8px; padding: 20px 20px 18px;
-  box-shadow: 0 0 0 3px #0b4c38, 0 18px 50px rgba(0,0,0,.55);
+  width: min(100%, 440px); box-sizing: border-box; background: var(--sign); color: var(--sign-ink);
+  border-radius: 8px; padding: 20px 20px 18px; box-shadow: 0 0 0 3px var(--sign-deep), 0 18px 50px rgba(0,0,0,.55);
   display: grid; gap: 12px;
 }
 .eyebrow { font-weight: 600; text-transform: uppercase; letter-spacing: .14em; font-size: 14px; opacity: .85; }
 .card h1, .card h2 { margin: 0; font-weight: 800; text-transform: uppercase; line-height: .92; text-wrap: balance; }
-.card h1 { font-size: clamp(48px, 15vw, 68px); letter-spacing: .01em; }
-.card h1 .arrow { display: inline-block; color: #bff2c9; }
-.card h2 { font-size: 40px; }
-.card p { margin: 0; font-size: 19px; line-height: 1.25; font-weight: 500; }
-.legend { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
-.legend li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; font-size: 17px; line-height: 1.15; }
-.legend .ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; }
+.card h1 { font-size: clamp(46px, 14vw, 66px); }
+.card h1 small { display: inline-block; font-size: .5em; background: var(--sign-ink); color: var(--sign); padding: 2px 8px; border-radius: 4px; vertical-align: middle; }
+.card h2 { font-size: 38px; }
+.card p { margin: 0; font-size: 18px; line-height: 1.25; font-weight: 500; }
+.legend { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 28px 1fr; gap: 9px; align-items: center; font-size: 16px; line-height: 1.12; }
+.legend .ico { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; }
 .legend b { font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
-.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 18px; margin: 0; }
+.legend-title { font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: 13px; opacity: .8; margin-top: 2px; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-size: 17px; margin: 0; }
 .stats dt { opacity: .85; }
 .stats dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
-.small { font-size: 15px !important; opacity: .8; }
+.small { font-size: 15px !important; opacity: .85; }
 .btn {
   appearance: none; border: 0; cursor: pointer; touch-action: manipulation;
-  font: 800 24px/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
-  background: var(--sign-ink); color: var(--sign);
-  padding: 15px 18px; border-radius: 6px;
+  font: 800 23px/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
+  background: var(--sign-ink); color: var(--sign); padding: 15px 18px; border-radius: 6px;
   display: flex; justify-content: space-between; align-items: center;
 }
 .btn:active { transform: translateY(1px); background: #d9ecd9; }
-.btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.btn:focus-visible, .chip:focus-visible, #call button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.rank { display: inline-block; background: var(--amber); color: #2a1c00; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 4px 8px; border-radius: 4px; font-size: 16px; justify-self: start; }
+
+/* Duty roster calendar */
+.roster { background: var(--paper); color: var(--paper-ink); border-radius: 4px; padding: 10px; display: grid; gap: 6px; }
+.roster h3 { margin: 0; font: 800 17px/1.1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; font-variant-numeric: tabular-nums; }
+.cal div { min-width: 0; aspect-ratio: 1 / .85; border-radius: 3px; background: #e9eee9; font: 600 11px/1 var(--mono); padding: 3px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+.cal .hd { background: none; aspect-ratio: auto; font: 800 12px/1 var(--display); text-transform: uppercase; justify-content: center; align-items: center; padding: 2px 0; }
+.cal .blank { background: none; }
+.cal .we { background: #dfe6e1; color: #61706a; }
+.cal b { align-self: flex-end; font: 800 12px/1 var(--display); padding: 2px 3px; border-radius: 2px; color: #fff; }
+.d-WE { background: #c0322a; } .d-N { background: #2d3f8f; } .d-24 { background: #7a1fa2; } .d-RB { background: #b7791f; }
+.roster .legend-line { font: 12px/1.3 var(--mono); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.roster .legend-line span b { display: inline-block; padding: 1px 4px; border-radius: 2px; color: #fff; font: 800 11px/1.2 var(--display); }
+
 @media (prefers-reduced-motion: reduce) {
-  #stage.shake #cv, .flash.on { animation: none; }
+  #flash.on, #toast.pop, #lab.pop, #call.ring { animation: none; }
 }
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="pager" aria-live="polite">
-    <div class="pager-row"><span id="hudFloor">FL 5 · INTERNAL MED</span><span id="hudClock">17:00</span></div>
-    <div class="pager-row"><span id="hudMsg">Shift ended 17:00. Leave quietly.</span><span id="hudSanity" aria-label="Sanity">♥♥♥</span></div>
-  </header>
+<div id="game">
+  <canvas id="gl" aria-label="Krankenhausflur aus Sicht des Arztes"></canvas>
+  <div id="touch"></div>
+  <div id="hideVeil" hidden></div>
+  <div id="flash"></div>
+  <div id="crosshair"></div>
+  <div id="stick" hidden><div id="knob"></div></div>
 
-  <main id="stage">
-    <canvas id="cv" aria-label="Hospital floor plan"></canvas>
-    <div class="flash" id="flash"></div>
-    <div id="stick" hidden><div id="knob"></div></div>
-
-    <section class="overlay" id="ovTitle">
-      <div class="card">
-        <div class="eyebrow">Staff exit · Ground floor</div>
-        <h1>Hospital<br>Escape <span class="arrow">→</span></h1>
-        <p>Your shift ended at 17:00. Get from floor 5 down to the parking lot before anyone hands you more work.</p>
-        <ul class="legend">
-          <li><span class="ico" style="background:#8fc1e8">🤒</span><span><b>Patient</b> · has one quick question</span></li>
-          <li><span class="ico" style="background:#f2b33d">👵</span><span><b>Family</b> · wants an update and follows you</span></li>
-          <li><span class="ico" style="background:#e2483d">🧐</span><span><b>Attending</b> · patrols, sees ahead, hands out weekend shifts</span></li>
-          <li><span class="ico" style="background:#9b6bff">🕴️</span><span><b>Chief</b> · always knows where you are</span></li>
-          <li><span class="ico" style="background:#f3f8f1">☕</span><span><b>Coffee</b> walk faster · <b>📋 Clipboard</b> look busy, nobody stops you</span></li>
-        </ul>
-        <p class="small">Drag anywhere to walk. On a keyboard use the arrow keys or WASD. Three run-ins and you burn out.</p>
-        <p class="small" id="bestLine" hidden></p>
-        <button class="btn" id="btnStart" type="button"><span>Clock out</span><span>→</span></button>
+  <div class="hud">
+    <div class="pager" aria-live="polite">
+      <div class="pager-row"><span id="hudFloor">5B · INNERE</span><span id="hudClock">17:00</span></div>
+      <div class="pager-row"><span id="hudMsg">Feierabend war um 17:00. Leise raus.</span></div>
+      <div class="chips">
+        <span class="chip" id="hudNerves" aria-label="Nerven">♥♥♥♥♥</span>
+        <button class="chip" id="chipTasks" type="button">AUFGABEN 0</button>
+        <span class="chip" id="chipDuty">DIENSTE 0</span>
+        <span class="chip good" id="chipBuff" hidden></span>
       </div>
-    </section>
+    </div>
+    <canvas id="mini" width="208" height="208" aria-label="Lageplan"></canvas>
+  </div>
 
-    <section class="overlay" id="ovIntro" hidden>
-      <div class="card">
-        <div class="eyebrow" id="introEyebrow">Floor 5 of 5</div>
-        <h2 id="introName">Internal Medicine</h2>
-        <p id="introTip"></p>
-        <p class="small" id="introBonus" hidden></p>
-        <button class="btn" id="btnGo" type="button"><span>Take the stairs</span><span>↓</span></button>
-      </div>
-    </section>
+  <div class="hint" id="hint">Links ziehen: laufen · Rechts ziehen: umsehen</div>
 
-    <section class="overlay" id="ovEnd" hidden>
-      <div class="card">
-        <div class="eyebrow" id="endEyebrow">Pager message</div>
-        <h2 id="endTitle">Burned out</h2>
-        <p id="endText"></p>
-        <dl class="stats">
-          <dt>Weekend shifts accepted</dt><dd id="stWeekend">0</dd>
-          <dt>Quick questions answered</dt><dd id="stPatient">0</dd>
-          <dt>Family updates given</dt><dd id="stFamily">0</dd>
-        </dl>
-        <p class="small" id="endBest" hidden></p>
-        <button class="btn" id="btnAgain" type="button"><span>Next shift</span><span>↻</span></button>
-      </div>
-    </section>
-  </main>
+  <div id="toast" hidden>
+    <div id="toastAvatar"></div>
+    <div id="toastWho"></div>
+    <div id="toastLine"></div>
+    <div id="toastStamps"></div>
+  </div>
 
-  <footer class="hint">Drag anywhere to walk · ☕ faster · 📋 look busy</footer>
+  <div id="lab" hidden></div>
+
+  <div id="call" hidden>
+    <div class="call-top">
+      <div id="callAvatar">📞</div>
+      <div><div id="callFrom">Station 3B</div><div id="callSub">ruft an…</div></div>
+    </div>
+    <div id="callText"></div>
+    <div class="call-btns"><button id="btnDecline" type="button">Ablehnen</button><button id="btnAccept" type="button">Annehmen</button></div>
+  </div>
+
+  <div id="tasks" hidden>
+    <h3>Meine Aufgaben</h3>
+    <ol id="taskList"></ol>
+    <button type="button" id="btnTasksClose">Zuklappen</button>
+  </div>
+
+  <section class="overlay" id="ovTitle">
+    <div class="card">
+      <div class="eyebrow">Personalausgang · Erdgeschoss</div>
+      <h1>Hospital Escape <small>3D</small></h1>
+      <p>Dein Dienst endete um 17:00. Du stehst auf Station 5B. Zwischen dir und deinem Auto liegen vier Stockwerke voller Menschen, die „nur ganz kurz“ etwas wollen.</p>
+      <div class="legend-title">Nicht begegnen</div>
+      <ul class="legend">
+        <li><span class="ico" style="background:#8fc1e8">🤒</span><span><b>Patienten</b> · eine kurze Frage (nie kurz)</span></li>
+        <li><span class="ico" style="background:#f2b33d">👵</span><span><b>Angehörige</b> · im Rudel, verlangen ein Gespräch</span></li>
+        <li><span class="ico" style="background:#4fb3a9">👩‍⚕️</span><span><b>Pflege</b> · „Kannst du noch kurz abzeichnen?“</span></li>
+        <li><span class="ico" style="background:#e2483d">🧐</span><span><b>Oberarzt</b> · patrouilliert, roter Blickkegel, verteilt Wochenenddienste</span></li>
+        <li><span class="ico" style="background:#9b6bff">🤴</span><span><b>Chefarzt</b> · weiß immer, wo du bist</span></li>
+        <li><span class="ico" style="background:#9aa3a0">🤓</span><span><b>Controlling</b> · DRG-Kodierung, Formulare</span></li>
+      </ul>
+      <div class="legend-title">Hilft dir</div>
+      <ul class="legend">
+        <li><span class="ico" style="background:#f3f8f1">☕</span><span><b>Kaffee</b> schneller · <b>📋 Klemmbrett</b> beschäftigt wirken · <b>✈️ Flugmodus</b> keine Anrufe</span></li>
+        <li><span class="ico" style="background:#f3f8f1">🎂</span><span><b>Kuchen</b> +1 Nerv · <b>🥺 PJ-Student</b> übernimmt Aufgaben · <b>📢 Durchsage</b> lockt alle weg</span></li>
+        <li><span class="ico" style="background:#f3f8f1">🧺</span><span><b>Wäschewagen</b> · stillstehen und unsichtbar sein</span></li>
+      </ul>
+      <p class="small">Herumliegende Laborzettel nicht aufheben: was du anfasst, gehört dir. Jeder Anruf klingelt laut und lockt Leute an. Jede Sekunde ist eine Minute Überstunde.</p>
+      <p class="small">iPhone: links ziehen zum Laufen, rechts ziehen zum Umsehen. Tastatur: WASD laufen, Pfeiltasten oder Q/E drehen.</p>
+      <p class="small" id="bestLine" hidden></p>
+      <button class="btn" id="btnStart" type="button"><span>Ausstempeln</span><span>→</span></button>
+    </div>
+  </section>
+
+  <section class="overlay" id="ovIntro" hidden>
+    <div class="card">
+      <div class="eyebrow" id="introEyebrow">Stockwerk 5</div>
+      <h2 id="introName">Station 5B</h2>
+      <p id="introTip"></p>
+      <p class="small" id="introBonus" hidden></p>
+      <button class="btn" id="btnGo" type="button"><span>Los</span><span>↓</span></button>
+    </div>
+  </section>
+
+  <section class="overlay" id="ovEnd" hidden>
+    <div class="card">
+      <div class="eyebrow" id="endEyebrow">Pager</div>
+      <h2 id="endTitle">Burnout</h2>
+      <span class="rank" id="endRank"></span>
+      <p id="endText"></p>
+      <dl class="stats">
+        <dt>Überstunden</dt><dd id="stOver">0</dd>
+        <dt>Aufgaben eingesammelt</dt><dd id="stTasks">0</dd>
+        <dt>Dienste aufgedrückt</dt><dd id="stDuty">0</dd>
+        <dt>Anrufe angenommen / abgelehnt</dt><dd id="stCalls">0 / 0</dd>
+        <dt>Laborzettel aufgehoben</dt><dd id="stPapers">0</dd>
+      </dl>
+      <div class="roster" id="roster"></div>
+      <p class="small" id="endBest" hidden></p>
+      <button class="btn" id="btnAgain" type="button"><span>Nächste Schicht</span><span>↻</span></button>
+    </div>
+  </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (() => {
-  const COLS = 13, ROWS = 19;
-  const SHIFT_END = 17 * 60;
+  const $ = id => document.getElementById(id);
+  const N = 17, S = 3, WALL_H = 3.2, EYE = 1.6, SHIFT_END = 17 * 60;
+  const PLAYER_R = 0.22, PLAYER_SPEED = 2.2, MAX_NERVES = 5;
 
-  // # wall · b bed · S start · E stairs/exit · P patient · F family · A attending · C chief · c coffee · k clipboard
+  // # Wand · B Flurbett · T Tresen · M Automat · w Wäschewagen · S Start · E Treppenhaus
+  // P Patient · F Angehörige · N Pflege · O Oberarzt · C Chefarzt · V Controlling
+  // k Kaffee · c Klemmbrett · f Flugmodus · u Kuchen · s PJ-Student · d Durchsage · x Laborzettel
   const LEVELS = [
-    { floor: 5, name: "Internal Medicine", short: "INTERNAL MED",
-      tip: "Patients have one quick question. Family members want an update and will follow you once they spot you.",
-      map: [
-        "#############","#S....#.....#","#.###.#.###.#","#.#b..P..b#.#","#.#.#####.#.#","#...#...#...#",
-        "###.#.c.#.###","#.....#.....#","#.###...###.#","#.#b.....b#.#","#.#.##F##.#.#","#...#...#...#",
-        "#.#.#.P.#.#.#","#.#.......#.#","#.#####.###.#","#..k........#","#.#######.#.#","#....P....#E#","#############"] },
-    { floor: 4, name: "General Surgery", short: "SURGERY",
-      tip: "Attendings patrol the corridors. Stay out of their red sightline or you'll be on call Saturday.",
-      map: [
-        "#############","#E....#....k#","###.#.#.#.###","#...#...#...#","#.#####.###.#","#.#b.......P#",
-        "#.#.###.###.#","#...#A....#.#","#.#.#.###.#.#","#.#...#...#.#","#.###.#.###.#","#...F.#.....#",
-        "###.#####.#.#","#...#.c.#.#.#","#.#.#.#.#.#.#","#.#...#...#.#","#.#######.#.#","#....P.....S#","#############"] },
-    { floor: 3, name: "Cardiology", short: "CARDIOLOGY",
-      tip: "Two attendings and twice the family. Grab the clipboard: while you look busy, nobody stops you.",
-      map: [
-        "#############","#S..#...#..c#","#.#.#.#.#.#.#","#.#...#...#.#","#.#####.###.#","#...F.....#.#",
-        "#.#.#####.#.#","#.#.#b.b#.A.#","#.#.#...#.#.#","#.#...P...#.#","#.###.#.###.#","#.....#....F#",
-        "#####.#.#####","#k..#.....#.#","#.#.#.###.#.#","#.#...#A....#","#.#####.###.#","#.......P..E#","#############"] },
-    { floor: 2, name: "Intensive Care", short: "ICU",
-      tip: "The Chief of Medicine is on this floor. The Chief always knows where you are, but walks slowly.",
-      map: [
-        "#############","#E#.......#c#","#.#.#####.#.#","#.#.#b.b#...#","#...#...#.#.#","#.###.A.#.#.#",
-        "#...#...#.#.#","###.##.##.#.#","#.....F.....#","#.###.#.###.#","#.#b..#..b#.#","#.#.#####.#.#",
-        "#k..#.P.#...#","###.#...#.###","#...##.##...#","#.#...C...#.#","#.#.#####.#.#","#...A...F..S#","#############"] },
-    { floor: 1, name: "Emergency Department", short: "EMERGENCY",
-      tip: "Last floor. Everyone is here. The exit opens onto the staff parking lot.",
-      map: [
-        "#############","#S....#...P.#","#.###.#.#.#.#","#.#F..A.#.#.#","#.#.###.#.#.#","#...#c..#...#",
-        "###.#.####.##","#.P.#....F..#","#.#.##.#.##.#","#.#....#..#.#","#.####.##.#.#","#..C.....A..#",
-        "##.#.###.#.##","#..#.#k#.#..#","#.##.#.#.##.#","#....#.#....#","#.##.....##.#","#..F..P...#E#","#############"] },
+    { code: "5B", short: "5B · INNERE", name: "Station 5B · Innere Medizin", floor: 5, room: 5,
+      tip: "Patienten haben „nur eine kurze Frage“. Angehörige kommen im Rudel. Die Pflege will Unterschriften. Folge der grünen Bodenlinie zum Treppenhaus und heb keine Zettel auf.",
+      map: ["#################","#S....x...#....u#","#.###.###.#.###.#","#.#B..P.#...#B#.#","#.#.###.#.#.#.#.#","#...#k....#...#.#","###.#.#####.###.#","#...#...F...#...#","#.#####.###.#.###","#.B.TT#...#...#.#","#.....#.#.###.#.#","#.#.N.x.#...#...#","#.#.###.###.#.#.#","#.#...#...#.c.#.#","#.###.#.#.#####.#","#w..P...#...x..E#","#################"] },
+    { code: "4A", short: "4A · CHIRURGIE", name: "Station 4A · Chirurgie", floor: 4, room: 4,
+      tip: "Hier patrouilliert der Oberarzt. Sein roter Blickkegel bedeutet Wochenenddienst. Controlling sucht unkodierte Fälle. Flugmodus liegt irgendwo herum.",
+      map: ["#################","#E..#.....#...B.#","#.#.#.###.#.#.#.#","#.#...#O..x.#...#","#.#####.#####.###","#...w...#..k#...#","#.###.#.#.#.#.#.#","#.#B#.#...#...#.#","#.#.#.###.#####.#","#...#.TT..N...F.#","###.#.#.###.#.###","#...x.#.#c..#...#","#.#####.#.###.#.#","#.#V..#...#...#.#","#.#.#.#####.#.#.#","#...#...f...#..S#","#################"] },
+    { code: "ITS", short: "3 · INTENSIV", name: "Intensivstation · Ebene 3", floor: 3, room: 3,
+      tip: "Der Chefarzt ist im Haus. Er weiß immer, wo du bist, geht aber langsam. Der PJ-Student nimmt dir Aufgaben ab. Die Durchsage schickt alle in die Cafeteria.",
+      map: ["#################","#S..#.......#..d#","#.#.#.#####.#.#.#","#.#...#B.B#...#.#","#.###.#...#.###.#","#...#.##.##.#...#","###.#...O...#.###","#...###.#.###...#","#.#...x.#.x...#.#","#.###.TTTTT.#.#.#","#...#..N....#.#.#","###.#.#.#.###.#.#","#k..#.#.#.#...#.#","#.###.#C#.#.###.#","#.#s..#...#..F#.#","#..x.F#.u.#.c..E#","#################"] },
+    { code: "ZNA", short: "EG · NOTAUFNAHME", name: "Zentrale Notaufnahme · Erdgeschoss", floor: 0, room: 0,
+      tip: "Letztes Stockwerk. Alle sind da. Hinter der grünen Tür liegt der Personalparkplatz. Und dein Wochenende.",
+      map: ["#################","#E..x...#...P...#","#.#####.#.#####.#","#.#B.B#...#.O.#.#","#.#...#.###...#.#","#...#...#k..#.#.#","###.#.###.###.#.#","#...#.F.#...#...#","#.#####.#.#.###.#","#.w..TT...#.#V..#","#.#.#.N.#.#.#.###","#.#.#.###.#...#.#","#...#..C..x.#.#.#","#.#.#####.###.#.#","#.#d..P...#c..f.#","#...#.x.#.#.F#.S#","#################"] },
   ];
 
+  const DUTIES = {
+    WE: "Wochenenddienst", N: "Nachtdienst", "24": "24-h-Dienst", RB: "Rufbereitschaft",
+  };
   const TYPES = {
-    P: { name: "Patient", emoji: "🤒", color: "#8fc1e8", walk: 0.9, chase: 1.5, range: 3.5, memory: 1.2, cost: 10, tally: "patient",
-         lines: ["Doc, while you're here… it's about my left toe.", "Can you look at this rash real quick?",
-                 "I read online that I have something rare.", "When can I go home? Today? Now?", "Is this mole normal? Just a quick look."] },
-    F: { name: "Family", emoji: "👵", color: "#f2b33d", walk: 0.8, chase: 2.3, range: 4.5, memory: 2.5, cost: 20, tally: "family",
-         lines: ["We need an update. All of us. Now.", "My niece is a nurse and she says…", "Could you explain everything again from the start?",
-                 "Why hasn't anyone told us anything?", "The other doctor said something different."] },
-    A: { name: "Attending", emoji: "🧐", color: "#e2483d", walk: 1.6, chase: 2.8, range: 5.5, memory: 3, cost: 30, tally: "weekend", cone: true,
-         lines: ["You're on call Saturday.", "Present this patient at 6 AM rounds.", "Just one more admission before you go.",
-                 "Swap shifts with me this Sunday? Great, thanks.", "Your discharge letters are overdue."] },
-    C: { name: "Chief", emoji: "🕴️", color: "#9b6bff", walk: 1.45, chase: 1.45, range: 99, memory: 99, cost: 45, tally: "weekend", always: true,
-         lines: ["Weekend shift. Both days.", "Mandatory quality meeting, 7 AM Saturday.",
-                 "We're short-staffed over Christmas. You're in.", "My office. Bring the duty roster."] },
+    P: { label: "PATIENT", who: () => pick(["Hr. Meier, Zi. 12", "Fr. Schulze, Zi. 7", "Hr. Brösel, Flurbett"]), emoji: "🤒", color: "#8fc1e8", body: 0x8fc1e8,
+         walk: .5, chase: .95, range: 3, memory: 1.5, mins: 10, nerves: 1,
+         lines: ["Herr Doktor, nur ganz kurz… mein Zeh.", "Ich hab gegoogelt. Ich hab was ganz Seltenes.", "Wann darf ich heim? Heute? Jetzt?",
+                 "Können Sie mal auf den Leberfleck schauen? Und den da?", "Das Essen ist kalt. Ist das medizinisch relevant?"],
+         tasks: ["Salbe für Hr. Meiers Zeh anordnen", "Leberfleck-Konsil anmelden", "Entlassbrief schreiben (Patient will JETZT)", "Schlaftablette anordnen"] },
+    F: { label: "ANGEHÖRIGE ×3", who: () => pick(["Familie Kowalski (alle 7)", "Die Tochter aus München", "Neffe (ist Heilpraktiker)"]), emoji: "👵", color: "#f2b33d", body: 0xd4a03a,
+         walk: .5, chase: 1.5, range: 4.5, memory: 3, mins: 20, nerves: 1,
+         lines: ["Wir wollen JETZT ein Gespräch. Alle zusammen.", "Meine Nichte ist Krankenschwester, die sagt…", "Können Sie alles nochmal von vorn erklären?",
+                 "Warum sagt uns hier keiner was?", "Der andere Arzt hat was ganz anderes gesagt!"],
+         tasks: ["Angehörigengespräch Fam. Kowalski", "Rückruf bei der Tochter aus München", "Befunde ausdrucken (für den Neffen)"] },
+    N: { label: "PFLEGE", who: () => pick(["Schwester Gertrud", "Pfleger Kevin", "Schwester Ayşe"]), emoji: "👩‍⚕️", color: "#4fb3a9", body: 0x3f8fb3,
+         walk: .8, chase: 1.3, range: 4, memory: 2, mins: 10, nerves: 1, taskCount: 2,
+         lines: ["Kannst du noch kurz die Medikation abzeichnen?", "Zimmer 7 braucht 'ne neue Braunüle. Nur eine. Versprochen.",
+                 "Die Kurve von Zimmer 3 ist noch nicht visiert!", "Kalium ist da. Willst du's sehen? Egal, du musst."],
+         tasks: ["Medikation abzeichnen (14 Patienten)", "Braunüle Zi. 7 legen", "Kurve Zi. 3 visieren", "BZ-Schema Zi. 9 anpassen", "Bedarfsmedikation aufschreiben"] },
+    O: { label: "OBERARZT", who: () => pick(["OA Dr. Kranich", "OÄ Dr. Stahlhart"]), emoji: "🧐", color: "#e2483d", body: 0xf4f4f0,
+         walk: 1.0, chase: 1.75, range: 5.5, memory: 3, mins: 30, nerves: 1, cone: true, duties: 1,
+         lines: ["Sie machen doch Samstag, oder? Super.", "Morgen 6:30 Frühbesprechung. Sie stellen vor.", "Eine Aufnahme noch, dann dürfen Sie gehen.",
+                 "Tauschen Sie Sonntag mit mir? Danke!", "Ihre Arztbriefe stapeln sich bis zur Decke."],
+         tasks: ["Patienten für Frühbesprechung vorbereiten", "Arztbriefe (23 Stück)"] },
+    C: { label: "CHEFARZT", who: () => "Prof. Dr. Dr. h.c. Übermut", emoji: "🤴", color: "#9b6bff", body: 0xf4f4f0,
+         walk: .9, chase: .9, range: 99, memory: 99, mins: 45, nerves: 2, always: true, duties: 2,
+         lines: ["Wochenende? Beide Tage. Und den Feiertag.", "Qualitätszirkel, Samstag 7 Uhr. Pflicht.", "Sie halten nächste Woche die M&M-Konferenz.",
+                 "Mein Büro. Bringen Sie den Dienstplan mit."],
+         tasks: ["M&M-Konferenz vorbereiten", "Publikation für den Chef schreiben"] },
+    V: { label: "CONTROLLING", who: () => "Hr. Paragraf, Controlling", emoji: "🤓", color: "#9aa3a0", body: 0x6b7280,
+         walk: .7, chase: 1.4, range: 4.5, memory: 3, mins: 20, nerves: 1, taskCount: 2,
+         lines: ["37 Fälle unkodiert! Die DRGs weinen!", "Ihre Überstunden sind leider nicht genehmigt.", "Die Verweildauer von Zimmer 9 ist überschritten!",
+                 "Formular 17b, bitte in dreifacher Ausfertigung."],
+         tasks: ["DRG-Nachkodierung (37 Fälle)", "Formular 17b (3-fach)", "MD-Anfrage beantworten", "Verweildauer Zi. 9 begründen"] },
   };
-  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const PLAYER_SPEED = 3.4, PLAYER_R = 0.3, MAX_SANITY = 3;
 
-  const $ = id => document.getElementById(id);
-  const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
-  const hud = { floor: $("hudFloor"), clock: $("hudClock"), msg: $("hudMsg"), sanity: $("hudSanity") };
-
-  let T = 30, dpr = 1;
-  let mode = "title"; // title | intro | play | over | win
-  let grid, player, enemies, items, exit;
-  let run;
-  let msg = { text: "", t: 0, alert: false };
-  let shakeTimer = 0;
-
-  // ---------- storage (best time) ----------
-  const BEST_KEY = "hospital-escape-best";
-  function getBest() { try { const v = parseFloat(localStorage.getItem(BEST_KEY)); return isFinite(v) ? v : null; } catch (e) { return null; } }
-  function setBest(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} }
-
-  // ---------- helpers ----------
-  const fmtTime = mins => {
-    const t = Math.floor(SHIFT_END + mins);
-    return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+  const ITEMS = {
+    k: { emoji: "☕", label: "KAFFEE", ring: 0xb07a3f },
+    c: { emoji: "📋", label: "KLEMMBRETT", ring: 0x3f8fb3 },
+    f: { emoji: "✈️", label: "FLUGMODUS", ring: 0x2c7fd0 },
+    u: { emoji: "🎂", label: "KUCHEN", ring: 0xe26fa0 },
+    d: { emoji: "📢", label: "DURCHSAGE", ring: 0xf2b33d },
+    s: { emoji: "🥺", label: "PJ-STUDENT", ring: 0x1f9d55 },
   };
+
+  const CALLS = [
+    { from: "Station 3B", sub: "Pflege", av: "🏥", text: "Hr. Lehmann hat Fieber. 37,6 °C! Kommen Sie mal?",
+      acc: { mins: 10, task: "Hr. Lehmann: „Fieber“ 37,6 °C anschauen" }, dec: { task: "Rückruf Station 3B" } },
+    { from: "Notaufnahme", sub: "ZNA-Tresen", av: "🚑", text: "Wir hätten da noch einen für Sie. Nur einen. Ganz leicht. Versprochen.",
+      acc: { mins: 15, task: "Aufnahme aus der ZNA (82 J., 14 Diagnosen)" }, dec: { task: "Rückruf ZNA (die sind sauer)" } },
+    { from: "Zentrallabor", sub: "Labor", av: "🧪", text: "Kalium 7,2. Oder Hämolyse. Eher Hämolyse. Vielleicht.",
+      acc: { mins: 5, task: "Kalium kontrollieren lassen" }, dec: { task: "Rückruf Labor" } },
+    { from: "Chefsekretariat", sub: "Fr. Vorzimmer", av: "🗂️", text: "Der Chef möchte Sie sprechen. Es geht um den Dienstplan.",
+      acc: { mins: 10, duties: 1 }, dec: { task: "Chefsekretariat zurückrufen (!!!)" } },
+    { from: "Mama", sub: "Mobil", av: "👩", text: "Isst du auch genug? Komm doch Sonntag zum Kuchen!",
+      acc: { mins: 3, nerves: 1, note: "Mama ist glücklich. +1 Nerv." }, dec: { task: "Mama zurückrufen (sie zählt mit)" } },
+    { from: "Unbekannte Nummer", sub: "Pharmareferent", av: "💼", text: "Darf ich Sie zum Essen einladen? Nur fünf Minuten zu unserem neuen Präparat…",
+      acc: { mins: 20, nerves: 1, note: "Gratis Schnitzel. +1 Nerv, +20 Min." }, dec: {} },
+    { from: "Personalabteilung", sub: "Zeiterfassung", av: "⏱️", text: "Ihre Überstunden aus 2024 verfallen heute um Mitternacht.",
+      acc: { nerves: -1, note: "Das tat weh. −1 Nerv." }, dec: { task: "Personalabteilung zurückrufen" } },
+    { from: "Dr. Kurz", sub: "Assistenzarzt", av: "🙏", text: "Kannst du meinen Dienst am Samstag übernehmen? Bitte bitte bitte.",
+      acc: { duties: 1, nerves: 1, note: "Du bist ein guter Mensch. +1 Nerv, +1 Dienst." }, dec: {} },
+    { from: "Hygiene", sub: "Hygienefachkraft", av: "🧴", text: "Sie haben heute 3× zu kurz desinfiziert. Wir müssen reden.",
+      acc: { mins: 15, task: "Hygieneschulung (online, 90 Min.)" }, dec: { task: "Rückruf Hygiene" } },
+  ];
+
+  const LAB_POOL = [
+    ["Kalium", "6,8", "mmol/l", "↑↑"], ["Natrium", "121", "mmol/l", "↓"], ["CRP", "287", "mg/l", "↑↑"], ["Hb", "6,1", "g/dl", "↓↓"],
+    ["Troponin T", "0,9", "ng/ml", "↑↑"], ["Laktat", "4,2", "mmol/l", "↑"], ["Kreatinin", "3,4", "mg/dl", "↑"], ["INR", "4,8", "", "↑"],
+    ["Leukozyten", "23,4", "/nl", "↑"], ["Glukose", "487", "mg/dl", "↑↑"], ["TSH", "0,01", "mU/l", "↓"], ["Lipase", "1240", "U/l", "↑↑"],
+    ["Koffein", "0", "mg/l", "↓↓↓"], ["Schlaf (24 h)", "2,5", "h", "↓↓"], ["Motivation", "–", "", "n.n."],
+  ];
+
+  // ---------- utils ----------
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  const solidCh = ch => ch === "#" || ch === "b";
-  const open = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS && !solidCh(grid[y][x]);
-  const solidAt = (x, y) => !open(Math.floor(x), Math.floor(y));
+  const fmtTime = mins => { const t = Math.floor(SHIFT_END + mins); return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  const fmtDur = mins => { const m = Math.round(mins); return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min"; };
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
+  let grid;
+  const solidMove = ch => ch === "#" || ch === "B" || ch === "T" || ch === "M";
+  const solidSight = ch => ch === "#" || ch === "M";
+  const cell = (x, y) => (x < 0 || y < 0 || x >= N || y >= N) ? "#" : grid[y][x];
+  const openTile = (x, y) => !solidMove(cell(x, y));
+  const blockedAt = (x, y) => solidMove(cell(Math.floor(x), Math.floor(y)));
   function los(x0, y0, x1, y1) {
-    const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / 0.2);
-    for (let i = 1; i < n; i++) if (solidAt(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
+    const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / .2);
+    for (let i = 1; i < n; i++) if (solidSight(cell(Math.floor(x0 + (x1 - x0) * i / n), Math.floor(y0 + (y1 - y0) * i / n)))) return false;
     return true;
   }
-
-  function bfsNext(sx, sy, gx, gy) {
-    if (sx === gx && sy === gy) return null;
-    const prev = new Int16Array(COLS * ROWS).fill(-1);
-    const start = sy * COLS + sx, goal = gy * COLS + gx;
+  function bfs(sx, sy, gx, gy) {
+    const prev = new Int16Array(N * N).fill(-1), start = sy * N + sx, goal = gy * N + gx;
     const q = [start]; prev[start] = start;
     for (let h = 0; h < q.length; h++) {
       const c = q[h]; if (c === goal) break;
-      const cx = c % COLS, cy = (c / COLS) | 0;
+      const cx = c % N, cy = (c / N) | 0;
       for (const [dx, dy] of DIRS) {
         const nx = cx + dx, ny = cy + dy;
-        if (!open(nx, ny)) continue;
-        const ni = ny * COLS + nx;
+        if (!openTile(nx, ny)) continue;
+        const ni = ny * N + nx;
         if (prev[ni] !== -1) continue;
         prev[ni] = c; q.push(ni);
       }
     }
     if (prev[goal] === -1) return null;
-    let c = goal;
-    while (prev[c] !== start) c = prev[c];
-    return [c % COLS, (c / COLS) | 0];
+    const path = [goal]; let c = goal;
+    while (c !== start) { c = prev[c]; path.push(c); }
+    return path.reverse().map(i => [i % N, (i / N) | 0]);
+  }
+  function bfsNext(sx, sy, gx, gy) {
+    if (sx === gx && sy === gy) return null;
+    const p = bfs(sx, sy, gx, gy);
+    return p && p.length > 1 ? p[1] : null;
   }
 
-  // ---------- setup ----------
-  function newRun() {
-    run = { idx: 0, sanity: MAX_SANITY, minutes: 0, tallies: { patient: 0, family: 0, weekend: 0 } };
+  // ---------- canvas textures ----------
+  const texCache = new Map();
+  function canvasTex(w, h, draw, key) {
+    if (key && texCache.has(key)) return texCache.get(key);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.anisotropy = 4;
+    if (key) texCache.set(key, t);
+    return t;
+  }
+  const SIGN_FONT = '"Helvetica Neue", Arial, sans-serif';
+  const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+  const emojiTex = e => canvasTex(128, 128, (g) => {
+    g.font = `100px ${EMOJI_FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, 64, 72);
+  }, "emoji:" + e);
+  const labelTex = (text, bg, fg) => canvasTex(512, 96, (g, w, h) => {
+    g.font = `800 52px ${SIGN_FONT}`;
+    const tw = Math.min(w - 8, g.measureText(text).width + 40);
+    g.fillStyle = bg; rr(g, (w - tw) / 2, 10, tw, h - 20, 14); g.fill();
+    g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, w / 2, h / 2 + 2, w - 30);
+  }, "label:" + text + bg);
+  function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+
+  function wallTex() {
+    return canvasTex(256, 272, (g, w, h) => {
+      g.fillStyle = "#e4ece6"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#cfdcd4"; g.fillRect(0, 0, w, h * .06);
+      g.fillStyle = "#a9c3b8"; g.fillRect(0, h * .62, w, h * .38);
+      g.fillStyle = "#8a6f52"; g.fillRect(0, h * .6, w, h * .04);
+      g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(0, h * .64, w, h * .012);
+      g.fillStyle = "#c9d4ce"; g.fillRect(0, h * .78, w, h * .05);
+      g.fillStyle = "#56645e"; g.fillRect(0, h * .96, w, h * .04);
+      g.fillStyle = "rgba(0,0,0,.05)"; g.fillRect(0, 0, 2, h); g.fillRect(w - 2, 0, 2, h);
+      for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * .03})`; g.fillRect(Math.random() * w, Math.random() * h * .6, 3, 3); }
+    }, "wall");
+  }
+  function floorTex() {
+    return canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = "#d6e0d9"; g.fillRect(0, 0, w, h);
+      const r = rng(7);
+      for (let i = 0; i < 900; i++) { const v = r(); g.fillStyle = v < .4 ? "rgba(90,110,100,.18)" : v < .7 ? "rgba(255,255,255,.35)" : "rgba(60,120,110,.14)"; g.fillRect(r() * w, r() * h, 2 + r() * 3, 2 + r() * 2); }
+      g.strokeStyle = "rgba(60,80,70,.22)"; g.lineWidth = 3; g.strokeRect(0, 0, w, h);
+      g.strokeStyle = "rgba(60,80,70,.1)"; g.lineWidth = 2; g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+    }, "floor");
+  }
+  function ceilTex() {
+    return canvasTex(128, 128, (g, w, h) => {
+      g.fillStyle = "#eef1ee"; g.fillRect(0, 0, w, h);
+      const r = rng(3);
+      for (let i = 0; i < 260; i++) { g.fillStyle = "rgba(80,90,85,.25)"; g.fillRect(r() * w, r() * h, 1.5, 1.5); }
+      g.strokeStyle = "#b9c1bc"; g.lineWidth = 3; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+    }, "ceil");
+  }
+  function doorTex(num, plate, color) {
+    return canvasTex(128, 256, (g, w, h) => {
+      g.fillStyle = "#8d9a94"; g.fillRect(0, 0, w, h);
+      g.fillStyle = color; g.fillRect(8, 8, w - 16, h - 8);
+      g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(8, 8, 10, h - 8);
+      g.fillStyle = "#b9d3dd"; g.fillRect(40, 40, 48, 70); g.strokeStyle = "#556"; g.lineWidth = 3; g.strokeRect(40, 40, 48, 70);
+      g.fillStyle = "#c9ccc8"; g.fillRect(96, 140, 20, 6);
+      g.fillStyle = "#fff"; g.fillRect(24, 10, 80, 24);
+      g.fillStyle = "#123"; g.font = `800 18px ${SIGN_FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(num, 64, 23);
+      if (plate) { g.fillStyle = "#f6f6ef"; g.fillRect(18, 118, 92, 20); g.fillStyle = "#333"; g.font = `700 11px ${SIGN_FONT}`; g.fillText(plate, 64, 128, 88); }
+    });
+  }
+  const POSTERS = [
+    { bg: "#2b7bb9", title: "HÄNDE-", title2: "DESINFEKTION", body: ["30 Sekunden.", "Jedes Mal.", "Ja, auch Sie."], icon: "🧴" },
+    { bg: "#e2483d", title: "LÄCHELN!", body: ["Sie sind im Dienst.", "Der Patient merkt alles."], icon: "😁" },
+    { bg: "#6b4fd0", title: "FORTBILDUNG", body: ["Burnout-Prävention", "Samstag 07:00 Uhr", "Anwesenheit Pflicht"], icon: "🧘" },
+    { bg: "#f2b33d", title: "STATIONSFEST", body: ["ABGESAGT", "(Personalmangel)"], icon: "🎉" },
+    { bg: "#1f9d55", title: "MITARBEITER", title2: "DES MONATS", body: ["Der Kaffeeautomat"], icon: "☕" },
+    { bg: "#34514c", title: "ÜBERSTUNDEN?", body: ["Antrag 23c ausfüllen.", "Bearbeitung: 6–8 Monate.", "Ablehnung garantiert."], icon: "📝" },
+    { bg: "#c0322a", title: "RUHE BITTE", body: ["Patienten schlafen.", "Ärzte nicht."], icon: "🤫" },
+    { bg: "#2d3f8f", title: "DIENSTTAUSCH", body: ["Biete: Heiligabend", "Suche: irgendwas", "Tel. 4711"], icon: "🎄" },
+  ];
+  function posterTex(p) {
+    return canvasTex(256, 352, (g, w, h) => {
+      g.fillStyle = "#fbfaf4"; g.fillRect(0, 0, w, h);
+      g.fillStyle = p.bg; g.fillRect(0, 0, w, p.title2 ? 110 : 80);
+      g.fillStyle = "#fff"; g.font = `800 34px ${SIGN_FONT}`; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(p.title, w / 2, 42, w - 20); if (p.title2) g.fillText(p.title2, w / 2, 82, w - 20);
+      g.font = `90px ${EMOJI_FONT}`; g.fillText(p.icon, w / 2, p.title2 ? 175 : 155);
+      g.fillStyle = "#1d2622"; g.font = `700 22px ${SIGN_FONT}`;
+      p.body.forEach((l, i) => g.fillText(l, w / 2, (p.title2 ? 250 : 235) + i * 30, w - 20));
+      g.strokeStyle = "#c9ccc8"; g.lineWidth = 6; g.strokeRect(0, 0, w, h);
+    }, "poster:" + p.title + p.body[0]);
+  }
+  const signTex = (text, sub, bg) => canvasTex(512, 160, (g, w, h) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = `800 64px ${SIGN_FONT}`; g.fillText(text, w / 2, sub ? 62 : h / 2, w - 30);
+    if (sub) { g.font = `600 34px ${SIGN_FONT}`; g.fillText(sub, w / 2, 122, w - 30); }
+  }, "sign:" + text + sub + bg);
+  const paperTex = () => canvasTex(64, 90, (g, w, h) => {
+    g.fillStyle = "#fbfaf4"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#c0322a"; g.fillRect(4, 4, w - 8, 8);
+    g.fillStyle = "#555"; for (let i = 0; i < 9; i++) g.fillRect(6, 18 + i * 7, 20 + Math.random() * 30, 2);
+  }, "paper");
+  const screenTex = () => canvasTex(128, 96, (g, w, h) => {
+    g.fillStyle = "#08130e"; g.fillRect(0, 0, w, h);
+    g.strokeStyle = "#5ee08a"; g.lineWidth = 2; g.beginPath();
+    for (let x = 0; x < w; x++) { const p = x % 40; const y = p === 18 ? 18 : p === 20 ? 62 : p === 22 ? 40 : 40 + Math.sin(x * .3) * 1.5; x ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke();
+    g.fillStyle = "#ffd27a"; g.font = "700 18px monospace"; g.fillText("HF 112", 6, 88);
+  }, "screen");
+  const vendTex = () => canvasTex(128, 192, (g, w, h) => {
+    g.fillStyle = "#b8352d"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#1b2a33"; g.fillRect(10, 30, 76, 120);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) { g.fillStyle = ["#f2b33d", "#4fb3a9", "#e26fa0"][(r + c) % 3]; g.fillRect(16 + c * 24, 38 + r * 28, 16, 18); }
+    g.fillStyle = "#fff"; g.font = `800 20px ${SIGN_FONT}`; g.fillText("SNACKS", 14, 22);
+    g.save(); g.translate(64, 100); g.rotate(-.35); g.fillStyle = "#fff"; g.fillRect(-60, -14, 120, 28); g.fillStyle = "#c0322a"; g.font = `800 15px ${SIGN_FONT}`; g.textAlign = "center"; g.fillText("AUSSER BETRIEB", 0, 6); g.restore();
+  }, "vend");
+  const laundryTex = () => canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = "#3f6fb3"; g.fillRect(0, 0, w, h);
+    g.strokeStyle = "rgba(255,255,255,.18)"; for (let i = 0; i < w; i += 8) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); }
+    g.fillStyle = "#fff"; g.font = `800 18px ${SIGN_FONT}`; g.textAlign = "center"; g.fillText("WÄSCHE", w / 2, 70);
+  }, "laundry");
+
+  // ---------- three setup ----------
+  const canvas = $("gl");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  const FOG = 0xcbd8d1;
+  scene.background = new THREE.Color(FOG);
+  scene.fog = new THREE.Fog(FOG, 5, 30);
+  const camera = new THREE.PerspectiveCamera(72, 1, .05, 90);
+  camera.rotation.order = "YXZ";
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x7f9a90, .55));
+  scene.add(new THREE.AmbientLight(0xffffff, .25));
+  const sun = new THREE.DirectionalLight(0xffffff, .3); sun.position.set(3, 10, 2); scene.add(sun);
+  const headLamp = new THREE.PointLight(0xfff4e0, .3, 12); scene.add(headLamp);
+
+  const matCache = new Map();
+  const lambert = (color, map) => {
+    const key = color + ":" + (map ? map.uuid : "");
+    if (!matCache.has(key)) matCache.set(key, new THREE.MeshLambertMaterial({ color, map: map || null }));
+    return matCache.get(key);
+  };
+  const GEO = {
+    body: new THREE.CylinderGeometry(.26, .36, 1.36, 12),
+    pole: new THREE.CylinderGeometry(.025, .025, 1.9, 6),
+    box: new THREE.BoxGeometry(1, 1, 1),
+    plane: new THREE.PlaneGeometry(1, 1),
+    ring: new THREE.RingGeometry(.32, .46, 28),
+  };
+  function sprite(tex, sx, sy) {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, fog: true }));
+    m.scale.set(sx, sy, 1); return m;
+  }
+  const at = (o, x, y, z) => { o.position.set(x, y, z); return o; };
+  function boxMesh(w, h, d, color, map) {
+    const m = new THREE.Mesh(GEO.box, lambert(color, map)); m.scale.set(w, h, d); return m;
   }
 
-  function loadLevel(i) {
-    const L = LEVELS[i];
+  // ---------- level ----------
+  let level = null; // { group, enemies, items, papers, exit, start, startYaw, perTex[] }
+  function disposeLevel() {
+    if (!level) return;
+    scene.remove(level.group);
+    level.group.traverse(o => {
+      if (o.isSprite) o.material.dispose();
+      if (o.isInstancedMesh) o.geometry.dispose();
+    });
+    for (const t of level.perTex) t.dispose();
+    for (const m of level.perMat) m.dispose();
+    for (const g of level.perGeo) g.dispose();
+  }
+
+  function buildLevel(idx) {
+    disposeLevel();
+    const L = LEVELS[idx];
     grid = L.map.map(r => r.split(""));
-    enemies = []; items = [];
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const group = new THREE.Group();
+    const lv = { group, enemies: [], items: [], papers: [], exit: null, start: null, perTex: [], perMat: [] };
+    const r = rng(idx * 97 + 11);
+
+    // parse entities
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const ch = grid[y][x];
-      if (ch === "S") { player = { x: x + .5, y: y + .5, inv: 0, coffee: 0, busy: 0, fx: 0, fy: 1 }; grid[y][x] = "."; }
-      else if (ch === "E") exit = { x, y };
-      else if (TYPES[ch]) {
-        enemies.push({ type: ch, x: x + .5, y: y + .5, tx: x, ty: y, hx: x, hy: y, face: [0, 1], mode: "idle",
-                       lost: 0, stun: 0, pause: Math.random(), say: "", sayT: 0 });
-        grid[y][x] = ".";
-      } else if (ch === "c" || ch === "k") { items.push({ kind: ch, x, y, taken: false }); grid[y][x] = "."; }
+      if (ch === "S") { lv.start = [x, y]; grid[y][x] = "."; }
+      else if (ch === "E") { lv.exit = [x, y]; grid[y][x] = "."; }
+      else if (TYPES[ch]) { lv.enemies.push({ type: ch, x: x + .5, y: y + .5, tx: x, ty: y, hx: x, hy: y, face: [0, 1], mode: "idle", lost: 0, stun: 0, pause: r() }); grid[y][x] = "."; }
+      else if (ITEMS[ch]) { lv.items.push({ kind: ch, x, y, taken: false }); grid[y][x] = "."; }
+      else if (ch === "x") { lv.papers.push({ x: x + .5, y: y + .5, taken: false }); grid[y][x] = "."; }
     }
-    hud.floor.textContent = `FL ${L.floor} · ${L.short}`;
-    setMsg("Shift ended 17:00. Leave quietly.", 0);
+
+    // floor + ceiling
+    const ft = floorTex(); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(N, N);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(N * S, N * S), new THREE.MeshLambertMaterial({ map: ft }));
+    floor.rotation.x = -Math.PI / 2; floor.position.set(N * S / 2, 0, N * S / 2); group.add(floor);
+    const ct = ceilTex(); ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(N * 2, N * 2);
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(N * S, N * S), new THREE.MeshLambertMaterial({ map: ct }));
+    ceil.rotation.x = Math.PI / 2; ceil.position.set(N * S / 2, WALL_H, N * S / 2); group.add(ceil);
+    lv.perMat.push(floor.material, ceil.material);
+    lv.perGeo = [floor.geometry, ceil.geometry];
+
+    // walls (instanced)
+    const walls = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (grid[y][x] === "#") walls.push([x, y]);
+    const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex()), walls.length);
+    const m4 = new THREE.Matrix4();
+    walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));
+    group.add(wallMesh);
+
+    // ceiling light panels
+    const lights = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (grid[y][x] !== "#" && (x + y) % 2 === 0) lights.push([x, y]);
+    const panelMat = new THREE.MeshBasicMaterial({ color: 0xfdfdf6 });
+    const panels = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, .05, .7), panelMat, lights.length);
+    lights.forEach(([x, y], i) => panels.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H - .03, y * S + S / 2)));
+    group.add(panels); lv.perMat.push(panelMat);
+    const fl = lights[Math.floor(r() * lights.length)];
+    lv.flicker = new THREE.Mesh(new THREE.BoxGeometry(1.42, .06, .72), new THREE.MeshBasicMaterial({ color: 0x444a46 }));
+    lv.flicker.position.set(fl[0] * S + S / 2, WALL_H - .03, fl[1] * S + S / 2); group.add(lv.flicker);
+    lv.perMat.push(lv.flicker.material);
+
+    // guide line on the floor (start → exit)
+    const path = bfs(lv.start[0], lv.start[1], lv.exit[0], lv.exit[1]) || [];
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0x1f9d55 }); lv.perMat.push(lineMat);
+    for (let i = 0; i < path.length - 1; i++) {
+      const [ax, ay] = path[i], [bx, by] = path[i + 1];
+      const seg = new THREE.Mesh(GEO.plane, lineMat);
+      seg.rotation.x = -Math.PI / 2;
+      const horiz = ay === by;
+      seg.scale.set(horiz ? S + .12 : .12, horiz ? .12 : S + .12, 1);
+      seg.position.set(((ax + bx) / 2 + .5) * S + (horiz ? 0 : .7), .012, ((ay + by) / 2 + .5) * S + (horiz ? .7 : 0));
+      group.add(seg);
+    }
+
+    // wall decorations
+    let roomNo = 1, usedElevator = false;
+    const plates = ["3 Betten", "Isolierung!", "Arztzimmer", "Bereitschaftsraum", "Lager", "Unreiner Raum", "Stationsküche", "Chefarzt (leer)", "2 Betten", "Besprechung"];
+    const exitKey = lv.exit[0] + "," + lv.exit[1];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      if (grid[y][x] === "#") continue;
+      for (const [dx, dy] of DIRS) {
+        if (cell(x + dx, y + dy) !== "#") continue;
+        const theta = Math.atan2(-dx, -dy);
+        const cx = (x + .5) * S + dx * (S / 2 - .02), cz = (y + .5) * S + dy * (S / 2 - .02);
+        const place = (obj, yPos, inset = 0) => { obj.position.set(cx - dx * inset, yPos, cz - dy * inset); obj.rotation.y = theta; group.add(obj); };
+        if ((x + "," + y) === exitKey && !lv.exitPlaced) {
+          lv.exitPlaced = true;
+          const door = new THREE.Mesh(GEO.plane, lambert(0xffffff, signTex("TREPPENHAUS", idx === LEVELS.length - 1 ? "→ PARKPLATZ" : "↓ " + (L.floor - 1 || "EG"), "#1f9d55")));
+          door.scale.set(1.8, 2.3, 1); place(door, 1.15);
+          const sign = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: signTex("🏃 NOTAUSGANG", "", "#14a052") }));
+          sign.scale.set(1.5, .45, 1); place(sign, 2.7, .02); lv.perMat.push(sign.material);
+          const glow = new THREE.PointLight(0x3cff8a, .9, 7); glow.position.set(cx - dx * .6, 2, cz - dy * .6); group.add(glow);
+          continue;
+        }
+        const v = r();
+        if (v < .2) {
+          const num = (L.room ? L.room + "." : "0.") + String(roomNo++).padStart(2, "0");
+          const t = doorTex(num, r() < .55 ? pick(plates) : "", pick(["#c9b38f", "#9fb7c4", "#d1c7b3"]));
+          lv.perTex.push(t);
+          const mat = new THREE.MeshLambertMaterial({ map: t }); lv.perMat.push(mat);
+          const door = new THREE.Mesh(GEO.plane, mat); door.scale.set(1.15, 2.25, 1); place(door, 1.125);
+        } else if (v < .29) {
+          const p = new THREE.Mesh(GEO.plane, lambert(0xffffff, posterTex(pick(POSTERS)))); p.scale.set(.75, 1.03, 1); place(p, 1.65);
+        } else if (v < .33) {
+          const ext = new THREE.Mesh(new THREE.CylinderGeometry(.11, .11, .55, 10), lambert(0xd42b2b)); place(ext, .45, .18);
+          lv.perGeo.push(ext.geometry);
+          const s = new THREE.Mesh(GEO.plane, lambert(0xffffff, signTex("🧯", "", "#c0322a"))); s.scale.set(.42, .14, 1); place(s, 1.1);
+        } else if (v < .39) {
+          const disp = boxMesh(.14, .26, .1, 0xf4f4f4); place(disp, 1.25, .06);
+          const drop = boxMesh(.08, .05, .06, 0x3f8fb3); place(drop, 1.08, .08);
+        } else if (v < .41 && !usedElevator) {
+          usedElevator = true;
+          const el = new THREE.Mesh(GEO.plane, lambert(0xffffff, signTex("AUFZUG", "defekt seit 2019", "#7b8a85"))); el.scale.set(1.7, 2.3, 1); place(el, 1.15);
+        } else if (v < .45) {
+          const hook = new THREE.Mesh(GEO.plane, lambert(0xffffff, screenTex())); hook.scale.set(.5, .38, 1); place(hook, 1.7);
+        }
+      }
+    }
+
+    // props
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const ch = grid[y][x], wx = (x + .5) * S, wz = (y + .5) * S;
+      if (ch === "B") {
+        const alongZ = openTile(x, y - 1) || openTile(x, y + 1);
+        const g = new THREE.Group();
+        g.add(at(boxMesh(1.05, .1, 2.1, 0x8a948f), 0, .5, 0));
+        g.add(at(boxMesh(1, .18, 2, 0xf6f8f7), 0, .64, 0));
+        g.add(at(boxMesh(1.02, .1, 1.25, 0x6aa1d6), 0, .76, .35));
+        g.add(at(boxMesh(.7, .12, .4, 0xffffff), 0, .79, -.72));
+        g.add(at(boxMesh(1.05, .5, .06, 0x7d8783), 0, .85, -1.03));
+        for (const [lx, lz] of [[-.45, -.9], [.45, -.9], [-.45, .9], [.45, .9]]) g.add(at(boxMesh(.06, .45, .06, 0x5c6662), lx, .23, lz));
+        const face = sprite(emojiTex(pick(["😴", "🤕", "🤒", "😵"])), .5, .5); face.position.set(0, 1.0, -.7); g.add(face);
+        const tag = sprite(labelTex("FLURBETT", "#7b8a85", "#fff"), 1.1, .2); tag.position.set(0, 1.5, 0); g.add(tag);
+        g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
+      } else if (ch === "T") {
+        const desk = boxMesh(S, 1.1, S * .55, 0xc9b38f); desk.position.set(wx, .55, wz); group.add(desk);
+        const top = boxMesh(S + .1, .06, S * .62, 0xeeeae0); top.position.set(wx, 1.13, wz); group.add(top);
+        const mon = new THREE.Mesh(GEO.box, [lambert(0x222), lambert(0x222), lambert(0x222), lambert(0x222), lambert(0xffffff, screenTex()), lambert(0xffffff, screenTex())]);
+        mon.scale.set(.6, .42, .06); mon.position.set(wx + (r() - .5), 1.42, wz); group.add(mon);
+        const papers = boxMesh(.35, .12, .45, 0xfbfaf4); papers.position.set(wx - .7, 1.22, wz + .1); papers.rotation.y = r(); group.add(papers);
+        if (!lv.deskSign) {
+          lv.deskSign = true;
+          const sgn = sprite(signTex("STATIONSZIMMER", "Bitte klingeln (bringt nichts)", "#2b7bb9"), 2.2, .7); sgn.position.set(wx, 2.7, wz); group.add(sgn);
+        }
+      } else if (ch === "M") {
+        const vm = boxMesh(1.3, 2.1, .9, 0xffffff, vendTex()); vm.position.set(wx, 1.05, wz); group.add(vm);
+      } else if (ch === "w") {
+        const cart = boxMesh(1.2, 1.0, 1.7, 0xffffff, laundryTex()); cart.position.set(wx, .62, wz); group.add(cart);
+        const top = boxMesh(1.1, .2, 1.6, 0xf2f2ee); top.position.set(wx, 1.18, wz); group.add(top);
+        for (const [lx, lz] of [[-.5, -.7], [.5, -.7], [-.5, .7], [.5, .7]]) { const w = boxMesh(.12, .12, .12, 0x333); w.position.set(wx + lx, .06, wz + lz); group.add(w); }
+        const tag = sprite(labelTex("VERSTECK", "#3f6fb3", "#fff"), 1.1, .2); tag.position.set(wx, 1.75, wz); group.add(tag);
+      }
+    }
+
+    // random corridor clutter: IV poles, wheelchairs, wet-floor signs
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      if (grid[y][x] !== "." || r() > .07) continue;
+      if ((x === lv.start[0] && y === lv.start[1]) || (x === lv.exit[0] && y === lv.exit[1])) continue;
+      const wx = (x + .5) * S + (r() - .5) * 1.4, wz = (y + .5) * S + (r() - .5) * 1.4, kind = r();
+      if (kind < .4) {
+        const p = new THREE.Mesh(GEO.pole, lambert(0xb9c1bc)); p.position.set(wx, .95, wz); group.add(p);
+        const bag = boxMesh(.18, .28, .06, 0xd8eef8); bag.position.set(wx + .1, 1.75, wz); group.add(bag);
+      } else if (kind < .7) {
+        const sgn = new THREE.Mesh(new THREE.ConeGeometry(.3, .7, 4), lambert(0xf2c300)); sgn.position.set(wx, .35, wz); group.add(sgn); lv.perGeo.push(sgn.geometry);
+        const tag = sprite(labelTex("RUTSCHGEFAHR", "#f2c300", "#222"), 1, .18); tag.position.set(wx, .95, wz); group.add(tag);
+      } else {
+        const seat = boxMesh(.6, .08, .6, 0x2b2f33); seat.position.set(wx, .55, wz); group.add(seat);
+        const back = boxMesh(.6, .6, .06, 0x2b2f33); back.position.set(wx, .85, wz - .3); group.add(back);
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(.3, .04, 6, 16), lambert(0x777)); wheel.position.set(wx + .34, .32, wz); wheel.rotation.y = Math.PI / 2; group.add(wheel); lv.perGeo.push(wheel.geometry);
+        const wheel2 = wheel.clone(); wheel2.position.x = wx - .34; group.add(wheel2);
+      }
+    }
+
+    // papers (traps)
+    for (const p of lv.papers) {
+      p.mesh = new THREE.Group();
+      for (let i = 0; i < 3; i++) {
+        const sh = new THREE.Mesh(GEO.plane, lambert(0xffffff, paperTex()));
+        sh.rotation.x = -Math.PI / 2; sh.rotation.z = r() * Math.PI; sh.scale.set(.32, .45, 1);
+        sh.position.set((r() - .5) * .7, .015 + i * .002, (r() - .5) * .7); p.mesh.add(sh);
+      }
+      const tag = sprite(labelTex("LABOR", "#c0322a", "#fff"), .7, .13); tag.position.y = .45; p.mesh.add(tag);
+      p.mesh.position.set(p.x * S, 0, p.y * S); group.add(p.mesh);
+    }
+
+    // items
+    for (const it of lv.items) {
+      const def = ITEMS[it.kind];
+      it.mesh = new THREE.Group();
+      if (it.kind === "s") {
+        const b = new THREE.Mesh(GEO.body, lambert(0x6fcf97)); b.position.y = .68; it.mesh.add(b);
+        const h = sprite(emojiTex(def.emoji), .62, .62); h.position.y = 1.62; it.mesh.add(h);
+      } else {
+        it.icon = sprite(emojiTex(def.emoji), .7, .7); it.icon.position.y = 1.0; it.mesh.add(it.icon);
+      }
+      const ringMat = new THREE.MeshBasicMaterial({ color: def.ring, transparent: true, opacity: .7, side: THREE.DoubleSide }); lv.perMat.push(ringMat);
+      const ring = new THREE.Mesh(GEO.ring, ringMat); ring.rotation.x = -Math.PI / 2; ring.position.y = .02; it.mesh.add(ring);
+      const tag = sprite(labelTex(def.label, "#1d2622", "#fff"), 1, .19); tag.position.y = it.kind === "s" ? 2.2 : 1.55; it.mesh.add(tag);
+      it.mesh.position.set((it.x + .5) * S, 0, (it.y + .5) * S); group.add(it.mesh);
+    }
+
+    // enemies
+    for (const e of lv.enemies) {
+      const t = TYPES[e.type];
+      const g = new THREE.Group();
+      const addFigure = (color, emoji, ox, oz, sc) => {
+        const b = new THREE.Mesh(GEO.body, lambert(color)); b.scale.setScalar(sc); b.position.set(ox, .68 * sc, oz); g.add(b);
+        const h = sprite(emojiTex(emoji), .62 * sc, .62 * sc); h.position.set(ox, 1.62 * sc, oz); g.add(h);
+      };
+      addFigure(t.body, t.emoji, 0, 0, 1);
+      if (e.type === "F") { addFigure(0x7f5aa8, "🧔", .5, .25, .95); addFigure(0xe26fa0, "👧", -.45, .3, .7); }
+      if (e.type === "P") {
+        const p = new THREE.Mesh(GEO.pole, lambert(0xb9c1bc)); p.position.set(.45, .95, 0); g.add(p);
+        const bag = boxMesh(.18, .28, .06, 0xd8eef8); bag.position.set(.52, 1.75, 0); g.add(bag);
+      }
+      if (e.type === "V") { const f = boxMesh(.3, .4, .06, 0xc0322a); f.position.set(.32, 1.0, .2); g.add(f); }
+      if (e.type === "O" || e.type === "C") { const st = boxMesh(.05, .4, .05, 0x222); st.position.set(.15, 1.15, .28); g.add(st); }
+      const tag = sprite(labelTex(t.label, t.color, e.type === "P" || e.type === "F" || e.type === "V" ? "#1d2622" : "#fff"), 1.25, .24);
+      tag.position.y = 2.2; g.add(tag);
+      e.bang = sprite(labelTex("!", "#e2483d", "#fff"), .5, .3); e.bang.position.y = 2.55; e.bang.visible = false; g.add(e.bang);
+      e.mesh = g; group.add(g);
+      if (t.cone) {
+        const coneMat = new THREE.MeshBasicMaterial({ color: 0xe2483d, transparent: true, opacity: .22, depthWrite: false, side: THREE.DoubleSide });
+        const spread = Math.acos(.55);
+        const geo = new THREE.CircleGeometry(1, 20, -spread, spread * 2); geo.rotateX(-Math.PI / 2);
+        e.cone = new THREE.Mesh(geo, coneMat); e.cone.position.y = .03; group.add(e.cone);
+        lv.perMat.push(coneMat); lv.perGeo.push(geo);
+      }
+    }
+
+    // initial facing: toward first step of the guide path
+    lv.startYaw = 0;
+    if (path.length > 1) { const [nx, ny] = path[1]; const gx = nx - lv.start[0], gy = ny - lv.start[1]; lv.startYaw = Math.atan2(-gx, -gy); }
+
+    scene.add(group);
+    level = lv;
+    return lv;
   }
 
-  function setMsg(text, secs, alert) {
-    msg = { text, t: secs, alert: !!alert };
-    hud.msg.textContent = text;
-    hud.msg.classList.toggle("alert", !!alert);
+  // ---------- state ----------
+  let mode = "title";
+  let run = null;
+  const player = { x: 0, y: 0, yaw: 0, pitch: 0, coffee: 0, busy: 0, airplane: 0, inv: 0, hidden: false, stillT: 0, bob: 0 };
+  let msg = { text: "", t: 0 };
+  let call = null, lure = null, toastT = 0, labT = 0;
+
+  function newRun() {
+    run = { idx: 0, nerves: MAX_NERVES, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, nextCall: 16 + Math.random() * 10 };
   }
+
+  function loadFloor(idx) {
+    buildLevel(idx);
+    player.x = level.start[0] + .5; player.y = level.start[1] + .5;
+    player.yaw = level.startYaw; player.pitch = 0;
+    player.coffee = player.busy = player.inv = 0; player.hidden = false;
+    lure = null; endCall(true);
+    $("hudFloor").textContent = LEVELS[idx].short;
+    setMsg("Feierabend war um 17:00. Leise raus.", 0);
+    updateHud();
+  }
+
+  // ---------- HUD ----------
+  function setMsg(text, secs, alert) {
+    msg = { text, t: secs };
+    $("hudMsg").textContent = text; $("hudMsg").classList.toggle("alert", !!alert);
+  }
+  function updateHud() {
+    let h = "";
+    for (let i = 0; i < MAX_NERVES; i++) h += i < run.nerves ? "♥" : '<span class="lost">♡</span>';
+    $("hudNerves").innerHTML = h;
+    $("chipTasks").textContent = "AUFGABEN " + run.tasks.length;
+    $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
+    $("chipDuty").textContent = "DIENSTE " + run.duties.length;
+    $("chipDuty").classList.toggle("warn", run.duties.length > 0);
+    $("taskList").innerHTML = run.tasks.length ? run.tasks.map(t => `<li>${t}</li>`).join("") : '<li class="empty">Nichts. Verdächtig.</li>';
+  }
+  function buffText() {
+    const b = [];
+    if (player.hidden) b.push("VERSTECKT");
+    if (player.busy > 0) b.push("📋 " + Math.ceil(player.busy));
+    if (player.coffee > 0) b.push("☕ " + Math.ceil(player.coffee));
+    if (player.airplane > 0) b.push("✈️ " + Math.ceil(player.airplane));
+    if (lure) b.push("📢 " + Math.ceil(lure.t));
+    return b.join(" · ");
+  }
+
+  function addTask(t) { run.tasks.push(t); run.tasksTotal++; }
+  function addDuty() {
+    const code = pick(["WE", "WE", "N", "24", "RB"]);
+    run.duties.push(code); return DUTIES[code];
+  }
+
+  function showToast(avatar, avatarBg, who, line, stamps) {
+    $("toastAvatar").textContent = avatar; $("toastAvatar").style.background = avatarBg;
+    $("toastWho").textContent = who; $("toastLine").textContent = line;
+    $("toastStamps").innerHTML = stamps.map(s => `<span class="stamp${s.good ? " good" : ""}">${s.text}</span>`).join("");
+    const t = $("toast"); t.hidden = false; t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop");
+    toastT = 3.2;
+  }
+  function flash() { const f = $("flash"); f.classList.remove("on"); void f.offsetWidth; f.classList.add("on"); }
+
+  // ---------- audio ----------
+  let actx = null;
+  function initAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) { actx = null; } }
+  function tone(freq, start, dur, type = "square", vol = .05) {
+    if (!actx) return;
+    try {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + start;
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + .02);
+    } catch (e) {}
+  }
+  const sfx = {
+    hit: () => { tone(2200, 0, .1); tone(2200, .14, .1); },
+    pick: () => { tone(880, 0, .08, "triangle", .08); tone(1320, .08, .1, "triangle", .08); },
+    paper: () => { tone(300, 0, .15, "sawtooth", .04); },
+    ring: () => { for (let i = 0; i < 6; i++) tone(i % 2 ? 1400 : 1750, i * .07, .06, "square", .035); },
+    floor: () => { tone(660, 0, .1, "triangle", .08); tone(880, .1, .1, "triangle", .08); tone(1100, .2, .2, "triangle", .08); },
+  };
 
   // ---------- input ----------
   const keys = new Set();
-  const touch = { active: false, id: null, ox: 0, oy: 0, vx: 0, vy: 0 };
-  const stick = $("stick"), knob = $("knob");
-
   addEventListener("keydown", e => {
     const k = e.key.toLowerCase();
-    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(k)) { keys.add(k); e.preventDefault(); }
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d", "q", "e"].includes(k)) { keys.add(k); e.preventDefault(); }
     if ((k === "enter" || k === " ") && mode !== "play") {
-      const btn = mode === "title" ? $("btnStart") : mode === "intro" ? $("btnGo") : $("btnAgain");
-      if (!btn.closest(".overlay").hidden) { e.preventDefault(); btn.click(); }
+      const id = mode === "title" ? "btnStart" : mode === "intro" ? "btnGo" : "btnAgain";
+      if (!$(id).closest(".overlay").hidden) { e.preventDefault(); $(id).click(); }
     }
+    if (mode === "play" && call && (k === "y" || k === "j")) acceptCall();
+    if (mode === "play" && call && k === "n") declineCall();
   });
   addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
   addEventListener("blur", () => keys.clear());
+  document.addEventListener("gesturestart", e => e.preventDefault());
 
-  stage.addEventListener("pointerdown", e => {
-    if (mode !== "play" || e.target.closest(".overlay")) return;
-    const r = stage.getBoundingClientRect();
-    Object.assign(touch, { active: true, id: e.pointerId, ox: e.clientX, oy: e.clientY, vx: 0, vy: 0 });
-    stick.style.left = (e.clientX - r.left) + "px"; stick.style.top = (e.clientY - r.top) + "px";
-    knob.style.transform = "";
-    stick.hidden = false;
-    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  const touchLayer = $("touch"), stick = $("stick"), knob = $("knob");
+  const ptr = { move: null, look: null };
+  touchLayer.addEventListener("pointerdown", e => {
+    if (mode !== "play") return;
+    $("tasks").hidden = true;
+    const left = e.pointerType !== "mouse" && e.clientX < innerWidth * .5;
+    if (left && !ptr.move) {
+      ptr.move = { id: e.pointerId, ox: e.clientX, oy: e.clientY, vx: 0, vy: 0 };
+      stick.style.left = e.clientX + "px"; stick.style.top = e.clientY + "px"; knob.style.transform = ""; stick.hidden = false;
+    } else if (!ptr.look) {
+      ptr.look = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+    } else return;
+    try { touchLayer.setPointerCapture(e.pointerId); } catch (_) {}
     e.preventDefault();
   });
-  stage.addEventListener("pointermove", e => {
-    if (!touch.active || e.pointerId !== touch.id) return;
-    let dx = e.clientX - touch.ox, dy = e.clientY - touch.oy;
-    const d = Math.hypot(dx, dy), max = 40;
-    if (d > max) { dx = dx / d * max; dy = dy / d * max; }
-    knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    const m = Math.min(1, d / max);
-    touch.vx = d > 6 ? dx / Math.min(d, max) * m : 0;
-    touch.vy = d > 6 ? dy / Math.min(d, max) * m : 0;
+  touchLayer.addEventListener("pointermove", e => {
+    if (ptr.move && e.pointerId === ptr.move.id) {
+      let dx = e.clientX - ptr.move.ox, dy = e.clientY - ptr.move.oy;
+      const d = Math.hypot(dx, dy), max = 46;
+      if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      ptr.move.vx = d > 6 ? dx / max : 0; ptr.move.vy = d > 6 ? dy / max : 0;
+    } else if (ptr.look && e.pointerId === ptr.look.id) {
+      const sens = e.pointerType === "mouse" ? .005 : .0075;
+      player.yaw -= (e.clientX - ptr.look.lx) * sens;
+      player.pitch = Math.max(-.6, Math.min(.5, player.pitch - (e.clientY - ptr.look.ly) * sens * .7));
+      ptr.look.lx = e.clientX; ptr.look.ly = e.clientY;
+    }
   });
-  const endTouch = e => {
-    if (e.pointerId !== touch.id) return;
-    touch.active = false; touch.vx = touch.vy = 0; stick.hidden = true;
+  const endPtr = e => {
+    if (ptr.move && e.pointerId === ptr.move.id) { ptr.move = null; stick.hidden = true; }
+    if (ptr.look && e.pointerId === ptr.look.id) ptr.look = null;
   };
-  stage.addEventListener("pointerup", endTouch);
-  stage.addEventListener("pointercancel", endTouch);
+  touchLayer.addEventListener("pointerup", endPtr);
+  touchLayer.addEventListener("pointercancel", endPtr);
 
-  function inputVec() {
-    let x = 0, y = 0;
-    if (keys.has("arrowleft") || keys.has("a")) x -= 1;
-    if (keys.has("arrowright") || keys.has("d")) x += 1;
-    if (keys.has("arrowup") || keys.has("w")) y -= 1;
-    if (keys.has("arrowdown") || keys.has("s")) y += 1;
-    if (x || y) { const d = Math.hypot(x, y); return [x / d, y / d]; }
-    return [touch.vx, touch.vy];
-  }
-
-  // ---------- sound (pager beep, starts after first tap) ----------
-  let actx = null;
-  function initAudio() {
-    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) { actx = null; }
-  }
-  function beep(freq = 2200, count = 2) {
-    if (!actx) return;
-    try {
-      const t0 = actx.currentTime;
-      for (let i = 0; i < count; i++) {
-        const o = actx.createOscillator(), g = actx.createGain();
-        o.type = "square"; o.frequency.value = freq;
-        g.gain.setValueAtTime(0.0001, t0 + i * .14);
-        g.gain.exponentialRampToValueAtTime(0.06, t0 + i * .14 + .01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * .14 + .1);
-        o.connect(g).connect(actx.destination);
-        o.start(t0 + i * .14); o.stop(t0 + i * .14 + .12);
-      }
-    } catch (e) {}
+  function moveInput() {
+    let f = 0, s = 0;
+    if (keys.has("w") || keys.has("arrowup")) f += 1;
+    if (keys.has("s") || keys.has("arrowdown")) f -= 1;
+    if (keys.has("d")) s += 1;
+    if (keys.has("a")) s -= 1;
+    if (f || s) { const d = Math.hypot(f, s); return [f / d, s / d]; }
+    if (ptr.move) return [-ptr.move.vy, ptr.move.vx];
+    return [0, 0];
   }
 
   // ---------- update ----------
-  function movePlayer(dt) {
-    const [vx, vy] = inputVec();
-    if (vx || vy) { player.fx = vx; player.fy = vy; }
-    const sp = PLAYER_SPEED * (player.coffee > 0 ? 1.6 : 1) * dt;
-    stepAxis(vx * sp, 0); stepAxis(0, vy * sp);
-  }
-  const blocked = (x, y) => {
-    const r = PLAYER_R;
-    return solidAt(x - r, y - r) || solidAt(x + r, y - r) || solidAt(x - r, y + r) || solidAt(x + r, y + r);
-  };
+  const blocked = (x, y) => { const r = PLAYER_R; return blockedAt(x - r, y - r) || blockedAt(x + r, y - r) || blockedAt(x - r, y + r) || blockedAt(x + r, y + r); };
   function stepAxis(dx, dy) {
     if (!dx && !dy) return;
     if (!blocked(player.x + dx, player.y + dy)) { player.x += dx; player.y += dy; return; }
-    // Corner assist: slide toward the corridor centre so turns don't snag.
     const amt = Math.abs(dx || dy);
-    if (dx) {
-      const cy = Math.floor(player.y) + .5, off = cy - player.y;
-      if (Math.abs(off) > .01 && !blocked(player.x + dx, cy)) player.y += Math.sign(off) * Math.min(Math.abs(off), amt);
-    } else {
-      const cx = Math.floor(player.x) + .5, off = cx - player.x;
-      if (Math.abs(off) > .01 && !blocked(cx, player.y + dy)) player.x += Math.sign(off) * Math.min(Math.abs(off), amt);
-    }
+    if (dx) { const cy = Math.floor(player.y) + .5, off = cy - player.y; if (Math.abs(off) > .01 && !blocked(player.x + dx, cy)) player.y += Math.sign(off) * Math.min(Math.abs(off), amt * .7); }
+    else { const cx = Math.floor(player.x) + .5, off = cx - player.x; if (Math.abs(off) > .01 && !blocked(cx, player.y + dy)) player.x += Math.sign(off) * Math.min(Math.abs(off), amt * .7); }
+  }
+
+  function updatePlayer(dt) {
+    let turn = 0;
+    if (keys.has("arrowleft") || keys.has("q")) turn += 1;
+    if (keys.has("arrowright") || keys.has("e")) turn -= 1;
+    player.yaw += turn * 2.4 * dt;
+    const [f, s] = moveInput();
+    const sp = PLAYER_SPEED * (player.coffee > 0 ? 1.6 : 1) * dt;
+    const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw), rx = Math.cos(player.yaw), ry = -Math.sin(player.yaw);
+    const vx = (fx * f + rx * s) * sp, vy = (fy * f + ry * s) * sp;
+    stepAxis(vx, 0); stepAxis(0, vy);
+    const moving = Math.hypot(f, s) > .08;
+    if (moving) player.bob += dt * 9 * (player.coffee > 0 ? 1.4 : 1);
+    const onCart = cell(Math.floor(player.x), Math.floor(player.y)) === "w";
+    player.stillT = moving ? 0 : player.stillT + dt;
+    player.hidden = onCart && player.stillT > .25 && !(call && call.loud);
+  }
+
+  function seesPlayer(e, t, dx, dy, d) {
+    if (player.busy > 0 || player.hidden) return false;
+    if (t.always) return true;
+    if (d > t.range) return false;
+    if (t.cone && d > 1.3 && (dx * e.face[0] + dy * e.face[1]) / d < .55) return false;
+    return los(e.x, e.y, player.x, player.y);
   }
 
   function chooseNext(e) {
     const cx = e.tx, cy = e.ty;
+    if (e.mode === "lured" && lure) {
+      const n = bfsNext(cx, cy, lure.x, lure.y);
+      if (n) { e.face = [n[0] - cx, n[1] - cy]; e.tx = n[0]; e.ty = n[1]; }
+      return;
+    }
     if (e.mode === "chase") {
       const n = bfsNext(cx, cy, Math.floor(player.x), Math.floor(player.y));
       if (n) { e.face = [n[0] - cx, n[1] - cy]; e.tx = n[0]; e.ty = n[1]; }
       return;
     }
-    if (e.type !== "A" && Math.random() < 0.25) { e.pause = 0.4 + Math.random() * 1.2; return; }
-    let opts = DIRS.filter(([dx, dy]) => open(cx + dx, cy + dy));
-    if (e.type !== "A") {
-      const near = opts.filter(([dx, dy]) => Math.abs(cx + dx - e.hx) + Math.abs(cy + dy - e.hy) <= 3);
-      if (near.length) opts = near;
-    }
+    if (e.type !== "O" && Math.random() < .25) { e.pause = .4 + Math.random() * 1.2; return; }
+    let opts = DIRS.filter(([dx, dy]) => openTile(cx + dx, cy + dy) && cell(cx + dx, cy + dy) !== "w");
+    if (e.type !== "O") { const near = opts.filter(([dx, dy]) => Math.abs(cx + dx - e.hx) + Math.abs(cy + dy - e.hy) <= 3); if (near.length) opts = near; }
     if (!opts.length) return;
     const fwd = opts.find(([dx, dy]) => dx === e.face[0] && dy === e.face[1]);
     const nonRev = opts.filter(([dx, dy]) => !(dx === -e.face[0] && dy === -e.face[1]));
-    let d;
-    if (fwd && Math.random() < (e.type === "A" ? 0.75 : 0.5)) d = fwd;
-    else d = pick(nonRev.length ? nonRev : opts);
+    const d = fwd && Math.random() < (e.type === "O" ? .75 : .5) ? fwd : pick(nonRev.length ? nonRev : opts);
     e.face = d; e.tx = cx + d[0]; e.ty = cy + d[1];
-  }
-
-  function seesPlayer(e, t, dx, dy, d) {
-    if (player.busy > 0) return false;
-    if (t.always) return true;
-    if (d > t.range) return false;
-    if (t.cone && d > 1.5 && (dx * e.face[0] + dy * e.face[1]) / d < 0.55) return false;
-    return los(e.x, e.y, player.x, player.y);
   }
 
   function updateEnemy(e, dt) {
     const t = TYPES[e.type];
-    if (e.sayT > 0) e.sayT -= dt;
     if (e.stun > 0) { e.stun -= dt; return; }
-    const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy);
-
-    if (seesPlayer(e, t, dx, dy, d)) { e.mode = "chase"; e.lost = t.memory; }
-    else if (e.mode === "chase") { e.lost -= dt; if (e.lost <= 0 || player.busy > 0) e.mode = "idle"; }
-
-    // Hit check
-    if (d < 0.62 && player.inv <= 0 && player.busy <= 0) { hit(e, t); return; }
-
-    if (e.pause > 0) { e.pause -= dt; if (e.mode !== "chase") return; e.pause = 0; }
-    let step = (e.mode === "chase" ? t.chase : t.walk) * dt;
-
-    // Close range: step straight at the doctor.
+    const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy) || .001;
+    if (lure) { e.mode = "lured"; }
+    else {
+      if (e.mode === "lured") e.mode = "idle";
+      if (seesPlayer(e, t, dx, dy, d)) { if (e.mode !== "chase") e.alertT = .6; e.mode = "chase"; e.lost = t.memory; }
+      else if (e.mode === "chase") { e.lost -= dt; if (e.lost <= 0 || player.busy > 0 || player.hidden) e.mode = "idle"; }
+    }
+    if (d < .45 && player.inv <= 0 && player.busy <= 0 && !player.hidden) { encounter(e, t); return; }
+    if (e.pause > 0) { e.pause -= dt; if (e.mode === "idle") return; e.pause = 0; }
+    const step = (e.mode === "chase" ? t.chase : e.mode === "lured" ? t.chase * 1.3 : t.walk) * dt;
     if (e.mode === "chase" && d < 1 && los(e.x, e.y, player.x, player.y)) {
       e.x += dx / d * Math.min(step, d); e.y += dy / d * Math.min(step, d);
       e.tx = Math.floor(e.x); e.ty = Math.floor(e.y);
+      if (Math.abs(dx) > Math.abs(dy)) e.face = [Math.sign(dx), 0]; else e.face = [0, Math.sign(dy)];
       return;
     }
     const gx = e.tx + .5, gy = e.ty + .5, mx = gx - e.x, my = gy - e.y, md = Math.hypot(mx, my);
@@ -492,293 +1087,367 @@ body {
     else { e.x += mx / md * step; e.y += my / md * step; }
   }
 
-  function hit(e, t) {
-    const line = pick(t.lines);
-    e.stun = 2.5; e.say = line; e.sayT = 2.5; e.mode = "idle";
-    player.inv = 1.6;
-    run.sanity -= 1;
-    run.minutes += t.cost;
-    run.tallies[t.tally] += 1;
-    setMsg(`${t.name.toUpperCase()}: ${line} (+${t.cost} min)`, 3.5, true);
-    shakeTimer = .3;
-    stage.classList.remove("shake"); void stage.offsetWidth; stage.classList.add("shake");
-    const f = $("flash"); f.classList.remove("on"); void f.offsetWidth; f.classList.add("on");
-    beep(2200, 2);
-    if (navigator.vibrate) try { navigator.vibrate(120); } catch (_) {}
-    updateSanity();
-    if (run.sanity <= 0) { mode = "over"; setTimeout(showGameOver, 1100); }
+  function encounter(e, t) {
+    const line = pick(t.lines), stamps = [{ text: "+" + t.mins + " Min" }];
+    e.stun = 3; e.mode = "idle";
+    player.inv = 2.2;
+    run.nerves -= t.nerves; run.minutes += t.mins;
+    stamps.push({ text: "−" + t.nerves + " Nerv" + (t.nerves > 1 ? "en" : "") });
+    for (let i = 0; i < (t.duties || 0); i++) stamps.push({ text: addDuty() });
+    const taskList = t.tasks.slice().sort(() => Math.random() - .5);
+    for (let i = 0; i < (t.taskCount || 1); i++) { addTask(taskList[i % taskList.length]); }
+    stamps.push({ text: "+" + (t.taskCount || 1) + " Aufgabe" + ((t.taskCount || 1) > 1 ? "n" : "") });
+    showToast(t.emoji, t.color, t.who(), "„" + line + "“", stamps);
+    setMsg(t.label + ": " + line, 3.5, true);
+    flash(); sfx.hit();
+    if (navigator.vibrate) try { navigator.vibrate(150); } catch (_) {}
+    updateHud();
+    checkDeath();
+  }
+
+  function checkDeath() {
+    if (run.nerves > 0 || mode !== "play") return;
+    mode = "dying"; endCall(true);
+    setTimeout(showGameOver, 1300);
+  }
+
+  function pickupItem(it) {
+    it.taken = true; it.mesh.visible = false; sfx.pick();
+    const stamps = [];
+    let who = "", line = "", av = ITEMS[it.kind].emoji;
+    switch (it.kind) {
+      case "k": player.coffee = 8; who = "Kaffee"; line = "Aus dem Stationszimmer. Gehört eigentlich Schwester Gertrud."; stamps.push({ text: "8 s schneller", good: true }); break;
+      case "c": player.busy = 7; who = "Klemmbrett"; line = "Klemmbrett hoch, Stirn runzeln. Niemand spricht dich an."; stamps.push({ text: "7 s beschäftigt", good: true }); break;
+      case "f": player.airplane = 45; who = "Flugmodus"; line = "Pieper „versehentlich“ im Spind vergessen."; stamps.push({ text: "45 s keine Anrufe", good: true }); if (call) endCall(true); break;
+      case "u": run.nerves = Math.min(MAX_NERVES, run.nerves + 1); who = "Kuchen"; line = "Geburtstagskuchen im Stationszimmer. Von wem? Egal."; stamps.push({ text: "+1 Nerv", good: true }); break;
+      case "s": {
+        const n = Math.min(3, run.tasks.length); run.tasks.splice(0, n);
+        who = "PJ-Student Jonas"; line = n ? `„Klar mach ich das!“ Jonas übernimmt ${n} Aufgabe${n > 1 ? "n" : ""}. Er wirkt glücklich. Noch.` : "„Hast du was für mich?“ Leider nein. Er ist enttäuscht.";
+        stamps.push({ text: "−" + n + " Aufgaben", good: true }); break;
+      }
+      case "d": {
+        let far = null, best = -1;
+        const fromP = Math.floor(player.x), fromQ = Math.floor(player.y);
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+          if (!openTile(x, y)) continue; const p = bfs(fromP, fromQ, x, y); if (p && p.length > best) { best = p.length; far = [x, y]; }
+        }
+        lure = { x: far[0], y: far[1], t: 12 };
+        who = "Durchsage"; line = "„Achtung: Kostenloser Kuchen in der Cafeteria. Solange der Vorrat reicht.“ Alle rennen los.";
+        stamps.push({ text: "12 s Ruhe", good: true }); break;
+      }
+    }
+    showToast(av, "#f3f8f1", who, line, stamps);
+    updateHud();
+  }
+
+  function pickupPaper(p) {
+    p.taken = true; p.mesh.visible = false; run.papers++; sfx.paper();
+    const room = (LEVELS[run.idx].room || 0) + "." + String(1 + Math.floor(Math.random() * 24)).padStart(2, "0");
+    const lab = $("lab");
+    if (Math.random() < .35) {
+      // Fieberkurve
+      const pts = []; let v = 37;
+      for (let i = 0; i < 14; i++) { v = Math.max(36.2, Math.min(40.5, v + (Math.random() - .35) * 1.1)); pts.push(v); }
+      const poly = pts.map((t, i) => `${10 + i * 22},${90 - (t - 36) * 18}`).join(" ");
+      lab.innerHTML = `<h3>Kurve · Zi. ${room} · Hr. K., 74 J.</h3>
+        <svg viewBox="0 0 310 100" role="img" aria-label="Fieberkurve"><rect x="0" y="0" width="310" height="100" fill="#fff"/>
+        ${[37, 38, 39, 40].map(t => `<line x1="0" x2="310" y1="${90 - (t - 36) * 18}" y2="${90 - (t - 36) * 18}" stroke="#dde" />`).join("")}
+        <line x1="0" x2="310" y1="${90 - 2 * 18}" y2="${90 - 2 * 18}" stroke="#c0322a" stroke-dasharray="4 3"/>
+        <polyline points="${poly}" fill="none" stroke="#2d3f8f" stroke-width="2.5"/>
+        <text x="4" y="12" font-size="10" fill="#555">°C</text><text x="270" y="${90 - 2 * 18 - 3}" font-size="10" fill="#c0322a">38,0</text></svg>
+        <div class="foot">Fieber seit 3 Tagen. Niemand hat's gesehen. Jetzt du. +1 Aufgabe</div>`;
+      addTask(`Fieberkurve Zi. ${room} anschauen`);
+    } else {
+      const rows = LAB_POOL.slice().sort(() => Math.random() - .5).slice(0, 5);
+      lab.innerHTML = `<h3>Laborbefund · Zi. ${room} · Eilt!</h3><table>${rows.map(r => `<tr><td>${r[0]}</td><td class="v">${r[1]}</td><td>${r[2]}</td><td class="f">${r[3]}</td></tr>`).join("")}</table>
+        <div class="foot">Du hast ihn angefasst. Jetzt ist es dein Problem. +1 Aufgabe</div>`;
+      addTask(`Laborwerte Zi. ${room} nachverfolgen`);
+    }
+    lab.hidden = false; lab.classList.remove("pop"); void lab.offsetWidth; lab.classList.add("pop");
+    labT = 4;
+    setMsg("Laborzettel aufgehoben. Reflex. Fehler.", 2.5, true);
+    updateHud();
+  }
+
+  // calls
+  function startCall() {
+    const c = pick(CALLS);
+    call = { def: c, t: 0, loud: false };
+    $("callFrom").textContent = c.from; $("callSub").textContent = c.sub + " · ruft an…"; $("callAvatar").textContent = c.av;
+    $("callText").textContent = c.text;
+    const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud");
+    sfx.ring();
+  }
+  function endCall(silent) {
+    call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud");
+    if (run) run.nextCall = 22 + Math.random() * 18;
+  }
+  function applyEffect(eff, title, av) {
+    const stamps = [];
+    if (eff.mins) { run.minutes += eff.mins; stamps.push({ text: "+" + eff.mins + " Min" }); }
+    if (eff.task) { addTask(eff.task); stamps.push({ text: "+1 Aufgabe" }); }
+    if (eff.duties) for (let i = 0; i < eff.duties; i++) stamps.push({ text: addDuty() });
+    if (eff.nerves) { run.nerves = Math.max(0, Math.min(MAX_NERVES, run.nerves + eff.nerves)); stamps.push({ text: (eff.nerves > 0 ? "+" : "−") + Math.abs(eff.nerves) + " Nerv", good: eff.nerves > 0 }); }
+    if (!stamps.length) stamps.push({ text: "Erledigt", good: true });
+    showToast(av, "#e6ece9", title, eff.note || (eff.task ? eff.task : "Aufgelegt."), stamps);
+    updateHud(); checkDeath();
+  }
+  function acceptCall() { if (!call) return; const c = call.def; run.callsAcc++; endCall(); applyEffect(c.acc, c.from + " · angenommen", c.av); }
+  function declineCall() { if (!call) return; const c = call.def; run.callsDec++; endCall(); applyEffect(c.dec, c.from + " · abgelehnt", c.av); }
+  $("btnAccept").addEventListener("click", acceptCall);
+  $("btnDecline").addEventListener("click", declineCall);
+
+  function updateCalls(dt) {
+    if (call) {
+      call.t += dt;
+      if (call.t > 6 && !call.loud) { call.loud = true; $("call").classList.add("loud"); setMsg("Das Handy klingelt LAUT. Alle drehen sich um.", 2.5, true); }
+      if (call.loud && Math.floor(call.t * 2) !== Math.floor((call.t - dt) * 2)) {
+        sfx.ring();
+        for (const e of level.enemies) if (Math.hypot(e.x - player.x, e.y - player.y) < 7 && e.stun <= 0 && !lure) { e.mode = "chase"; e.lost = 3; }
+      }
+      if (call.t > 16) { const c = call.def; run.callsDec++; endCall(); applyEffect({ task: "Rückruf " + c.from }, c.from + " · verpasst", c.av); }
+    } else if (player.airplane <= 0) {
+      run.nextCall -= dt;
+      if (run.nextCall <= 0) startCall();
+    }
   }
 
   function update(dt) {
-    run.minutes += dt; // one real second = one minute of overtime
+    run.minutes += dt;
     player.inv = Math.max(0, player.inv - dt);
     player.coffee = Math.max(0, player.coffee - dt);
     player.busy = Math.max(0, player.busy - dt);
-    movePlayer(dt);
+    player.airplane = Math.max(0, player.airplane - dt);
+    if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
+    updatePlayer(dt);
 
-    for (const it of items) {
-      if (it.taken || Math.hypot(player.x - it.x - .5, player.y - it.y - .5) > .6) continue;
-      it.taken = true;
-      if (it.kind === "c") { player.coffee = 6; setMsg("Coffee from the break room. Faster for 6 s.", 2.5); }
-      else { player.busy = 5; setMsg("Clipboard up. You look busy. Nobody stops you for 5 s.", 2.5); }
-      beep(1500, 1);
-    }
+    for (const it of level.items) if (!it.taken && Math.hypot(player.x - it.x - .5, player.y - it.y - .5) < .5) pickupItem(it);
+    for (const p of level.papers) if (!p.taken && Math.hypot(player.x - p.x, player.y - p.y) < .38) pickupPaper(p);
+    for (const e of level.enemies) { updateEnemy(e, dt); if (mode !== "play") break; }
+    if (mode !== "play") return;
+    updateCalls(dt);
 
-    for (const e of enemies) { updateEnemy(e, dt); if (mode !== "play") return; }
+    if (Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
 
-    if (Math.floor(player.x) === exit.x && Math.floor(player.y) === exit.y) { nextFloor(); return; }
-
-    if (msg.t > 0) {
-      msg.t -= dt;
-      if (msg.t <= 0) setMsg(statusLine(), 0);
-    } else {
-      const s = statusLine();
-      if (s !== msg.text) setMsg(s, 0);
-    }
-    hud.clock.textContent = fmtTime(run.minutes);
+    if (toastT > 0) { toastT -= dt; if (toastT <= 0) $("toast").hidden = true; }
+    if (labT > 0) { labT -= dt; if (labT <= 0) $("lab").hidden = true; }
+    if (msg.t > 0) { msg.t -= dt; if (msg.t <= 0) setMsg(statusLine(), 0); }
+    else { const s = statusLine(); if (s !== msg.text) setMsg(s, 0); }
+    $("hudClock").textContent = fmtTime(run.minutes);
+    const bt = buffText(); const chip = $("chipBuff");
+    if (chip.textContent !== bt) chip.textContent = bt;
+    chip.hidden = !bt;
+    $("hideVeil").hidden = !player.hidden;
   }
 
   function statusLine() {
-    if (player.busy > 0) return `CLIPBOARD · looking busy ${Math.ceil(player.busy)} s`;
-    if (player.coffee > 0) return `COFFEE · fast for ${Math.ceil(player.coffee)} s`;
-    return LEVELS[run.idx].floor === 1 ? "Find the EXIT to the parking lot." : "Find the STAIRS down.";
-  }
-
-  function updateSanity() {
-    let h = "";
-    for (let i = 0; i < MAX_SANITY; i++) h += i < run.sanity ? "♥" : '<span class="lost">♡</span>';
-    hud.sanity.innerHTML = h;
+    if (player.hidden) return "Im Wäschewagen. Riecht nach Station 4. Nicht bewegen.";
+    if (lure) return "Alle sind in der Cafeteria. Jetzt!";
+    if (call) return "Handy klingelt: " + call.def.from;
+    return run.idx === LEVELS.length - 1 ? "Folge der grünen Linie zum Parkplatz." : "Folge der grünen Linie zum Treppenhaus.";
   }
 
   // ---------- flow ----------
   function show(id) { for (const o of ["ovTitle", "ovIntro", "ovEnd"]) $(o).hidden = o !== id; }
+  function hidePopups() { $("toast").hidden = true; $("lab").hidden = true; $("tasks").hidden = true; $("hideVeil").hidden = true; toastT = labT = 0; }
 
   function showIntro(bonus) {
     const L = LEVELS[run.idx];
-    $("introEyebrow").textContent = `Floor ${L.floor} · ${run.idx + 1} of ${LEVELS.length}`;
+    $("introEyebrow").textContent = `Stockwerk ${L.floor || "EG"} · ${run.idx + 1} von ${LEVELS.length}`;
     $("introName").textContent = L.name;
     $("introTip").textContent = L.tip;
-    $("introBonus").hidden = !bonus;
-    $("introBonus").textContent = bonus || "";
-    $("btnGo").firstElementChild.textContent = run.idx === 0 ? "Start sneaking" : "Keep going";
+    $("introBonus").hidden = !bonus; $("introBonus").textContent = bonus || "";
+    $("btnGo").firstElementChild.textContent = run.idx === 0 ? "Losschleichen" : "Weiter";
     mode = "intro"; show("ovIntro");
     setTimeout(() => $("btnGo").focus({ preventScroll: true }), 50);
   }
 
   function nextFloor() {
-    run.idx += 1;
-    if (run.idx >= LEVELS.length) { showWin(); return; }
-    let bonus = "";
-    if (run.sanity < MAX_SANITY) { run.sanity += 1; bonus = "Deep breath in the stairwell. +1 sanity."; }
-    updateSanity();
-    loadLevel(run.idx);
-    hud.clock.textContent = fmtTime(run.minutes);
-    beep(880, 1);
-    showIntro(bonus);
+    const n = run.tasks.length, mins = n * 8;
+    run.minutes += mins; run.tasks = [];
+    const before = run.nerves; run.nerves = Math.min(MAX_NERVES, run.nerves + 1);
+    endCall(true);
+    run.idx++;
+    sfx.floor(); hidePopups();
+    if (run.idx >= LEVELS.length) { showWin(mins, n); return; }
+    loadFloor(run.idx);
+    const parts = [];
+    parts.push(n ? `Im Treppenhaus ${n} Aufgabe${n > 1 ? "n" : ""} dokumentiert: +${mins} Min.` : "Keine offenen Aufgaben. Respekt.");
+    if (run.nerves > before) parts.push("Kurz durchgeatmet: +1 Nerv.");
+    showIntro(parts.join(" "));
   }
 
-  function fillStats() {
-    $("stWeekend").textContent = run.tallies.weekend;
-    $("stPatient").textContent = run.tallies.patient;
-    $("stFamily").textContent = run.tallies.family;
+  function rankFor(over) {
+    if (over < 60) return "Legende der Pünktlichkeit";
+    if (over < 120) return "Fast pünktlich";
+    if (over < 200) return "Typischer Assistenzarzt";
+    if (over < 300) return "Wohnt im Bereitschaftsraum";
+    return "Gehört zum Inventar";
   }
+
+  function buildRoster() {
+    const now = new Date();
+    const y = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear(), m = (now.getMonth() + 1) % 12;
+    const days = new Date(y, m + 1, 0).getDate(), first = (new Date(y, m, 1).getDay() + 6) % 7;
+    const cells = new Array(days + 2).fill(null);
+    const overflow = [];
+    for (const code of run.duties) {
+      let ok = false;
+      if (code === "WE") {
+        for (let d = 1; d < days && !ok; d++) if ((first + d - 1) % 7 === 5 && !cells[d] && !cells[d + 1]) { cells[d] = cells[d + 1] = "WE"; ok = true; }
+      } else {
+        const free = []; for (let d = 1; d <= days; d++) if (!cells[d] && (first + d - 1) % 7 < 5) free.push(d);
+        if (free.length) { cells[pick(free)] = code; ok = true; }
+      }
+      if (!ok) overflow.push(code);
+    }
+    const monthName = new Date(y, m, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    let html = `<h3>Dein Dienstplan · ${monthName}</h3><div class="cal">`;
+    html += ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(d => `<div class="hd">${d}</div>`).join("");
+    for (let i = 0; i < first; i++) html += '<div class="blank"></div>';
+    for (let d = 1; d <= days; d++) {
+      const wd = (first + d - 1) % 7, c = cells[d];
+      html += `<div class="${wd >= 5 ? "we" : ""}">${d}${c ? `<b class="d-${c}">${c}</b>` : ""}</div>`;
+    }
+    html += "</div>";
+    if (!run.duties.length) html += '<div class="legend-line">Komplett leer. Das gab es noch nie. Mach einen Screenshot.</div>';
+    else html += `<div class="legend-line">${Object.entries(DUTIES).map(([k, v]) => `<span><b class="d-${k}">${k}</b> ${v}</span>`).join("")}${overflow.length ? `<span>+${overflow.length} weitere im Folgemonat</span>` : ""}</div>`;
+    $("roster").innerHTML = html;
+  }
+
+  function fillEnd() {
+    $("stOver").textContent = fmtDur(run.minutes);
+    $("stTasks").textContent = run.tasksTotal;
+    $("stDuty").textContent = run.duties.length;
+    $("stCalls").textContent = run.callsAcc + " / " + run.callsDec;
+    $("stPapers").textContent = run.papers;
+    $("endRank").textContent = rankFor(run.minutes);
+    buildRoster();
+  }
+
+  const BEST_KEY = "hospital-escape-3d-best";
+  const getBest = () => { try { const v = parseFloat(localStorage.getItem(BEST_KEY)); return isFinite(v) ? v : null; } catch (e) { return null; } };
+  const setBest = v => { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} };
 
   function showGameOver() {
+    hidePopups();
     const L = LEVELS[run.idx];
     $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes);
-    $("endTitle").textContent = "Burned out";
-    $("endText").textContent = `They caught you on floor ${L.floor} (${L.name}) at ${fmtTime(run.minutes)}. You're staying for the night shift.`;
-    fillStats();
+    $("endTitle").textContent = "Burnout";
+    $("endText").textContent = `Erwischt auf ${L.name} um ${fmtTime(run.minutes)}. Die Nerven sind weg. Du bleibst gleich zum Nachtdienst.`;
+    run.duties.push("N");
+    fillEnd();
     const best = getBest();
     $("endBest").hidden = best == null;
-    if (best != null) $("endBest").textContent = `Best escape so far: ${fmtTime(best)}.`;
-    $("btnAgain").firstElementChild.textContent = "Try again";
+    if (best != null) $("endBest").textContent = "Bester Feierabend bisher: " + fmtTime(best);
+    $("btnAgain").firstElementChild.textContent = "Nochmal versuchen";
     mode = "over"; show("ovEnd");
     setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
   }
 
-  function showWin() {
+  function showWin(mins, n) {
     mode = "win";
-    const mins = Math.round(run.minutes);
     const best = getBest(), isBest = best == null || run.minutes < best;
     if (isBest) setBest(run.minutes);
-    $("endEyebrow").textContent = "Staff parking lot";
-    $("endTitle").textContent = "You're out";
-    $("endText").textContent = `You reached your car at ${fmtTime(run.minutes)}, ${mins} minutes after your shift ended. Phone on silent. Go home.`;
-    fillStats();
+    $("endEyebrow").textContent = "Personalparkplatz · " + fmtTime(run.minutes);
+    $("endTitle").textContent = "Feierabend!";
+    $("endText").textContent = `Du sitzt um ${fmtTime(run.minutes)} im Auto${n ? `, nachdem du im Treppenhaus noch ${n} Aufgabe${n > 1 ? "n" : ""} erledigt hast` : ""}. Handy aus. Fahr los, bevor jemand anruft.`;
+    fillEnd();
     $("endBest").hidden = false;
-    $("endBest").textContent = isBest ? "New best escape time." : `Best escape so far: ${fmtTime(best)}.`;
-    $("btnAgain").firstElementChild.textContent = "Next shift";
-    setMsg("Pager switched off. Have a good weekend.", 0);
-    beep(1200, 3);
+    $("endBest").textContent = isBest ? "Neuer Rekord für den frühesten Feierabend." : "Bester Feierabend bisher: " + fmtTime(best);
+    $("btnAgain").firstElementChild.textContent = "Nächste Schicht";
+    setMsg("Pager aus. Schönes Wochenende (haha).", 0);
     show("ovEnd");
     setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
   }
 
   function startGame() {
-    initAudio();
-    newRun(); updateSanity(); loadLevel(0);
-    hud.clock.textContent = fmtTime(0);
+    initAudio(); hidePopups();
+    newRun(); loadFloor(0);
+    $("hudClock").textContent = fmtTime(0);
     showIntro("");
   }
-
   $("btnStart").addEventListener("click", startGame);
   $("btnAgain").addEventListener("click", startGame);
-  $("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; });
+  $("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; $("hint").hidden = false; setTimeout(() => { if (mode === "play") $("hint").hidden = true; }, 6000); });
+  $("chipTasks").addEventListener("click", () => { $("tasks").hidden = !$("tasks").hidden; });
+  $("btnTasksClose").addEventListener("click", () => { $("tasks").hidden = true; });
 
-  // ---------- drawing ----------
+  // ---------- render ----------
+  const mini = $("mini"), mctx = mini.getContext("2d");
+  function drawMini() {
+    const W = mini.width, c = W / N;
+    mctx.clearRect(0, 0, W, W);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const ch = grid[y][x];
+      mctx.fillStyle = ch === "#" ? "#34514c" : ch === "B" || ch === "T" || ch === "M" ? "#6b7f78" : ch === "w" ? "#3f6fb3" : "#cfdcd4";
+      mctx.fillRect(x * c, y * c, c + .5, c + .5);
+    }
+    mctx.fillStyle = "#1f9d55"; mctx.fillRect(level.exit[0] * c, level.exit[1] * c, c, c);
+    for (const it of level.items) if (!it.taken) { mctx.fillStyle = "#f2b33d"; mctx.beginPath(); mctx.arc((it.x + .5) * c, (it.y + .5) * c, c * .25, 0, 7); mctx.fill(); }
+    for (const e of level.enemies) {
+      if (Math.hypot(e.x - player.x, e.y - player.y) > 6 && e.type !== "C") continue;
+      mctx.fillStyle = TYPES[e.type].color; mctx.beginPath(); mctx.arc(e.x * c, e.y * c, c * .38, 0, 7); mctx.fill();
+      mctx.strokeStyle = "#111"; mctx.lineWidth = 1.5; mctx.stroke();
+    }
+    const px = player.x * c, py = player.y * c, fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw);
+    mctx.fillStyle = "#fff"; mctx.strokeStyle = "#0f6b4f"; mctx.lineWidth = 2;
+    mctx.beginPath(); mctx.moveTo(px + fx * c * .7, py + fy * c * .7);
+    mctx.lineTo(px - fx * c * .4 + fy * c * .4, py - fy * c * .4 - fx * c * .4);
+    mctx.lineTo(px - fx * c * .4 - fy * c * .4, py - fy * c * .4 + fx * c * .4);
+    mctx.closePath(); mctx.fill(); mctx.stroke();
+  }
+
+  function render(time) {
+    if (!level) return;
+    const bob = Math.sin(player.bob) * .05;
+    camera.position.set(player.x * S, EYE + bob - (player.hidden ? .6 : 0), player.y * S);
+    camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
+    headLamp.position.copy(camera.position);
+    for (const e of level.enemies) {
+      e.mesh.position.set(e.x * S, 0, e.y * S);
+      e.mesh.rotation.y = Math.atan2(e.face[0], e.face[1]);
+      e.bang.visible = e.mode === "chase" && e.stun <= 0;
+      if (e.cone) {
+        e.cone.visible = e.stun <= 0 && !lure;
+        let rl = 0; while (rl < TYPES.O.range && !solidSight(cell(Math.floor(e.x + e.face[0] * rl), Math.floor(e.y + e.face[1] * rl)))) rl += .15;
+        e.cone.position.set(e.x * S, .03, e.y * S);
+        e.cone.scale.setScalar(Math.max(.5, rl) * S);
+        e.cone.rotation.y = Math.atan2(-e.face[1], e.face[0]);
+        e.cone.material.opacity = e.mode === "chase" ? .38 : .2;
+      }
+    }
+    for (const it of level.items) if (!it.taken && it.icon) it.icon.position.y = 1.0 + Math.sin(time * 3 + it.x) * .08;
+    level.flicker.visible = Math.sin(time * 23) + Math.sin(time * 7.3) > .6;
+    renderer.render(scene, camera);
+    drawMini();
+  }
+
   function resize() {
-    const r = stage.getBoundingClientRect();
-    T = Math.max(10, Math.floor(Math.min(r.width / COLS, r.height / ROWS)));
-    dpr = Math.min(3, window.devicePixelRatio || 1);
-    cv.style.width = T * COLS + "px"; cv.style.height = T * ROWS + "px";
-    cv.width = Math.round(T * COLS * dpr); cv.height = Math.round(T * ROWS * dpr);
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.fov = w < h ? 78 : 66;
+    camera.updateProjectionMatrix();
   }
   addEventListener("resize", resize);
 
-  const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-
-  function roundRect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-  }
-
-  function drawMap() {
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      const ch = grid[y][x], px = x * T, py = y * T;
-      if (ch === "#") {
-        ctx.fillStyle = "#34514c"; ctx.fillRect(px, py, T, T);
-        if (y + 1 < ROWS && grid[y + 1][x] !== "#") { ctx.fillStyle = "#4d6e67"; ctx.fillRect(px, py + T * .78, T, T * .22); }
-        continue;
-      }
-      ctx.fillStyle = (x + y) % 2 ? "#dbe7e1" : "#cfdfd8"; ctx.fillRect(px, py, T, T);
-      if (y > 0 && grid[y - 1][x] === "#") { ctx.fillStyle = "rgba(20,40,36,.16)"; ctx.fillRect(px, py, T, T * .12); }
-      if (ch === "b") {
-        ctx.fillStyle = "#f6f9f8"; roundRect(px + T * .14, py + T * .08, T * .72, T * .84, T * .1); ctx.fill();
-        ctx.fillStyle = "#6aa1d6"; roundRect(px + T * .14, py + T * .42, T * .72, T * .5, T * .1); ctx.fill();
-        ctx.fillStyle = "#e7eeec"; roundRect(px + T * .26, py + T * .14, T * .48, T * .2, T * .06); ctx.fill();
-      } else if (ch === "E") {
-        const last = run.idx === LEVELS.length - 1;
-        ctx.fillStyle = "#1f9d55"; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
-        ctx.fillStyle = "#f3f8f1"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = `800 ${Math.round(T * (last ? .36 : .3))}px "Barlow Condensed","Arial Narrow",sans-serif`;
-        ctx.fillText(last ? "EXIT" : "STAIRS", px + T / 2, py + T * .38);
-        ctx.font = `800 ${Math.round(T * .34)}px "Barlow Condensed","Arial Narrow",sans-serif`;
-        ctx.fillText(last ? "→" : "↓", px + T / 2, py + T * .74);
-      }
-    }
-  }
-
-  function drawCone(e, t) {
-    if (!t.cone || e.stun > 0) return;
-    const ang = Math.atan2(e.face[1], e.face[0]), spread = Math.acos(0.55), rays = 18;
-    ctx.beginPath(); ctx.moveTo(e.x * T, e.y * T);
-    for (let i = 0; i <= rays; i++) {
-      const a = ang - spread + (2 * spread * i) / rays, cx = Math.cos(a), cy = Math.sin(a);
-      let r = 0;
-      while (r < t.range && !solidAt(e.x + cx * r, e.y + cy * r)) r += 0.15;
-      ctx.lineTo((e.x + cx * r) * T, (e.y + cy * r) * T);
-    }
-    ctx.closePath();
-    ctx.fillStyle = e.mode === "chase" ? "rgba(226,72,61,.28)" : "rgba(226,72,61,.15)";
-    ctx.fill();
-  }
-
-  function drawToken(x, y, ring, emoji, alpha = 1) {
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(10,20,18,.22)";
-    ctx.beginPath(); ctx.ellipse(x * T, (y + .3) * T, T * .34, T * .12, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = ring;
-    ctx.beginPath(); ctx.arc(x * T, y * T, T * .42, 0, Math.PI * 2); ctx.fill();
-    ctx.font = `${Math.round(T * .62)}px ${EMOJI_FONT}`;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(emoji, x * T, y * T + T * .04);
-    ctx.globalAlpha = 1;
-  }
-
-  function drawBubble(e) {
-    const fs = Math.max(12, Math.round(T * .42));
-    ctx.font = `600 ${fs}px "Barlow Condensed","Arial Narrow",sans-serif`;
-    const maxW = Math.min(T * 7, cv.width / dpr - 8);
-    const words = e.say.split(" "), lines = [];
-    let line = "";
-    for (const w of words) {
-      const test = line ? line + " " + w : w;
-      if (ctx.measureText(test).width > maxW - 16 && line) { lines.push(line); line = w; } else line = test;
-    }
-    lines.push(line);
-    const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 16, h = lines.length * fs * 1.1 + 10;
-    let bx = e.x * T - w / 2;
-    bx = Math.max(4, Math.min(cv.width / dpr - w - 4, bx));
-    let by = e.y * T - T * .6 - h;
-    if (by < 4) by = e.y * T + T * .6;
-    ctx.globalAlpha = Math.min(1, e.sayT * 2);
-    ctx.fillStyle = "#fffdf6"; ctx.strokeStyle = "#14201f"; ctx.lineWidth = 2;
-    roundRect(bx, by, w, h, 6); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#14201f"; ctx.textAlign = "left"; ctx.textBaseline = "top";
-    lines.forEach((l, i) => ctx.fillText(l, bx + 8, by + 6 + i * fs * 1.1));
-    ctx.globalAlpha = 1;
-  }
-
-  function draw(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = "#0b1513"; ctx.fillRect(0, 0, cv.width, cv.height);
-    if (!grid) return;
-    drawMap();
-
-    for (const it of items) {
-      if (it.taken) continue;
-      const bob = Math.sin(time * 3 + it.x) * .06;
-      ctx.fillStyle = "rgba(255,255,255,.55)";
-      ctx.beginPath(); ctx.arc((it.x + .5) * T, (it.y + .5 + bob) * T, T * .34, 0, Math.PI * 2); ctx.fill();
-      ctx.font = `${Math.round(T * .52)}px ${EMOJI_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(it.kind === "c" ? "☕" : "📋", (it.x + .5) * T, (it.y + .52 + bob) * T);
-    }
-
-    for (const e of enemies) drawCone(e, TYPES[e.type]);
-
-    const actors = enemies.map(e => ({ y: e.y, e })).concat([{ y: player.y, p: true }]).sort((a, b) => a.y - b.y);
-    for (const a of actors) {
-      if (a.p) {
-        if (player.inv > 0 && Math.floor(time * 10) % 2) continue;
-        drawToken(player.x, player.y, player.coffee > 0 ? "#f2b33d" : "#f3f8f1", "🧑‍⚕️", player.busy > 0 ? .5 : 1);
-        ctx.strokeStyle = "#0f6b4f"; ctx.lineWidth = Math.max(2, T * .08);
-        ctx.beginPath(); ctx.arc(player.x * T, player.y * T, T * .42, 0, Math.PI * 2); ctx.stroke();
-        if (player.busy > 0) {
-          ctx.font = `${Math.round(T * .4)}px ${EMOJI_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillText("📋", (player.x + .38) * T, (player.y - .38) * T);
-        }
-      } else {
-        const e = a.e, t = TYPES[e.type];
-        drawToken(e.x, e.y, t.color, t.emoji, e.stun > 0 ? .75 : 1);
-        if (e.mode === "chase" && e.stun <= 0) {
-          ctx.fillStyle = "#e2483d"; ctx.font = `800 ${Math.round(T * .55)}px "Barlow Condensed",sans-serif`;
-          ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-          ctx.fillText("!", e.x * T, (e.y - .4) * T);
-        }
-      }
-    }
-    for (const e of enemies) if (e.sayT > 0 && e.say) drawBubble(e);
-  }
-
-  // ---------- loop ----------
   let last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
     if (mode === "play" && !document.hidden) update(dt);
-    draw(now / 1000);
+    if (mode === "title") player.yaw += dt * .18;
+    render(now / 1000);
     requestAnimationFrame(frame);
   }
 
-  // Boot: show floor 5 behind the title screen.
+  // boot: title screen over a slowly turning view of Station 5B
   const best = getBest();
-  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = `Best escape so far: ${fmtTime(best)}.`; }
-  newRun(); updateSanity(); loadLevel(0);
+  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = "Bester Feierabend bisher: " + fmtTime(best); }
+  newRun(); loadFloor(0);
+  $("hint").hidden = true;
   resize();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
   requestAnimationFrame(frame);
-  $("btnStart").focus({ preventScroll: true });
 })();
 </script>
 </body>

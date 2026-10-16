@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hospital Escape</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hospital Escape">
+<meta name="theme-color" content="#0b1513">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;800&family=VT323&display=swap">
+<style>
+/* Layout: one-screen app. Pager HUD on top, the floor plan fills the rest, overlays look like hospital wayfinding signs. Night-shift look, single dark theme by choice. */
+:root {
+  --night: #0b1513;      /* page ground: corridor at night */
+  --wall: #34514c;       /* institutional green-grey walls */
+  --wall-edge: #4d6e67;
+  --lino-a: #dbe7e1;     /* linoleum tiles */
+  --lino-b: #cfdfd8;
+  --sign: #0f6b4f;       /* wayfinding sign green */
+  --sign-ink: #f3f8f1;
+  --pager: #121c17;
+  --lcd: #a6e38f;
+  --lcd-dim: #5e8a52;
+  --alert: #e2483d;
+  --amber: #f2b33d;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --lcd-font: "VT323", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--sign-ink);
+  font-family: var(--display);
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+.app {
+  height: 100%;
+  display: flex; flex-direction: column; gap: 10px;
+  box-sizing: border-box;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 560px; margin: 0 auto;
+}
+
+/* Pager HUD */
+.pager {
+  background: var(--pager);
+  border: 2px solid #26332d;
+  border-radius: 10px;
+  box-shadow: inset 0 0 18px rgba(166, 227, 143, .08);
+  padding: 6px 12px;
+  font-family: var(--lcd-font);
+  color: var(--lcd);
+  font-size: 21px; line-height: 1.05;
+  display: grid; gap: 2px;
+}
+.pager-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; }
+.pager-row > span { min-width: 0; }
+#hudClock { font-size: 26px; font-variant-numeric: tabular-nums; }
+#hudMsg { color: var(--lcd); min-height: 2.1em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#hudMsg.alert { color: #ffd27a; }
+#hudSanity { letter-spacing: 2px; white-space: nowrap; }
+#hudSanity .lost { color: var(--lcd-dim); }
+
+/* Stage */
+#stage {
+  position: relative; flex: 1; min-height: 0;
+  display: grid; place-items: center;
+  touch-action: none;
+}
+#cv { display: block; border-radius: 6px; box-shadow: 0 0 0 2px #1c2a26, 0 12px 40px rgba(0,0,0,.5); }
+#stage.shake #cv { animation: shake .3s linear; }
+@keyframes shake {
+  20% { transform: translate(-5px, 2px); } 40% { transform: translate(4px, -3px); }
+  60% { transform: translate(-3px, -2px); } 80% { transform: translate(3px, 3px); }
+}
+.flash { position: absolute; inset: 0; pointer-events: none; background: var(--alert); opacity: 0; border-radius: 6px; }
+.flash.on { animation: flash .45s ease-out; }
+@keyframes flash { from { opacity: .35; } to { opacity: 0; } }
+
+#stick { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%;
+  border: 2px solid rgba(243, 248, 241, .35); background: rgba(243, 248, 241, .06); pointer-events: none; }
+#knob { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+  background: rgba(243, 248, 241, .5); }
+
+.hint { text-align: center; font-size: 15px; letter-spacing: .04em; color: #8fa9a1; }
+
+/* Overlays: wayfinding signs */
+.overlay {
+  position: absolute; inset: 0; z-index: 5;
+  display: grid; place-items: center;
+  background: rgba(11, 21, 19, .72);
+  overflow-y: auto; padding: 12px 0;
+  touch-action: pan-y;
+}
+.card {
+  width: min(100%, 420px); box-sizing: border-box;
+  background: var(--sign); color: var(--sign-ink);
+  border-radius: 8px; padding: 20px 20px 18px;
+  box-shadow: 0 0 0 3px #0b4c38, 0 18px 50px rgba(0,0,0,.55);
+  display: grid; gap: 12px;
+}
+.eyebrow { font-weight: 600; text-transform: uppercase; letter-spacing: .14em; font-size: 14px; opacity: .85; }
+.card h1, .card h2 { margin: 0; font-weight: 800; text-transform: uppercase; line-height: .92; text-wrap: balance; }
+.card h1 { font-size: clamp(48px, 15vw, 68px); letter-spacing: .01em; }
+.card h1 .arrow { display: inline-block; color: #bff2c9; }
+.card h2 { font-size: 40px; }
+.card p { margin: 0; font-size: 19px; line-height: 1.25; font-weight: 500; }
+.legend { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; font-size: 17px; line-height: 1.15; }
+.legend .ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; }
+.legend b { font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 18px; margin: 0; }
+.stats dt { opacity: .85; }
+.stats dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.small { font-size: 15px !important; opacity: .8; }
+.btn {
+  appearance: none; border: 0; cursor: pointer; touch-action: manipulation;
+  font: 800 24px/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
+  background: var(--sign-ink); color: var(--sign);
+  padding: 15px 18px; border-radius: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.btn:active { transform: translateY(1px); background: #d9ecd9; }
+.btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  #stage.shake #cv, .flash.on { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="pager" aria-live="polite">
+    <div class="pager-row"><span id="hudFloor">FL 5 · INTERNAL MED</span><span id="hudClock">17:00</span></div>
+    <div class="pager-row"><span id="hudMsg">Shift ended 17:00. Leave quietly.</span><span id="hudSanity" aria-label="Sanity">♥♥♥</span></div>
+  </header>
+
+  <main id="stage">
+    <canvas id="cv" aria-label="Hospital floor plan"></canvas>
+    <div class="flash" id="flash"></div>
+    <div id="stick" hidden><div id="knob"></div></div>
+
+    <section class="overlay" id="ovTitle">
+      <div class="card">
+        <div class="eyebrow">Staff exit · Ground floor</div>
+        <h1>Hospital<br>Escape <span class="arrow">→</span></h1>
+        <p>Your shift ended at 17:00. Get from floor 5 down to the parking lot before anyone hands you more work.</p>
+        <ul class="legend">
+          <li><span class="ico" style="background:#8fc1e8">🤒</span><span><b>Patient</b> · has one quick question</span></li>
+          <li><span class="ico" style="background:#f2b33d">👵</span><span><b>Family</b> · wants an update and follows you</span></li>
+          <li><span class="ico" style="background:#e2483d">🧐</span><span><b>Attending</b> · patrols, sees ahead, hands out weekend shifts</span></li>
+          <li><span class="ico" style="background:#9b6bff">🕴️</span><span><b>Chief</b> · always knows where you are</span></li>
+          <li><span class="ico" style="background:#f3f8f1">☕</span><span><b>Coffee</b> walk faster · <b>📋 Clipboard</b> look busy, nobody stops you</span></li>
+        </ul>
+        <p class="small">Drag anywhere to walk. On a keyboard use the arrow keys or WASD. Three run-ins and you burn out.</p>
+        <p class="small" id="bestLine" hidden></p>
+        <button class="btn" id="btnStart" type="button"><span>Clock out</span><span>→</span></button>
+      </div>
+    </section>
+
+    <section class="overlay" id="ovIntro" hidden>
+      <div class="card">
+        <div class="eyebrow" id="introEyebrow">Floor 5 of 5</div>
+        <h2 id="introName">Internal Medicine</h2>
+        <p id="introTip"></p>
+        <p class="small" id="introBonus" hidden></p>
+        <button class="btn" id="btnGo" type="button"><span>Take the stairs</span><span>↓</span></button>
+      </div>
+    </section>
+
+    <section class="overlay" id="ovEnd" hidden>
+      <div class="card">
+        <div class="eyebrow" id="endEyebrow">Pager message</div>
+        <h2 id="endTitle">Burned out</h2>
+        <p id="endText"></p>
+        <dl class="stats">
+          <dt>Weekend shifts accepted</dt><dd id="stWeekend">0</dd>
+          <dt>Quick questions answered</dt><dd id="stPatient">0</dd>
+          <dt>Family updates given</dt><dd id="stFamily">0</dd>
+        </dl>
+        <p class="small" id="endBest" hidden></p>
+        <button class="btn" id="btnAgain" type="button"><span>Next shift</span><span>↻</span></button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="hint">Drag anywhere to walk · ☕ faster · 📋 look busy</footer>
+</div>
+
+<script>
+(() => {
+  const COLS = 13, ROWS = 19;
+  const SHIFT_END = 17 * 60;
+
+  // # wall · b bed · S start · E stairs/exit · P patient · F family · A attending · C chief · c coffee · k clipboard
+  const LEVELS = [
+    { floor: 5, name: "Internal Medicine", short: "INTERNAL MED",
+      tip: "Patients have one quick question. Family members want an update and will follow you once they spot you.",
+      map: [
+        "#############","#S....#.....#","#.###.#.###.#","#.#b..P..b#.#","#.#.#####.#.#","#...#...#...#",
+        "###.#.c.#.###","#.....#.....#","#.###...###.#","#.#b.....b#.#","#.#.##F##.#.#","#...#...#...#",
+        "#.#.#.P.#.#.#","#.#.......#.#","#.#####.###.#","#..k........#","#.#######.#.#","#....P....#E#","#############"] },
+    { floor: 4, name: "General Surgery", short: "SURGERY",
+      tip: "Attendings patrol the corridors. Stay out of their red sightline or you'll be on call Saturday.",
+      map: [
+        "#############","#E....#....k#","###.#.#.#.###","#...#...#...#","#.#####.###.#","#.#b.......P#",
+        "#.#.###.###.#","#...#A....#.#","#.#.#.###.#.#","#.#...#...#.#","#.###.#.###.#","#...F.#.....#",
+        "###.#####.#.#","#...#.c.#.#.#","#.#.#.#.#.#.#","#.#...#...#.#","#.#######.#.#","#....P.....S#","#############"] },
+    { floor: 3, name: "Cardiology", short: "CARDIOLOGY",
+      tip: "Two attendings and twice the family. Grab the clipboard: while you look busy, nobody stops you.",
+      map: [
+        "#############","#S..#...#..c#","#.#.#.#.#.#.#","#.#...#...#.#","#.#####.###.#","#...F.....#.#",
+        "#.#.#####.#.#","#.#.#b.b#.A.#","#.#.#...#.#.#","#.#...P...#.#","#.###.#.###.#","#.....#....F#",
+        "#####.#.#####","#k..#.....#.#","#.#.#.###.#.#","#.#...#A....#","#.#####.###.#","#.......P..E#","#############"] },
+    { floor: 2, name: "Intensive Care", short: "ICU",
+      tip: "The Chief of Medicine is on this floor. The Chief always knows where you are, but walks slowly.",
+      map: [
+        "#############","#E#.......#c#","#.#.#####.#.#","#.#.#b.b#...#","#...#...#.#.#","#.###.A.#.#.#",
+        "#...#...#.#.#","###.##.##.#.#","#.....F.....#","#.###.#.###.#","#.#b..#..b#.#","#.#.#####.#.#",
+        "#k..#.P.#...#","###.#...#.###","#...##.##...#","#.#...C...#.#","#.#.#####.#.#","#...A...F..S#","#############"] },
+    { floor: 1, name: "Emergency Department", short: "EMERGENCY",
+      tip: "Last floor. Everyone is here. The exit opens onto the staff parking lot.",
+      map: [
+        "#############","#S....#...P.#","#.###.#.#.#.#","#.#F..A.#.#.#","#.#.###.#.#.#","#...#c..#...#",
+        "###.#.####.##","#.P.#....F..#","#.#.##.#.##.#","#.#....#..#.#","#.####.##.#.#","#..C.....A..#",
+        "##.#.###.#.##","#..#.#k#.#..#","#.##.#.#.##.#","#....#.#....#","#.##.....##.#","#..F..P...#E#","#############"] },
+  ];
+
+  const TYPES = {
+    P: { name: "Patient", emoji: "🤒", color: "#8fc1e8", walk: 0.9, chase: 1.5, range: 3.5, memory: 1.2, cost: 10, tally: "patient",
+         lines: ["Doc, while you're here… it's about my left toe.", "Can you look at this rash real quick?",
+                 "I read online that I have something rare.", "When can I go home? Today? Now?", "Is this mole normal? Just a quick look."] },
+    F: { name: "Family", emoji: "👵", color: "#f2b33d", walk: 0.8, chase: 2.3, range: 4.5, memory: 2.5, cost: 20, tally: "family",
+         lines: ["We need an update. All of us. Now.", "My niece is a nurse and she says…", "Could you explain everything again from the start?",
+                 "Why hasn't anyone told us anything?", "The other doctor said something different."] },
+    A: { name: "Attending", emoji: "🧐", color: "#e2483d", walk: 1.6, chase: 2.8, range: 5.5, memory: 3, cost: 30, tally: "weekend", cone: true,
+         lines: ["You're on call Saturday.", "Present this patient at 6 AM rounds.", "Just one more admission before you go.",
+                 "Swap shifts with me this Sunday? Great, thanks.", "Your discharge letters are overdue."] },
+    C: { name: "Chief", emoji: "🕴️", color: "#9b6bff", walk: 1.45, chase: 1.45, range: 99, memory: 99, cost: 45, tally: "weekend", always: true,
+         lines: ["Weekend shift. Both days.", "Mandatory quality meeting, 7 AM Saturday.",
+                 "We're short-staffed over Christmas. You're in.", "My office. Bring the duty roster."] },
+  };
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const PLAYER_SPEED = 3.4, PLAYER_R = 0.3, MAX_SANITY = 3;
+
+  const $ = id => document.getElementById(id);
+  const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
+  const hud = { floor: $("hudFloor"), clock: $("hudClock"), msg: $("hudMsg"), sanity: $("hudSanity") };
+
+  let T = 30, dpr = 1;
+  let mode = "title"; // title | intro | play | over | win
+  let grid, player, enemies, items, exit;
+  let run;
+  let msg = { text: "", t: 0, alert: false };
+  let shakeTimer = 0;
+
+  // ---------- storage (best time) ----------
+  const BEST_KEY = "hospital-escape-best";
+  function getBest() { try { const v = parseFloat(localStorage.getItem(BEST_KEY)); return isFinite(v) ? v : null; } catch (e) { return null; } }
+  function setBest(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} }
+
+  // ---------- helpers ----------
+  const fmtTime = mins => {
+    const t = Math.floor(SHIFT_END + mins);
+    return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+  };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const solidCh = ch => ch === "#" || ch === "b";
+  const open = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS && !solidCh(grid[y][x]);
+  const solidAt = (x, y) => !open(Math.floor(x), Math.floor(y));
+
+  function los(x0, y0, x1, y1) {
+    const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / 0.2);
+    for (let i = 1; i < n; i++) if (solidAt(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
+    return true;
+  }
+
+  function bfsNext(sx, sy, gx, gy) {
+    if (sx === gx && sy === gy) return null;
+    const prev = new Int16Array(COLS * ROWS).fill(-1);
+    const start = sy * COLS + sx, goal = gy * COLS + gx;
+    const q = [start]; prev[start] = start;
+    for (let h = 0; h < q.length; h++) {
+      const c = q[h]; if (c === goal) break;
+      const cx = c % COLS, cy = (c / COLS) | 0;
+      for (const [dx, dy] of DIRS) {
+        const nx = cx + dx, ny = cy + dy;
+        if (!open(nx, ny)) continue;
+        const ni = ny * COLS + nx;
+        if (prev[ni] !== -1) continue;
+        prev[ni] = c; q.push(ni);
+      }
+    }
+    if (prev[goal] === -1) return null;
+    let c = goal;
+    while (prev[c] !== start) c = prev[c];
+    return [c % COLS, (c / COLS) | 0];
+  }
+
+  // ---------- setup ----------
+  function newRun() {
+    run = { idx: 0, sanity: MAX_SANITY, minutes: 0, tallies: { patient: 0, family: 0, weekend: 0 } };
+  }
+
+  function loadLevel(i) {
+    const L = LEVELS[i];
+    grid = L.map.map(r => r.split(""));
+    enemies = []; items = [];
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const ch = grid[y][x];
+      if (ch === "S") { player = { x: x + .5, y: y + .5, inv: 0, coffee: 0, busy: 0, fx: 0, fy: 1 }; grid[y][x] = "."; }
+      else if (ch === "E") exit = { x, y };
+      else if (TYPES[ch]) {
+        enemies.push({ type: ch, x: x + .5, y: y + .5, tx: x, ty: y, hx: x, hy: y, face: [0, 1], mode: "idle",
+                       lost: 0, stun: 0, pause: Math.random(), say: "", sayT: 0 });
+        grid[y][x] = ".";
+      } else if (ch === "c" || ch === "k") { items.push({ kind: ch, x, y, taken: false }); grid[y][x] = "."; }
+    }
+    hud.floor.textContent = `FL ${L.floor} · ${L.short}`;
+    setMsg("Shift ended 17:00. Leave quietly.", 0);
+  }
+
+  function setMsg(text, secs, alert) {
+    msg = { text, t: secs, alert: !!alert };
+    hud.msg.textContent = text;
+    hud.msg.classList.toggle("alert", !!alert);
+  }
+
+  // ---------- input ----------
+  const keys = new Set();
+  const touch = { active: false, id: null, ox: 0, oy: 0, vx: 0, vy: 0 };
+  const stick = $("stick"), knob = $("knob");
+
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(k)) { keys.add(k); e.preventDefault(); }
+    if ((k === "enter" || k === " ") && mode !== "play") {
+      const btn = mode === "title" ? $("btnStart") : mode === "intro" ? $("btnGo") : $("btnAgain");
+      if (!btn.closest(".overlay").hidden) { e.preventDefault(); btn.click(); }
+    }
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+
+  stage.addEventListener("pointerdown", e => {
+    if (mode !== "play" || e.target.closest(".overlay")) return;
+    const r = stage.getBoundingClientRect();
+    Object.assign(touch, { active: true, id: e.pointerId, ox: e.clientX, oy: e.clientY, vx: 0, vy: 0 });
+    stick.style.left = (e.clientX - r.left) + "px"; stick.style.top = (e.clientY - r.top) + "px";
+    knob.style.transform = "";
+    stick.hidden = false;
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  stage.addEventListener("pointermove", e => {
+    if (!touch.active || e.pointerId !== touch.id) return;
+    let dx = e.clientX - touch.ox, dy = e.clientY - touch.oy;
+    const d = Math.hypot(dx, dy), max = 40;
+    if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    const m = Math.min(1, d / max);
+    touch.vx = d > 6 ? dx / Math.min(d, max) * m : 0;
+    touch.vy = d > 6 ? dy / Math.min(d, max) * m : 0;
+  });
+  const endTouch = e => {
+    if (e.pointerId !== touch.id) return;
+    touch.active = false; touch.vx = touch.vy = 0; stick.hidden = true;
+  };
+  stage.addEventListener("pointerup", endTouch);
+  stage.addEventListener("pointercancel", endTouch);
+
+  function inputVec() {
+    let x = 0, y = 0;
+    if (keys.has("arrowleft") || keys.has("a")) x -= 1;
+    if (keys.has("arrowright") || keys.has("d")) x += 1;
+    if (keys.has("arrowup") || keys.has("w")) y -= 1;
+    if (keys.has("arrowdown") || keys.has("s")) y += 1;
+    if (x || y) { const d = Math.hypot(x, y); return [x / d, y / d]; }
+    return [touch.vx, touch.vy];
+  }
+
+  // ---------- sound (pager beep, starts after first tap) ----------
+  let actx = null;
+  function initAudio() {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) { actx = null; }
+  }
+  function beep(freq = 2200, count = 2) {
+    if (!actx) return;
+    try {
+      const t0 = actx.currentTime;
+      for (let i = 0; i < count; i++) {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = "square"; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t0 + i * .14);
+        g.gain.exponentialRampToValueAtTime(0.06, t0 + i * .14 + .01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * .14 + .1);
+        o.connect(g).connect(actx.destination);
+        o.start(t0 + i * .14); o.stop(t0 + i * .14 + .12);
+      }
+    } catch (e) {}
+  }
+
+  // ---------- update ----------
+  function movePlayer(dt) {
+    const [vx, vy] = inputVec();
+    if (vx || vy) { player.fx = vx; player.fy = vy; }
+    const sp = PLAYER_SPEED * (player.coffee > 0 ? 1.6 : 1) * dt;
+    stepAxis(vx * sp, 0); stepAxis(0, vy * sp);
+  }
+  const blocked = (x, y) => {
+    const r = PLAYER_R;
+    return solidAt(x - r, y - r) || solidAt(x + r, y - r) || solidAt(x - r, y + r) || solidAt(x + r, y + r);
+  };
+  function stepAxis(dx, dy) {
+    if (!dx && !dy) return;
+    if (!blocked(player.x + dx, player.y + dy)) { player.x += dx; player.y += dy; return; }
+    // Corner assist: slide toward the corridor centre so turns don't snag.
+    const amt = Math.abs(dx || dy);
+    if (dx) {
+      const cy = Math.floor(player.y) + .5, off = cy - player.y;
+      if (Math.abs(off) > .01 && !blocked(player.x + dx, cy)) player.y += Math.sign(off) * Math.min(Math.abs(off), amt);
+    } else {
+      const cx = Math.floor(player.x) + .5, off = cx - player.x;
+      if (Math.abs(off) > .01 && !blocked(cx, player.y + dy)) player.x += Math.sign(off) * Math.min(Math.abs(off), amt);
+    }
+  }
+
+  function chooseNext(e) {
+    const cx = e.tx, cy = e.ty;
+    if (e.mode === "chase") {
+      const n = bfsNext(cx, cy, Math.floor(player.x), Math.floor(player.y));
+      if (n) { e.face = [n[0] - cx, n[1] - cy]; e.tx = n[0]; e.ty = n[1]; }
+      return;
+    }
+    if (e.type !== "A" && Math.random() < 0.25) { e.pause = 0.4 + Math.random() * 1.2; return; }
+    let opts = DIRS.filter(([dx, dy]) => open(cx + dx, cy + dy));
+    if (e.type !== "A") {
+      const near = opts.filter(([dx, dy]) => Math.abs(cx + dx - e.hx) + Math.abs(cy + dy - e.hy) <= 3);
+      if (near.length) opts = near;
+    }
+    if (!opts.length) return;
+    const fwd = opts.find(([dx, dy]) => dx === e.face[0] && dy === e.face[1]);
+    const nonRev = opts.filter(([dx, dy]) => !(dx === -e.face[0] && dy === -e.face[1]));
+    let d;
+    if (fwd && Math.random() < (e.type === "A" ? 0.75 : 0.5)) d = fwd;
+    else d = pick(nonRev.length ? nonRev : opts);
+    e.face = d; e.tx = cx + d[0]; e.ty = cy + d[1];
+  }
+
+  function seesPlayer(e, t, dx, dy, d) {
+    if (player.busy > 0) return false;
+    if (t.always) return true;
+    if (d > t.range) return false;
+    if (t.cone && d > 1.5 && (dx * e.face[0] + dy * e.face[1]) / d < 0.55) return false;
+    return los(e.x, e.y, player.x, player.y);
+  }
+
+  function updateEnemy(e, dt) {
+    const t = TYPES[e.type];
+    if (e.sayT > 0) e.sayT -= dt;
+    if (e.stun > 0) { e.stun -= dt; return; }
+    const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy);
+
+    if (seesPlayer(e, t, dx, dy, d)) { e.mode = "chase"; e.lost = t.memory; }
+    else if (e.mode === "chase") { e.lost -= dt; if (e.lost <= 0 || player.busy > 0) e.mode = "idle"; }
+
+    // Hit check
+    if (d < 0.62 && player.inv <= 0 && player.busy <= 0) { hit(e, t); return; }
+
+    if (e.pause > 0) { e.pause -= dt; if (e.mode !== "chase") return; e.pause = 0; }
+    let step = (e.mode === "chase" ? t.chase : t.walk) * dt;
+
+    // Close range: step straight at the doctor.
+    if (e.mode === "chase" && d < 1 && los(e.x, e.y, player.x, player.y)) {
+      e.x += dx / d * Math.min(step, d); e.y += dy / d * Math.min(step, d);
+      e.tx = Math.floor(e.x); e.ty = Math.floor(e.y);
+      return;
+    }
+    const gx = e.tx + .5, gy = e.ty + .5, mx = gx - e.x, my = gy - e.y, md = Math.hypot(mx, my);
+    if (md <= step) { e.x = gx; e.y = gy; chooseNext(e); }
+    else { e.x += mx / md * step; e.y += my / md * step; }
+  }
+
+  function hit(e, t) {
+    const line = pick(t.lines);
+    e.stun = 2.5; e.say = line; e.sayT = 2.5; e.mode = "idle";
+    player.inv = 1.6;
+    run.sanity -= 1;
+    run.minutes += t.cost;
+    run.tallies[t.tally] += 1;
+    setMsg(`${t.name.toUpperCase()}: ${line} (+${t.cost} min)`, 3.5, true);
+    shakeTimer = .3;
+    stage.classList.remove("shake"); void stage.offsetWidth; stage.classList.add("shake");
+    const f = $("flash"); f.classList.remove("on"); void f.offsetWidth; f.classList.add("on");
+    beep(2200, 2);
+    if (navigator.vibrate) try { navigator.vibrate(120); } catch (_) {}
+    updateSanity();
+    if (run.sanity <= 0) { mode = "over"; setTimeout(showGameOver, 1100); }
+  }
+
+  function update(dt) {
+    run.minutes += dt; // one real second = one minute of overtime
+    player.inv = Math.max(0, player.inv - dt);
+    player.coffee = Math.max(0, player.coffee - dt);
+    player.busy = Math.max(0, player.busy - dt);
+    movePlayer(dt);
+
+    for (const it of items) {
+      if (it.taken || Math.hypot(player.x - it.x - .5, player.y - it.y - .5) > .6) continue;
+      it.taken = true;
+      if (it.kind === "c") { player.coffee = 6; setMsg("Coffee from the break room. Faster for 6 s.", 2.5); }
+      else { player.busy = 5; setMsg("Clipboard up. You look busy. Nobody stops you for 5 s.", 2.5); }
+      beep(1500, 1);
+    }
+
+    for (const e of enemies) { updateEnemy(e, dt); if (mode !== "play") return; }
+
+    if (Math.floor(player.x) === exit.x && Math.floor(player.y) === exit.y) { nextFloor(); return; }
+
+    if (msg.t > 0) {
+      msg.t -= dt;
+      if (msg.t <= 0) setMsg(statusLine(), 0);
+    } else {
+      const s = statusLine();
+      if (s !== msg.text) setMsg(s, 0);
+    }
+    hud.clock.textContent = fmtTime(run.minutes);
+  }
+
+  function statusLine() {
+    if (player.busy > 0) return `CLIPBOARD · looking busy ${Math.ceil(player.busy)} s`;
+    if (player.coffee > 0) return `COFFEE · fast for ${Math.ceil(player.coffee)} s`;
+    return LEVELS[run.idx].floor === 1 ? "Find the EXIT to the parking lot." : "Find the STAIRS down.";
+  }
+
+  function updateSanity() {
+    let h = "";
+    for (let i = 0; i < MAX_SANITY; i++) h += i < run.sanity ? "♥" : '<span class="lost">♡</span>';
+    hud.sanity.innerHTML = h;
+  }
+
+  // ---------- flow ----------
+  function show(id) { for (const o of ["ovTitle", "ovIntro", "ovEnd"]) $(o).hidden = o !== id; }
+
+  function showIntro(bonus) {
+    const L = LEVELS[run.idx];
+    $("introEyebrow").textContent = `Floor ${L.floor} · ${run.idx + 1} of ${LEVELS.length}`;
+    $("introName").textContent = L.name;
+    $("introTip").textContent = L.tip;
+    $("introBonus").hidden = !bonus;
+    $("introBonus").textContent = bonus || "";
+    $("btnGo").firstElementChild.textContent = run.idx === 0 ? "Start sneaking" : "Keep going";
+    mode = "intro"; show("ovIntro");
+    setTimeout(() => $("btnGo").focus({ preventScroll: true }), 50);
+  }
+
+  function nextFloor() {
+    run.idx += 1;
+    if (run.idx >= LEVELS.length) { showWin(); return; }
+    let bonus = "";
+    if (run.sanity < MAX_SANITY) { run.sanity += 1; bonus = "Deep breath in the stairwell. +1 sanity."; }
+    updateSanity();
+    loadLevel(run.idx);
+    hud.clock.textContent = fmtTime(run.minutes);
+    beep(880, 1);
+    showIntro(bonus);
+  }
+
+  function fillStats() {
+    $("stWeekend").textContent = run.tallies.weekend;
+    $("stPatient").textContent = run.tallies.patient;
+    $("stFamily").textContent = run.tallies.family;
+  }
+
+  function showGameOver() {
+    const L = LEVELS[run.idx];
+    $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes);
+    $("endTitle").textContent = "Burned out";
+    $("endText").textContent = `They caught you on floor ${L.floor} (${L.name}) at ${fmtTime(run.minutes)}. You're staying for the night shift.`;
+    fillStats();
+    const best = getBest();
+    $("endBest").hidden = best == null;
+    if (best != null) $("endBest").textContent = `Best escape so far: ${fmtTime(best)}.`;
+    $("btnAgain").firstElementChild.textContent = "Try again";
+    mode = "over"; show("ovEnd");
+    setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  }
+
+  function showWin() {
+    mode = "win";
+    const mins = Math.round(run.minutes);
+    const best = getBest(), isBest = best == null || run.minutes < best;
+    if (isBest) setBest(run.minutes);
+    $("endEyebrow").textContent = "Staff parking lot";
+    $("endTitle").textContent = "You're out";
+    $("endText").textContent = `You reached your car at ${fmtTime(run.minutes)}, ${mins} minutes after your shift ended. Phone on silent. Go home.`;
+    fillStats();
+    $("endBest").hidden = false;
+    $("endBest").textContent = isBest ? "New best escape time." : `Best escape so far: ${fmtTime(best)}.`;
+    $("btnAgain").firstElementChild.textContent = "Next shift";
+    setMsg("Pager switched off. Have a good weekend.", 0);
+    beep(1200, 3);
+    show("ovEnd");
+    setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  }
+
+  function startGame() {
+    initAudio();
+    newRun(); updateSanity(); loadLevel(0);
+    hud.clock.textContent = fmtTime(0);
+    showIntro("");
+  }
+
+  $("btnStart").addEventListener("click", startGame);
+  $("btnAgain").addEventListener("click", startGame);
+  $("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; });
+
+  // ---------- drawing ----------
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    T = Math.max(10, Math.floor(Math.min(r.width / COLS, r.height / ROWS)));
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.style.width = T * COLS + "px"; cv.style.height = T * ROWS + "px";
+    cv.width = Math.round(T * COLS * dpr); cv.height = Math.round(T * ROWS * dpr);
+  }
+  addEventListener("resize", resize);
+
+  const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  function drawMap() {
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const ch = grid[y][x], px = x * T, py = y * T;
+      if (ch === "#") {
+        ctx.fillStyle = "#34514c"; ctx.fillRect(px, py, T, T);
+        if (y + 1 < ROWS && grid[y + 1][x] !== "#") { ctx.fillStyle = "#4d6e67"; ctx.fillRect(px, py + T * .78, T, T * .22); }
+        continue;
+      }
+      ctx.fillStyle = (x + y) % 2 ? "#dbe7e1" : "#cfdfd8"; ctx.fillRect(px, py, T, T);
+      if (y > 0 && grid[y - 1][x] === "#") { ctx.fillStyle = "rgba(20,40,36,.16)"; ctx.fillRect(px, py, T, T * .12); }
+      if (ch === "b") {
+        ctx.fillStyle = "#f6f9f8"; roundRect(px + T * .14, py + T * .08, T * .72, T * .84, T * .1); ctx.fill();
+        ctx.fillStyle = "#6aa1d6"; roundRect(px + T * .14, py + T * .42, T * .72, T * .5, T * .1); ctx.fill();
+        ctx.fillStyle = "#e7eeec"; roundRect(px + T * .26, py + T * .14, T * .48, T * .2, T * .06); ctx.fill();
+      } else if (ch === "E") {
+        const last = run.idx === LEVELS.length - 1;
+        ctx.fillStyle = "#1f9d55"; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        ctx.fillStyle = "#f3f8f1"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = `800 ${Math.round(T * (last ? .36 : .3))}px "Barlow Condensed","Arial Narrow",sans-serif`;
+        ctx.fillText(last ? "EXIT" : "STAIRS", px + T / 2, py + T * .38);
+        ctx.font = `800 ${Math.round(T * .34)}px "Barlow Condensed","Arial Narrow",sans-serif`;
+        ctx.fillText(last ? "→" : "↓", px + T / 2, py + T * .74);
+      }
+    }
+  }
+
+  function drawCone(e, t) {
+    if (!t.cone || e.stun > 0) return;
+    const ang = Math.atan2(e.face[1], e.face[0]), spread = Math.acos(0.55), rays = 18;
+    ctx.beginPath(); ctx.moveTo(e.x * T, e.y * T);
+    for (let i = 0; i <= rays; i++) {
+      const a = ang - spread + (2 * spread * i) / rays, cx = Math.cos(a), cy = Math.sin(a);
+      let r = 0;
+      while (r < t.range && !solidAt(e.x + cx * r, e.y + cy * r)) r += 0.15;
+      ctx.lineTo((e.x + cx * r) * T, (e.y + cy * r) * T);
+    }
+    ctx.closePath();
+    ctx.fillStyle = e.mode === "chase" ? "rgba(226,72,61,.28)" : "rgba(226,72,61,.15)";
+    ctx.fill();
+  }
+
+  function drawToken(x, y, ring, emoji, alpha = 1) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(10,20,18,.22)";
+    ctx.beginPath(); ctx.ellipse(x * T, (y + .3) * T, T * .34, T * .12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = ring;
+    ctx.beginPath(); ctx.arc(x * T, y * T, T * .42, 0, Math.PI * 2); ctx.fill();
+    ctx.font = `${Math.round(T * .62)}px ${EMOJI_FONT}`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(emoji, x * T, y * T + T * .04);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBubble(e) {
+    const fs = Math.max(12, Math.round(T * .42));
+    ctx.font = `600 ${fs}px "Barlow Condensed","Arial Narrow",sans-serif`;
+    const maxW = Math.min(T * 7, cv.width / dpr - 8);
+    const words = e.say.split(" "), lines = [];
+    let line = "";
+    for (const w of words) {
+      const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxW - 16 && line) { lines.push(line); line = w; } else line = test;
+    }
+    lines.push(line);
+    const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 16, h = lines.length * fs * 1.1 + 10;
+    let bx = e.x * T - w / 2;
+    bx = Math.max(4, Math.min(cv.width / dpr - w - 4, bx));
+    let by = e.y * T - T * .6 - h;
+    if (by < 4) by = e.y * T + T * .6;
+    ctx.globalAlpha = Math.min(1, e.sayT * 2);
+    ctx.fillStyle = "#fffdf6"; ctx.strokeStyle = "#14201f"; ctx.lineWidth = 2;
+    roundRect(bx, by, w, h, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#14201f"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    lines.forEach((l, i) => ctx.fillText(l, bx + 8, by + 6 + i * fs * 1.1));
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(time) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#0b1513"; ctx.fillRect(0, 0, cv.width, cv.height);
+    if (!grid) return;
+    drawMap();
+
+    for (const it of items) {
+      if (it.taken) continue;
+      const bob = Math.sin(time * 3 + it.x) * .06;
+      ctx.fillStyle = "rgba(255,255,255,.55)";
+      ctx.beginPath(); ctx.arc((it.x + .5) * T, (it.y + .5 + bob) * T, T * .34, 0, Math.PI * 2); ctx.fill();
+      ctx.font = `${Math.round(T * .52)}px ${EMOJI_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(it.kind === "c" ? "☕" : "📋", (it.x + .5) * T, (it.y + .52 + bob) * T);
+    }
+
+    for (const e of enemies) drawCone(e, TYPES[e.type]);
+
+    const actors = enemies.map(e => ({ y: e.y, e })).concat([{ y: player.y, p: true }]).sort((a, b) => a.y - b.y);
+    for (const a of actors) {
+      if (a.p) {
+        if (player.inv > 0 && Math.floor(time * 10) % 2) continue;
+        drawToken(player.x, player.y, player.coffee > 0 ? "#f2b33d" : "#f3f8f1", "🧑‍⚕️", player.busy > 0 ? .5 : 1);
+        ctx.strokeStyle = "#0f6b4f"; ctx.lineWidth = Math.max(2, T * .08);
+        ctx.beginPath(); ctx.arc(player.x * T, player.y * T, T * .42, 0, Math.PI * 2); ctx.stroke();
+        if (player.busy > 0) {
+          ctx.font = `${Math.round(T * .4)}px ${EMOJI_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText("📋", (player.x + .38) * T, (player.y - .38) * T);
+        }
+      } else {
+        const e = a.e, t = TYPES[e.type];
+        drawToken(e.x, e.y, t.color, t.emoji, e.stun > 0 ? .75 : 1);
+        if (e.mode === "chase" && e.stun <= 0) {
+          ctx.fillStyle = "#e2483d"; ctx.font = `800 ${Math.round(T * .55)}px "Barlow Condensed",sans-serif`;
+          ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+          ctx.fillText("!", e.x * T, (e.y - .4) * T);
+        }
+      }
+    }
+    for (const e of enemies) if (e.sayT > 0 && e.say) drawBubble(e);
+  }
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (mode === "play" && !document.hidden) update(dt);
+    draw(now / 1000);
+    requestAnimationFrame(frame);
+  }
+
+  // Boot: show floor 5 behind the title screen.
+  const best = getBest();
+  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = `Best escape so far: ${fmtTime(best)}.`; }
+  newRun(); updateSanity(); loadLevel(0);
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
+  requestAnimationFrame(frame);
+  $("btnStart").focus({ preventScroll: true });
+})();
+</script>
+</body>
+</html>
