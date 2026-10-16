@@ -4,15 +4,16 @@ A browser game for iPhone (and any other browser). Your shift ended at 17:00. Ge
 
 ## Hospital Escape 3D (`index.html`)
 
-First-person 3D in Three.js (r128, loaded from cdnjs). German UI. Five areas: Station 5B (Innere), 4A (Chirurgie), Intensivstation, the haunted cellar (Pathologie & Archiv) and the Notaufnahme, then the staff parking lot.
+First-person 3D in Three.js (r128, loaded from cdnjs). German UI. A thoroughly cost-cut hospital in seven sections: Arztzimmer/Innere (5B), Orthopädie, Radiologie, Dermatologie, Keller, Notaufnahme, Parkhaus P2.
 
-- **Missions per floor:** car key from the doctors' room, handover to the night-shift colleague, a scripted cardiac arrest on the ICU, a fuse from the caretaker to restore power in the cellar. Optional: secret passage, Approbationsurkunde from the locker, Arbeitszeugnis from the chief's office.
-- **Conversations:** every run-in opens a dialogue with 2–3 answers (excuses with success chances, honest answers, running away). Friendly NPCs: cleaner (secret passage, coffee), night-shift colleague, caretaker, PJ student (takes tasks).
-- **Stats:** nerves (health), energy (drains while walking, fast while sprinting; empty = crawl), overtime clock, tasks, shifts on next month's roster.
-- **Dangers:** patients, relatives, nursing staff, a patrolling Oberarzt with a sight cone, the Chefarzt, Controlling, the ghost Dr. Ewig (moves through walls), runaway bed transports, sparking cables, slippery puddles, rubble, flickering and broken lights, blackouts, lab printouts that become tasks.
-- **Rescues:** cardiac-arrest alarms; reach the patient and do CPR in rhythm (110/min).
-- **Calls and the way out:** calls arrive every 20–40 s. A headhunter from a fictional pharma company calls on 4A; other offers (consulting, cruise-ship doctor, telemedicine) come in randomly. At the parking lot you choose an ending depending on accepted offers and collected documents.
-- **Controls:** phone: left half drag to walk, right half drag to look, RENNEN to sprint, yellow button to talk/use. Keyboard: WASD, mouse (click to capture) or arrows/Q to turn, Shift sprint, E action, 1–3 answers, J/N calls, Tab missions, P pause. Pause menu has look sensitivity, invert-Y, sound and head-bob settings.
+- **Start:** you begin in the doctors' room; the whiteboard holds the mission plan (also via pause menu or M).
+- **People are 3D figures** built from primitives (coats, scrubs, gowns, glasses, stethoscopes, props) with walk animations. Anyone who catches you opens a dialogue; pick an answer to break free. Afterwards that person leaves you alone.
+- **Departments:** Innere = internist nerds (distract them with a rare case report), Orthopädie = bouncers at every door (protein shake, anatomy question or arm-wrestling), Radiologie = pitch dark with a battery-limited flashlight and an MRT that pulls metal items, Dermatologie = safe "rescue station" with wellness and creams, Keller = blackouts and the ghost Dr. Ewig, Notaufnahme = endless shuffling pseudo-emergencies, Parkhaus = barrier, reversing chief's car, your car.
+- **PD Dr. Phil:** an overconfident habilitand who quizzes you with three statistics questions (a calculator item shows the right answer).
+- **Navigation:** compass strip with the target, an on-screen waypoint with distance, glowing route dots on the floor and a minimap.
+- **Inventory:** coffee, energy drink, donut, cream, clipboard, disinfectant spray, PA mic, airplane-mode pager, case report, protein shake, calculator, batteries.
+- **Also:** energy and nerves, creepy flickering corridors where lighting was "saved", leaking roofs, cost-cutting signs, lab printouts on the floor, phone calls, CPR mini-game, job offers and six endings, a duty roster for next month.
+- **Controls:** phone: left stick walk, right side look (joystick or swipe, set in pause menu), RENNEN to sprint, yellow button to use, tap inventory slots. Keyboard: WASD, mouse (click to capture) or arrows/Q, Shift sprint, E action, 1–6 inventory, J/N calls, Tab missions, M mission plan, P pause.
 
 ## Classic 2D (`classic.html`)
 
