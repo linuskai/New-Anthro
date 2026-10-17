@@ -247,6 +247,63 @@ Sie stehen einfach im Flur herum, flexen oder machen Bizeps-Curls mit Hantel, un
 - **Unter die Decke**: zu einem Patienten ins Bett legen. Er verrät nichts. Will aber Schnitzel.
 - **13 neue Gespräche**, absurder und mit mehr Auswahl: Horoskop-Patient, Google-Bewertung, PowerPoint der Familie (47 Folien), Heilpraktiker mit Wünschelrute, „unterschreib, dass du unterschrieben hast“, „nur EIN Dienst“ (acht), dritte Meinung, Klinik-Maskottchen, das Controlling bucht deine Atmung, 45 Minuten Natrium, krankes WLAN, „Ich sehe was, was du nicht siehst“ im Dunkeln, „Ist Blut vegan?“.
 
+## Version 10: Der Escape-Modus von vorn
+
+### Die zwei Spielmodi
+1. **Feierabend (Escape)**: Raus aus dem Krankenhaus. Du wählst am Anfang im Posteingang einen Ausweg. Jeder Ausweg ist eine Kette von Unter-Missionen über die acht Stockwerke. Am Ende steigst du im Parkhaus ins Fluchtfahrzeug.
+2. **Nachtdienst (Grusel)**: 22:00 bis 07:00 überleben. Pager-Aufträge (annehmen oder ablehnen), echte Notfälle (Reanimation), Pseudo-Notfälle, Geister, Schwester Hildegard.
+
+### Auswege und ihre Unter-Missionen
+| Ausweg | Schwierigkeit | Frist | Unter-Missionen | Fahrzeug |
+|---|---|---|---|---|
+| Pharma | ★★ | 18 Min | Approbation (Innere, Spind) · Arbeitszeugnis (Radiologie) · Studienordner (Gastro) · Kongress-Lanyard (ZNA) | Limousine |
+| Dermatologie | ★ | 17 Min | Approbation · Bizeps-Foto (Orthopädie) · Probetag bei Dr. Glatt (Derma) | Pinkes Cabrio |
+| Beratung | ★★★ | 16 Min | Beweisfotos: Faxgerät (Innere), Wartezeit-Anzeige (Ortho), Wartenummer 999 (ZNA) | Business-Taxi |
+| Startup | ★★ | 19 Min | Ringlicht (Radiologie) · Selfie mit Influencerin (Derma) · 3 Testimonials (ZNA) | E-Scooter |
+| Behörde | ★★★ | 20 Min | Formular A38 (Innere) · 3 Stempel (Ortho, Keller, ZNA) · Approbation | Dienstfahrrad |
+| Kreuzfahrt | ★★ | 18 Min | Approbation · Sonnencreme (Derma) · Reisetabletten (ZNA) | Hafen-Shuttle |
+| Einfach heim | ★ | keine | Bonus: Brotdose (Innere), Fahrradhelm (Keller) | Dein Auto |
+
+Fristen gelten in Spielzeit (1 Sekunde = 1 Spielminute), auf „Entspannt“ ×1,35.
+
+### Auswahl
+Der Posteingang zeigt jede Mail mit Sternen, Frist und deinem Rekord. Öffnest du eine, siehst du das **Dossier**: Schwierigkeit, Frist, Belohnung, was beim Scheitern passiert, und die Unter-Missionen mit Stockwerk.
+
+### Unterwegs
+- **Missionszettel**: „Unter-Mission · Pharma“, dazu wie und wo (Entfernung und Pfeil).
+- **Routen-Chip** im Pager: „💼 PHARMA 2/4 · ⏱ 9:12“, wird rot unter 3 Minuten.
+- **Flucht-Zentrale**: Checkliste der ganzen Route über alle Stockwerke.
+- **Weitere Angebote**: Jobangebote per Anruf (annehmen = neuer Ausweg im Parkhaus wählbar). Im Parkhaus kannst du umsatteln, wenn du die Bedingungen erfüllst.
+
+### Scheitern
+- Frist verpasst: Die Route ist weg (−400 Punkte), du kannst nur noch heim. Mit einer Pointe pro Route.
+- Nerven auf null: Burnout, Spielende.
+- Im Nachtdienst: verpasste Pager-Aufträge kosten Nerven.
+
+### Punkte und Rang
+Stockwerke ×150, Unter-Missionen ×350, Ausweg geschafft 1000 + 250 pro Stern, unentdeckte Stockwerke ×150, Gespräche ×40, angenommene Anrufe ×25, Nebenmissionen ×250, Zeitbonus (unter der Bestzeit-Vorgabe ×3 pro Minute). Abzüge: Dienste ×80, liegengelassene Aufgaben ×40, verpasste Route −400. Rang S (ab 4200), A, B, C, D. Rekorde (Punkte und schnellste Flucht) pro Route.
+
+### Verteidigung
+Alle Tricks wirken und sind jetzt sichtbar: Leiste mit aktiven Effekten und Countdown (Telefonat, Zivil, Versteckt, Atempause, Feueralarm, Ablenkung, Koffein, Goodwill) und ein blauer Schutzrand, solange dich ein Effekt schützt. Leute, die dich deswegen übersehen, reagieren mit 🤫 oder 🤷.
+
+### Anrufe mit Sinn
+Unter „Annehmen“ und „Ablehnen“ steht, was passiert. Annehmen: Zeit, eventuell Aufgabe oder Dienst, dafür Goodwill (die nächste Person aus dieser Abteilung lässt dich ziehen) oder ein neuer Ausweg. Ablehnen: Rückruf fällig, bei zwei offenen wirst du ausgerufen und ein Oberarzt sucht dich.
+
+### Orthopäden
+Fünf Optionen statt sechs: Proteinshake, Liegestütz-Wettkampf, **Reflexhammer-Duell** (Markierung im grünen Feld treffen, 3 Treffer in 6 Versuchen, die Zone wird kleiner), eine zufällige Gesprächsoption, später.
+
+### Szenarien
+Alle ein bis zwei Minuten eine Situation mit Entscheidung: führerloser Rollstuhl, Drucker druckt Seite 1 von 1 zum 400. Mal, Geburtstag im Stationszimmer, Kaffeeautomat, Visite blockiert den Flur, verlaufener Besucher, frisch gewischter Flur, Fax, Katze „Dr. Miau“, Mitarbeiterbefragung, Patient auf der Flucht, Hausmeister auf der Leiter.
+
+### Grafik
+- **Echte Fenster** in Außenwänden: ein Loch in der Wand, Glas mit Tropfen, zwei Regenschichten in unterschiedlicher Tiefe und die Stadt 9 m dahinter. Beim Laufen verschiebt sich alles gegeneinander (echte Parallaxe). Blitze erhellen die Stadt.
+- **Moos und Schmutz** in den heruntergekommenen Abschnitten (Schimmel am Sockel, Schmutzschlieren von der Decke), auch im Keller.
+- **Staubpartikel** schweben in der Luft.
+- **Geister** (Dr. Ewig): leuchtende Aura, stärkeres Licht, Frost am Bildschirmrand und Flüstern in der Nähe, pulsierender Punkt auf dem Radar.
+
+### Gespräche
+125 Gespräche (26 neue), z. B. TikTok-Patient, der rote Knopf, Zwillinge, Excel-Tabelle seit 1998, wer erbt das Pflegebett, Dienstplan-Farben, Paper ohne Daten, Golf, Chef-Podcast, Kuli-Inventur, Zebras, Fingernagel-MRT, Mathe-Attest, Kapsel-Livestream, Lieblings-Darmabschnitt, h-Index, schlafwandelnder Koch.
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten
