@@ -5,7 +5,7 @@ const escapeBoardTex = () => canvasTex(512, 288, (g, w, h) => {
   const M = `"Marker Felt","Comic Sans MS",${SF}`;
   g.fillStyle = "#c0322a"; g.font = `800 34px ${M}`; g.fillText("FLUCHT-ZENTRALE", 20, 44);
   g.fillStyle = "#1d2622"; g.font = `600 19px ${M}`;
-  ["1. Schlüssel → Dr. KURZ!!", "2. Ortho: 3 Türsteher (Shake?)", "3. Radio: Lampe AUS = unsichtbar", "4. DERMA = Wellness ♥", "5. Keller: Sicherung (Dr. Ewig??)", "6. ZNA: Parkticket", "7. P2 → AUTO → FREIHEIT"].forEach((l, i) => g.fillText(l, 22, 80 + i * 28));
+  ["1. Schlüssel → Dr. KURZ!!", "2. Ortho: 3× Bizeps (Shake?)", "3. Radio: Lampe AUS = unsichtbar", "4. DERMA = Wellness ♥", "5. Keller: Sicherung (Dr. Ewig??)", "6. ZNA: Parkticket", "7. P2 → AUTO → FREIHEIT"].forEach((l, i) => g.fillText(l, 22, 80 + i * 28));
   g.strokeStyle = "#2d3f8f"; g.lineWidth = 3; g.beginPath(); g.moveTo(340, 150); g.lineTo(470, 100); g.stroke();
   g.fillStyle = "#2d3f8f"; g.font = `700 20px ${M}`; g.fillText("Pharma?", 400, 92); g.fillText("Kreuzfahrt??", 380, 196); g.fillText("Amt?!", 430, 240);
   g.fillStyle = "#1f9d55"; g.font = `800 22px ${M}`; g.fillText("Leise. Schleichen.", 300, 270);
@@ -75,9 +75,9 @@ function buildFloors(lv, theme) {
   const glossy = !["cellar", "park", "derma"].includes(theme);
   const ft = floorTex(theme), rt = roomFloorTex(theme), wt = floorTex("derma");
   const mats = {
-    1: glossy ? new THREE.MeshPhongMaterial({ map: ft, color: 0xd2d8d4, shininess: 60, specular: 0x2a2a2a }) : new THREE.MeshLambertMaterial({ map: ft, color: 0xe4e4e4 }),
-    2: new THREE.MeshPhongMaterial({ map: rt, shininess: 25, specular: 0x1a1a1a }),
-    3: new THREE.MeshLambertMaterial({ map: wt }),
+    1: new THREE.MeshStandardMaterial({ map: ft, color: glossy ? 0xd2d8d4 : 0xe4e4e4, roughness: glossy ? .3 : .85, metalness: 0 }),
+    2: new THREE.MeshStandardMaterial({ map: rt, roughness: .5, metalness: 0 }),
+    3: new THREE.MeshStandardMaterial({ map: wt, roughness: .55, metalness: 0 }),
   };
   const m4 = new THREE.Matrix4();
   for (const k of [1, 2, 3]) {
@@ -136,7 +136,7 @@ function setDoor(d, open, quiet) {
 function buildStairwell(lv, idx, theme) {
   const [x, y] = lv.exit, n = DIRS.find(([dx, dy]) => cell(x + dx, y + dy) !== "#") || [0, 1];
   const g = new THREE.Group(); g.position.set((x + .5) * S, 0, (y + .5) * S); g.rotation.y = Math.atan2(n[0], n[1]);
-  const shaftMat = new THREE.MeshLambertMaterial({ color: 0x9aa39e, side: THREE.BackSide }); lv.perMat.push(shaftMat);
+  const shaftMat = new THREE.MeshStandardMaterial({ color: 0x9aa39e, side: THREE.BackSide, roughness: .9 }); lv.perMat.push(shaftMat);
   g.add(at(mesh(GEO.box, shaftMat, S, 3.8, S), 0, -1.9, 0));
   const stepMat = lambert(0x9aa3a0), nose = lambert(0xf2c300), steps = 9, d = S / steps;
   for (let i = 0; i < steps; i++) {
@@ -346,9 +346,9 @@ function buildRouteProps(lv, idx) {
 }
 function vehicleModel(route) {
   const v = ROUTES[route] ? ROUTES[route].vehicle : "car", g = new THREE.Group();
-  if (v === "car") g.add(makeCar(0x1f9d55));
-  else if (v === "limo") { const c = makeCar(0x111111, true); c.scale.set(1.05, 1, 1.45); g.add(c); const p = makePerson({ skin: SKIN[0], hair: 0xd9b26c, hairStyle: "long", shirt: 0x111111, pants: 0x111111, jacket: 0x111111, acc: "phone", glasses: "sun", mood: "smile" }); p.group.position.set(1.4, 0, .5); p.group.rotation.y = -.6; g.add(p.group); }
-  else if (v === "cabrio") { const c = makeCar(0xff7ab8, true); c.children[1].visible = false; g.add(c); g.add(at(boxMesh(1.3, .06, .3, 0xffffff, textTex(["DR. GLATT"], "#ff7ab8", "#fff", 256, 60, 40)), 0, .85, -1.3)); }
+  if (v === "car") g.add(makeCar(0x1f9d55, false, { plate: "KS-DR 1700" }));
+  else if (v === "limo") { const c = makeCar(0x111111, true, { plate: "PH-ARMA 1" }); c.scale.set(1.05, 1, 1.45); g.add(c); const p = makePerson({ skin: SKIN[0], hair: 0xd9b26c, hairStyle: "long", shirt: 0x111111, pants: 0x111111, jacket: 0x111111, acc: "phone", glasses: "sun", mood: "smile" }); p.group.position.set(1.4, 0, .5); p.group.rotation.y = -.6; g.add(p.group); }
+  else if (v === "cabrio") { const c = makeCar(0xff7ab8, true, { cabrio: true, plate: "GLATT 1" }); g.add(c); g.add(at(boxMesh(1.3, .06, .3, 0xffffff, textTex(["DR. GLATT"], "#ff7ab8", "#fff", 256, 60, 40)), 0, .85, -1.3)); }
   else if (v === "taxi") { g.add(makeCar(0xf2c300, true)); g.add(at(boxMesh(.5, .18, .2, 0xffffff, textTex(["TAXI"], "#111", "#f2c300", 128, 50, 36)), 0, 1.42, -.15)); }
   else if (v === "scooter") {
     g.add(at(boxMesh(.18, .06, .9, 0x111111), 0, .14, 0)); g.add(at(mesh(GEO.cyl, lambert(0x333333), .02, 1, .02), 0, .62, .42)); g.add(at(boxMesh(.5, .03, .03, 0x333333), 0, 1.1, .42));

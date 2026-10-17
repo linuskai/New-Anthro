@@ -113,7 +113,7 @@ const breakFree = (cost, text) => ({ label: "Losreißen und weg", hint: "−" + 
 
 function finishEncounter(e) {
   if (e.done) return;
-  e.done = true; e.state = "leaving"; e.leaving = 3; e.aw = 0; player.inv = 2.5; run.talks++;
+  e.done = true; e.state = "leaving"; e.leaving = 3; e.aw = 0; player.inv = 5; run.talks++;
   if ("PZF".includes(e.type)) { run.testi = (run.testi || 0) + 1; if (run.route === "tele" && run.testi <= 3) setTimeout(() => showToast("🎥", "#ff3fa4", "DocFlix", `Testimonial ${run.testi}/3 im Kasten. „Authentisch! Roh! Echt!“ – das Team`, []), 1200); }
   e.tri.visible = false;
   e.label.material.map = labelFor(TYPES[e.type], e.type === "Z" ? "✓ TRIAGIERT" : "✓ ERLEDIGT"); e.label.material.needsUpdate = true;
@@ -145,8 +145,8 @@ function bouncerDialog(e) {
     e.x = e.tx + .5 + side[0] * .62; e.tri.visible = false; e.label.material.map = labelFor(t, "✓ DURCHGELASSEN"); e.label.material.needsUpdate = true; sfx.ding();
     return { text, stamps: [good("Tür frei")] };
   };
-  openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Orthopädie · Security · Tür " + (bouncersCleared() + 1) + " von " + bouncersTotal(),
-    text: "„" + pick(["Name steht nicht auf der Liste.", "Hier kommt nur rein, wer mindestens 120 kg drückt.", "Orthopädie. Members only.", "Du kommst hier nicht rein. Zu wenig Muskeln."]) + "“",
+  openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Orthopädie · Oberarzt Kraftraum · Tür " + (bouncersCleared() + 1) + " von " + bouncersTotal(),
+    text: "„" + pick(["Moment, ich bin mitten im Satz. Zwölf Wiederholungen. Danach Visite.", "Hier kommt nur durch, wer seine Rotatorenmanschette kennt. Persönlich.", "Wir haben die Tür zu. Zugluft ist schlecht für die Regeneration.", "Kollege, Sie sehen aus, als hätten Sie seit 2019 kein Bein-Training gehabt."]) + "“",
     options: [
       { label: "Proteinshake anbieten", hint: hasItem("6") ? "🥤 verbrauchen" : "braucht 🥤", disabled: !hasItem("6"), act: () => { takeItem("6"); return clear("Er trinkt ihn in einem Zug. „Vanille. Respekt.“ Er tritt zur Seite."); } },
       { label: "„Ich bin auch Orthopäde.“", act: () => ({ next: () => openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette.“",

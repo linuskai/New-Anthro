@@ -45,10 +45,10 @@ const LEVELS = [
     map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2...x...I...3....N..E#", "############l############"] },
   { key: "ortho", short: "4 · ORTHOPÄDIE", name: "Orthopädie · 4. OG", floor: "4. OG", room: 4, env: "ortho",
     safeNames: [["UMKLEIDE", "Riecht nach Deo und Verzweiflung"]],
-    tip: "Die Orthopädie hat den Sicherheitsdienst eingespart und durch Orthopäden ersetzt. Drei Türsteher, drei Türen. Proteinshake hilft. Fachwissen auch. Armdrücken eher nicht.",
+    tip: "Die Orthopädie hat den Sicherheitsdienst eingespart. Jetzt stehen drei Orthopäden in den Türen und trainieren dabei Bizeps. Proteinshake hilft. Fachwissen auch. Armdrücken eher nicht.",
     objectives: [
-      { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Türstehern vorbei (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
-        brief: "Drei Türsteher, drei Türen, null Gesprächsbereitschaft. Wer hier durchwill, braucht Muskeln, Proteine oder Latein." },
+      { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Orthopäden vorbei (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
+        brief: "Drei Orthopäden, drei Türen, sechs Bizepse. Sie stehen da „nur kurz zwischen zwei Sätzen“. Wer durchwill, braucht Proteine, Fachwissen oder Respekt vor dem Pump." },
       { id: "protein", title: "Flüssige Bestechung", text: "Proteinshake aus dem Kraftraum", at: "item:6", done: () => run.picked.has("6"),
         brief: "Im Kraftraum steht ein Proteinshake. Vanille. Für Orthopäden die härteste Währung der Welt." }],
     exitText: "Treppenhaus → Radiologie", lock: "", headhunter: true,
@@ -101,7 +101,7 @@ const LEVELS = [
     map: ["#################", "#S......a.a.a...#", "#.a.a.a.......a.#", "#.......a.a.a.D.#", "#.a.a.a.......a.#", "#.q.............#", "########=########", "#.a.a.....a.a.a.#", "#...........q...#", "#.a.a.a.O.a...j.#", "#################"] },
 ];
 
-const PLAN = ["Innere: Dr. Kurz hat deinen Autoschlüssel. Übergabe machen, Schlüssel zurück.", "Orthopädie: an drei Türstehern vorbei. Proteinshake hilft.", "Radiologie: im Dunkeln durch. REA im CT.", "Dermatologie: Rettungsstation. Wellness, Creme, Jobangebot.", "Keller: Strom an. Dr. Ewig ausweichen.", "Notaufnahme: durch die Pseudo-Notfälle. Parkticket ziehen.", "Parkhaus: Schranke, Auto, Entscheidung."];
+const PLAN = ["Innere: Dr. Kurz hat deinen Autoschlüssel. Übergabe machen, Schlüssel zurück.", "Orthopädie: an drei Bizeps-Orthopäden vorbei. Proteinshake hilft.", "Radiologie: im Dunkeln durch. REA im CT.", "Dermatologie: Rettungsstation. Wellness, Creme, Jobangebot.", "Keller: Strom an. Dr. Ewig ausweichen.", "Notaufnahme: durch die Pseudo-Notfälle. Parkticket ziehen.", "Parkhaus: Schranke, Auto, Entscheidung."];
 
 const STORY = [
   ["16:59", "Station 5B, Arztzimmer. Du bist seit 31 Stunden wach. Dein letzter Kaffee war gestern. Die Kaffeemaschine wurde im März eingespart."],
@@ -138,8 +138,8 @@ const TYPES = {
   I: { label: "INTERNIST", role: "Internist · Nerd", who: () => rnd(["Dr. Differential", "Dr. Zebra", "Dr. Natrium"]), av: "🤓", color: "#7cc4ff",
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "messy", coat: true, shirt: 0xd9c46b, pants: 0x4a4a3a, glasses: "thick", pens: true, acc: "book", build: "thin" }),
        walk: .55, approach: 1.0, range: 5, fov: .45, detect: .7, barks: ["Warte! Hast du an Morbus Whipple gedacht?", "Interessanter Fall!", "Natrium 134!"] },
-  U: { label: "TÜRSTEHER", role: "Orthopäde · Security", who: () => rnd(["Dr. Bizeps", "Dr. Quadrizeps", "Dr. Kreuzband"]), av: "💪", color: "#3a3a3a",
-       spec: () => ({ skin: rnd(SKIN), hair: 0x1b1b1b, hairStyle: "bald", shirt: 0x1d1d1d, pants: 0x1d1d1d, build: "muscle", glasses: "sun", print: "ORTHO SECURITY", pose: "crossed", scale: 1.1, short: true }),
+  U: { label: "ORTHOPÄDE", role: "Orthopädie · Oberarzt Kraftraum", who: () => rnd(["Dr. Bizeps", "Dr. Quadrizeps", "Dr. Kreuzband"]), av: "💪", color: "#3a3a3a",
+       spec: () => ({ skin: rnd(SKIN), hair: rnd([0x1b1b1b, 0x5a3a22, 0x8a6a3a]), hairStyle: rnd(["short", "baldSides", "spiky"]), shirt: 0x2a5f8a, pants: 0x2a5f8a, scrubs: true, pens: true, badge: true, build: "muscle", steth: true, pose: "flex", scale: 1.06, short: true, acc: "shake", mood: rnd(["smile", "neutral"]) }),
        static: true },
   A: { label: "RADIOLOGE", role: "Radiologie", who: () => rnd(["Dr. Schatten", "Dr. Kontrast", "Dr. Voraufnahme"]), av: "🩻", color: "#6a7a9a",
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "short", coat: true, apron: true, shirt: 0x333a44, pants: 0x2a2f38, glasses: "normal", acc: "mug", lamp: true }),
@@ -180,7 +180,7 @@ const ITEMS = {
   "3": { emoji: "🧴", name: "Desinfektionsspray", desc: "Alle in der Nähe 6 s außer Gefecht" },
   "4": { emoji: "✈️", name: "Flugmodus-Pieper", desc: "60 s keine Anrufe" },
   "5": { emoji: "📢", name: "Durchsage-Mikro", desc: "Alle rennen zur Cafeteria" },
-  "6": { emoji: "🥤", name: "Proteinshake", desc: "Für Türsteher. Oder +25 Energie" },
+  "6": { emoji: "🥤", name: "Proteinshake", desc: "Für Orthopäden. Oder +25 Energie" },
   "7": { emoji: "📕", name: "Seltener Fallbericht", desc: "Köder für Nerds" },
   "8": { emoji: "🧮", name: "Taschenrechner", desc: "Hilft gegen PD-Phil", metal: true },
   "9": { emoji: "🔋", name: "Batterie", desc: "Taschenlampe voll" },

@@ -55,16 +55,12 @@ const liftTex = n => canvasTex(64, 32, (g, w, h) => { g.fillStyle = "#111"; g.fi
 
 // ---------- small helpers ----------
 const grp = (...kids) => { const g = new THREE.Group(); for (const k of kids) g.add(k); return g; };
-const plate = (map, w, h, transparent) => { const m = new THREE.Mesh(GEO.plane, transparent ? new THREE.MeshLambertMaterial({ map, transparent: true }) : lambert(0xffffff, map)); m.scale.set(w, h, 1); return m; };
+const plate = (map, w, h, transparent) => { const m = new THREE.Mesh(GEO.plane, transparent ? new THREE.MeshStandardMaterial({ roughness: .8, map, transparent: true }) : lambert(0xffffff, map)); m.scale.set(w, h, 1); return m; };
 const glowMat = color => { const k = "glow" + color; if (!matCache.has(k)) matCache.set(k, new THREE.MeshBasicMaterial({ color })); return matCache.get(k); };
 const metal = c => phong(c, 70);
 
 // ---------- office ----------
-function monitorModel(map, w = .55) {
-  const g = new THREE.Group(), m = monitorMesh(map); m.scale.set(w, w * .62, .04); m.position.set(0, .34, 0); g.add(m);
-  g.add(at(boxMesh(.05, .2, .05, 0x2a2a2a), 0, .12, -.05)); g.add(at(boxMesh(.22, .02, .16, 0x2a2a2a), 0, .01, -.04));
-  return g;
-}
+function monitorModel(map, w = .55) { return modernMonitor(map, w); }
 function phoneModel() {
   const g = new THREE.Group();
   const base = boxMesh(.2, .06, .22, 0xd8d4c8); base.rotation.x = -.15; base.position.y = .04; g.add(base);
@@ -102,14 +98,7 @@ function penCup() {
   return g;
 }
 /* desk against the wall: back edge at z = 0 */
-function deskModel(opt = {}) {
-  const g = new THREE.Group(), W = opt.w || 1.6, D = .72, top = .76, wood = opt.wood || 0xc9b38f;
-  g.add(at(boxMesh(W, .04, D, wood), 0, top, D / 2));
-  g.add(at(boxMesh(.04, top, D - .04, 0x9aa3a0), -W / 2 + .03, top / 2, D / 2)); g.add(at(boxMesh(.04, top, D - .04, 0x9aa3a0), W / 2 - .03, top / 2, D / 2));
-  g.add(at(boxMesh(.42, .6, D - .08, 0xd8d0c0), W / 2 - .28, .34, D / 2)); for (let i = 0; i < 3; i++) g.add(at(boxMesh(.06, .015, .01, 0x666666), W / 2 - .28, .2 + i * .19, D - .035));
-  g.add(at(boxMesh(W - .1, .3, .02, 0x8a948f), 0, .55, .04));
-  return g;
-}
+function deskModel(opt = {}) { return modernDesk(opt); }
 function keyboardModel() { const k = new THREE.Mesh(GEO.box, [lambert(0x2b2b2b), lambert(0x2b2b2b), lambert(0xffffff, keyboardTex()), lambert(0x2b2b2b), lambert(0x2b2b2b), lambert(0x2b2b2b)]); k.scale.set(.44, .02, .15); return k; }
 function workstation(screens, opt = {}) {
   const g = deskModel(opt), top = .78;
@@ -172,7 +161,7 @@ function trashBin(full) {
 function coffeeMachine() {
   const g = new THREE.Group();
   g.add(at(boxMesh(.36, .46, .32, 0x222222), 0, .23, .16)); g.add(at(boxMesh(.3, .08, .26, 0x333333), 0, .5, .14));
-  const pot = new THREE.Mesh(GEO.cyl, new THREE.MeshPhongMaterial({ color: 0x9fb8c4, transparent: true, opacity: .55, shininess: 100 })); pot.scale.set(.08, .14, .08); pot.position.set(0, .1, .27); g.add(pot);
+  const pot = new THREE.Mesh(GEO.cyl, glossy(0x9fb8c4, .05, 0, { transparent: true, opacity: .55 })); pot.scale.set(.08, .14, .08); pot.position.set(0, .1, .27); g.add(pot);
   g.add(at(mesh(GEO.cyl, lambert(0x2a1a0a), .07, .02, .07), 0, .04, .27));
   const sign = plate(flatTex(["DEFEKT", "eingespart 03/24"], "#c0322a", "#fff", 256, 110, 34), .32, .14); sign.position.set(0, .34, .33); g.add(sign);
   return g;
@@ -200,14 +189,14 @@ function medRail(n = 1) {
 }
 function bedsideTable() {
   const g = grp(at(boxMesh(.45, .75, .45, 0xe8e2d8), 0, .375, .23), at(boxMesh(.36, .01, .01, 0x888888), 0, .55, .46));
-  g.add(at(mesh(GEO.cyl, new THREE.MeshPhongMaterial({ color: 0xcfe8ff, transparent: true, opacity: .6 }), .035, .1, .035), .1, .8, .25));
+  g.add(at(mesh(GEO.cyl, glossy(0xcfe8ff, .05, 0, { transparent: true, opacity: .6 }), .035, .1, .035), .1, .8, .25));
   g.add(at(boxMesh(.12, .02, .06, 0x333333), -.08, .76, .2));
   return g;
 }
 function wallTV() { const g = new THREE.Group(); g.add(at(boxMesh(.08, .08, .4, 0x333333), 0, 0, .2)); const tv = monitorMesh(flatTex(["Wetter: Regen", "Morgen: Regen", "Feierabend: nie"], "#123", "#9fd8ff", 256, 150, 24)); tv.scale.set(.7, .42, .05); tv.position.set(0, -.05, .42); tv.rotation.x = .15; g.add(tv); return g; }
 function sinkModel() {
   const g = new THREE.Group(); g.add(at(boxMesh(.55, .14, .42, 0xf4f4f0), 0, .82, .21)); g.add(at(mesh(GEO.cyl, metal(0xc8ccd0), .015, .18, .015), 0, .96, .05)); g.add(at(boxMesh(.02, .02, .12, 0xc8ccd0), 0, 1.04, .1));
-  const mir = new THREE.Mesh(GEO.plane, new THREE.MeshPhongMaterial({ color: 0xb8c8d0, shininess: 120, specular: 0xffffff })); mir.scale.set(.5, .6, 1); mir.position.set(0, 1.45, .015); g.add(mir);
+  const mir = new THREE.Mesh(GEO.plane, glossy(0xd8e0e4, .03, 1)); mir.scale.set(.5, .6, 1); mir.position.set(0, 1.45, .015); g.add(mir);
   g.add(at(boxMesh(.1, .2, .08, 0xf4f4f4), .4, 1.2, .04));
   return g;
 }

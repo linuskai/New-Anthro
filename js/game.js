@@ -5,7 +5,7 @@ let run = null;
 const player = { x: 0, y: 0, yaw: 0, pitch: 0, coffee: 0, busy: 0, airplane: 0, inv: 0, hidden: false, bob: 0, stun: 0, slip: 0, slipDir: [0, 0],
   channel: null, sprint: false, sneak: false, lamp: 100, lampOn: true, moveMag: 0, noiseT: 0 };
 let msg = { text: "", t: 0 };
-let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 0, lightMul = 1, zoneMsgT = 0, boltT = 0, nextBolt = 25, scare = null, scareCd = 20;
+let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 0, lightMul = 1, ceilPower = 1, zoneMsgT = 0, boltT = 0, nextBolt = 25, scare = null, scareCd = 20;
 
 function newRun(m = "mission") {
   run = { idx: 0, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
@@ -46,11 +46,13 @@ function applyEnv(force) {
   lightMul += (target - lightMul) * (force ? 1 : .06);
   const bolt = boltT > 0 ? .9 : 0;
   const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - 780) / 60)) : 0;
-  hemi.intensity = (env.hemi * .9 + dawn * .45) * lightMul + bolt * .6; amb.intensity = (env.amb * .85 + dawn * .15) * lightMul; sun.intensity = (env.dir * 1.7 + dawn * .5) * lightMul;
-  const fogC = new THREE.Color(bo ? 0x030504 : env.fog); if (dawn) fogC.lerp(new THREE.Color(0x6a5a6a), dawn * .8);
+  hemi.intensity = (env.hemi * .55 + dawn * .45) * lightMul + bolt * .6; amb.intensity = (env.amb * .45 + dawn * .15) * lightMul; sun.intensity = (env.dir * 2.6 + dawn * .5) * lightMul;
+  scene.environment = bo || env.dark ? ENV_DARK : ENV_BRIGHT;
+  ceilPower = bo ? 0 : (env.dark ? (cellarDark() ? 0 : .7) : 1.15) * Math.max(.25, lightMul);
+  const fogC = new THREE.Color(bo ? 0x030504 : env.fog); if (!env.dark && !bo) fogC.multiplyScalar(.74); if (dawn) fogC.lerp(new THREE.Color(0x6a5a6a), dawn * .8);
   if (!env.dark) fogC.lerp(new THREE.Color(0x0a0d0c), 1 - lightMul);
   scene.fog.color.copy(fogC); scene.background.copy(fogC);
-  scene.fog.near = bo ? 1 : env.near * (.4 + .6 * lightMul); scene.fog.far = bo ? 10 : (env.far + dawn * 12) * (.45 + .55 * lightMul);
+  const fk = env.dark ? 1 : 1.5; scene.fog.near = bo ? 1 : env.near * fk * (.4 + .6 * lightMul); scene.fog.far = bo ? 10 : (env.far * fk + dawn * 12) * (.45 + .55 * lightMul);
   const need = inDarkness() || bo;
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
@@ -113,19 +115,17 @@ function updateNavi(dt) {
   if (!naviTarget || !settings.navi || offline) { nv.count = 0; if (level.chev) level.chev.count = 0; return; }
   const path = bfs(Math.floor(player.x), Math.floor(player.y), Math.floor(naviTarget[0]), Math.floor(naviTarget[1]), true, playerPass);
   if (!path) { nv.count = 0; if (level.chev) level.chev.count = 0; return; }
-  // the "Leitlinie": a painted green line with arrows, like the coloured guide lines in real hospitals
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  // subtle floor arrows every ~1.8 m along the path (no more thick painted line)
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const pts = [[player.x, player.y]].concat(path.slice(1).map(([x, y]) => [x + .5, y + .5]));
-  let n = 0, c = 0; const ch = level.chev;
-  for (let i = 0; i < pts.length - 1 && n < 90; i++) {
+  let c = 0, walked = 0, next = .8; const ch = level.chev;
+  for (let i = 0; i < pts.length - 1 && c < 16; i++) {
     const [ax, ay] = pts[i], [bx, by] = pts[i + 1], len = Math.hypot(bx - ax, by - ay); if (len < .01) continue;
-    const yaw = Math.atan2(bx - ax, by - ay); q.setFromAxisAngle(up, yaw);
-    const from = i === 0 ? .9 / len : 0; if (from >= 1) continue;
-    const sx = ax + (bx - ax) * from, sy = ay + (by - ay) * from, l2 = len * (1 - from);
-    pos.set((sx + bx) / 2 * S, .025, (sy + by) / 2 * S); sc.set(1, 1, l2 * S + .2); m.compose(pos, q, sc); level.navi.setMatrixAt(n++, m);
-    if (ch && c < 60 && i > 0) { pos.set((ax + bx) / 2 * S, .03, (ay + by) / 2 * S); sc.set(1, 1, 1); q.setFromAxisAngle(up, yaw + Math.PI); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); }
+    const yaw = Math.atan2(bx - ax, by - ay); q.setFromAxisAngle(up, yaw + Math.PI);
+    while (next <= walked + len && c < 16) { const k = (next - walked) / len; pos.set((ax + (bx - ax) * k) * S, .02, (ay + (by - ay) * k) * S); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); next += .6; }
+    walked += len;
   }
-  nv.count = n; nv.instanceMatrix.needsUpdate = true; if (ch) { ch.count = c; ch.instanceMatrix.needsUpdate = true; }
+  nv.count = 0; nv.instanceMatrix.needsUpdate = true; if (ch) { ch.count = c; ch.instanceMatrix.needsUpdate = true; }
 }
 
 // ---------- HUD ----------
@@ -238,7 +238,7 @@ function useItem(k) {
       p.position.set(player.x * S, 0, player.y * S); level.group.add(p); nerdLure.mesh = p;
       st = [good(n ? n + " Nerds abgelenkt" : "Hingelegt")]; line = "Du legst den Fallbericht „Morbus Whipple mit Zebrastreifen“ hin. Jeder Internist im Umkreis kommt angerannt."; break;
     }
-    case "6": takeItem(k); st = gain({ energy: 25 }); line = "Schmeckt nach Vanille und Kreidestaub. Eigentlich für die Türsteher gedacht."; break;
+    case "6": takeItem(k); st = gain({ energy: 25 }); line = "Schmeckt nach Vanille und Kreidestaub. Eigentlich für die Orthopäden gedacht."; break;
     case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für PD-Phil auf."; break;
     case "p": takeItem(k); { const n = throwPen(); st = [good(n ? n + " abgelenkt" : "Klack")]; line = n ? "Klack! Der Kuli landet irgendwo da hinten. Alle drehen sich um und gehen nachsehen. Kugelschreiber: das Schweizer Taschenmesser der Medizin." : "Klack. Niemand in der Nähe, der sich dafür interessiert. Der Kuli ist trotzdem weg."; } break;
     case "c": toggleCoat(); line = player.civil ? "Kittel aus. Ohne Kittel erkennt dich das Personal nicht mehr: nur ein weiterer müder Besucher. Patienten und Angehörige fragen dich dafür nach der Toilette." : "Kittel wieder an. Du bist wieder Ärztin oder Arzt. Leider."; st = [good(player.civil ? "Zivil" : "Kittel an")]; break;

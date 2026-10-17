@@ -48,7 +48,7 @@ function buildLevel(idx) {
     exit: null, start: null, reaSpot: null, doors: [], colliders: [], reserved: new Set(), orig: L.map, perTex: [], perMat: [], perGeo: [], visited: new Uint8Array(GW * GH), dark: new Uint8Array(GW * GH), t: 0, spawnT: 6 };
   level = lv; doorMap = new Map();
   const r = rng(idx * 97 + 11);
-  ghostMat = new THREE.MeshLambertMaterial({ color: 0xe8eeff, transparent: true, opacity: .45, emissive: 0x334466 }); lv.perMat.push(ghostMat);
+  ghostMat = new THREE.MeshStandardMaterial({ color: 0xe8eeff, transparent: true, opacity: .45, emissive: 0x334466, roughness: .4 }); lv.perMat.push(ghostMat);
   const occupied = new Set(), mark = (x, y) => occupied.add(x + "," + y);
 
   const pending = [];
@@ -77,7 +77,7 @@ function buildLevel(idx) {
   // floor & ceiling
   buildFloors(lv, theme);
   const ct = ceilTex(theme); ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(GW * 2, GH * 2);
-  const ceilMat = new THREE.MeshLambertMaterial({ map: ct });
+  const ceilMat = new THREE.MeshStandardMaterial({ map: ct, roughness: .95 });
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(GW * S, GH * S), ceilMat);
   ceil.rotation.x = Math.PI / 2; ceil.position.set(GW * S / 2, WALL_H, GH * S / 2); group.add(ceil);
   lv.perMat.push(ceilMat); lv.perGeo.push(ceil.geometry);
@@ -108,6 +108,11 @@ function buildLevel(idx) {
   });
   if (railTheme) group.add(rail);
   group.add(skirt);
+  // contact shadow where floor meets wall
+  const aoMat = new THREE.MeshBasicMaterial({ map: aoTex(), transparent: true, depthWrite: false, opacity: env.dark ? .6 : .85 }); lv.perMat.push(aoMat);
+  const ao = new THREE.InstancedMesh(GEO.plane, aoMat, Math.max(1, faces.length));
+  faces.forEach(([x, y, dx, dy], i) => { const th = Math.atan2(dx, dy); ao.setMatrixAt(i, q4.makeRotationY(th).multiply(m4.makeRotationX(-Math.PI / 2)).multiply(m4.makeScale(S, .55, 1)).setPosition((x + .5) * S + dx * (S / 2 - .275), .008, (y + .5) * S + dy * (S / 2 - .275))); });
+  ao.renderOrder = 1; group.add(ao);
 
   // secret doors
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] === "H") {
@@ -138,7 +143,7 @@ function buildLevel(idx) {
     else if (v < env.flicker + env.broken) panelsBroken.push([x, y]);
     else panelsOk.push([x, y]);
   }
-  lv.panelMat = new THREE.MeshBasicMaterial({ color: env.lamp }); lv.perMat.push(lv.panelMat);
+  lv.panelMat = new THREE.MeshBasicMaterial({ color: env.lamp, toneMapped: false }); lv.perMat.push(lv.panelMat);
   const panelGeo = new THREE.BoxGeometry(1.4, .05, .7); lv.perGeo.push(panelGeo);
   const panels = new THREE.InstancedMesh(panelGeo, lv.panelMat, Math.max(1, panelsOk.length));
   panelsOk.forEach(([x, y], i) => panels.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H - .03, y * S + S / 2)));
@@ -147,6 +152,15 @@ function buildLevel(idx) {
   const frames = new THREE.InstancedMesh(frameGeo, lambert(0x9aa3a0), panelsOk.length + lv.flickers.length || 1);
   [...panelsOk, ...lv.flickers.map(f => [f.x, f.y])].forEach(([x, y], i) => frames.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H - .015, y * S + S / 2)));
   group.add(frames);
+  lv.lampSpots = panelsOk.map(([x, y]) => [x + .5, y + .5]);
+  // light pools on the floor under working panels (cheap fake bounce light)
+  if (!env.dark && panelsOk.length) {
+    const pm = new THREE.MeshBasicMaterial({ map: poolTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: theme === "park" ? .5 : .32, toneMapped: false, color: env.lamp });
+    lv.perMat.push(pm);
+    const pools = new THREE.InstancedMesh(GEO.plane, pm, panelsOk.length);
+    panelsOk.forEach(([x, y], i) => pools.setMatrixAt(i, q4.makeRotationX(-Math.PI / 2).multiply(m4.makeScale(S * 1.25, S * 1.25, 1)).setPosition(x * S + S / 2, .012, y * S + S / 2)));
+    pools.renderOrder = 1; group.add(pools); lv.pools = pools;
+  }
   const brokenMat = lambert(0x3a3e3b);
   for (const [x, y] of panelsBroken) {
     const p = new THREE.Mesh(panelGeo, brokenMat); p.position.set(x * S + S / 2 + .3, WALL_H - .45, y * S + S / 2); p.rotation.z = .55; p.rotation.y = r() * 3; group.add(p);
@@ -154,7 +168,7 @@ function buildLevel(idx) {
     group.add(at(boxMesh(1.4, .02, .7, 0x0a0a0a), x * S + S / 2, WALL_H - .01, y * S + S / 2));
     if (r() < .4 && !env.dark) group.add(at(sprite(labelTex("LAMPE EINGESPART", "#f2c300", "#222"), 1.2, .2), x * S + S / 2, WALL_H - .9, y * S + S / 2));
   }
-  for (const f of lv.flickers) { f.mat = new THREE.MeshBasicMaterial({ color: f.tint }); lv.perMat.push(f.mat); f.mesh = new THREE.Mesh(panelGeo, f.mat); f.mesh.position.set(f.x * S + S / 2, WALL_H - .03, f.y * S + S / 2); group.add(f.mesh); }
+  for (const f of lv.flickers) { f.mat = new THREE.MeshBasicMaterial({ color: f.tint, toneMapped: false }); lv.perMat.push(f.mat); f.mesh = new THREE.Mesh(panelGeo, f.mat); f.mesh.position.set(f.x * S + S / 2, WALL_H - .03, f.y * S + S / 2); group.add(f.mesh); }
   // ceiling vents
   const vents = [];
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] !== "#" && (x + y) % 2 && r() < .35) vents.push([x, y]);
@@ -185,7 +199,7 @@ function buildLevel(idx) {
     const theta = Math.atan2(-dx, -dy);
     const cx = (x + .5) * S + dx * (S / 2 - .02), cz = (y + .5) * S + dy * (S / 2 - .02);
     const place = (obj, yPos, inset = 0, along = 0) => { obj.position.set(cx - dx * inset + (dy !== 0 ? along : 0), yPos, cz - dy * inset + (dx !== 0 ? along : 0)); obj.rotation.y = theta; group.add(obj); return obj; };
-    const planeM = (map, w, h, yy, inset = 0, transparent, along = 0) => { const mat = transparent ? new THREE.MeshLambertMaterial({ map, transparent: true }) : lambert(0xffffff, map); if (transparent) lv.perMat.push(mat); const m = new THREE.Mesh(GEO.plane, mat); m.scale.set(w, h, 1); return place(m, yy, inset, along); };
+    const planeM = (map, w, h, yy, inset = 0, transparent, along = 0) => { const mat = transparent ? new THREE.MeshStandardMaterial({ roughness: .8, map, transparent: true }) : lambert(0xffffff, map); if (transparent) lv.perMat.push(mat); const m = new THREE.Mesh(GEO.plane, mat); m.scale.set(w, h, 1); return place(m, yy, inset, along); };
     const v = r();
     if (isBorder(x + dx, y + dy) && v < .22 && env.storm !== undefined && theme !== "radio") {
       const w = curtainWindow(windowMat); w.children.slice(3).forEach(c => w.remove(c)); place(w, 1.75, .01); lv.windows.push(w); continue;
@@ -292,12 +306,9 @@ function buildLevel(idx) {
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
     const ch = grid[y][x], wx = (x + .5) * S, wz = (y + .5) * S, alongZ = openTile(x, y - 1) || openTile(x, y + 1);
     if (ch === "B") {
-      const g = new THREE.Group();
-      g.add(at(boxMesh(1.05, .1, 2.1, 0x8a948f), 0, .5, 0)); g.add(at(boxMesh(1, .18, 2, 0xf6f8f7), 0, .64, 0));
-      g.add(at(boxMesh(1.02, .1, 1.25, 0x6aa1d6), 0, .76, .35)); g.add(at(boxMesh(.7, .12, .4, 0xffffff), 0, .79, -.72)); g.add(at(boxMesh(1.05, .5, .06, 0x7d8783), 0, .85, -1.03));
-      for (const [lx, lz] of [[-.45, -.9], [.45, -.9], [-.45, .9], [.45, .9]]) { g.add(at(boxMesh(.06, .45, .06, 0x5c6662), lx, .23, lz)); g.add(at(mesh(GEO.ball, lambert(0x222222), .05), lx, .05, lz)); }
+      const g = idx === 2 ? stretcher() : hospitalBed({ blanket: pick([0x8fb7d9, 0xb9d3a8, 0xe8d8b8, 0xc8b8d8]) });
       const pat = makePerson({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "messy", gown: true, shirt: 0x9cc6e6, noShadow: true });
-      pat.group.rotation.x = -Math.PI / 2; pat.group.position.set(0, .78, .95); g.add(pat.group);
+      pat.group.rotation.x = -Math.PI / 2 + (idx === 2 ? 0 : .16); pat.group.position.set(0, idx === 2 ? .93 : .7, .95); pat.group.scale.setScalar(.95); g.add(pat.group);
       g.add(at(sprite(labelTex(idx === 2 ? "CT-LIEGE" : "FLURBETT " + (7 + Math.floor(r() * 20)) + " VON 23", "#7b8a85", "#fff"), 1.4, .22), 0, 1.6, 0));
       g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
     } else if (ch === "T") {
@@ -320,9 +331,7 @@ function buildLevel(idx) {
       group.add(at(sprite(labelTex("MRT · 3 TESLA · KEIN METALL!", "#7a0f0f", "#fff"), 2.2, .3), wx, 2.8, wz));
       lv.mrt = [x + .5, y + .5];
     } else if (ch === "W") {
-      const g = new THREE.Group();
-      g.add(at(boxMesh(.9, .35, 2.2, 0xf6efe6), 0, .3, 0)); g.add(at(boxMesh(.85, .12, 1.4, 0xf6c1d4), 0, .53, .3)); g.add(at(boxMesh(.8, .4, .5, 0xf6efe6), 0, .62, -.85));
-      g.add(at(mesh(GEO.cyl, lambert(0x7fbf5a), .08, .02, .08), .2, .62, .9));
+      const g = spaLounger();
       g.add(at(sprite(labelTex("WELLNESS-LIEGE", "#e26fa0", "#fff"), 1.3, .22), 0, 1.4, 0));
       g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
       lv.props.push({ kind: "W", x: x + .5, y: y + .5, used: false });
@@ -337,10 +346,7 @@ function buildLevel(idx) {
       group.add(at(sprite(labelTex("NUR MIT TICKET", "#c0322a", "#fff"), 1.3, .22), wx, 1.8, wz));
       lv.props.push({ kind: "=", x: x + .5, y: y + .5, arm });
     } else if (ch === "Y") {
-      const g = new THREE.Group();
-      g.add(at(boxMesh(.9, .08, 2, 0xb9c1bc), 0, .85, 0));
-      for (const [lx, lz] of [[-.38, -.85], [.38, -.85], [-.38, .85], [.38, .85]]) g.add(at(boxMesh(.05, .85, .05, 0x8a948f), lx, .42, lz));
-      g.add(at(boxMesh(.7, .28, 1.75, 0xf2f2ee), 0, 1.02, 0)); g.add(at(mesh(GEO.ball, lambert(0xf2f2ee), .2), 0, 1.12, -.8));
+      const g = stretcher({ sheet: true });
       g.add(at(mesh(GEO.box, lambert(0xd8c8a0), .1, .14, .05), .1, 1.1, 1.0));
       g.add(at(sprite(labelTex("ZEHENZETTEL: „NUR KURZ“", "#e8e4d0", "#333"), 1.3, .16), 0, 1.45, 1.0));
       g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
@@ -357,7 +363,7 @@ function buildLevel(idx) {
       group.add(at(sprite(labelTex("WÄSCHEWAGEN", "#3f6fb3", "#fff"), 1.2, .2), wx, 1.75, wz));
       lv.props.push({ kind: "w", x: x + .5, y: y + .5 });
     } else if (ch === "o") {
-      const pm = new THREE.MeshPhongMaterial({ color: theme === "cellar" ? 0x22302e : 0x9fb8c4, shininess: 120, transparent: true, opacity: .75, specular: 0xffffff }); lv.perMat.push(pm);
+      const pm = new THREE.MeshStandardMaterial({ color: theme === "cellar" ? 0x22302e : 0x9fb8c4, roughness: .04, metalness: .3, transparent: true, opacity: .75, specular: 0xffffff }); lv.perMat.push(pm);
       const p = new THREE.Mesh(GEO.puddle, pm); p.rotation.x = -Math.PI / 2; p.scale.set(1.2, .9, 1); p.position.set(wx, .015, wz); group.add(p);
       if (theme !== "cellar") { const ws = wetSign(); ws.position.set(wx + 1, 0, wz - .8); group.add(ws); }
       lv.hazards.push({ kind: "o", x: x + .5, y: y + .5, cd: 0 });
@@ -421,7 +427,9 @@ function buildLevel(idx) {
     f.tri = triMesh(TRI_MAT.friend); f.tri.scale.setScalar(1.5); f.tri.position.y = top + .22; g.add(f.tri);
     g.position.set(f.x * S, 0, f.y * S); group.add(g); f.mesh = g;
   }
+  let optional = 0;
   for (const [ch, x, y] of pending) {
+    if (pending.length > 5 && "PFNOI".includes(ch) && optional++ % 3 === 1) continue; // fewer people in crowded wards
     const e = spawnEnemy(lv, ch, x + .5, y + .5, r);
     if (ch === "U") { e.static = true; e.tri.material = TRI_MAT.sus; }
   }
@@ -439,9 +447,9 @@ function buildLevel(idx) {
   lv.naviMat = new THREE.MeshBasicMaterial({ color: 0x3cff8a, transparent: true, opacity: .8, depthWrite: false }); lv.perMat.push(lv.naviMat);
   const lineGeo = new THREE.PlaneGeometry(.2, 1); lineGeo.rotateX(-Math.PI / 2); lv.perGeo.push(lineGeo);
   lv.navi = new THREE.InstancedMesh(lineGeo, lv.naviMat, 90); lv.navi.count = 0; lv.navi.frustumCulled = false; group.add(lv.navi);
-  const chev = new THREE.Shape(); chev.moveTo(-.22, -.12); chev.lineTo(0, .12); chev.lineTo(.22, -.12); chev.lineTo(.12, -.12); chev.lineTo(0, .02); chev.lineTo(-.12, -.12); chev.closePath();
+  const chev = new THREE.Shape(); chev.moveTo(-.16, -.09); chev.lineTo(0, .09); chev.lineTo(.16, -.09); chev.lineTo(.1, -.09); chev.lineTo(0, .015); chev.lineTo(-.1, -.09); chev.closePath();
   const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2); lv.perGeo.push(chevGeo);
-  lv.chevMat = new THREE.MeshBasicMaterial({ color: 0xeaffef, transparent: true, opacity: .95, depthWrite: false }); lv.perMat.push(lv.chevMat);
+  lv.chevMat = new THREE.MeshBasicMaterial({ color: 0x8affc0, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }); lv.perMat.push(lv.chevMat);
   lv.chev = new THREE.InstancedMesh(chevGeo, lv.chevMat, 60); lv.chev.count = 0; lv.chev.frustumCulled = false; group.add(lv.chev);
 
   lv.startYaw = 0;

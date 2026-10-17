@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · input, stealth AI, hazards, events and the main update loop. */
-const diffMul = () => settings.diff === "easy" ? .65 : 1;
+const diffMul = () => settings.diff === "easy" ? .55 : .9;
 
 // ---------- input ----------
 const keys = new Set();
@@ -115,7 +115,7 @@ function findFocus() {
   for (const f of level.friends) consider(f.x, f.y, 1.4, { type: "friend", ref: f, label: "Sprechen", name: FRIENDS[f.kind].name });
   for (const it of level.items) if (!it.taken) consider(it.wx, it.wy, 1.05, { type: "item", ref: it, label: "Nehmen", name: ITEMS[it.kind].name });
   if (run.route === "amt" && !run.flags.has("stamp1")) for (const e of level.enemies) if (e.type === "V" && !e.done && !e.gone) consider(e.x, e.y, 1.7, { type: "stampV", ref: e, label: "Stempel holen", name: e.name });
-  for (const e of level.enemies) if (e.type === "U" && !e.cleared) consider(e.x, e.y, 1.45, { type: "bouncer", ref: e, label: "Ansprechen", name: "Türsteher" });
+  for (const e of level.enemies) if (e.type === "U" && !e.cleared) consider(e.x, e.y, 1.45, { type: "bouncer", ref: e, label: "Ansprechen", name: "Orthopäde" });
   for (const p of level.props) {
     if (p.kind === "M" && p.uses < 3) consider(p.x, p.y, 1.35, { type: "machine", ref: p, label: "Automat", name: "Snackautomat" });
     if (p.kind === "L" && !run.flags.has("approbation")) consider(p.x, p.y, 1.35, { type: "locker", ref: p, label: "Öffnen", name: "Dein Spind" });
@@ -266,7 +266,8 @@ function perceive(e, t, dx, dy, d) {
   if (d > 1.2 && dot < t.fov) return 0;
   if (!t.ghost && !los(e.x, e.y, player.x, player.y)) return 0;
   const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1;
-  return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil;
+  const grace = player.inv > 0 ? .15 : 1; // right after a conversation the others give you a moment
+  return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace;
 }
 function walkTo(e, gx, gy, sp, dt) {
   const step = sp * dt;
@@ -364,10 +365,10 @@ function updateHorde(dt) {
   if (!LEVELS[run.idx].horde || !level.spawns.length) return;
   level.spawnT -= dt;
   const active = level.enemies.filter(e => e.type === "Z" && !e.done).length;
-  if (level.spawnT <= 0 && active < (settings.diff === "easy" ? 5 : 7)) {
-    level.spawnT = 9 + Math.random() * 5;
+  if (level.spawnT <= 0 && active < (settings.diff === "easy" ? 3 : 5)) {
+    level.spawnT = 14 + Math.random() * 8;
     const sp = pick(level.spawns);
-    if (Math.hypot(sp[0] + .5 - player.x, sp[1] + .5 - player.y) > 4) spawnEnemy(level, "Z", sp[0] + .5, sp[1] + .5);
+    if (Math.hypot(sp[0] + .5 - player.x, sp[1] + .5 - player.y) > 7) spawnEnemy(level, "Z", sp[0] + .5, sp[1] + .5);
   }
 }
 function updateTransports(dt) {

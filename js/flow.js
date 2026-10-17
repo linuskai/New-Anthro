@@ -4,7 +4,7 @@ function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
 // ---------- story in the doctors' room ----------
-let story = null;
+let story = null, ceilT = 0;
 let lastMode = "mission";
 function startStory(m) {
   m = m === "night" ? "night" : "mission"; lastMode = m;
@@ -434,7 +434,7 @@ function render(time, dt) {
   const crouch = mode === "play" && player.moveMag === .5 ? .18 : 0;
   camera.position.set(player.x * S + shake, EYE + bob - crouch - (player.hidden ? .7 : 0), player.y * S);
   camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
-  fpHand.position.y = -.22 + Math.sin(player.bob * 2) * .008;
+  fpHand.position.y = -.2 + Math.sin(player.bob * 2) * .008;
 
   let near = null, nd = 3.4;
   const cd = cellarDark();
@@ -444,6 +444,12 @@ function render(time, dt) {
     f.mat.color.setHex(f.on ? f.tint : 0x1e201f);
     const d = Math.hypot(f.x + .5 - player.x, f.y + .5 - player.y); if (d < nd) { nd = d; near = f; }
   }
+  if ((ceilT -= dt) <= 0) {
+    ceilT = .25;
+    const spots = (level.lampSpots || []).map(([x, y]) => [x, y, (x - player.x) ** 2 + (y - player.y) ** 2]).sort((u, v) => u[2] - v[2]);
+    ceilLights.forEach((l, i) => { const sp = spots[i]; if (sp && sp[2] < 49) { l.position.set(sp[0] * S, WALL_H - .35, sp[1] * S); l.userData.on = 1; } else l.userData.on = 0; });
+  }
+  for (const l of ceilLights) l.intensity += ((l.userData.on ? ceilPower * .95 : 0) - l.intensity) * Math.min(1, dt * 5);
   if (near) { lampLight.position.set((near.x + .5) * S, WALL_H - .4, (near.y + .5) * S); lampLight.color.setHex(near.tint); lampLight.intensity = near.on ? (near.creepy ? 1.2 : .9) : 0; } else lampLight.intensity = 0;
   if (humGain) {
     const L = LEVELS[run.idx], live = mode === "play" || mode === "story";
@@ -502,7 +508,7 @@ function render(time, dt) {
   for (const c of level.clocks) { c.m.rotation.z = -((tm % 60) / 60) * Math.PI * 2; c.h.rotation.z = -(((tm / 60) % 12) / 12) * Math.PI * 2; }
   if (run.rea && run.rea.beam) { const p = .5 + .5 * Math.sin(time * 8); run.rea.beam.material.opacity = .12 + .25 * p; reaLight.intensity = 1.2 * p; }
   if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .38 + Math.sin(time * 2) * .1 : .05;
-  if (level.navi) { level.naviMat.opacity = .6 + .25 * Math.sin(time * 4); level.navi.visible = mode === "play"; if (level.chev) level.chev.visible = mode === "play"; }
+  if (level.navi) { level.chevMat.opacity = .38 + .14 * Math.sin(time * 3); level.navi.visible = mode === "play"; if (level.chev) level.chev.visible = mode === "play"; }
   if (level.callMat) level.callMat.color.setHex(Math.sin(time * 5) > 0 ? 0xff3020 : 0x5a1410);
   renderer.render(scene, camera);
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }

@@ -21,18 +21,46 @@ const facadeTex = () => canvasTex(512, 256, (g, w, h) => {
   for (let y = 0; y < 7; y++) for (let x = 0; x < 16; x++) { const lit = r() < .55; g.fillStyle = lit ? (r() < .15 ? "#bfe4ff" : "#ffe7a8") : "#2a3340"; g.fillRect(8 + x * 31.5, 14 + y * 34, 22, 22); }
   g.fillStyle = "#8a948f"; g.fillRect(0, h - 18, w, 18);
 }, "facade");
+const asphaltTex = () => { const t = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = "#34373a"; g.fillRect(0, 0, w, h); const r = rng(11);
+  for (let i = 0; i < 5000; i++) { const v = r(); g.fillStyle = v < .5 ? `rgba(0,0,0,${r() * .25})` : `rgba(255,255,255,${r() * .09})`; g.fillRect(r() * w, r() * h, 1 + r() * 2, 1 + r() * 2); }
+  g.strokeStyle = "rgba(10,10,10,.5)"; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); let x = r() * w, y = 0; g.moveTo(x, y); while (y < h) { x += (r() - .5) * 20; y += 12; g.lineTo(x, y); } g.stroke(); }
+  g.fillStyle = "rgba(20,20,20,.35)"; g.beginPath(); g.ellipse(r() * w, r() * h, 30, 14, 0, 0, 7); g.fill();
+}, "asphalt"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 60); return t; };
+const paveTex = () => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#9a9a94"; g.fillRect(0, 0, w, h); g.strokeStyle = "#7c7c76"; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(0, i * 32); g.lineTo(w, i * 32); g.stroke(); g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, h); g.stroke(); } const r = rng(4); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(0,0,0,${r() * .12})`; g.fillRect(r() * w, r() * h, 2, 2); } }, "pave"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 120); return t; };
+const grassTex = () => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#3d5a35"; g.fillRect(0, 0, w, h); const r = rng(8); for (let i = 0; i < 2500; i++) { g.fillStyle = r() < .5 ? "rgba(90,130,60,.5)" : "rgba(20,40,20,.4)"; g.fillRect(r() * w, r() * h, 1, 2 + r() * 3); } }, "grass"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(80, 80); return t; };
 function buildOutro(kind) {
   const dawn = kind === "night", sc = new THREE.Scene();
   sc.background = skyTex(dawn); sc.fog = new THREE.Fog(dawn ? 0xd8b8a8 : 0x8a5a6a, 30, 190);
   sc.add(new THREE.HemisphereLight(dawn ? 0xfff0dd : 0xffc8a0, 0x3a3a4a, .9));
   const sunL = new THREE.DirectionalLight(dawn ? 0xffe0b0 : 0xff9a5a, .9); sunL.position.set(-20, 12, 80); sc.add(sunL);
-  const ground = mesh(GEO.plane, lambert(0x3a4a3a), 400, 400, 1); ground.rotation.x = -Math.PI / 2; sc.add(ground);
-  const road = mesh(GEO.plane, lambert(0x2a2c2e), 8, 400, 1); road.rotation.x = -Math.PI / 2; road.position.set(0, .01, 150); sc.add(road);
-  for (let z = -10; z < 340; z += 8) { const l = mesh(GEO.plane, basic(0xe8e4d0), .18, 3.5, 1); l.rotation.x = -Math.PI / 2; l.position.set(0, .02, z); sc.add(l); }
-  for (let z = 6; z < 340; z += 22) for (const s of [-1, 1]) {
-    sc.add(at(mesh(GEO.cyl, lambert(0x555a5e), .08, 6, .08), s * 5.2, 3, z + (s > 0 ? 11 : 0)));
-    sc.add(at(boxMesh(1.2, .12, .3, 0x555a5e), s * 4.7, 6, z + (s > 0 ? 11 : 0)));
-    const glow = sprite(glowTex("rgba(255,214,140,1)"), 2.4, 2.4); glow.material.blending = THREE.AdditiveBlending; glow.position.set(s * 4.2, 5.8, z + (s > 0 ? 11 : 0)); sc.add(glow);
+  sc.environment = ENV_BRIGHT;
+  const ground = new THREE.Mesh(GEO.plane, new THREE.MeshStandardMaterial({ map: grassTex(), roughness: 1 })); ground.scale.set(400, 400, 1); ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; sc.add(ground);
+  const road = new THREE.Mesh(GEO.plane, new THREE.MeshStandardMaterial({ map: asphaltTex(), roughness: dawn ? .55 : .35, metalness: .1 })); road.scale.set(9, 400, 1); road.rotation.x = -Math.PI / 2; road.position.set(0, .01, 150); sc.add(road);
+  const paint = basic(0xd8d4c4);
+  for (let z = -10; z < 340; z += 9) { const l = mesh(GEO.plane, paint, .14, 4, 1); l.rotation.x = -Math.PI / 2; l.position.set(0, .02, z); sc.add(l); }
+  for (const s of [-1, 1]) {
+    const e = mesh(GEO.plane, paint, .12, 400, 1); e.rotation.x = -Math.PI / 2; e.position.set(s * 4.1, .02, 150); sc.add(e);
+    sc.add(at(rmesh(.28, .16, 400, .05, 0xb0b0aa), s * 4.64, .08, 150));
+    const walk = new THREE.Mesh(GEO.plane, new THREE.MeshStandardMaterial({ map: paveTex(), roughness: .9 })); walk.scale.set(2.6, 400, 1); walk.rotation.x = -Math.PI / 2; walk.position.set(s * 6.08, .15, 150); sc.add(walk);
+    sc.add(at(rmesh(.2, .12, 400, .04, 0x8a8a84), s * 7.45, .1, 150));
+  }
+  // zebra crossing at the hospital entrance
+  for (let i = 0; i < 7; i++) { const st = mesh(GEO.plane, paint, .5, 3, 1); st.rotation.x = -Math.PI / 2; st.position.set(-3.3 + i * 1.1, .021, -6); sc.add(st); }
+  for (let z = 6; z < 340; z += 24) for (const s of [-1, 1]) {
+    const zz = z + (s > 0 ? 12 : 0), pole = phong(0x4a4f53, 60);
+    sc.add(at(mesh(GEO.cyl, pole, .07, 6.2, .07), s * 5.4, 3.1, zz)); sc.add(at(mesh(GEO.cyl, pole, .14, .3, .14), s * 5.4, .3, zz));
+    const arm = at(rmesh(1.4, .08, .1, .03, pole), s * 4.8, 6.15, zz); arm.rotation.z = s * -.12; sc.add(arm);
+    sc.add(at(rmesh(.6, .1, .26, .04, 0x2a2c2e), s * 4.15, 6.05, zz)); sc.add(at(rmesh(.5, .02, .2, .01, basic(0xffe0a8)), s * 4.15, 5.99, zz));
+    const glow = sprite(glowTex("rgba(255,214,140,1)"), 2.6, 2.6); glow.material.blending = THREE.AdditiveBlending; glow.position.set(s * 4.15, 5.8, zz); sc.add(glow);
+    const pool = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: poolTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: dawn ? .15 : .5, color: 0xffc880, toneMapped: false })); pool.scale.set(7, 7, 1); pool.rotation.x = -Math.PI / 2; pool.position.set(s * 3.6, .03, zz); sc.add(pool);
+  }
+  // town: a row of houses behind the trees
+  const r2 = rng(21);
+  for (let z = 20; z < 330; z += 14 + r2() * 10) for (const s of [-1, 1]) {
+    const w = 8 + r2() * 8, h = 6 + r2() * 14, d = 8 + r2() * 4, col = pick([0xd8cfc0, 0xc9b9a8, 0xb8c4c8, 0xe0d8c8, 0xa89888]);
+    const fm = lambert(0xffffff, facadeTex()), wall = lambert(col);
+    const hb = new THREE.Mesh(GEO.box, [wall, wall, lambert(0x6a5a50), wall, fm, fm]); hb.scale.set(d, h, w); hb.position.set(s * (26 + r2() * 10), h / 2, z); hb.rotation.y = Math.PI / 2; sc.add(hb);
   }
   // the hospital behind you
   const fac = new THREE.Mesh(GEO.box, [lambert(0xc9cfcc), lambert(0xc9cfcc), lambert(0x9aa3a0), lambert(0x9aa3a0), lambert(0xffffff, facadeTex()), lambert(0xffffff, facadeTex())]);
