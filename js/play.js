@@ -610,7 +610,7 @@ function update(dt) {
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
   player.phoneT = Math.max(0, (player.phoneT || 0) - dt); player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
-  updateStink(dt); updateEmotes(dt);
+  updateStink(dt); updateEmotes(dt); updateScenarios(dt);
   if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
   if (nerdLure) { nerdLure.t -= dt; if (nerdLure.t <= 0) { if (nerdLure.mesh) level.group.remove(nerdLure.mesh); nerdLure = null; for (const e of level.enemies) if (e.state === "nerd") e.state = "idle"; } }
   updatePlayer(dt);

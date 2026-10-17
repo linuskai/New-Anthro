@@ -148,6 +148,18 @@ function phdQuiz(e) {
   });
 }
 
+// one random way of talking your way past an orthopaedist (keeps the menu short)
+const TALK_U = [
+  { label: "„Ist das ein Bizeps oder trägst du ein Kleinkind unterm Ärmel?“", hint: "60 %", act: (clear, lauch) => chance(.6) ? clear("Er errötet. Er flext. Er flext nochmal, für sich selbst. Er hat vergessen, dass es dich gibt.") : lauch("„Billig.“ Aber er flext trotzdem. Du stehst immer noch davor.") },
+  { label: "„Da hinten verschreibt ein Internist Physio ohne Indikation!“", hint: "50 %", act: (clear, lauch) => chance(.5) ? clear("„WAS?!“ Er rennt los, die Hantel noch in der Hand. Du hörst ihn den ganzen Flur entlang schnauben.") : lauch("Er schaut hin. Da ist niemand. Er schaut zurück. „Netter Versuch, Lauch.“") },
+  { label: "„Ich bin Unfallchirurg.“", hint: "Quiz", act: (clear, lauch, base, e) => ({ next: () => openDialog({ ...base, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette. Ohne Googeln. Ohne Leitlinie.“",
+    options: [
+      { label: "Bizeps, Trizeps, Quadrizeps, Wadl", act: () => lauch("„Wadl ist kein Muskel. Wadl ist ein Lebensgefühl.“", { nerves: 1 }) },
+      { label: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis", act: () => clear("Er nickt anerkennend. „SITS. Bruder.“ Ihr macht einen Faustcheck. Deine Fingerknöchel knacken.") },
+      { label: "„Hängt vom Natriumwert ab.“", act: () => lauch("„WUSST ICH'S! INTERNIST!“ Die anderen Orthopäden drehen sich um. Einer zeigt mit der Hantel auf dich.", { energy: 10 }) },
+    ], onClose: () => { player.inv = 1; e.cool = 2; } }) }) },
+  { label: "„Was ist dein Max beim Bankdrücken?“", hint: "55 %", act: (clear, lauch) => chance(.55) ? clear("Er erzählt. 40 Minuten lang. Du nickst. Irgendwann merkt er nicht mehr, dass du schon hinter ihm stehst. Und dann weg bist.") : lauch("„Mehr als du wiegst.“ Er misst dich mit Blicken. Er hat recht.") },
+];
 function bouncerDialog(e) {
   const t = TYPES.U, base = { sp: e.person.sp, av: t.av, color: "#2a5f8a", name: e.name, role: "Orthopädie · Lauch-Kontrolle · " + (bouncersCleared() + 1) + " von " + bouncersTotal() };
   setExpression(e.person, "angry");
@@ -165,16 +177,36 @@ function bouncerDialog(e) {
       { label: "Proteinshake anbieten", hint: () => hasItem("6") ? "🥤 verbrauchen" : "braucht 🥤", disabled: () => !hasItem("6"), act: () => { takeItem("6"); return clear("Er trinkt ihn in einem Zug, ohne zu schlucken. „Vanille. Respekt. Du bist kein Lauch. Du bist… ein Frühlingslauch.“"); } },
       { label: "Liegestütze! Jetzt! Hier!", hint: "Minispiel · Energie", disabled: () => run.energy < 10, act: () => ({ next: () => pushupGame(e, ok => openDialog({ ...base, text: ok ? "Er zählt mit. Laut. Der ganze Flur zählt mit. Ein Patient weint vor Rührung." : "Bei Nummer sechs liegst du flach. Er stellt dir den Fuß auf den Rücken und macht ein Foto für die Gruppe.",
         options: [{ label: ok ? "Aufstehen. Lässig." : "Liegen bleiben. Würde zeigen.", act: () => ok ? clear("„Kein Lauch. Ein Spargel vielleicht. Aber kein Lauch.“ Er tritt zur Seite und klatscht dich ab. Deine Hand ist taub.") : lauch("„Lauch.“ Er tätschelt dir den Kopf. Wie einem Golden Retriever.", { energy: 12 }) }], onClose: () => { player.inv = 1; e.cool = 2; } })) }) },
-      { label: "„Ist das ein Bizeps oder trägst du ein Kleinkind unterm Ärmel?“", hint: "60 %", act: () => chance(.6) ? clear("Er errötet. Er flext. Er flext nochmal, für sich selbst. Er hat vergessen, dass es dich gibt.") : lauch("„Billig.“ Aber er flext trotzdem. Du stehst immer noch davor.") },
-      { label: "„Ich bin Unfallchirurg.“", act: () => ({ next: () => openDialog({ ...base, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette. Ohne Googeln. Ohne Leitlinie.“",
-        options: [
-          { label: "Bizeps, Trizeps, Quadrizeps, Wadl", act: () => lauch("„Wadl ist kein Muskel. Wadl ist ein Lebensgefühl.“", { nerves: 1 }) },
-          { label: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis", act: () => clear("Er nickt anerkennend. „SITS. Bruder.“ Ihr macht einen Faustcheck. Deine Fingerknöchel knacken.") },
-          { label: "„Hängt vom Natriumwert ab.“", act: () => lauch("„WUSST ICH'S! INTERNIST!“ Die anderen Orthopäden drehen sich um. Einer zeigt mit der Hantel auf dich.", { energy: 10 }) },
-        ], onClose: () => { player.inv = 1; e.cool = 2; } }) }) },
-      { label: "„Da hinten verschreibt ein Internist Physio ohne Indikation!“", hint: "50 %", act: () => { if (chance(.5)) { const r = clear("„WAS?!“ Er rennt los, die Hantel noch in der Hand. Du hörst ihn den ganzen Flur entlang schnauben."); return r; } return lauch("Er schaut hin. Da ist niemand. Er schaut zurück. „Netter Versuch, Lauch.“"); } },
+      { label: "Reflexhammer-Duell!", hint: "Minispiel · Kampf", act: () => ({ next: () => duelGame(e, ok => openDialog({ ...base, text: ok ? "Sein Bein schnellt hoch. Dreimal. Er ist beeindruckt und leicht beleidigt. „Saubere Patellarsehne getroffen. Respekt, Kollege.“" : "Er weicht jedes Mal aus. Dann klopft er DEINE Patellarsehne. Dein Bein tritt ihm gegen das Schienbein. Er lacht nur.",
+        options: [{ label: ok ? "Hammer einstecken. Cool weitergehen." : "Humpeln.", act: () => ok ? clear("Er reibt sich das Knie. „Lauch mit Technik. Das gibt es also.“ Er macht Platz.") : lauch("„Reflexe hast du. Muskeln nicht.“", { energy: 10 }) }], onClose: () => { player.inv = 1; e.cool = 2; } })) }) },
+      (() => { const v = TALK_U[Math.floor(Math.random() * TALK_U.length)]; return { label: v.label, hint: v.hint, act: () => v.act(clear, lauch, base, e) }; })(),
       { label: "„Ich komm später wieder.“", act: () => ({ text: "„Später ist Beintag. Da sind wir noch schlechter gelaunt.“" }) },
     ], onClose: () => { player.inv = 1; e.cool = 2; } });
+}
+// reflex-hammer duel: hit his patellar tendon three times before he gets yours
+function duelGame(e, done) {
+  const need = 3, tries = 6; let hits = 0, swings = 0, over = false, pos = 0, dir = 1, zone = .22;
+  const ov = document.createElement("div"); ov.id = "pushup";
+  ov.innerHTML = `<div class="pu-card duel"><b>REFLEXHAMMER-DUELL</b><small>Du: Reflexhammer. Er: Stethoskop (falsch herum). Triff die Patellarsehne, wenn die Markierung im grünen Feld ist. ${need} Treffer, ${tries} Versuche.</small>
+    <div class="du-score"><span class="du-you">🔨 0</span><span class="du-left">Versuche: ${tries}</span></div>
+    <div class="du-bar"><i class="du-zone"></i><i class="du-mark"></i></div><div class="du-msg">&nbsp;</div><button type="button" class="pu-btn">🔨 ZUSCHLAGEN</button></div>`;
+  document.body.appendChild(ov); mode = "dialog";
+  const mark = ov.querySelector(".du-mark"), zoneEl = ov.querySelector(".du-zone"), msg = ov.querySelector(".du-msg");
+  const place = () => { zoneEl.style.left = (50 - zone * 50) + "%"; zoneEl.style.width = zone * 100 + "%"; }; place();
+  let last = performance.now();
+  const tick = now => { if (over) return; const dt = Math.min(.05, (now - last) / 1000); last = now; pos += dir * dt * (.9 + hits * .35); if (pos > 1) { pos = 1; dir = -1; } if (pos < 0) { pos = 0; dir = 1; } mark.style.left = pos * 100 + "%"; requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  const kick = p => { if (!p) return; p.knees[0].rotation.x = -1.2; setTimeout(() => { p.knees[0].rotation.x = 0; }, 260); };
+  const hit = ev => {
+    ev.preventDefault(); if (over) return; swings++;
+    const ok = Math.abs(pos - .5) < zone / 2;
+    if (ok) { hits++; sfx.knock(); kick(e.person); emote(e, pick(["😵", "🦵", "😳"])); msg.textContent = pick(["TOCK! Sein Bein schnellt hoch.", "Volltreffer. Er tritt sich selbst gegen die Hantel.", "Reflex 4+. Er ist beeindruckt."]); zone = Math.max(.1, zone - .04); place(); }
+    else { run.energy = Math.max(0, run.energy - 5); sfx.step(); flash(); msg.textContent = pick(["Daneben. Er klopft zurück. Dein Bein tritt ins Leere.", "Du triffst die Hantel. Sie klingt wie eine Kirchenglocke.", "Zu früh. Er gähnt."]); }
+    ov.querySelector(".du-you").textContent = "🔨 " + hits; ov.querySelector(".du-left").textContent = "Versuche: " + (tries - swings);
+    if (hits >= need || tries - swings <= 0) { over = true; removeEventListener("keydown", key); setTimeout(() => { ov.remove(); done(hits >= need); }, 700); }
+  };
+  ov.querySelector(".pu-btn").addEventListener("pointerdown", hit);
+  const key = ev => { if (ev.key === " " || ev.key === "Enter" || ev.key.toLowerCase() === "e") hit(ev); }; addEventListener("keydown", key);
 }
 // push-up challenge: tap as fast as you can
 function pushupGame(e, done) {

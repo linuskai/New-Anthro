@@ -453,6 +453,11 @@ body.hudmin .mission { display: none; }
 @keyframes shieldPulse { 50% { box-shadow: inset 0 0 80px 18px rgba(110,190,255,.55); } }
 @media (orientation: landscape) and (max-height: 520px) { #buffs { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); } }
 #frostFx { position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: 0; background: radial-gradient(ellipse at center, rgba(160,190,255,0) 45%, rgba(160,190,255,.35) 85%, rgba(220,235,255,.6) 100%); }
+.du-score { display: flex; justify-content: space-between; font: 800 16px/1 var(--display); }
+.du-bar { position: relative; height: 26px; background: rgba(255,255,255,.12); border-radius: 13px; overflow: hidden; }
+.du-zone { position: absolute; top: 0; bottom: 0; background: rgba(111,207,151,.7); }
+.du-mark { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #f2b33d; border-radius: 3px; box-shadow: 0 0 10px #f2b33d; }
+.du-msg { font: 600 14px/1.25 var(--display); min-height: 2.5em; }
 </style>
 </head>
 <body>
@@ -705,9 +710,11 @@ body.hudmin .mission { display: none; }
 <script src="js/talks.js"></script>
 <script src="js/talks2.js"></script>
 <script src="js/talks3.js"></script>
+<script src="js/talks4.js"></script>
 <script src="js/play.js"></script>
 <script src="js/outro.js"></script>
 <script src="js/score.js"></script>
+<script src="js/scenarios.js"></script>
 <script src="js/flow.js"></script>
 </body>
 </html>

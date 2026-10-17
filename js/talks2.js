@@ -140,7 +140,7 @@ function hostileDialog(e) {
   flash(); sfx.hit();
   if (navigator.vibrate) try { navigator.vibrate(100); } catch (_) {}
   if (call && !call.def.forced) endCall();
-  if (e.type === "D") return phdQuiz(e);
+  if (e.type === "D" && (!TALKS.D || Math.random() < .6)) return phdQuiz(e);
   if (e.type === "V" && run.route === "amt" && !run.flags.has("stamp1")) return stampDialog(e);
   if (run.goodwill[e.type] > 0) {
     run.goodwill[e.type]--;
