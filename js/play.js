@@ -271,11 +271,25 @@ function perceive(e, t, dx, dy, d) {
   if (d > range) return 0;
   const fx = Math.sin(e.yaw), fy = Math.cos(e.yaw), dot = (dx * fx + dy * fy) / d;
   if (d > 1.2 && dot < t.fov) return 0;
-  if (!t.ghost && !los(e.x, e.y, player.x, player.y)) return 0;
+  if (!(t.ghost && blackout > 0) && !los(e.x, e.y, player.x, player.y)) return 0;
   const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1, phone = player.phoneT > 0 && "NOCVIADnU".includes(e.type) ? .2 : 1;
   const grace = player.inv > 0 ? .15 : 1; // right after a conversation the others give you a moment
   if ((phone < 1 || civil < 1) && d < 4.5 && player.moveMag > 0 && !e.shrugged) { e.shrugged = true; emote(e, phone < 1 ? "🤫" : "🤷"); }
   return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace * phone;
+}
+/* chasing: only towards where they last SAW you. Out of sight they go there, look around, give up.
+   The chief and a paged attending always know where you are (they have the intercom). */
+function chase(e, t, dx, dy, d, dt, sp) {
+  const sees = !player.hidden && !playerSafe() && los(e.x, e.y, player.x, player.y) && d < t.range * 1.2;
+  const omniscient = e.type === "C" || e.hunter;
+  if (sees || omniscient) { e.lastSeen = [player.x, player.y]; e.lostT = 0; e.searching = 0; }
+  if (sees && d < 1.2) { const st = Math.min(sp * dt, d), nx = e.x + dx / d * st, ny = e.y + dy / d * st; if (!blockedAt(nx, ny)) { e.x = nx; e.y = ny; e.tx = Math.floor(e.x); e.ty = Math.floor(e.y); } e.tyaw = Math.atan2(dx, dy); e.moving = true; e.speed = sp; return; }
+  const ls = e.lastSeen || [player.x, player.y];
+  if (Math.hypot(ls[0] - e.x, ls[1] - e.y) > .8) { walkTo(e, Math.floor(ls[0]), Math.floor(ls[1]), sp, dt); e.lostT = (e.lostT || 0) + (sees ? 0 : dt); if (e.lostT < 9) return; }
+  // arrived (or took too long): look around, then give up
+  e.searching = (e.searching || 0) + dt; e.moving = false;
+  e.tyaw += dt * 2.2 * Math.sin(e.searching * 1.7);
+  if (e.searching > 2.8) { e.aw = .2; e.state = "idle"; e.searching = 0; e.lastSeen = null; e.lostT = 0; emote(e, pick(["🤷", "❔", "🙄"])); setExpression(e.person, "worried"); }
 }
 function walkTo(e, gx, gy, sp, dt) {
   const step = sp * dt;
@@ -370,8 +384,8 @@ function updateEnemy(e, dt) {
   if (e.state !== prev || !e.person.expr) setExpression(e.person, exprFor(e));
   if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { hostileDialog(e); return; }
   if (t.ghost) {
-    if (e.state === "spot") { const sp = t.approach * (blackout > 0 ? 1.5 : 1) * dt; e.x += dx / d * sp; e.y += dy / d * sp; e.tyaw = Math.atan2(dx, dy); e.moving = true; if (Math.random() < dt * .4) sfx.whisper(); }
-    else { e.drift = (e.drift || 0) + dt; e.x += Math.cos(e.drift * .4) * t.walk * dt; e.y += Math.sin(e.drift * .3) * t.walk * dt; e.x = Math.max(1.5, Math.min(GW - 1.5, e.x)); e.y = Math.max(1.5, Math.min(GH - 1.5, e.y)); e.moving = true; e.tyaw = e.drift; }
+    if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (blackout > 0 ? 1.5 : 1)); if (Math.random() < dt * .4) sfx.whisper(); }
+    else patrol(e, t, dt);
     return;
   }
   if (e.investigate && e.state !== "spot") {
@@ -380,10 +394,7 @@ function updateEnemy(e, dt) {
     else { walkTo(e, Math.floor(iv.x), Math.floor(iv.y), t.walk * 1.5, dt); return; }
   }
   if (e.state === "sus") { e.tyaw = Math.atan2(dx, dy); return; }
-  if (e.state === "spot") {
-    if (d < 1.2 && los(e.x, e.y, player.x, player.y)) { const st = Math.min(t.approach * dt, d); e.x += dx / d * st; e.y += dy / d * st; e.tx = Math.floor(e.x); e.ty = Math.floor(e.y); e.tyaw = Math.atan2(dx, dy); e.moving = true; e.speed = t.approach; return; }
-    walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (settings.diff === "easy" ? .85 : 1), dt); return;
-  }
+  if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (settings.diff === "easy" ? .85 : 1)); return; }
   if (e.state === "lured") { walkTo(e, lure.x, lure.y, t.approach * 1.2, dt); return; }
   if (e.state === "nerd" && nerdLure) { if (Math.hypot(e.x - nerdLure.x, e.y - nerdLure.y) > .8) walkTo(e, Math.floor(nerdLure.x), Math.floor(nerdLure.y), t.approach, dt); return; }
   if (e.hunter) { walkTo(e, Math.floor(player.x), Math.floor(player.y), t.walk * .9, dt); return; }
