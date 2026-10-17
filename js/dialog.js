@@ -1,6 +1,8 @@
 /* Hospital Escape 3D · dialogue engine and all conversations. */
 let dlgState = null;
 function openDialog(d) {
+  const val = v => typeof v === "function" ? v() : v;
+  d = { ...d, options: d.options.map(o => ({ ...o, hint: val(o.hint), disabled: !!val(o.disabled) })) };
   dlgState = { ...d };
   mode = "dialog";
   $("dlgAvatar").textContent = d.av; $("dlgAvatar").style.background = d.color || "#ddd";
@@ -70,90 +72,6 @@ function finishEncounter(e) {
   for (let i = 0; i < dm.length; i++) if (dm[i] > best && dm[i] < 9) { best = dm[i]; bi = i; }
   e.leaveTo = [bi % GW, (bi / GW) | 0];
   if (e.type === "Z") e.person.seated = true;
-}
-
-function hostileDialog(e) {
-  const t = TYPES[e.type];
-  flash(); sfx.hit();
-  if (navigator.vibrate) try { navigator.vibrate(100); } catch (_) {}
-  if (call && !call.def.forced) endCall();
-  if (e.type === "D") return phdQuiz(e);
-  if (e.type === "P") {
-    const v = Math.random();
-    if (v < .45) {
-      const Q = pick(PAT_QUIZ);
-      return runChain(e, "„Herr Doktor! Mein Bettnachbar und ich haben gewettet. Um seinen Pudding.“", [{ q: Q.q, options: Q.o.map((label, j) => ({ label, act: () => j === Q.a ? { text: Q.right, stamps: gain({ nerves: 1, text: "Pudding-Bonus" }) } : { text: Q.wrong, stamps: pen({ mins: 12 }) } }))
-        .concat([{ label: "„Fragen Sie Ihren Hausarzt.“", act: () => ({ text: "„Der hat doch Urlaub!“ Er ist beleidigt. Aber er lässt dich gehen.", stamps: pen({ energy: 8 }) }) }]) }]);
-    }
-    if (v < .75) return runChain(e, "", [
-      { q: "„Doc! Darf ich heute noch heim?“", options: yesNo(() => ({ text: "„Super! Dann brauch ich nur den Entlassbrief. Und ein Taxi. Und meine Zähne, die liegen in der Cafeteria.“", stamps: pen({ tasks: ["Entlassbrief (Zähne in der Cafeteria!)"] }) }),
-        () => ({ text: "„Dann will ich wenigstens was Ordentliches zu essen.“" })) },
-      { q: "„Können Sie mir noch ein Schnitzel besorgen? Mit Pommes?“", options: yesNo(() => ({ text: "Er strahlt. Du hast keine Ahnung, wo du um 17 Uhr ein Schnitzel herbekommst. Die Küche wurde 2020 ausgelagert.", stamps: pen({ tasks: ["Schnitzel organisieren"], mins: 5 }) }),
-        () => ({ text: "„Dann erzähl ich Ihnen von meinem Zeh.“ Er erzählt. Lange. Dann darfst du gehen.", stamps: pen({ energy: 10 }) })) }]);
-    return runChain(e, "", [{ q: "„Ich hab gegoogelt. Ich hab entweder Schnupfen oder die Pest. Was meinen Sie?“", options: [
-      { label: "„Schnupfen.“", act: () => ({ text: "„Langweilig.“ Er ist sichtlich enttäuscht und schlurft davon.", stamps: [good("Befreit")] }) },
-      { label: "„Die Pest.“", act: () => ({ text: "Er ist begeistert. Er postet es sofort auf Facebook. Das Gesundheitsamt ruft gleich an.", stamps: pen({ tasks: ["Gesundheitsamt beruhigen (es ist Schnupfen)"] }) }) },
-      { label: "„Hören Sie auf zu googeln.“", hint: "50 %", act: () => chance(.5) ? { text: "Er legt das Handy weg. Zum ersten Mal seit 2011. Er weint ein bisschen.", stamps: [good("Befreit")] } : { text: "Er googelt „arroganter Arzt Station 5B“. Zwei Treffer. Beide du.", stamps: pen({ nerves: 1 }) } }] }]);
-  }
-  if (e.type === "F") return runChain(e, "„Endlich! Wir sind die Familie Kowalski. Alle sieben. Wir haben nur drei kurze Fragen.“", [
-    { q: "„Wird er wieder gesund?“", options: [
-      { label: "„Ja!“", act: () => ({ text: "Jubel. „Sie haben es versprochen! Dirk hat's gefilmt.“", score: 1, stamps: pen({ tasks: ["Versprechen einhalten (gefilmt)"] }) }) },
-      { label: "„Nein.“", act: () => ({ text: "Oma fängt an zu weinen. Dirk filmt das auch.", score: -1, stamps: pen({ nerves: 1 }) }) },
-      { label: "„Das bespricht morgen der Stationsarzt.“", act: () => ({ text: "„Sie SIND der Stationsarzt.“ Stille. Sie schreiben etwas auf.", score: 0 }) }] },
-    { q: "„Darf er Omas Sahnetorte essen? Drei Stück?“", options: [
-      { label: "„Ja.“", act: () => ({ text: "Oma strahlt. Sein Blutzucker wird morgen auch strahlen.", score: 1, stamps: pen({ tasks: ["Blutzucker Hr. Kowalski (Sahnetorte!)"] }) }) },
-      { label: "„Nein.“", act: () => ({ text: "„Sie haben unsere Torte beleidigt.“", score: -1 }) },
-      { label: "„Ein halbes Stück.“", act: () => ({ text: "Diplomatisch. Oma schneidet ein sehr großes halbes Stück.", score: 1 }) }] },
-    { q: "„Können Sie uns alles nochmal von vorne erklären? Cousin Dirk ist gerade erst gekommen.“", options: [
-      { label: "„Ja, natürlich.“", act: () => ({ text: "Du erklärst alles. Nochmal. Dirk nickt. Dirk hat nichts verstanden. Dirk ist Heilpraktiker.", score: 2, stamps: pen({ mins: 20 }) }) },
-      { label: "„Nein.“", act: () => ({ text: "„Dann schreiben wir an die Geschäftsführung!“", score: -1 }) },
-      { label: "„Dirk kann im Internet nachlesen.“", act: () => ({ text: "Dirk öffnet Google. Du hast etwa drei Minuten.", score: 0, stamps: [good("Zeit gewonnen")] }) }] },
-  ], score => score >= 2 ? { text: "Die Familie ist begeistert. Oma drückt dir Pralinen in die Hand. Alle sieben winken.", stamps: gain({ nerves: 1, energy: 20 }) }
-    : score <= -1 ? { text: "Sie gehen direkt zur Geschäftsführung. Du bekommst Post.", stamps: pen({ tasks: ["Beschwerde Fam. Kowalski beantworten"], nerves: 1 }) }
-    : { text: "Die Familie zieht weiter. Murmelnd. Du hörst noch „…früher war das anders…“.", stamps: [] });
-  if (e.type === "N") return runChain(e, "", [
-    { q: "„Kannst du noch kurz abzeichnen? Nur 14 Patienten.“", options: yesNo(() => ({ text: "Du zeichnest 14 Kurven ab. Deine Unterschrift sieht danach aus wie ein EKG.", score: 1, stamps: pen({ mins: 12 }) }),
-      () => ({ text: "„Ah. So einer bist du.“", score: -1 })) },
-    { q: "„Und Zimmer 7 braucht 'ne Braunüle. Die Venen sind… sportlich.“", options: yesNo(() => chance(.6) ? { text: "Erster Versuch! Die Pflege applaudiert. Der Patient auch.", score: 1, stamps: gain({ nerves: 1 }).concat(pen({ mins: 8 })) } : { text: "Dritter Versuch. Der Patient schreibt eine Google-Bewertung. Live.", score: 0, stamps: pen({ nerves: 1, mins: 15 }) },
-      () => ({ text: "„Dann sag ich's dem Nachtdienst. Der sagt's dem OA. Der sagt's dir. Morgen früh.“", score: -1, stamps: pen({ tasks: ["Braunüle Zi. 7 (sportliche Venen)"] }) })) },
-  ], score => score >= 1 ? (addItem("1"), { text: "Sie schenkt dir ihren geheimen Notfall-Kaffee. Den aus der Schublade mit dem Schloss.", stamps: [good("☕ eingepackt")] }) : null);
-  if (e.type === "O") return runChain(e, "", [
-    { q: "„Sie machen doch Samstag, oder?“", options: [
-      { label: "„Selbstverständlich!“", act: () => ({ text: "„Wusste ich's doch. Teamplayer.“", stamps: pen({ duties: 1 }) }) },
-      { label: "„Da ist die Hochzeit meiner Schwester.“", hint: "45 %", act: () => chance(.45) ? { text: "Er glaubt dir. Du hast keine Schwester.", stamps: [good("Kein Dienst")] } : { text: "„Die hat doch letzten Monat schon geheiratet.“ Strafdienst.", stamps: pen({ duties: 2, nerves: 1 }) } },
-      { label: "„Nein.“", hint: run.nerves >= 3 ? "−2 Nerven" : "braucht 3 Nerven", disabled: run.nerves < 3, act: () => ({ text: "Stille. Er notiert sich etwas. Du weißt nicht, was. Das ist das Schlimmste.", stamps: pen({ nerves: 2 }) }) },
-      breakFree(25, "Du tust, als würde dein Pieper gehen. Pieper wurden 2019 eingespart. Egal, du bist weg.")] },
-    { q: "„Und morgen in der Frühbesprechung stellen Sie vor. Thema?“", options: [
-      { label: "„Hyponatriämie.“", act: () => ({ text: "„Langweilig. Aber gut.“ Er nickt. 40 Folien bis 6:30.", stamps: pen({ tasks: ["Vortrag Hyponatriämie (40 Folien)"] }) }) },
-      { label: "„Work-Life-Balance.“", act: () => ({ text: "Er lacht fünf Minuten lang. Tränen. Du gehst einfach.", stamps: [good("Befreit")] }) },
-      { label: "„Ich hab morgen frei.“", act: () => ({ text: "„Hatten Sie.“", stamps: pen({ duties: 1 }) }) }] },
-  ]);
-  if (e.type === "C") return runChain(e, "„" + pick(["Wochenende? Beide Tage. Und den Feiertag.", "Qualitätszirkel, Samstag 7 Uhr. Pflicht.", "Sie halten nächste Woche die M&M-Konferenz."]) + "“", [{ q: "Was sagst du?", options: [
-    { label: "„Jawohl, Herr Professor.“", act: () => ({ text: "„Schön. Und die Publikation bis Montag.“", stamps: pen({ duties: 2, tasks: ["Publikation für den Chef"] }) }) },
-    { label: "„Ich habe ein Angebot aus der Industrie.“", hint: run.offers.size ? "" : "braucht ein Jobangebot", disabled: !run.offers.size,
-      act: () => { const st = run.duties.length ? (run.duties.pop(), [good("−1 Dienst")]) : [good("Respekt")]; return { text: "Er wird blass. Plötzlich sind Sie „unverzichtbar“. Er streicht Ihnen sogar einen Dienst.", stamps: st }; } },
-    { label: "„Mir geht's nicht gut.“", hint: "50 %", act: () => chance(.5) ? { text: "„Dann gehen Sie heim. Aber Montag sind Sie da.“", stamps: [good("Befreit")] } : { text: "„Dann machen Sie Nachtdienst, da ist es ruhiger.“", stamps: [{ text: addDuty("N") }].concat(pen({ nerves: 1 })) } }] }]);
-  if (e.type === "V") return runChain(e, "„Kurze Kodierfrage, dauert nur eine Sekunde.“", [{ q: "„Ist ‚Patient hatte schlechte Laune‘ eine Nebendiagnose?“", options: [
-    { label: "„Ja. R45.4, Reizbarkeit und Wut.“", act: () => ({ text: "Er ist tief beeindruckt. „Erlös plus 0,3 Prozent!“ Er tanzt davon.", stamps: [good("Befreit")].concat(gain({ nerves: 1 })) }) },
-    { label: "„Nein.“", act: () => ({ text: "„Doch! Das ist GELD!“ Er gibt dir 37 Akten zum Nachkodieren.", stamps: pen({ tasks: ["DRG-Nachkodierung (37 Fälle)"], mins: 10 }) }) },
-    { label: "„Ich bin Arzt, kein Buchhalter.“", hint: "50 %", act: () => chance(.5) ? { text: "„Noch.“ Er geht. Es klang wie eine Drohung.", stamps: [good("Befreit")] } : { text: "„Das steht so nicht in Ihrer Stellenbeschreibung.“ Formular 17b.", stamps: pen({ tasks: ["Formular 17b (3-fach)"] }) } }] }]);
-  if (e.type === "I") return runChain(e, "„" + pick(["Warte! Hast du an Morbus Whipple gedacht?", "Natrium 134. Das müssen wir besprechen. Ausführlich.", "Die Differentialdiagnose umfasst 47 Punkte."]) + "“", [{ q: "„Schnelle Frage, Kollege: Was ist es immer?“", options: [
-    { label: "„Lupus.“", hint: "50 %", act: () => chance(.5) ? { text: "„ES IST IMMER LUPUS!“ Er rennt in die Bibliothek. Die ist seit 2018 geschlossen.", stamps: [good("Befreit")] } : { text: "„Es ist NIE Lupus!“ Er erklärt dir 20 Minuten lang, warum.", stamps: pen({ mins: 20 }) } },
-    { label: "„Sarkoidose.“", act: () => ({ text: "Er nickt ehrfürchtig. „Ein Kenner.“ Er lässt dich ziehen.", stamps: [good("Befreit")] }) },
-    { label: "„Psychosomatisch.“", act: () => ({ text: "Er schnappt nach Luft und geht beleidigt. Perfekt.", stamps: pen({ energy: 5 }) }) },
-    { label: "„Hier, ein seltener Fallbericht.“", hint: hasItem("7") ? "📕 verbrauchen" : "braucht 📕", disabled: !hasItem("7"), act: () => { takeItem("7"); for (const o of level.enemies) if (o.type === "I") o.stun = 20; return { text: "Er hält den Bericht wie einen heiligen Gral. Alle Internisten versammeln sich andächtig.", stamps: [good("Alle Nerds abgelenkt")] }; } }] }]);
-  if (e.type === "A") return runChain(e, "„Psst. Wir befunden gerade. Im Dunkeln. Wie immer.“", [{ q: "„Sehen Sie hier was?“ Er zeigt auf einen schwarzen Bildschirm.", options: [
-    { label: "„Einen Schatten.“", act: () => ({ text: "„Das ist der Monitorrand.“ Er gibt dir trotzdem einen Befund mit.", stamps: pen({ tasks: ["Befund abholen (folgt)"], mins: 10 }) }) },
-    { label: "„Klinische Korrelation empfohlen.“", act: () => ({ text: "Ihm kommen die Tränen. „Endlich spricht jemand meine Sprache.“", stamps: [good("Befreit")].concat(gain({ nerves: 1 })) }) },
-    { label: "„Ich seh nichts. Hier ist es dunkel.“", act: () => ({ text: "„Willkommen in der Radiologie.“ Er verschwindet in der Dunkelheit.", stamps: [good("Befreit")] }) }] }]);
-  if (e.type === "Z") return runChain(e, "„" + pick(["Ich hab seit drei Wochen Schnupfen.", "Zeckenbiss. 2019. Ich wollte nur mal fragen.", "Mein Hausarzt hat Urlaub. Seit zwei Stunden.", "Mir ist seit gestern komisch. Und vorgestern auch."]) + "“", [{ q: "„Ist das ein Notfall?“", options: [
-    { label: "„Ja.“", act: () => ({ text: "Du schreibst einen Arztbrief über Schnupfen. Drei Seiten. Mit Anamnese.", stamps: pen({ mins: 15, tasks: ["Arztbrief „Schnupfen“"] }) }) },
-    { label: "„Nein.“", act: () => ({ text: "Er schreibt eine 1-Stern-Bewertung. Dann setzt er sich auf den Boden.", stamps: [good("Triagiert")] }) },
-    { label: "„Triage Grün. Wartezeit: 7 Stunden.“", act: () => ({ text: "„Okay.“ Er setzt sich. Er hat Zeit. Viel Zeit.", stamps: [good("Triagiert")] }) }] }]);
-  if (e.type === "g") return runChain(e, "„" + pick(["Ich wollte auch nur kurz ins Archiv… Das war 2009.", "Bleib doch. Für immer. Es gibt Kaffee. Kalten."]) + "“", [{ q: "Das Licht flackert. Es wird kalt.", options: [
-    { label: "„Wer… sind Sie?“", act: () => ({ text: "„Ich bin du. In fünfzehn Jahren.“ Er lächelt.", stamps: pen({ nerves: 1, energy: 15 }) }) },
-    { label: "„Gehen Sie heim, Dr. Ewig.“", hint: "50 %", act: () => chance(.5) ? { text: "Er schaut auf seine Uhr. „Schon so spät?“ Er löst sich auf. Endlich Feierabend.", stamps: gain({ nerves: 1, text: "Geist erlöst" }) } : { text: "„Heim? Was ist das?“ Er verschwindet im Boden. Vorerst.", stamps: pen({ nerves: 1 }) } },
-    breakFree(25, "Du rennst so schnell wie seit dem Physikum nicht mehr.")] }]);
 }
 
 function phdQuiz(e) {

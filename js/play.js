@@ -25,9 +25,11 @@ addEventListener("keydown", e => {
     if (call && (k === "y" || k === "j")) acceptCall();
     if (call && k === "n") declineCall();
     if (k === "p" || k === "escape") pause();
-    if (k === "m") showBrief(true);
+    if (k === "m") openMap();
+    if (k === "b") showBrief(true);
     if (k === "tab") { e.preventDefault(); $("tasks").hidden = !$("tasks").hidden; }
   } else if (mode === "pause" && (k === "p" || k === "escape")) resume();
+  else if (mode === "map" && (k === "m" || k === "escape")) closeMap();
 });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 addEventListener("blur", () => { keys.clear(); clearInputs(); });
@@ -42,7 +44,7 @@ touchLayer.addEventListener("pointerdown", e => {
   if (mode !== "play") return;
   $("tasks").hidden = true;
   if (e.pointerType === "mouse" && !locked && touchLayer.requestPointerLock) { try { const p = touchLayer.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
-  const left = e.pointerType !== "mouse" && e.clientX < innerWidth * .45;
+  const left = e.pointerType !== "mouse" && e.clientX < innerWidth * .45 && e.clientY > innerHeight * .42;
   if (left && !ptr.move) {
     ptr.move = { id: e.pointerId, ox: e.clientX, oy: e.clientY, vx: 0, vy: 0 };
     const st = $("moveStick"); st.style.left = e.clientX + "px"; st.style.top = e.clientY + "px"; $("moveKnob").style.transform = ""; st.hidden = false;
@@ -115,12 +117,23 @@ function findFocus() {
     if (p.kind === "L" && !run.flags.has("approbation")) consider(p.x, p.y, 1.35, { type: "locker", ref: p, label: "Öffnen", name: "Dein Spind" });
     if (p.kind === "G" && !run.flags.has("power")) consider(p.x, p.y, 1.35, { type: "fuse", ref: p, label: run.flags.has("fuse") ? "Reparieren" : "Ansehen", name: "Sicherungskasten" });
     if (p.kind === "w") consider(p.x, p.y, .95, { type: "cart", ref: p, label: player.hidden ? "Raus" : "Verstecken", name: "Wäschewagen" });
-    if (p.kind === "v") consider(p.x, p.y, 1.4, { type: "board", ref: p, label: "Lesen", name: "Missionsplan" });
+    if (p.kind === "v") consider(p.x, p.y, 1.5, { type: "board", ref: p, label: "Öffnen", name: "Flucht-Zentrale" });
     if (p.kind === "W" && !p.used) consider(p.x, p.y, 1.4, { type: "spa", ref: p, label: "Liegen", name: "Wellness-Liege" });
-    if (p.kind === "sofa" && !p.room.rested) consider(p.x, p.y, 1.2, { type: "sofa", ref: p, label: "Ausruhen", name: p.room.name[0].toLowerCase().replace(/^./, c => c.toUpperCase()) + " · Sofa" });
+    if (p.kind === "sofa" && !p.room.rested) consider(p.x, p.y, 1.3, { type: "sofa", ref: p, label: p.bed ? "Hinlegen" : "Ausruhen", name: p.bed ? "Bereitschaftsliege" : "Sofa" });
     if (p.kind === "t" && !run.flags.has("ticket")) consider(p.x, p.y, 1.35, { type: "ticket", ref: p, label: "Bezahlen", name: "Parkticket-Automat" });
     if (p.kind === "=" && !run.flags.has("barrier")) consider(p.x, p.y, 1.5, { type: "barrier", ref: p, label: "Ticket rein", name: "Schranke" });
     if (p.kind === "j") consider(p.x, p.y, 1.7, { type: "car", ref: p, label: "Einsteigen", name: "Dein Auto" });
+  }
+  for (const d of level.doors) {
+    const tx = d.x + .5, ty = d.y + .5, inTile = Math.floor(player.x) === d.x && Math.floor(player.y) === d.y;
+    if (!inTile) consider(tx, ty, 1.55, { type: "door", ref: d, label: d.open ? "Schließen" : "Öffnen", name: d.safe ? "Ruheraum" : "Tür" });
+  }
+  for (const p of level.props) {
+    if (p.kind === "lift") consider(p.x, p.y, 1.3, { type: "lift", ref: p, label: "Rufen", name: "Aufzug" });
+    if (p.kind === "locked") consider(p.x, p.y, 1.2, { type: "locked", ref: p, label: "Rütteln", name: p.name });
+    if (p.kind === "pc") consider(p.x, p.y, 1.3, { type: "pc", ref: p, label: "Einloggen", name: "Computer (KIS 2003)" });
+    if (p.kind === "phone") consider(p.x, p.y, 1.3, { type: "phone", ref: p, label: "Abheben", name: "Diensttelefon" });
+    if (p.kind === "brew") consider(p.x, p.y, 1.3, { type: "brew", ref: p, label: "Kaffee", name: "Kaffeemaschine" });
   }
   if (run.rea && !run.rea.done) consider(run.rea.x + .5, run.rea.y + .5, 1.3, { type: "rea", label: "Reanimieren", name: "Patient ohne Puls" });
   return best;
@@ -152,10 +165,22 @@ function act() {
     showToast("🎫", "#1f9d55", "Schranke", "Piep. Sie öffnet sich. 12 € für 9 Stunden Überstunden-Parken. Fair.", [good("Schranke offen")]); updateHud();
   } else if (f.type === "car") { if (!run.flags.has("key")) { showToast("🔑", "#c0322a", "Dein Auto", "Kein Schlüssel. Der liegt noch bei Dr. Kurz.", []); return; } finale(); }
   else if (f.type === "rea") startCpr();
+  else if (f.type === "door") toggleDoor(f.ref);
+  else if (f.type === "lift") liftDialog(f.ref);
+  else if (f.type === "locked") { sfx.knock(); showToast("🔒", "#c0322a", f.ref.name, f.ref.text, []); makeNoise(3, .15); }
+  else if (f.type === "pc") pcDialog();
+  else if (f.type === "phone") phoneDialog();
+  else if (f.type === "brew") brewDialog(f.ref);
 }
 
 // ---------- movement ----------
-const blocked = (x, y) => { const r = PLAYER_R; return blockedAt(x - r, y - r) || blockedAt(x + r, y - r) || blockedAt(x - r, y + r) || blockedAt(x + r, y + r); };
+const blocked = (x, y) => {
+  const r = PLAYER_R;
+  if (blockedAt(x - r, y - r) || blockedAt(x + r, y - r) || blockedAt(x - r, y + r) || blockedAt(x + r, y + r)) return true;
+  const c = .15;
+  for (const k of level.colliders) if (x + c > k.x0 && x - c < k.x1 && y + c > k.y0 && y - c < k.y1) return true;
+  return false;
+};
 function stepAxis(dx, dy) {
   if (!dx && !dy) return;
   if (!blocked(player.x + dx, player.y + dy)) { player.x += dx; player.y += dy; return; }
@@ -231,7 +256,7 @@ function walkTo(e, gx, gy, sp, dt) {
   if (md <= step) {
     e.x = tx; e.y = ty;
     const n = bfsNextEnemy(e.tx, e.ty, gx, gy);
-    if (n) { e.tx = n[0]; e.ty = n[1]; e.tyaw = Math.atan2(n[0] - Math.floor(e.x), n[1] - Math.floor(e.y)); } else e.moving = false;
+    if (n) { e.tx = n[0]; e.ty = n[1]; enemyDoor(e); e.tyaw = Math.atan2(n[0] - Math.floor(e.x), n[1] - Math.floor(e.y)); } else e.moving = false;
   } else { e.x += mx / md * step; e.y += my / md * step; e.tyaw = Math.atan2(mx, my); }
 }
 function patrol(e, t, dt) {
@@ -242,7 +267,7 @@ function patrol(e, t, dt) {
   e.x = tx; e.y = ty;
   if (Math.random() < .35) { e.pause = 1 + Math.random() * 2.5; return; }
   const cx = e.tx, cy = e.ty, fx = Math.round(Math.sin(e.yaw)), fy = Math.round(Math.cos(e.yaw));
-  let opts = DIRS.filter(([dx, dy]) => enemyPass(cx + dx, cy + dy) && cell(cx + dx, cy + dy) !== "z");
+  let opts = DIRS.filter(([dx, dy]) => enemyPass(cx + dx, cy + dy) && cell(cx + dx, cy + dy) !== "z" && (cell(cx + dx, cy + dy) !== "d" || Math.random() < .2));
   const near = opts.filter(([dx, dy]) => Math.abs(cx + dx - e.hx) + Math.abs(cy + dy - e.hy) <= (e.type === "O" || e.type === "D" ? 6 : 3));
   if (near.length) opts = near;
   if (!opts.length) return;
@@ -250,6 +275,22 @@ function patrol(e, t, dt) {
   const fwd = opts.find(([dx, dy]) => dx === fx && dy === fy);
   const d = fwd && Math.random() < .6 ? fwd : pick(nonRev.length ? nonRev : opts);
   e.tx = cx + d[0]; e.ty = cy + d[1];
+  enemyDoor(e);
+}
+/* someone opens a closed door in their way. Loud enough to notice. */
+function enemyDoor(e) {
+  if (cell(e.tx, e.ty) !== "d") return;
+  const d = doorAt(e.tx, e.ty); if (!d || d.safe) return;
+  setDoor(d, true, true); sfx.door(); e.pause = Math.max(e.pause || 0, .5);
+  if (Math.hypot(player.x - e.x, player.y - e.y) < 6) setMsg(pick(["Eine Tür geht auf…", "Klack. Jemand kommt rein.", "Die Tür! Versteck dich!"]), 2, true);
+}
+function toggleDoor(d) {
+  if (d.open) {
+    const busy = level.enemies.some(e => !e.gone && Math.floor(e.x) === d.x && Math.floor(e.y) === d.y);
+    if (busy) { setMsg("Da steht jemand in der Tür.", 1.5); return; }
+    setDoor(d, false);
+  } else setDoor(d, true);
+  makeNoise(2.5, .08);
 }
 function updateEnemy(e, dt) {
   const t = TYPES[e.type];
@@ -416,7 +457,7 @@ function startRea(x, y, timeout, mandatory) {
   showToast("🚨", "#e2483d", "Reanimationsalarm", mandatory ? "Im CT. Du bist der nächste Arzt. Das Notfallteam wurde 2021 eingespart. Lauf!" : "Patient kollabiert. Du hast " + Math.round(timeout) + " Sekunden.", [{ text: "Leben retten" }]);
 }
 function randomReaTile() {
-  const dm = distMap(Math.floor(player.x), Math.floor(player.y), openTile), c = [];
+  const dm = distMap(Math.floor(player.x), Math.floor(player.y), playerPass), c = [];
   for (let i = 0; i < dm.length; i++) if (dm[i] >= 5 && dm[i] <= 11 && grid[(i / GW) | 0][i % GW] === ".") c.push(i);
   if (!c.length) return null; const i = pick(c); return [i % GW, (i / GW) | 0];
 }
@@ -511,6 +552,7 @@ function update(dt) {
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
   updateNavi(dt);
+  level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); }
   focus = findFocus();
   const ab = $("btnAct");
   if (player.channel) { $("actLabel").textContent = player.channel.label; $("actProg").style.height = (player.channel.t / player.channel.total * 100) + "%"; ab.classList.add("ready"); }

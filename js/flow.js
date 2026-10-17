@@ -44,6 +44,34 @@ function updateStory(dt) {
   if (story.i === 5) blackout = Math.sin(story.t * 23) > .6 ? .2 : 0;
 }
 
+// ---------- mission cards (GTA style) and the dispatcher ----------
+let mcardT = null;
+function missionCard(eyebrow, title, sub, done) {
+  const el = $("mcard"); $("mcEyebrow").textContent = eyebrow; $("mcTitle").textContent = title; $("mcSub").textContent = sub || "";
+  el.classList.toggle("done", !!done); el.hidden = false; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(mcardT); mcardT = setTimeout(() => { el.hidden = true; }, 3700);
+  if (done) { tone(523, 0, .15, "triangle", .07); tone(659, .14, .15, "triangle", .07); tone(784, .28, .35, "triangle", .07); }
+  else { tone(196, 0, .25, "sawtooth", .04); tone(294, .2, .45, "sawtooth", .04); }
+}
+function announceObjective() {
+  const c = currentObjective(); if (!c) return;
+  missionCard(c.isExit ? "Weiter" : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
+  setTimeout(() => { if (mode === "play" && c.brief) showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800);
+}
+function trackObjectives() {
+  if (!run.objDone) run.objDone = new Set();
+  let changed = false;
+  for (const o of objectives()) {
+    const k = run.idx + ":" + o.id;
+    if (o.done && !run.objDone.has(k)) {
+      run.objDone.add(k); changed = true;
+      if (o.main) missionCard("Mission erfüllt", o.title || o.text, "", true);
+      else { missionCard("Nebenjob erledigt", o.title || o.text, "+10 Energie", true); run.energy = Math.min(100, run.energy + 10); }
+    }
+  }
+  if (changed) { updateHud(); setTimeout(() => { if (mode === "play") announceObjective(); }, 3900); }
+}
+
 // ---------- briefing ----------
 let briefReturn = null;
 function sideButtons(locked) {
@@ -71,8 +99,8 @@ function showBrief(fromGame) {
 }
 $("btnBrief").addEventListener("click", () => {
   if (briefReturn) { const r = briefReturn === "pause" ? "pause" : "play"; briefReturn = null; if (r === "pause") { mode = "pause"; show("ovPause"); } else { show(null); mode = "play"; } return; }
-  initAudio(); show(null); mode = "play"; blackout = 0; sfx.floor(); updateHud();
-  showToast("📟", "#a6e38f", "Pager · 17:00", "Mission: Feierabend. Zuerst Dr. Kurz finden, er hat deinen Autoschlüssel. Grünes Dreieck = freundlich.", [good("Los geht's")]);
+  initAudio(); show(null); mode = "play"; blackout = 0; updateHud(); trackObjectives();
+  announceObjective();
   const h = $("hint"); h.textContent = "Linker Stick: laufen (leicht ziehen = schleichen) · rechts: umsehen · gelber Knopf: benutzen · folge dem ◆"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000);
 });
 function showIntro(bonus) {
@@ -85,7 +113,7 @@ function showIntro(bonus) {
   mode = "intro"; show("ovIntro");
   setTimeout(() => $("btnGo").focus({ preventScroll: true }), 50);
 }
-$("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; });
+$("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; trackObjectives(); announceObjective(); });
 function nextFloor() {
   const n = run.tasks.length, mins = n * 8;
   run.minutes += mins; run.tasks = [];
@@ -184,8 +212,20 @@ $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener(
 $("btnPlan").addEventListener("click", () => showBrief(true));
 $("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); });
 $("mission").addEventListener("click", () => { $("tasks").hidden = !$("tasks").hidden; });
+document.querySelector(".pager").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
+if (settings.hudmin) document.body.classList.add("hudmin");
+function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); $("mapView").hidden = false; drawBigMap(); }
+function closeMap() { if (mode !== "map") return; $("mapView").hidden = true; mode = "play"; }
+$("mini").addEventListener("click", openMap); $("btnMapClose").addEventListener("click", closeMap); $("mapView").addEventListener("click", e => { if (e.target.id === "mapView") closeMap(); });
+function applyShadows() {
+  renderer.shadowMap.enabled = !!settings.shadows;
+  const dark = run && ENV[LEVELS[run.idx].env].dark;
+  sun.castShadow = !!settings.shadows && !dark; flashlight.castShadow = !!settings.shadows && !!dark;
+  scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); });
+}
 $("btnTasksClose").addEventListener("click", () => { $("tasks").hidden = true; });
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
+bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
 const lookSel = $("setLook"); lookSel.value = settings.look; lookSel.addEventListener("change", () => { settings.look = lookSel.value; saveSettings(); });
 for (const id of ["setDiff", "setDiffTitle"]) {
@@ -202,34 +242,79 @@ $("btnAgain").addEventListener("click", startStory);
 const mini = $("mini"), mctx = mini.getContext("2d");
 const comp = $("compass"), cctx = comp.getContext("2d");
 const nearVisited = (x, y) => level.visited[y * GW + x] || DIRS.some(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < GW && ny < GH && level.visited[ny * GW + nx]; });
-function drawMini(time) {
-  const W = mini.width, c = W / Math.max(GW, GH), oy = (W - GH * c) / 2, fog = LEVELS[run.idx].fogOfWar && !run.flags.has("power");
-  mctx.fillStyle = "#0b1513"; mctx.fillRect(0, 0, W, W);
-  mctx.save(); mctx.translate(0, oy);
-  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    if (fog && !nearVisited(x, y)) continue;
-    const ch = grid[y][x];
-    mctx.fillStyle = ch === "#" || ch === "H" ? "#34514c" : ch === "_" ? "#c9a77a" : "BTMLYGXvmWa=jtU".includes(ch) ? "#6b7f78" : ch === "w" ? "#3f6fb3" : ch === "z" ? "#c9b24a" : ch === "o" ? "#7fa3b5" : level.dark[y * GW + x] && !currentEnv().dark ? "#8a9a92" : "#cfdcd4";
-    mctx.fillRect(x * c, y * c, c + .5, c + .5);
-  }
-  if (level.exit && (!fog || nearVisited(level.exit[0], level.exit[1]))) { mctx.fillStyle = exitOpen() ? "#1f9d55" : "#7b8a85"; mctx.fillRect(level.exit[0] * c, level.exit[1] * c, c, c); }
-  const blink = Math.sin(time * 6) > 0;
-  const mark = (x, y, col, r = .42) => { mctx.fillStyle = col; mctx.beginPath(); mctx.arc(x * c, y * c, c * r, 0, 7); mctx.fill(); mctx.strokeStyle = "#111"; mctx.lineWidth = 1.5; mctx.stroke(); };
-  for (const it of level.items) if (!it.taken && (!fog || nearVisited(it.x, it.y))) mark(it.wx, it.wy, "#f2b33d", .3);
+const tileColor = (x, y, fog) => {
+  if (fog && !nearVisited(x, y)) return null;
+  const ch = grid[y][x], z = level.zone ? level.zone[y * GW + x] : 1;
+  if (ch === "#" || ch === "H") return "#26332d";
+  if (ch === "d" || ch === ",") return "#b8895a";
+  if (ch === "l") return "#7a2f28";
+  if (ch === "^") return "#9aa3a8";
+  if ("BTMLYGXvmWa=jtUK".includes(ch)) return "#6b7f78";
+  if (ch === "w") return "#3f6fb3"; if (ch === "z") return "#c9b24a"; if (ch === "o") return "#7fa3b5";
+  if (z === 3 || ch === "_") return "#c9a77a";
+  if (z === 2) return "#a9b8b0";
+  return level.dark[y * GW + x] && !currentEnv().dark ? "#8a9a92" : "#cfdcd4";
+};
+function mapMarks(ctx, c, fog, blink, scaleMark) {
+  const mark = (x, y, col, r = .42) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x * c, y * c, c * r * scaleMark, 0, 7); ctx.fill(); ctx.strokeStyle = "#111"; ctx.lineWidth = 1.5; ctx.stroke(); };
+  for (const it of level.items) if (!it.taken && (!fog || nearVisited(it.x, it.y))) mark(it.wx, it.wy, "#f2b33d", .28);
   for (const f of level.friends) if (!fog || nearVisited(Math.floor(f.x), Math.floor(f.y))) mark(f.x, f.y, "#6fcf97");
   if (run.rea && !run.rea.done && blink) mark(run.rea.x + .5, run.rea.y + .5, "#e2483d", .55);
   for (const e of level.enemies) {
     if (e.gone || TYPES[e.type].ghost || e.done) continue;
-    if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) > 7) continue;
-    mark(e.x, e.y, e.static ? "#f2b33d" : e.state === "spot" ? "#e2483d" : e.state === "sus" ? "#f2b33d" : "#dfe6e3", .36);
+    if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) > 8) continue;
+    const col = e.static ? "#f2b33d" : e.state === "spot" ? "#e2483d" : e.state === "sus" ? "#f2b33d" : "#dfe6e3";
+    if (!e.static) { ctx.fillStyle = col + "55"; ctx.beginPath(); ctx.moveTo(e.x * c, e.y * c); const a = Math.atan2(Math.cos(e.yaw), Math.sin(e.yaw)), w = Math.acos(Math.max(-1, Math.min(1, TYPES[e.type].fov || .5))); ctx.arc(e.x * c, e.y * c, c * 2.2, a - w, a + w); ctx.closePath(); ctx.fill(); }
+    mark(e.x, e.y, col, .36);
   }
-  for (const tr of level.transports) if (Math.hypot(tr.x - player.x, tr.y - player.y) < 6) mark(tr.x, tr.y, "#e8682a");
-  if (naviTarget) { const [tx, ty] = naviTarget; mctx.save(); mctx.translate(tx * c, ty * c); mctx.rotate(Math.PI / 4); mctx.fillStyle = blink ? "#f2b33d" : "#fff6d8"; mctx.fillRect(-c * .38, -c * .38, c * .76, c * .76); mctx.restore(); }
-  const px = player.x * c, py = player.y * c, fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw);
-  mctx.fillStyle = "#fff"; mctx.strokeStyle = "#0f6b4f"; mctx.lineWidth = 2;
-  mctx.beginPath(); mctx.moveTo(px + fx * c * .8, py + fy * c * .8); mctx.lineTo(px - fx * c * .45 + fy * c * .45, py - fy * c * .45 - fx * c * .45); mctx.lineTo(px - fx * c * .45 - fy * c * .45, py - fy * c * .45 + fx * c * .45); mctx.closePath(); mctx.fill(); mctx.stroke();
+  for (const tr of level.transports) if (Math.hypot(tr.x - player.x, tr.y - player.y) < 7) mark(tr.x, tr.y, "#e8682a");
+}
+/* GTA-style radar: centred on you, rotating with your view, your view cone in front */
+function drawMini(time) {
+  const W = mini.width, R = W / 2, c = W / 16, fog = LEVELS[run.idx].fogOfWar && !run.flags.has("power"), blink = Math.sin(time * 6) > 0;
+  const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw), rot = -Math.PI / 2 - Math.atan2(fy, fx);
+  mctx.save(); mctx.clearRect(0, 0, W, W);
+  mctx.beginPath(); mctx.arc(R, R, R - 2, 0, 7); mctx.clip();
+  mctx.fillStyle = "#0b1513"; mctx.fillRect(0, 0, W, W);
+  mctx.translate(R, R); mctx.rotate(rot); mctx.translate(-player.x * c, -player.y * c);
+  const x0 = Math.max(0, Math.floor(player.x - 12)), x1 = Math.min(GW - 1, Math.ceil(player.x + 12)), y0 = Math.max(0, Math.floor(player.y - 12)), y1 = Math.min(GH - 1, Math.ceil(player.y + 12));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const col = tileColor(x, y, fog); if (!col) continue; mctx.fillStyle = col; mctx.fillRect(x * c, y * c, c + .6, c + .6); }
+  if (level.exit && (!fog || nearVisited(level.exit[0], level.exit[1]))) { mctx.fillStyle = exitOpen() ? "#1f9d55" : "#7b8a85"; mctx.fillRect(level.exit[0] * c, level.exit[1] * c, c, c); }
+  mapMarks(mctx, c, fog, blink, 1);
   mctx.restore();
-  if (fog) { mctx.fillStyle = "rgba(166,227,143,.7)"; mctx.font = "18px monospace"; mctx.fillText("KEIN NETZ", 8, W - 10); }
+  // view cone + player arrow (always pointing up)
+  mctx.save(); mctx.translate(R, R);
+  const half = (camera.fov * camera.aspect) * Math.PI / 360;
+  const g = mctx.createRadialGradient(0, 0, 4, 0, 0, R); g.addColorStop(0, "rgba(255,255,255,.38)"); g.addColorStop(1, "rgba(255,255,255,0)");
+  mctx.fillStyle = g; mctx.beginPath(); mctx.moveTo(0, 0); mctx.arc(0, 0, R, -Math.PI / 2 - Math.min(1.1, half), -Math.PI / 2 + Math.min(1.1, half)); mctx.closePath(); mctx.fill();
+  mctx.fillStyle = "#fff"; mctx.strokeStyle = "#0f6b4f"; mctx.lineWidth = 3; mctx.beginPath(); mctx.moveTo(0, -c * .9); mctx.lineTo(c * .6, c * .6); mctx.lineTo(0, c * .25); mctx.lineTo(-c * .6, c * .6); mctx.closePath(); mctx.fill(); mctx.stroke();
+  // target diamond, clamped to the rim
+  if (naviTarget) {
+    const dx = naviTarget[0] - player.x, dy = naviTarget[1] - player.y, cr = Math.cos(rot), sr = Math.sin(rot);
+    let sx = (dx * cr - dy * sr) * c, sy = (dx * sr + dy * cr) * c; const d = Math.hypot(sx, sy), lim = R - 12;
+    if (d > lim) { sx = sx / d * lim; sy = sy / d * lim; }
+    mctx.save(); mctx.translate(sx, sy); mctx.rotate(Math.PI / 4); mctx.fillStyle = blink ? "#f2b33d" : "#fff6d8"; mctx.strokeStyle = "#111"; mctx.lineWidth = 2; mctx.fillRect(-8, -8, 16, 16); mctx.strokeRect(-8, -8, 16, 16); mctx.restore();
+  }
+  // north marker on the rim
+  const na = -Math.PI / 2 + rot; mctx.fillStyle = "#e2483d"; mctx.font = "800 22px sans-serif"; mctx.textAlign = "center"; mctx.textBaseline = "middle"; mctx.fillText("N", Math.cos(na) * (R - 14), Math.sin(na) * (R - 14));
+  mctx.restore();
+  mctx.strokeStyle = "#26332d"; mctx.lineWidth = 4; mctx.beginPath(); mctx.arc(R, R, R - 2, 0, 7); mctx.stroke();
+  if (fog) { mctx.fillStyle = "rgba(166,227,143,.85)"; mctx.font = "700 18px monospace"; mctx.textAlign = "center"; mctx.fillText("KEIN NETZ", R, W - 26); }
+}
+function drawBigMap() {
+  const cv = $("mapBig"), ctx = cv.getContext("2d"), W = cv.width, c = W / Math.max(GW, GH), oy = (W - GH * c) / 2, fog = LEVELS[run.idx].fogOfWar && !run.flags.has("power");
+  ctx.fillStyle = "#0b1513"; ctx.fillRect(0, 0, W, W); ctx.save(); ctx.translate(0, oy);
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) { const col = tileColor(x, y, fog); if (!col) continue; ctx.fillStyle = col; ctx.fillRect(x * c, y * c, c + .5, c + .5); }
+  if (level.exit) { ctx.fillStyle = exitOpen() ? "#1f9d55" : "#7b8a85"; ctx.fillRect(level.exit[0] * c, level.exit[1] * c, c, c); ctx.fillStyle = "#fff"; ctx.font = `800 ${c * .6}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("↓", (level.exit[0] + .5) * c, (level.exit[1] + .5) * c); }
+  for (const rg of level.safeRooms) { const [x, y] = rg.tiles[0]; ctx.fillStyle = "#2a1c00"; ctx.font = `700 ${Math.max(10, c * .32)}px sans-serif`; ctx.textAlign = "left"; ctx.fillText(rg.name[0], x * c + 3, y * c + c * .4); }
+  mapMarks(ctx, c, fog, true, 1);
+  if (naviTarget) { ctx.save(); ctx.translate(naviTarget[0] * c, naviTarget[1] * c); ctx.rotate(Math.PI / 4); ctx.fillStyle = "#f2b33d"; ctx.fillRect(-c * .35, -c * .35, c * .7, c * .7); ctx.restore(); }
+  const px = player.x * c, py = player.y * c, fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw);
+  ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.beginPath(); ctx.moveTo(px, py); const a = Math.atan2(fy, fx); ctx.arc(px, py, c * 3, a - .6, a + .6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = "#0f6b4f"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(px + fx * c * .7, py + fy * c * .7); ctx.lineTo(px - fx * c * .4 + fy * c * .4, py - fy * c * .4 - fx * c * .4); ctx.lineTo(px - fx * c * .4 - fy * c * .4, py - fy * c * .4 + fx * c * .4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = "#f3f8f1"; ctx.font = "800 24px sans-serif"; ctx.textAlign = "left"; ctx.fillText(LEVELS[run.idx].name, 14, 30);
 }
 function drawCompass() {
   const dpr = Math.min(2, window.devicePixelRatio || 1), w = comp.clientWidth, h = comp.clientHeight;
@@ -345,6 +430,10 @@ function render(time, dt) {
     f.tri.visible = friendNeeds(f); f.tri.rotation.y = time * 1.5;
     f.tri.position.y = 1.9 * (FRIENDS[f.kind].spec.scale || 1) + .22 + Math.sin(time * 4) * .06;
   }
+  for (const d of level.doors) { d.ang += (d.target - d.ang) * Math.min(1, dt * 7); d.pivot.rotation.y = d.ang; }
+  if (level.fireDoor) { const f = level.fireDoor, t = exitOpen() ? 1 : 0; f.open += (t - f.open) * Math.min(1, dt * 1.5); f.leaves.forEach((l, i) => { l.position.x = (i ? 1 : -1) * (S / 4 + f.open * (S / 2 - .05)); }); }
+  for (const p of level.props) if (p.kind === "lift") { p.open = Math.max(0, p.open - dt * .5); const o = Math.min(1, p.open * 1.5); p.leaves.forEach((l, i) => { l.position.x = (i ? 1 : -1) * (.32 + o * .6); }); }
+  sun.position.set(player.x * S + 4, 14, player.y * S + 3); sun.target.position.set(player.x * S, 0, player.y * S);
   if (scare) scare.mesh.rotation.y = Math.atan2(player.x - scare.x, player.y - scare.y);
   for (const it of level.items) if (!it.taken) { it.model.rotation.y = time * .8 + it.x; it.glow.material.opacity = .55 + .35 * Math.sin(time * 3 + it.y); }
   for (const h of level.hazards) if (h.kind === "z") for (const s of h.sparks) { s.visible = !!h.active && Math.random() < .7; s.position.set((Math.random() - .5) * .8, .3 + Math.random() * 2.2, (Math.random() - .5) * .8); }
@@ -353,7 +442,7 @@ function render(time, dt) {
   const tm = SHIFT_END + (mode === "story" && story ? Math.max(-1, story.i - 2) : run.minutes);
   for (const c of level.clocks) { c.m.rotation.z = -((tm % 60) / 60) * Math.PI * 2; c.h.rotation.z = -(((tm / 60) % 12) / 12) * Math.PI * 2; }
   if (run.rea && run.rea.beam) { const p = .5 + .5 * Math.sin(time * 8); run.rea.beam.material.opacity = .12 + .25 * p; reaLight.intensity = 1.2 * p; }
-  if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .8 + Math.sin(time * 2) * .2 : .1;
+  if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .38 + Math.sin(time * 2) * .1 : .05;
   if (level.navi) { level.naviMat.opacity = .55 + .3 * Math.sin(time * 5); level.navi.visible = mode === "play"; }
   renderer.render(scene, camera);
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }

@@ -11,7 +11,8 @@ const HAIR = [0x2b1d14, 0x5a3a22, 0x9a6b3f, 0xd9b26c, 0x1b1b1b, 0x8c8c8c, 0xb546
 /* Map legend
    # wall · H secret door · X rubble · B corridor bed · T desk · M vending machine · L locker · Y gurney · G fuse box · v whiteboard · m MRT
    W spa lounger · a parked car · = barrier · j your car · t ticket machine · w laundry cart · o puddle · z sparking cable · u leaking bucket
-   S start · E stairwell · r REA spot · ~ spawn point (ER) · x lab printout · _ safe room (also added automatically in dead ends)
+   S start · E stairwell (dead end) · r REA spot · ~ spawn point (ER) · x lab printout
+   : room floor · _ safe room floor · d door (openable) · l locked door · ^ elevator (in a wall) · K furniture block
    hostile: P patient · F relatives · N nurse · O attending · C chief · V controlling · I internist nerd · U bouncer · A radiologist
             Z pseudo-emergency · D PD Dr. Phil · g ghost · q moving car
    friendly: k Dr. Kurz · b Frau Bozkurt · h caretaker · s PJ student · e Dr. Glatt · i influencer
@@ -30,54 +31,74 @@ const ENV = {
 };
 
 const LEVELS = [
-  { key: "innere", short: "5B · INNERE", name: "Station 5B · Innere Medizin", floor: "5. OG", room: 5, env: "ward", safeRect: [1, 1, 3, 3],
-    tip: "Dr. Kurz hat deinen Autoschlüssel. Die Internisten hier sind Nerds: Wer dich erwischt, fragt dich nach Differentialdiagnosen. Ein seltener Fallbericht lenkt sie ab. Schleich, wenn ein Dreieck gelb wird.",
+  { key: "innere", short: "5B · INNERE", name: "Station 5B · Innere Medizin", floor: "5. OG", room: 5, env: "ward",
+    safeNames: [["ARZTZIMMER 5B", "Bitte nicht stören (stört trotzdem jeder)"], ["STATIONSKÜCHE", "Kaffee: eingespart. Sofa: noch da."]],
+    tip: "Die Internisten hier sind Nerds: Wer dich erwischt, will Differentialdiagnosen hören. Ein seltener Fallbericht lenkt sie ab. Türen kannst du öffnen und hinter dir schließen.",
     objectives: [
-      { id: "key", text: "Autoschlüssel von Dr. Kurz zurückholen", main: true, at: "friend:k" },
-      { id: "approbation", text: "Approbationsurkunde aus deinem Spind", at: "prop:L" },
-      { id: "secret1", text: "Frau Bozkurt nach einer Abkürzung fragen", at: "friend:b" }],
-    exitText: "Zum Treppenhaus (Orthopädie)", lock: "Ohne Autoschlüssel bringt dir das Parkhaus nichts. Erst zu Dr. Kurz.", reaRandom: true,
-    map: ["#################","#S.T#.....x.....#","#1.v#.###.###.#.#","#...#.#I......#.#","###.#.#.###B#.#.#","#...#...#F...8#$#","#.#####.#.#####.#","#.......#.3.N.#.#","#.###.###.#.#.#.#","#.#L#...k.#.#...#","#.#.#.#####.#.#.#","#...#.I...x.#.#.#","#.#.###.###H#.#.#","#.#b..#..P#...#.#","#.###.#.#.#.###.#","#..7..O.#..2..#E#","#################"] },
+      { id: "key", title: "Der Schlüsseldienst", text: "Autoschlüssel von Dr. Kurz zurückholen", main: true, at: "friend:k",
+        brief: "Dr. Kurz hat deinen Autoschlüssel „nur kurz“ ausgeliehen, um Brötchen zu holen. Das war um 9 Uhr. Er versteckt sich in einem Patientenzimmer. Da sucht ihn niemand." },
+      { id: "approbation", title: "Spind-Raid", text: "Approbationsurkunde aus dem Spind (Umkleide)", at: "prop:L",
+        brief: "Ohne Approbation nimmt dich keine Firma. Sie liegt im Spind, unter 14 Kugelschreibern und einer Banane aus dem letzten Quartal." },
+      { id: "secret1", title: "Die Abkürzung", text: "Frau Bozkurt nach dem Geheimgang fragen", at: "friend:b",
+        brief: "Frau Bozkurt putzt hier seit 1994 und kennt jeden Gang. Auch die, die es laut Bauplan nicht gibt." }],
+    exitText: "Treppenhaus → Orthopädie", lock: "Ohne Autoschlüssel bringt dir das Parkhaus nichts. Erst zu Dr. Kurz.", reaRandom: true,
+    map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2...x...I...3....N..E#", "############l############"] },
   { key: "ortho", short: "4 · ORTHOPÄDIE", name: "Orthopädie · 4. OG", floor: "4. OG", room: 4, env: "ortho",
-    tip: "Die Orthopädie hat den Sicherheitsdienst eingespart und durch Orthopäden ersetzt. An jeder Tür steht ein Türsteher. Proteinshake hilft. Fachwissen auch. Armdrücken eher nicht. PD Dr. Phil joggt hier herum.",
+    safeNames: [["UMKLEIDE", "Riecht nach Deo und Verzweiflung"]],
+    tip: "Die Orthopädie hat den Sicherheitsdienst eingespart und durch Orthopäden ersetzt. Drei Türsteher, drei Türen. Proteinshake hilft. Fachwissen auch. Armdrücken eher nicht.",
     objectives: [
-      { id: "gates", text: () => `An den Türstehern vorbei (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal() },
-      { id: "protein", text: "Proteinshake aus dem Kraftraum", at: "item:6", done: () => run.picked.has("6") }],
-    exitText: "Zum Treppenhaus (Radiologie)", lock: "", headhunter: true,
-    map: ["#################","#S...#....x..#.6#","#.##.#.##.##.#..#","#..O...#........#","#.##.#.#.###.##.#","#....#...V....#.#","#######U#########","#...#.....#..1..#","#.#.#.###.#.###.#","#.#...#D....#...#","#.#.###.#...#.#.#","##########U######","#0...#.....#....#","#.##.#.#O#.#.##.#","#..x...#...P..###","#.####...###..UE#","#################"] },
+      { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Türstehern vorbei (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
+        brief: "Drei Türsteher, drei Türen, null Gesprächsbereitschaft. Wer hier durchwill, braucht Muskeln, Proteine oder Latein." },
+      { id: "protein", title: "Flüssige Bestechung", text: "Proteinshake aus dem Kraftraum", at: "item:6", done: () => run.picked.has("6"),
+        brief: "Im Kraftraum steht ein Proteinshake. Vanille. Für Orthopäden die härteste Währung der Welt." }],
+    exitText: "Treppenhaus → Radiologie", lock: "", headhunter: true,
+    map: ["################l########", "#S........x.....O.......#", "####d#######d#######d####", "#:::::::#:Y:::x:#_______#", "#6::Y:::#:::::::#_____1_#", "############U############", "#..............D......w.#", "#.....#.V.........#.....^", "#............x..........#", "###U#####################", "#..x........O...........#", "######d########d#######U#", "#::::::::P::#:::2::::##E#", "#::0::::::::#:::::B::####", "########l################"] },
   { key: "radio", short: "3 · RADIOLOGIE", name: "Radiologie · 3. OG", floor: "3. OG", room: 3, env: "radio",
-    tip: "Die Radiologie spart Strom, indem sie grundsätzlich im Dunkeln befundet. Deine Taschenlampe hilft beim Sehen, aber sie verrät dich. Tipp auf LAMPE, um sie auszuschalten. Im CT liegt ein Patient ohne Puls. Im MRT-Raum: kein Metall!",
+    safeNames: [["DUNKELKAMMER", "Dunkel. Ruhig. Perfekt."]],
+    tip: "Die Radiologie spart Strom, indem sie grundsätzlich im Dunkeln befundet. Die Taschenlampe hilft beim Sehen, verrät dich aber. Tipp auf LAMPE, um sie auszuschalten. Im MRT-Raum: kein Metall!",
     objectives: [
-      { id: "rea3", text: "REA-Alarm im CT", main: true, at: "rea" },
-      { id: "zeugnis", text: "Arbeitszeugnis aus dem Befundungsraum", at: "item:&" }],
-    exitText: "Zum Treppenhaus (Dermatologie)", lock: "Im CT wird reanimiert. Du gehst jetzt nicht.", reaScript: 8,
-    map: ["#################","#S..#.....A.....#","#.#.#.###.###.#.#","#.#...#9#...#.#.#","#.###.#.#.#.#.#.#","#...#...#.#m..#.#","###.###.#.#...#.#","#..O..#.#.#...#.#","#.###.#.#.#####.#","#.#A..#.r.......#","#.#.#####.###.###","#...#.9.#.#&#...#","#.#.#.#.#.#.#.#.#","#.#...#...#.C.#.#","#.#####.###.###.#","#.........9...#E#","#################"] },
+      { id: "rea3", title: "Licht aus, Herz aus", text: "REA-Alarm im CT", main: true, at: "rea",
+        brief: "Im CT hat ein Patient keinen Puls. Das Notfallteam wurde 2021 eingespart. Du bist jetzt das Notfallteam." },
+      { id: "zeugnis", title: "Stets bemüht", text: "Arbeitszeugnis aus dem Befundungsraum", at: "item:&",
+        brief: "Dein Arbeitszeugnis liegt seit drei Monaten zur Unterschrift in der Radiologie. Im Dunkeln. Die Pharma will es sehen." }],
+    exitText: "Treppenhaus → Dermatologie", lock: "Im CT wird reanimiert. Du gehst jetzt nicht.", reaScript: 8,
+    map: ["#########################", "#S......................#", "#.####d#######d########.#", "#.#:Y:::::#:::::::::::#.#", "#.#:::r:::#:::::m:::::#.^", "#O#:::::::#:::::::::::#.#", "#.######d#########d####.#", "#...........A.........x.#", "#.####d######d#########.#", "#.#::::::9#:::::#_____#.#", "#9#:&:::A:#:::B:#_____#.#", "#.#:::::::#:x:::#_____#.#", "#.####l######d#####d###.#", "#.................C.9...#", "############E############", "#########################"] },
   { key: "derma", short: "2 · DERMATOLOGIE", name: "Dermatologie · Rettungsstation", floor: "2. OG", room: 2, env: "derma", safe: true,
-    tip: "Geschafft: die Dermatologie. Warm, Holzboden, es riecht nach Gurke, niemand hat Dienst. Dr. Glatt bietet Wellness an. Die Liegen füllen Energie auf. Und vielleicht gibt es einen Job mit Feierabend um 15 Uhr.",
+    safeNames: [],
+    tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Und vielleicht gibt es einen Job mit Feierabend um 15 Uhr.",
     objectives: [
-      { id: "spa", text: "Rettungsstation: Wellness bei Dr. Glatt", main: true, at: "friend:e" },
-      { id: "cream", text: "Creme für unterwegs einpacken", at: "item:+", done: () => run.picked.has("+") }],
-    exitText: "Zum Treppenhaus (Keller)", lock: "Dr. Glatt besteht auf Wellness. Ohne Gurkenscheibe kein Weiterkommen.",
-    map: ["#################","#S....+...W...+.#","#.###.#####.###.#","#.#W....e....W#.#","#.#.####.####.#.#","#.#..+..$..+..#.#","#.###########.#.#","#...i.........#E#","#################"] },
+      { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Wellness bei Dr. Glatt", main: true, at: "friend:e",
+        brief: "Die Dermatologie ist die einzige Abteilung mit Feierabend. Dr. Glatt besteht auf einer Behandlung, bevor du weiterdarfst. Medizinisch notwendig, sagt sie." },
+      { id: "cream", title: "Glanz für unterwegs", text: "Wundercreme einpacken", at: "item:+", done: () => run.picked.has("+"),
+        brief: "Die Wundercreme von Dr. Glatt: +1 Nerv, +60 Energie. Nebenwirkung: Du glänzt." }],
+    exitText: "Treppenhaus → Keller", lock: "Dr. Glatt besteht auf Wellness. Ohne Gurkenscheibe kein Weiterkommen.",
+    map: ["#########################", "#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:::+:#", "#:::::::#:::::::#:::::::#", "####d#######d#######d####", "#S.......$...........i..^", "######d#########d######.#", "#:::::::::::#:::::::###E#", "#:+:::e:::::#:::W:::#####", "#:::::::::::#:::::::#####", "#########################"] },
   { key: "cellar", short: "UG · KELLER", name: "Keller · Pathologie & Archiv", floor: "UG", room: 0, env: "cellar", envOn: "cellarOn",
-    tip: "Das Treppenhaus ins EG ist gesperrt (Brandschutzbegehung seit 2021). Der einzige Weg führt durch den Keller. Der Strom ist weg, die Wartung wurde gestrichen. Hausmeister Schraube hat eine Ersatzsicherung. Und Dr. Ewig ist noch da.",
+    safeNames: [["WERKSTATT", "Hausmeister Schraube · Zutritt nur mit Bier"]],
+    tip: "Das Treppenhaus ins EG ist gesperrt (Brandschutzbegehung seit 2021). Der Weg führt durch den Keller. Strom: weg. Wartung: gestrichen. Und Dr. Ewig ist noch da.",
     objectives: [
-      { id: "fuse", text: "Ersatzsicherung vom Hausmeister", main: true, at: "friend:h" },
-      { id: "power", text: "Strom einschalten (Sicherungskasten)", main: true, at: "prop:G" }],
-    exitText: "Zum Treppenhaus (Notaufnahme)", lock: "Die Tür zum Treppenhaus ist elektrisch. Ohne Strom bleibt sie zu.", blackouts: true, fogOfWar: true,
-    map: ["#################","#S..o....#.....Y#","#.##.###.#.###..#","#.#..#...X.#h#..#","#.#.##.#####.#.##","#...#..g..u..#..#","##.##.###.##.##.#","#..Y#...#..z#...#","#.###.#.#.#.#.#.#","#...o.#.9.#...#.#","#.#####.###.###.#","#.#...x.#...#...#","#.#.#####.#.#.#.#","#...#..z..#.#G#.#","###.#.###.#.###.#","#E....#.V...#0..#","#################"] },
+      { id: "fuse", title: "Keine Sicherung, kein Feierabend", text: "Ersatzsicherung beim Hausmeister holen", main: true, at: "friend:h",
+        brief: "Hausmeister Schraube hat eine Ersatzsicherung. Privat gekauft, im Baumarkt. Er sitzt in seiner Werkstatt und hört Radio von 1987." },
+      { id: "power", title: "Es werde Licht", text: "Sicherung im Technikraum einsetzen", main: true, at: "prop:G",
+        brief: "Sicherungskasten im Technikraum. Danach geht die elektrische Tür zum Treppenhaus auf. Dr. Ewig mag kein Licht." }],
+    exitText: "Treppenhaus → Notaufnahme", lock: "Die Tür zum Treppenhaus ist elektrisch. Ohne Strom bleibt sie zu.", blackouts: true, fogOfWar: true,
+    map: ["#########################", "#S..o...........u.......#", "#.####d#####.####d#####.#", "#.#:x::::::#.#::::::::#.#", "#.#::Y::Y::#X#:::::x::#.#", "#.#::::::::#.#::::::::#.#", "#.#######d##.##d#######.#", "#.....x.....g.....V.....#", "#.###d######.#####d####.#", "#.#________#.#::::::::#.#", "#9#___h____#z#::::::::#.^", "#.#________#.#::::::G:#.#", "#.######d###.###d######.#", "#....z..............o.0.#", "#######################E#", "#########################"] },
   { key: "er", short: "EG · NOTAUFNAHME", name: "Zentrale Notaufnahme", floor: "EG", room: 0, env: "er",
-    tip: "Wartezeit: 9 Stunden. Aus dem Wartezimmer schlurfen Pseudo-Notfälle: Schnupfen seit drei Wochen, Zeckenbiss 2019, Rezept für Nasenspray. Sie sind langsam. Triagiere sie weg und zieh am Automaten ein Parkticket.",
-    objectives: [{ id: "ticket", text: "Parkticket am Automaten ziehen", main: true, at: "prop:t" }],
-    exitText: "Zum Parkhaus", lock: "Ohne Parkticket kommst du aus dem Parkhaus nie raus. Erst zum Automaten.", reaRandom: true, horde: true,
-    map: ["#################","#E..x...#...~...#","#.#####.#.#####.#","#.#~~~#...#.O.#.#","#.#...#.###...#.#","#...#...#3..#.#.#","###.#.###.###.#.#","#...#.Z.#..0#...#","#.#####.#.#.###.#","#.w..TT...#.#...#","#.#.#.N.#.#.#.###","#.#.#.###.#...#M#","#...#..Z..x.#.#.#","#.#.#####.###.#.#","#.#5......#t....#","#...#.Z.#.#..#.S#","#################"] },
-  { key: "park", short: "P2 · PARKHAUS", name: "Parkhaus P2 · Personal", floor: "P2", room: 0, env: "park",
+    safeNames: [["PERSONALRAUM", "Hier gibt es seit 2017 keinen Kaffee mehr"]],
+    tip: "Wartezeit: 9 Stunden. Aus dem Wartezimmer schlurfen Pseudo-Notfälle: Schnupfen seit drei Wochen, Zeckenbiss 2019, Rezept nur kurz. Sie sind langsam. Triagiere sie weg.",
+    objectives: [{ id: "ticket", title: "Das teuerste Stück Papier", text: "Parkticket am Automaten ziehen", main: true, at: "prop:t",
+      brief: "Die Schranke im Parkhaus öffnet nur mit Ticket. Der Automat steht hinten in der Notaufnahme, hinter 40 Pseudo-Notfällen. Er nimmt nur Münzen." }],
+    exitText: "Ausgang → Parkhaus", lock: "Ohne Parkticket kommst du aus dem Parkhaus nie raus. Erst zum Automaten.", reaRandom: true, horde: true,
+    map: ["##########^##############", "#...............O.....S.#", "#.~..~..~.....TT..N.....#", "#.......................#", "#...#.Z#...###d##########", "#..Z....3..#Y::::#::::0:#", "#.....x....#:::::#:1::::#", "#####.####.###d#####d####", "#...........Z..x.w......#", "####d#######d#######.####", "#:::::::#_______#......M#", "#:5:::::#_______#...t...#", "#:::::::#_______#.......#", "#######################E#", "#########################"] },
+  { key: "park", short: "P2 · PARKHAUS", name: "Parkhaus P2 · Personal", floor: "P2", room: 0, env: "park", safeNames: [],
     tip: "Das Personalparkhaus. Die Ärzteparkplätze wurden 2022 gestrichen, du parkst ganz hinten. Die Schranke öffnet nur mit Ticket. Der Chef parkt gerade aus. Rückwärts. Ohne zu schauen.",
     objectives: [
-      { id: "barrier", text: "Schranke mit Parkticket öffnen", main: true, at: "prop:=" },
-      { id: "car", text: "Zu deinem Auto", main: true, at: "prop:j" }],
+      { id: "barrier", title: "Schranke des Schicksals", text: "Schranke mit Parkticket öffnen", main: true, at: "prop:=",
+        brief: "Die Schranke. 12 Euro für neun Stunden Überstunden-Parken. Steck das Ticket rein und bete." },
+      { id: "car", title: "Freiheit, Diesel", text: "Zu deinem Auto", main: true, at: "prop:j",
+        brief: "Dein Auto. Ganz hinten. Es hat Staub angesetzt. Du auch." }],
     exitText: "", lock: "", final: true,
-    map: ["#################","#S......a.a.a...#","#.a.a.a.......a.#","#.......a.a.a.D.#","#.a.a.a.......a.#","#.q.............#","########=########","#.a.a.....a.a.a.#","#...........q...#","#.a.a.a.O.a...j.#","#################"] },
+    map: ["#################", "#S......a.a.a...#", "#.a.a.a.......a.#", "#.......a.a.a.D.#", "#.a.a.a.......a.#", "#.q.............#", "########=########", "#.a.a.....a.a.a.#", "#...........q...#", "#.a.a.a.O.a...j.#", "#################"] },
 ];
 
 const PLAN = ["Innere: Dr. Kurz hat deinen Autoschlüssel. Übergabe machen, Schlüssel zurück.", "Orthopädie: an drei Türstehern vorbei. Proteinshake hilft.", "Radiologie: im Dunkeln durch. REA im CT.", "Dermatologie: Rettungsstation. Wellness, Creme, Jobangebot.", "Keller: Strom an. Dr. Ewig ausweichen.", "Notaufnahme: durch die Pseudo-Notfälle. Parkticket ziehen.", "Parkhaus: Schranke, Auto, Entscheidung."];
@@ -88,7 +109,8 @@ const STORY = [
   ["17:00", "Die Wanduhr springt auf 17:00. Feierabend. Offiziell. Dein Pager vibriert. 14 neue Nachrichten. Du schaust nicht hin."],
   ["17:00", "Deine Jackentasche ist leer. Dein Autoschlüssel ist weg. Auf dem Tisch ein Zettel: „Bin kurz Brötchen holen, hab deinen Schlüssel. LG Dr. Kurz“"],
   ["17:00", "Draußen auf dem Flur: Schritte. Stimmen. „Ist der Doktor noch da?“ – „Ich hab nur eine ganz kurze Frage.“ – „Wir sind die Familie. Alle sieben.“"],
-  ["17:00", "Irgendwo flackert eine Neonröhre. Irgendwo weiter unten, im Keller, flüstert jemand. Du nimmst deine Tasche. Mission: Raus hier. Leise."],
+  ["17:00", "Irgendwo flackert eine Neonröhre. Irgendwo weiter unten, im Keller, flüstert jemand."],
+  ["17:01", "Dein Pager vibriert. Frau Bozkurt, Reinigung, seit 1994 im Haus: „Ich hol dich hier raus. Ich kenne jeden Gang. Lies das Whiteboard. Und schleich.“"],
 ];
 
 const DUTIES = { WE: "Wochenenddienst", N: "Nachtdienst", "24": "24-h-Dienst", RB: "Rufbereitschaft", ST: "Studienambulanz (Sa)" };

@@ -8,13 +8,22 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 // ---------- grid ----------
 let grid = [], GW = 17, GH = 17;
-const SOLID_MOVE = "#BTMXHLYGvmWa=jtU", SOLID_SIGHT = "#MHLXvmU";
+const SOLID_MOVE = "#BTMXHLYGvmWa=jtUdl^K", SOLID_SIGHT = "#MHLXvmUdl^K";
 const solidMove = ch => SOLID_MOVE.includes(ch);
 const solidSight = ch => SOLID_SIGHT.includes(ch);
 const cell = (x, y) => (x < 0 || y < 0 || x >= GW || y >= GH) ? "#" : grid[y][x];
 const openTile = (x, y) => !solidMove(cell(x, y));
-const enemyPass = (x, y) => { const c = cell(x, y); return !solidMove(c) && c !== "_" && c !== "w"; };
-const blockedAt = (x, y) => solidMove(cell(Math.floor(x), Math.floor(y)));
+const playerPass = (x, y) => !solidMove(cell(x, y)) || cell(x, y) === "d";
+/* doors: "d" closed, "," open. Enemies may open ordinary doors, never the ones into safe rooms. */
+let doorMap = new Map();
+const doorAt = (x, y) => doorMap.get(x + "," + y);
+const enemyPass = (x, y) => { const c = cell(x, y); if (c === "d" || c === ",") { const d = doorAt(x, y); return !!d && !d.safe; } return !solidMove(c) && c !== "_" && c !== "w"; };
+const blockedAt = (x, y) => {
+  const tx = Math.floor(x), ty = Math.floor(y), c = cell(tx, ty);
+  if (solidMove(c)) return true;
+  if (c === ",") { const d = doorAt(tx, ty); if (d) return d.axis === "x" ? Math.abs(y - ty - .5) > .42 : Math.abs(x - tx - .5) > .42; }
+  return false;
+};
 function los(x0, y0, x1, y1) {
   const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / .2);
   for (let i = 1; i < n; i++) if (solidSight(cell(Math.floor(x0 + (x1 - x0) * i / n), Math.floor(y0 + (y1 - y0) * i / n)))) return false;
@@ -52,7 +61,7 @@ const bfsNextEnemy = (sx, sy, gx, gy) => { if (sx === gx && sy === gy) return nu
 
 // ---------- settings ----------
 const SET_KEY = "hospital-escape-3d-settings-v4";
-const settings = { sens: 1, invert: false, sound: true, bob: true, look: "stick", navi: true, diff: "easy" };
+const settings = { sens: 1, invert: false, sound: true, bob: true, look: "stick", navi: true, diff: "easy", shadows: true };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || "{}")); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
 
@@ -240,9 +249,12 @@ const camera = new THREE.PerspectiveCamera(72, 1, .05, 90);
 camera.rotation.order = "YXZ"; scene.add(camera);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x7f9a90, .55); scene.add(hemi);
 const amb = new THREE.AmbientLight(0xffffff, .25); scene.add(amb);
-const sun = new THREE.DirectionalLight(0xffffff, .3); sun.position.set(3, 10, 2); scene.add(sun);
+const sun = new THREE.DirectionalLight(0xffffff, .3); sun.position.set(3, 10, 2); scene.add(sun); scene.add(sun.target);
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 40 }); sun.shadow.bias = -.0006; sun.shadow.normalBias = .03;
 const lampLight = new THREE.PointLight(0xe8f4ff, 0, 10, 1.6); scene.add(lampLight);
 const flashlight = new THREE.SpotLight(0xfff2d8, 0, 20, .5, .55, 1.1);
+flashlight.shadow.mapSize.set(512, 512); flashlight.shadow.bias = -.002; flashlight.shadow.camera.near = .3; flashlight.shadow.camera.far = 20;
 flashlight.position.set(.15, -.15, 0); camera.add(flashlight); flashlight.target.position.set(0, -.08, -1); camera.add(flashlight.target);
 const reaLight = new THREE.PointLight(0xff3020, 0, 8); scene.add(reaLight);
 
@@ -370,6 +382,7 @@ function makePerson(sp) {
   if (acc === "mop") add(GEO.pole, 0x8a6f52, 1, 1, 1, .04, -.1, .08, hand);
   if (acc === "iv") { add(GEO.pole, 0xb9c1bc, 1, 1, 1, .45, .95, .05, g); add(GEO.box, 0xd8eef8, .16, .26, .05, .5, 1.75, .05, g); add(GEO.ball, 0x444444, .06, .03, .06, .45, .02, .05, g); }
   if (sp.trolley) { add(GEO.box, 0xf2c300, .52, .68, .78, .66, .38, .1, g); add(GEO.cyl, 0x3f8fb3, .14, .3, .14, .66, .85, .2, g); }
+  g.traverse(o => { if (o.isMesh && o.material !== shadowMat) o.castShadow = true; });
   return { group: g, body, legs, knees, arms, elbows, head, sp, phase: Math.random() * 6, amp: 0 };
 }
 function animatePerson(p, dt, moving, speed) {

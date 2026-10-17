@@ -286,7 +286,48 @@ details.more[open] summary { margin-bottom: 8px; }
 
 body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine #crosshair, body.cine #wp { display: none !important; }
 
-@media (max-height: 520px) { .hud-left { max-width: 400px; } .hud #compass { max-width: 520px; margin: 0 auto; } #mini { width: 84px; height: 84px; } #inv { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); } .hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); } }
+@media (max-height: 520px) {
+  .hud { gap: 4px; padding-top: calc(env(safe-area-inset-top, 0px) + 4px); }
+  .hud-left { max-width: 290px; gap: 4px; }
+  .pager { font-size: 13px; padding: 3px 7px 4px; gap: 2px; border-radius: 8px; }
+  #hudClock { font-size: 16px; }
+  #hudMsg { min-height: 0; -webkit-line-clamp: 1; }
+  .energy { font-size: 11px; gap: 4px; } .energy > span:first-child { display: none; } .bar { height: 6px; }
+  .chip { font-size: 12px; padding: 2px 4px; } #chipTasks, #chipDuty { display: none; }
+  .mission { font-size: 12px; padding: 3px 7px; } .mission b { font-size: 9px; }
+  #missionText { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #compass { height: 20px; max-width: 420px; margin: 0 auto; }
+  #mini { width: 86px; height: 86px; } .icon-btn { width: 34px; height: 34px; font-size: 14px; }
+  #btnSneak { width: 48px; height: 48px; font-size: 11px; } #btnSprint { width: 54px; height: 54px; font-size: 12px; } #btnAct { width: 72px; height: 72px; font-size: 13px; }
+  .stick-base { width: 92px; height: 92px; }
+  #inv { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); } .slot { width: 40px; height: 40px; font-size: 20px; }
+  .hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); font-size: 13px; }
+  #mcard { top: 18%; } #mcTitle { font-size: 30px; }
+  #tasks { top: calc(env(safe-area-inset-top, 0px) + 40px); max-height: calc(100% - 60px); }
+}
+body.hudmin .pager .energy, body.hudmin .pager .chips, body.hudmin #hudMsg { display: none; }
+body.hudmin .mission { display: none; }
+.pager { pointer-events: auto; cursor: pointer; }
+#mini { border-radius: 50%; pointer-events: auto; cursor: pointer; }
+#mcard { position: absolute; left: 0; right: 0; top: 24%; text-align: center; pointer-events: none; z-index: 4; padding: 0 20px; }
+#mcard.show { animation: mcIn 3.6s ease forwards; }
+@keyframes mcIn { 0% { opacity: 0; transform: translateY(-14px) scale(1.06); } 10% { opacity: 1; transform: none; } 82% { opacity: 1; } 100% { opacity: 0; transform: translateY(6px); } }
+#mcEyebrow { font: 800 15px/1 var(--display); letter-spacing: .3em; color: #f2c300; text-transform: uppercase; text-shadow: 0 2px 0 #000, 0 0 12px rgba(0,0,0,.8); }
+#mcTitle { font: 900 italic 40px/1 var(--display); color: #fff; text-transform: uppercase; letter-spacing: .02em; margin-top: 6px;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 24px rgba(0,0,0,.7); }
+#mcSub { font: 600 16px/1.25 var(--display); color: #f3f8f1; margin: 8px auto 0; max-width: 30em; text-shadow: 0 2px 4px #000, 0 0 10px rgba(0,0,0,.9); }
+#mcard.done #mcEyebrow { color: #6fcf97; } #mcard.done #mcTitle { color: #f2c300; }
+.fz-head { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: center; border-bottom: 2px dashed #8a8160; padding-bottom: 6px; margin-bottom: 6px; }
+.fz-head .fz-av { width: 40px; height: 40px; border-radius: 50%; background: #7ec8a0; display: grid; place-items: center; font-size: 22px; }
+.fz-head b { font: 900 18px/1 var(--display); letter-spacing: .06em; display: block; } .fz-head small { font: 600 11px/1.2 var(--display); opacity: .8; }
+#fzNow { background: rgba(0,0,0,.06); border-left: 4px solid #c0322a; padding: 6px 8px; border-radius: 3px; margin-bottom: 4px; }
+#fzNow b { font: 900 italic 16px/1.1 var(--display); text-transform: uppercase; display: block; } #fzNow p { margin: 3px 0 0; font: 500 13px/1.3 var(--display); }
+#tasks .obj-title { font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: .03em; display: block; }
+#mapView { position: absolute; inset: 0; z-index: 6; background: rgba(5,9,8,.86); display: grid; place-items: center; padding: 16px; }
+#mapView canvas { width: min(92vw, 80vh); height: min(92vw, 80vh); border-radius: 10px; border: 2px solid #26332d; background: #0b1513; }
+#mapView .map-close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 16px; }
+#mapView .map-legend { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); left: 16px; right: 16px; text-align: center; font: 600 13px/1.4 var(--display); color: #cfdcd4; }
+
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
 </style>
 </head>
@@ -340,6 +381,8 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
   </div>
   <div class="hint" id="hint" hidden></div>
 
+  <div id="mcard" hidden><div id="mcEyebrow">Mission</div><div id="mcTitle"></div><div id="mcSub"></div></div>
+  <div id="mapView" hidden><canvas id="mapBig" width="720" height="720" aria-label="Lageplan"></canvas><button class="btn ghost map-close" id="btnMapClose" type="button"><span>Schließen</span><span>✕</span></button><div class="map-legend">◆ Ziel · grün = freundlich · gelb/rot = Gefahr · braun = Tür · beige = sicherer Raum</div></div>
   <div id="toast" hidden><div id="toastAvatar"></div><div id="toastWho"></div><div id="toastLine"></div><div id="toastStamps"></div></div>
   <div id="lab" hidden></div>
   <div id="call" hidden>
@@ -348,6 +391,8 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
     <div class="call-btns"><button id="btnDecline" type="button">Ablehnen</button><button id="btnAccept" type="button">Annehmen</button></div>
   </div>
   <div id="tasks" hidden>
+    <div class="fz-head"><span class="fz-av">🧹</span><div><b>FLUCHT-ZENTRALE</b><small>Leitung: Frau Bozkurt · Reinigung, seit 1994 · per Pager</small></div></div>
+    <div id="fzNow"></div>
     <h3>Missionen hier</h3><ul id="objList"></ul>
     <h3>Nebenmissionen</h3><ul id="sideList"></ul>
     <h3>Aufgaben</h3><ol id="taskList"></ol>
@@ -409,7 +454,7 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
         </ul>
       </details>
       <label class="setting" for="setDiffTitle"><span>Schwierigkeit</span><select id="setDiffTitle"><option value="easy">Entspannt</option><option value="normal">Dienstalltag</option></select></label>
-      <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion, F Lampe, 1–6 Inventar, P Pause.</p>
+      <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion (auch Türen), F Lampe, M Lageplan, P Pause.</p>
       <p class="small" id="bestLine" hidden></p>
       <div class="err" id="loadErr" hidden>Die 3D-Engine konnte nicht geladen werden. Bitte Internetverbindung prüfen und neu laden.</div>
       <button class="btn" id="btnStart" type="button"><span>Schicht beenden</span><span>→</span></button>
@@ -418,9 +463,9 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
 
   <section class="overlay" id="ovBrief" hidden>
     <div class="card board">
-      <div class="eyebrow">Whiteboard · Arztzimmer 5B</div>
-      <h2>Mission: Feierabend</h2>
-      <p class="small">Hauptmission: raus bis zum Auto. Sieben Abschnitte.</p>
+      <div class="eyebrow">Flucht-Zentrale · Whiteboard im Arztzimmer</div>
+      <h2>Operation Feierabend</h2>
+      <p class="small">Leitung: Frau Bozkurt (Reinigung, kennt jeden Gang). Sie schickt dir pro Stockwerk die Missionen auf den Pager. Ziel: unbemerkt bis zum Auto.</p>
       <ol class="plan" id="planList"></ol>
       <h3 id="sideHead">Nebenmissionen · wähle bis zu 3</h3>
       <div class="sides" id="sideBox"></div>
@@ -449,8 +494,9 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
       <label class="setting" for="setInvert"><span>Blick vertikal umkehren</span><input type="checkbox" id="setInvert"></label>
       <label class="setting" for="setNavi"><span>Navi-Punkte am Boden</span><input type="checkbox" id="setNavi" checked></label>
       <label class="setting" for="setSound"><span>Ton</span><input type="checkbox" id="setSound" checked></label>
+      <label class="setting" for="setShadows"><span>Schatten (schöner, braucht mehr Leistung)</span><input type="checkbox" id="setShadows" checked></label>
       <label class="setting" for="setBob"><span>Kopfwippen</span><input type="checkbox" id="setBob" checked></label>
-      <p class="keys">iPhone: linker Stick laufen (leicht = schleichen) · rechte Hälfte umsehen · SCHLEICHEN / RENNEN · gelber Knopf Aktion · LAMPE antippen<br>Tastatur: WASD · Maus (ins Bild klicken) oder ←/→ · C schleichen · Shift rennen · E Aktion · F Lampe · 1–6 Inventar · J/N Anruf · Tab Missionen · M Missionsplan · P Pause</p>
+      <p class="keys">iPhone: unten links laufen (leicht = schleichen) · überall sonst tippen und ziehen = umsehen · SCHLEICHEN / RENNEN · gelber Knopf Aktion (auch Türen) · Radar antippen = Lageplan · Pager antippen = HUD klein · LAMPE antippen<br>Tastatur: WASD · Maus (ins Bild klicken) oder ←/→ · C schleichen · Shift rennen · E Aktion · F Lampe · 1–6 Inventar · J/N Anruf · Tab Flucht-Zentrale · M Lageplan · B Whiteboard · P Pause</p>
       <button class="btn" id="btnResume" type="button"><span>Weiter</span><span>▶</span></button>
       <button class="btn ghost" id="btnPlan" type="button"><span>Missionsplan</span><span>☰</span></button>
       <button class="btn ghost" id="btnQuit" type="button"><span>Schicht abbrechen</span><span>✕</span></button>
@@ -484,9 +530,13 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
 <script>if (!window.THREE) { document.getElementById("loadErr").hidden = false; document.getElementById("btnStart").disabled = true; }</script>
 <script src="js/data.js"></script>
 <script src="js/world.js"></script>
+<script src="js/props.js"></script>
+<script src="js/build.js"></script>
 <script src="js/level.js"></script>
 <script src="js/game.js"></script>
 <script src="js/dialog.js"></script>
+<script src="js/talks.js"></script>
+<script src="js/talks2.js"></script>
 <script src="js/play.js"></script>
 <script src="js/flow.js"></script>
 </body>

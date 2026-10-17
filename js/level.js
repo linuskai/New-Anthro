@@ -45,8 +45,8 @@ function buildLevel(idx) {
   grid = L.map.map(r => r.split("")); GW = grid[0].length; GH = grid.length;
   const group = new THREE.Group();
   const lv = { idx, group, enemies: [], friends: [], items: [], papers: [], transports: [], props: [], hazards: [], flickers: [], secrets: [], spawns: [], drips: [], clocks: [], windows: [], safeRooms: [],
-    exit: null, start: null, reaSpot: null, perTex: [], perMat: [], perGeo: [], visited: new Uint8Array(GW * GH), dark: new Uint8Array(GW * GH), t: 0, spawnT: 6 };
-  level = lv;
+    exit: null, start: null, reaSpot: null, doors: [], colliders: [], reserved: new Set(), orig: L.map, perTex: [], perMat: [], perGeo: [], visited: new Uint8Array(GW * GH), dark: new Uint8Array(GW * GH), t: 0, spawnT: 6 };
+  level = lv; doorMap = new Map();
   const r = rng(idx * 97 + 11);
   ghostMat = new THREE.MeshLambertMaterial({ color: 0xe8eeff, transparent: true, opacity: .45, emissive: 0x334466 }); lv.perMat.push(ghostMat);
   const occupied = new Set(), mark = (x, y) => occupied.add(x + "," + y);
@@ -58,6 +58,7 @@ function buildLevel(idx) {
     if (ch === "S") { lv.start = [x, y]; clear(); }
     else if (ch === "E") { lv.exit = [x, y]; clear(); }
     else if (ch === "r") { lv.reaSpot = [x, y]; clear(); }
+    else if (ch === "v" && idx === 0) { lv.board = [x, y]; clear(); }
     else if (ch === "~") { lv.spawns.push([x, y]); clear(); }
     else if (ch === "q") { lv.transports.push({ x: x + .5, y: y + .5, car: true }); clear(); }
     else if (TYPES[ch]) { pending.push([ch, x, y]); if (ch !== "U") clear(); }
@@ -66,34 +67,20 @@ function buildLevel(idx) {
     else if (ch === "x") { lv.papers.push({ x: x + .5 + (r() < .5 ? -.3 : .3), y: y + .5 + (r() < .5 ? -.3 : .3), taken: false }); clear(); }
   }
 
-  // safe rooms: the doctors' room, plus up to two dead ends per level
-  if (L.safeRect) { const [x0, y0, x1, y1] = L.safeRect; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (grid[y][x] === ".") grid[y][x] = "_"; }
-  if (!L.safe && !L.final) {
-    const cands = [];
-    for (let y = 1; y < GH - 1; y++) for (let x = 1; x < GW - 1; x++) {
-      if (grid[y][x] !== "." || occupied.has(x + "," + y)) continue;
-      const n = DIRS.filter(([dx, dy]) => openTile(x + dx, y + dy));
-      if (n.length !== 1) continue;
-      if (Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) < 4) continue;
-      cands.push([x, y, n[0]]);
-    }
-    for (let i = 0; i < 2 && cands.length; i++) {
-      const [x, y, d] = cands.splice(Math.floor(r() * cands.length), 1)[0];
-      grid[y][x] = "_"; lv.safeRooms.push({ x, y, door: d, name: SAFE_NAMES[(idx + i) % SAFE_NAMES.length], rested: false });
-    }
-  }
+  // regions: corridors, rooms, safe rooms
+  const regs = findRegions(lv, L.map);
+  let si = 0;
+  for (const rg of regs) if (rg.safe) { rg.name = (L.safeNames && L.safeNames[si]) || SAFE_NAMES[(idx + si) % SAFE_NAMES.length]; rg.rested = false; si++; }
+  lv.safeRooms = regs.filter(rg => rg.safe); lv.rooms = regs.filter(rg => !rg.safe);
+  const regionOf = (x, y) => regs.find(rg => rg.tiles.some(([a, b]) => a === x && b === y));
 
   // floor & ceiling
-  const ft = floorTex(theme); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(GW, GH);
-  const glossy = !["cellar", "park", "derma"].includes(theme);
-  const floorMat = glossy ? new THREE.MeshPhongMaterial({ map: ft, color: 0xd2d8d4, shininess: 60, specular: 0x2a2a2a }) : new THREE.MeshLambertMaterial({ map: ft, color: 0xe4e4e4 });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(GW * S, GH * S), floorMat);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(GW * S / 2, 0, GH * S / 2); group.add(floor);
+  buildFloors(lv, theme);
   const ct = ceilTex(theme); ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(GW * 2, GH * 2);
   const ceilMat = new THREE.MeshLambertMaterial({ map: ct });
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(GW * S, GH * S), ceilMat);
   ceil.rotation.x = Math.PI / 2; ceil.position.set(GW * S / 2, WALL_H, GH * S / 2); group.add(ceil);
-  lv.perMat.push(floorMat, ceilMat); lv.perGeo.push(floor.geometry, ceil.geometry);
+  lv.perMat.push(ceilMat); lv.perGeo.push(ceil.geometry);
 
   // walls
   const walls = [];
@@ -101,20 +88,22 @@ function buildLevel(idx) {
   const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex(theme)), walls.length);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Matrix4();
   walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));
-  group.add(wallMesh);
+  wallMesh.receiveShadow = true; group.add(wallMesh);
 
   // wall faces → handrails + skirting (instanced)
   const faces = [];
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    if (grid[y][x] === "#" || grid[y][x] === "H") continue;
+    if ("#Hdl^,".includes(grid[y][x]) || (lv.exit && x === lv.exit[0] && y === lv.exit[1])) continue;
     for (const [dx, dy] of DIRS) if (cell(x + dx, y + dy) === "#") faces.push([x, y, dx, dy]);
   }
   const railTheme = ["ward", "ortho", "er", "radio"].includes(theme);
   const rail = new THREE.InstancedMesh(GEO.box, lambert(theme === "radio" ? 0x55595f : 0xb08a62), faces.length);
   const skirt = new THREE.InstancedMesh(GEO.box, lambert(theme === "derma" ? 0x7a5a3a : 0x4f5a55), faces.length);
+  const railFaces = faces.filter(([x, y]) => lv.zone[y * GW + x] === 1);
+  rail.count = 0;
+  railFaces.forEach(([x, y, dx, dy], i) => { const th = Math.atan2(-dx, -dy), cx = (x + .5) * S + dx * (S / 2 - .05), cz = (y + .5) * S + dy * (S / 2 - .05); rail.setMatrixAt(i, q4.makeRotationY(th).multiply(m4.makeScale(S * .96, .06, .07)).setPosition(cx, 1.0, cz)); rail.count = i + 1; });
   faces.forEach(([x, y, dx, dy], i) => {
     const th = Math.atan2(-dx, -dy), cx = (x + .5) * S + dx * (S / 2 - .05), cz = (y + .5) * S + dy * (S / 2 - .05);
-    rail.setMatrixAt(i, q4.makeRotationY(th).multiply(m4.makeScale(S * .96, .06, .07)).setPosition(cx, 1.0, cz));
     skirt.setMatrixAt(i, q4.makeRotationY(th).multiply(m4.makeScale(S, .12, .03)).setPosition((x + .5) * S + dx * (S / 2 - .015), .06, (y + .5) * S + dy * (S / 2 - .015)));
   });
   if (railTheme) group.add(rail);
@@ -143,7 +132,7 @@ function buildLevel(idx) {
   // lamps
   const panelsOk = [], panelsBroken = [];
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    if (grid[y][x] === "#" || grid[y][x] === "H" || (x + y) % 2) continue;
+    if ("#Hdl^,".includes(grid[y][x]) || (x + y) % 2) continue;
     const v = r(), creepy = lv.dark[y * GW + x] && !env.dark;
     if (creepy || v < env.flicker) lv.flickers.push({ x, y, a: 3 + r() * 20, b: 1 + r() * 9, p: r() * 10, th: creepy ? .6 + r() * .6 : .2 + r() * .9, on: true, creepy, tint: creepy ? pick([0xff6a5a, 0x8affb0, 0xfdfdf6]) : env.lamp });
     else if (v < env.flicker + env.broken) panelsBroken.push([x, y]);
@@ -171,40 +160,42 @@ function buildLevel(idx) {
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] !== "#" && (x + y) % 2 && r() < .35) vents.push([x, y]);
   if (vents.length && theme !== "park") { const vm = new THREE.InstancedMesh(GEO.box, lambert(0xb9c1bc, ductTex()), vents.length); vents.forEach(([x, y], i) => vm.setMatrixAt(i, m4.makeScale(.6, .03, .6).setPosition(x * S + S / 2 + .6, WALL_H - .015, y * S + S / 2 - .5))); group.add(vm); }
 
-  // wall decorations
-  let roomNo = 1, special = 0;
-  const plates = { cellar: ["Pathologie", "Archiv 1987–1994", "Kühlraum", "Heizung", "Nicht öffnen", "Bettenlager"], radio: ["CT", "MRT", "Befundung", "Dunkelkammer", "Röntgen 2 (defekt)", "Kontrastmittel"],
-    derma: ["Sauna", "Gurkenlager", "Cremeraum", "Ruheraum", "Peeling", "Botox (privat)"], ortho: ["Kraftraum", "Gipsraum", "OP-Planung", "Proteinlager", "Sprechstunde", "Hammer-Ausgabe"],
-    er: ["Schockraum", "Wartezimmer 2", "Triage", "Gips", "Isolation", "Kaffee (leer)"] }[theme] || ["3 Betten", "Isolierung!", "Arztzimmer", "Bereitschaftsraum", "Lager", "Unreiner Raum", "Stationsküche", "Chefarzt (leer)", "2 Betten", "Besprechung"];
-  const exitKey = lv.exit ? lv.exit[0] + "," + lv.exit[1] : "";
+  // doors, stairwell, elevators, locked doors
   const windowMat = new THREE.MeshBasicMaterial({ map: nightTex(), color: 0x8a9ab0 }); lv.perMat.push(windowMat); lv.windowMat = windowMat;
+  const plates = { cellar: ["Pathologie", "Archiv 1987–1994", "Kühlraum", "Heizung", "Technik", "Bettenlager"], radio: ["CT", "MRT", "Befundung", "Röntgen 2 (defekt)", "Dunkelkammer", "Kontrastmittel"],
+    derma: ["Sauna", "Ruheraum", "Cremeraum", "Praxis Dr. Glatt", "Lounge", "Botox (privat)"], ortho: ["Kraftraum", "Gipsraum", "Umkleide", "Sprechstunde", "Röntgen-Demo", "Hammer-Ausgabe"],
+    er: ["Schockraum", "Gips", "Isolation", "Personalraum", "Wartezimmer 2", "Kaffee (leer)"] }[theme] || ["3 Betten", "2 Betten", "Arztzimmer", "Umkleide", "Isolierung!", "Stationsküche", "Lager", "Besprechung"];
+  let roomNo = 1;
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const ch = grid[y][x];
+    if (ch === "d") {
+      const inner = DIRS.map(([dx, dy]) => regionOf(x + dx, y + dy)).find(Boolean);
+      lv.nextSafeName = inner && inner.safe ? inner.name : null;
+      buildDoor(lv, x, y, theme, (L.room ? L.room + "." : "0.") + String(roomNo).padStart(2, "0"), plates[(roomNo - 1) % plates.length]); roomNo++;
+    } else if (ch === "l") buildLocked(lv, x, y, theme, r);
+    else if (ch === "^") buildElevator(lv, x, y, idx);
+  }
+  if (lv.exit) buildStairwell(lv, idx, theme);
+
+  // corridor walls
+  let special = 0;
   for (const [x, y, dx, dy] of faces) {
+    if (lv.zone[y * GW + x] !== 1) continue;
     if (solidMove(grid[y][x]) && grid[y][x] !== "U") continue;
     const theta = Math.atan2(-dx, -dy);
     const cx = (x + .5) * S + dx * (S / 2 - .02), cz = (y + .5) * S + dy * (S / 2 - .02);
     const place = (obj, yPos, inset = 0, along = 0) => { obj.position.set(cx - dx * inset + (dy !== 0 ? along : 0), yPos, cz - dy * inset + (dx !== 0 ? along : 0)); obj.rotation.y = theta; group.add(obj); return obj; };
     const planeM = (map, w, h, yy, inset = 0, transparent, along = 0) => { const mat = transparent ? new THREE.MeshLambertMaterial({ map, transparent: true }) : lambert(0xffffff, map); if (transparent) lv.perMat.push(mat); const m = new THREE.Mesh(GEO.plane, mat); m.scale.set(w, h, 1); return place(m, yy, inset, along); };
-    const doorWithFrame = (map, w = 1.15, h = 2.2) => {
-      planeM(map, w, h, h / 2 + .01, .03);
-      const fc = theme === "derma" ? 0x7a5a3a : 0x6f7a76;
-      place(mesh(GEO.box, lambert(fc), .08, h + .08, .1), (h + .08) / 2, .04, -w / 2 - .04); place(mesh(GEO.box, lambert(fc), .08, h + .08, .1), (h + .08) / 2, .04, w / 2 + .04);
-      place(mesh(GEO.box, lambert(fc), w + .16, .08, .1), h + .06, .04);
-    };
-    if ((x + "," + y) === exitKey && !lv.exitPlaced) {
-      lv.exitPlaced = true;
-      const next = LEVELS[idx + 1];
-      doorWithFrame(textTex(["TREPPENHAUS", next ? "→ " + next.short : ""], "#1f9d55", "#fff", 512, 640, 60), 1.8, 2.3);
-      lv.exitSignMat = new THREE.MeshBasicMaterial({ map: textTex(["NOTAUSGANG"], "#14a052", "#fff", 512, 140, 70) }); lv.perMat.push(lv.exitSignMat);
-      const sign = new THREE.Mesh(GEO.plane, lv.exitSignMat); sign.scale.set(1.5, .42, 1); place(sign, 2.75, .02);
-      lv.exitGlow = new THREE.PointLight(0x3cff8a, .9, 7); lv.exitGlow.position.set(cx - dx * .6, 2, cz - dy * .6); group.add(lv.exitGlow);
-      continue;
-    }
     const v = r();
+    if (isBorder(x + dx, y + dy) && v < .22 && env.storm !== undefined && theme !== "radio") {
+      const w = curtainWindow(windowMat); w.children.slice(3).forEach(c => w.remove(c)); place(w, 1.75, .01); lv.windows.push(w); continue;
+    }
     if (theme === "cellar") {
       if (v < .18) place(boxMesh(S * .8, 2.2, .45, 0xffffff, shelfTex()), 1.1, .25);
-      else if (v < .26) doorWithFrame(doorTex("U." + String(roomNo++).padStart(2, "0"), pick(plates), "#6e6a60"));
-      else if (v < .34) planeM(graffitiTex(pick(GRAFFITI)), 2.2, .55, 1.2 + r() * .8, .01, true);
-      else if (v < .42) planeM(crackTex(), 1.4, 1.4, .8 + r() * 1.5, .01, true);
+      else if (v < .3) planeM(graffitiTex(pick(GRAFFITI)), 2.2, .55, 1.2 + r() * .8, .01, true);
+      else if (v < .4) planeM(crackTex(), 1.4, 1.4, .8 + r() * 1.5, .01, true);
+      else if (v < .46) place(boxStack(2), 0, 0, (r() - .5));
+      else if (v < .5) place(fireHose(), 1.3, 0);
       continue;
     }
     if (theme === "park") {
@@ -214,43 +205,34 @@ function buildLevel(idx) {
       else if (v < .32) planeM(graffitiTex(pick(["Wer liest das? Geh heim.", "Budget: 0 €", "NUR KURZ"])), 2.2, .55, 1.3, .01, true);
       continue;
     }
-    if (v < .17) doorWithFrame(doorTex((L.room ? L.room + "." : "0.") + String(roomNo++).padStart(2, "0"), r() < .6 ? pick(plates) : "", theme === "derma" ? "#d8b48c" : theme === "radio" ? "#5a6070" : pick(["#c9b38f", "#9fb7c4", "#d1c7b3"])));
-    else if (v < .25) { const p = theme === "derma" ? { bg: "#e26fa0", t: "SELF CARE", b: ["Creme ist", "Medizin.", "— Dr. Glatt"], i: "🧖" } : theme === "radio" && r() < .5 ? POSTERS[6] : pick(POSTERS); planeM(posterTex(p), .75, 1.03, 1.65); }
-    else if (v < .3 && env.storm !== undefined && theme !== "radio") {
-      const w = new THREE.Mesh(GEO.plane, windowMat); w.scale.set(1.5, 1.1, 1); place(w, 1.75, .01);
-      place(mesh(GEO.box, lambert(0xdfe4e1), 1.62, .07, .1), 1.2, .05); place(mesh(GEO.box, lambert(0xdfe4e1), 1.62, .05, .06), 2.32, .03); place(mesh(GEO.box, lambert(0xdfe4e1), .05, 1.1, .06), 1.75, .03);
-      lv.windows.push(w);
-    }
-    else if (v < .33) { const ext = mesh(GEO.cyl, lambert(0xd42b2b), .11, .55, .11); place(ext, .45, .18); place(mesh(GEO.box, lambert(0x222222), .2, .05, .05), .76, .18); }
-    else if (v < .37) { place(boxMesh(.14, .26, .1, 0xf4f4f4), 1.25, .06); place(boxMesh(.08, .05, .06, 0x3f8fb3), 1.08, .08); planeM(textTex(["20 ct"], "#f2c300", "#222", 128, 64, 34), .16, .08, 1.45, .01); }
-    else if (v < .41) planeM(ductTex(), 1.1, .14, .9 + r() * 1.4, .01);
-    else if (v < .44) {
-      const c = new THREE.Group(); const face = mesh(GEO.disc, lambert(0xffffff, clockTex()), .32, 1, .32); face.rotation.x = Math.PI / 2; c.add(face);
-      const hh = mesh(GEO.box, basic(0x111111), .02, .13, .01); hh.geometry = GEO.box; const mh = mesh(GEO.box, basic(0x111111), .014, .2, .01);
+    if (v < .1) { const p = theme === "derma" ? { bg: "#e26fa0", t: "SELF CARE", b: ["Creme ist", "Medizin.", "— Dr. Glatt"], i: "🧖" } : theme === "radio" && r() < .5 ? POSTERS[6] : pick(POSTERS); place(framed(posterTex(p), .72, 1.0, 0x2a2a2a), 1.65); }
+    else if (v < .17 && theme !== "radio" && theme !== "derma") place(chairRow(3, theme === "er" ? 0xc0322a : 0x2b7bb9), 0, 0, (r() - .5) * .6);
+    else if (v < .2) { const ext = mesh(GEO.cyl, lambert(0xd42b2b), .11, .55, .11); place(ext, .45, .18); place(mesh(GEO.box, lambert(0x222222), .2, .05, .05), .76, .18); }
+    else if (v < .24) { place(sanitizer(), 1.25); planeM(textTex(["20 ct"], "#f2c300", "#222", 128, 64, 34), .16, .08, 1.45, .01); }
+    else if (v < .27) planeM(ductTex(), 1.1, .14, .9 + r() * 1.4, .01);
+    else if (v < .3) {
+      const c = dyn(new THREE.Group()); const face = mesh(GEO.disc, lambert(0xffffff, clockTex()), .32, 1, .32); face.rotation.x = Math.PI / 2; c.add(face);
+      const hh = mesh(GEO.box, basic(0x111111), .02, .13, .01), mh = mesh(GEO.box, basic(0x111111), .014, .2, .01);
       const hp = new THREE.Group(), mp = new THREE.Group(); hh.position.y = .065; mh.position.y = .1; hp.add(hh); mp.add(mh); hp.position.z = mp.position.z = .03; c.add(hp, mp);
       place(c, 2.35, .03); lv.clocks.push({ h: hp, m: mp });
     }
-    else if (v < .46 && special < 2) { special++; if (theme === "derma") { place(mesh(GEO.pot, lambert(0xb5653a), 1), .2, .35); place(mesh(GEO.leaf, lambert(0x3f8a4a), 1), .65, .35); } else planeM(textTex(["AUFZUG", "defekt seit 2019", "Treppe ist gesund!"], "#7b8a85", "#fff", 256, 320, 40), 1.6, 2.2, 1.1); }
+    else if (v < .33) place(aedBox(), 1.4);
+    else if (v < .36 && theme !== "derma") place(fireHose(), 1.3);
+    else if (v < .4) place(noticeBoard(pick([["HÄNDE", "DESINFIZIEREN", "30 Sekunden!"], ["BESUCHSZEIT", "15–18 Uhr", "(theoretisch)"], ["BITTE", "NICHT KLINGELN", "wir kommen eh nicht"], ["QUALITÄTS-", "OFFENSIVE 2026", "(abgesagt)"], ["RAUCHEN", "VERBOTEN", "(auch Burnout)"]])), 1.55);
+    else if (v < .43 && theme !== "radio") place(wheelchair(), 0, .45, (r() - .5) * .8).rotation.y += (r() - .5) * .8;
+    else if (v < .45 && special < 2 && theme !== "derma") { special++; planeM(textTex(["AUFZUG B", "defekt seit 2019", "Treppe ist gesund!"], "#7b8a85", "#fff", 256, 320, 40), 1.6, 2.2, 1.1); }
     else if (v < .49 && theme !== "derma") planeM(crackTex(), 1.2, 1.2, 1 + r(), .01, true);
     else if (v < .52 && theme === "radio") { const lb = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: xrayTex() })); lv.perMat.push(lb.material); lb.scale.set(.7, .88, 1); place(lb, 1.6); }
-    else if (v < .55 && theme === "derma") { place(mesh(GEO.pot, lambert(0xe8e2d8), 1), .2, .35); place(mesh(GEO.leaf, lambert(0x5aa05a), 1), .6, .35); }
+    else if (v < .56 && theme === "derma") place(livePlant(true), 0, .35);
+    else if (v < .58 && theme !== "radio") place(livePlant(), 0, .3);
   }
-  // safe room decor: wood floor, sofa, coffee table, warm lamp, door frame + sign
-  for (const sr of lv.safeRooms) {
-    const wx = (sr.x + .5) * S, wz = (sr.y + .5) * S, [ddx, ddy] = sr.door;
-    const wood = mesh(GEO.plane, lambert(0xffffff, floorTex("derma")), S * .98, S * .98, 1); wood.rotation.x = -Math.PI / 2; wood.position.set(wx, .013, wz); group.add(wood);
-    const back = [-ddx, -ddy], th = Math.atan2(ddx, ddy);
-    const sofa = new THREE.Group();
-    sofa.add(at(boxMesh(1.9, .42, .8, 0x6a4a7a), 0, .25, 0)); sofa.add(at(boxMesh(1.9, .5, .22, 0x5a3a6a), 0, .6, -.36)); sofa.add(at(boxMesh(.2, .35, .8, 0x5a3a6a), -.95, .45, 0)); sofa.add(at(boxMesh(.2, .35, .8, 0x5a3a6a), .95, .45, 0));
-    sofa.add(at(boxMesh(.5, .12, .4, 0xf2d38a), -.4, .52, .05));
-    sofa.position.set(wx + back[0] * .9, 0, wz + back[1] * .9); sofa.rotation.y = th; group.add(sofa);
-    group.add(at(boxMesh(.7, .4, .5, 0x8a6a4a), wx + ddx * .1 + (ddy ? .7 : 0), .2, wz + ddy * .1 + (ddx ? .7 : 0)));
-    group.add(at(mesh(GEO.cyl, lambert(0xf4f4f0), .05, .1, .05), wx + ddx * .1 + (ddy ? .7 : 0), .45, wz + ddy * .1 + (ddx ? .7 : 0)));
-    const lamp = mesh(GEO.ball, basic(0xffd890), .18); lamp.position.set(wx, WALL_H - .35, wz); group.add(lamp);
-    const bx = (sr.x + ddx + .5) * S - ddx * S / 2, bz = (sr.y + ddy + .5) * S - ddy * S / 2;
-    for (const s of [-1, 1]) group.add(at(boxMesh(ddy ? .14 : .3, WALL_H, ddx ? .14 : .3, 0x6f5a46), bx + (ddy ? s * S / 2 : 0), WALL_H / 2, bz + (ddx ? s * S / 2 : 0)));
-    const sg = sprite(textTex([sr.name[0], sr.name[1]], "#c9a77a", "#2a1c00", 512, 150, 50), 2.0, .58); sg.position.set(bx + ddx * .4, 2.7, bz + ddy * .4); group.add(sg);
-    lv.props.push({ kind: "sofa", x: sr.x + .5 + back[0] * .3, y: sr.y + .5 + back[1] * .3, room: sr });
+  // waiting room chairs in the emergency department
+  if (theme === "er") for (const [x, y] of [[2, 3], [5, 3], [8, 3], [2, 5], [6, 6]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); addCollider(lv, (x + .5) * S - 1, (y + .5) * S - .3, (x + .5) * S + 1, (y + .5) * S + .3); }
+  // rooms and safe rooms
+  for (const rg of lv.rooms) decorateRoom(lv, rg, theme, r);
+  for (const rg of lv.safeRooms) {
+    if (idx === 0 && rg.tiles.some(([a, b]) => a === lv.start[0] && b === lv.start[1])) decorateDoctorsRoom(lv, rg);
+    else decorateSafeRoom(lv, rg, theme, r);
   }
 
   // pipes
@@ -265,16 +247,6 @@ function buildLevel(idx) {
   if (theme === "park") {
     const lineMat = basic(0xe8e4d0);
     for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] === "a" || grid[y][x] === "j") for (const s of [-1, 1]) { const l = new THREE.Mesh(GEO.plane, lineMat); l.rotation.x = -Math.PI / 2; l.scale.set(.08, S * .9, 1); l.position.set((x + .5) * S + s * S * .48, .012, (y + .5) * S); group.add(l); }
-  }
-
-  // start room decor (doctors' room)
-  if (idx === 0) {
-    const [sx, sy] = lv.start, wx = (sx + .5) * S, wz = (sy + .5) * S;
-    const sofa = new THREE.Group(); sofa.add(at(boxMesh(.8, .42, 1.9, 0x3f6f8a), 0, .25, 0)); sofa.add(at(boxMesh(.22, .5, 1.9, 0x355f78), -.36, .6, 0)); sofa.add(at(boxMesh(.4, .12, .5, 0xf4f4f0), .05, .52, -.6));
-    sofa.position.set(wx - 1.05, 0, wz + S * 1.2); group.add(sofa);
-    group.add(at(boxMesh(.5, .8, .5, 0x8a8f8a), wx - 1.1, .4, wz + S * 2 - .9));
-    const chair = new THREE.Group(); chair.add(at(boxMesh(.5, .08, .5, 0x222222), 0, .5, 0)); chair.add(at(boxMesh(.5, .6, .08, 0x222222), 0, .85, .25)); chair.add(at(mesh(GEO.cyl, lambert(0x555555), .04, .45, .04), 0, .25, 0));
-    chair.position.set(wx + S - 1.2, 0, wz + .2); group.add(chair);
   }
 
   // props & hazards
@@ -431,5 +403,13 @@ function buildLevel(idx) {
 
   lv.startYaw = 0;
   for (const [dx, dy] of DIRS) if (openTile(lv.start[0] + dx, lv.start[1] + dy)) { lv.startYaw = Math.atan2(-dx, -dy); break; }
+  // everything that moves or changes stays separate; the rest is merged into a few big meshes
+  for (const e of lv.enemies) { dyn(e.mesh); if (e.cone) dyn(e.cone); }
+  for (const o of [...lv.friends, ...lv.items, ...lv.papers, ...lv.transports, ...lv.secrets]) dyn(o.mesh);
+  for (const h of lv.hazards) if (h.sparks) dyn(h.sparks[0].parent);
+  for (const d of lv.drips) dyn(d.mesh);
+  for (const p of lv.props) if (p.arm) dyn(p.arm);
+  for (const f of lv.flickers) dyn(f.mesh);
+  lv.merged = mergeStatic(group, lv.perGeo);
   scene.add(group);
 }

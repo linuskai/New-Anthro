@@ -15,8 +15,9 @@ const playerSafe = () => cell(Math.floor(player.x), Math.floor(player.y)) === "_
 
 function loadFloor(idx) {
   clearRea();
-  buildLevel(idx);
   const L = LEVELS[idx];
+  renderer.shadowMap.enabled = !!settings.shadows; sun.castShadow = !!settings.shadows && !ENV[L.env].dark; flashlight.castShadow = !!settings.shadows && !!ENV[L.env].dark;
+  buildLevel(idx);
   player.x = level.start[0] + .5; player.y = level.start[1] + .5; player.yaw = level.startYaw; player.pitch = 0;
   Object.assign(player, { coffee: 0, busy: 0, inv: 0, hidden: false, stun: 0, slip: 0, channel: null, lampOn: true });
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
@@ -40,7 +41,7 @@ function applyEnv(force) {
   const target = bo ? .06 : (tile && !env.dark ? .32 : 1);
   lightMul += (target - lightMul) * (force ? 1 : .06);
   const bolt = boltT > 0 ? .9 : 0;
-  hemi.intensity = env.hemi * lightMul + bolt * .6; amb.intensity = env.amb * lightMul; sun.intensity = env.dir * lightMul;
+  hemi.intensity = env.hemi * .9 * lightMul + bolt * .6; amb.intensity = env.amb * .85 * lightMul; sun.intensity = env.dir * 1.7 * lightMul;
   const fogC = new THREE.Color(bo ? 0x030504 : env.fog);
   if (!env.dark) fogC.lerp(new THREE.Color(0x0a0d0c), 1 - lightMul);
   scene.fog.color.copy(fogC); scene.background.copy(fogC);
@@ -59,7 +60,7 @@ const bouncersCleared = () => level ? level.enemies.filter(e => e.type === "U" &
 function objectives() {
   const L = LEVELS[run.idx];
   const list = L.objectives.map(o => ({ ...o, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }));
-  if (!L.final) list.push({ id: "exit", text: L.exitText, main: true, at: "exit", done: false, isExit: true });
+  if (!L.final) list.push({ id: "exit", title: "Abgang", text: L.exitText, brief: "Die Brandschutztür ist offen. Treppe runter. Oder Aufzug, wenn du Nerven hast.", main: true, at: "exit", done: false, isExit: true });
   return list;
 }
 const exitOpen = () => objectives().every(o => !o.main || o.done || o.isExit);
@@ -86,7 +87,7 @@ function updateNavi(dt) {
   const nv = level.navi;
   const offline = LEVELS[run.idx].fogOfWar && !run.flags.has("power");
   if (!naviTarget || !settings.navi || offline) { nv.count = 0; return; }
-  const path = bfs(Math.floor(player.x), Math.floor(player.y), Math.floor(naviTarget[0]), Math.floor(naviTarget[1]), true);
+  const path = bfs(Math.floor(player.x), Math.floor(player.y), Math.floor(naviTarget[0]), Math.floor(naviTarget[1]), true, playerPass);
   if (!path) { nv.count = 0; return; }
   const m = new THREE.Matrix4(); let n = 0;
   for (let i = 0; i < path.length - 1 && n < 90; i++) {
@@ -107,7 +108,8 @@ function updateHud() {
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
   $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
   $("missionText").textContent = cur ? cur.text : "Zum Auto!";
-  $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">optional</span>'}</li>`).join("");
+  $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${o.title ? `<span class="obj-title">${esc(o.title)}</span>` : ""}${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">Nebenjob</span>'}</li>`).join("");
+  $("fzNow").innerHTML = cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>";
   $("sideList").innerHTML = run.sides.size ? SIDE.filter(s => run.sides.has(s.id)).map(s => `<li>${esc(s.name)} <span class="opt-tag">${esc(s.desc)}</span></li>`).join("") : "<li>Keine gewählt.</li>";
   $("taskList").innerHTML = run.tasks.length ? run.tasks.map(t => `<li>${esc(t)}</li>`).join("") : "<li>Nichts. Verdächtig.</li>";
   const bag = Object.keys(BAG_NAMES).filter(k => run.flags.has(k)).map(k => `<li>${esc(BAG_NAMES[k])}</li>`);
@@ -175,7 +177,7 @@ function renderInv() {
   });
 }
 function farthestTile() {
-  const dm = distMap(Math.floor(player.x), Math.floor(player.y), openTile); let best = -1, bi = 0;
+  const dm = distMap(Math.floor(player.x), Math.floor(player.y), playerPass); let best = -1, bi = 0;
   for (let i = 0; i < dm.length; i++) if (dm[i] > best && grid[(i / GW) | 0][i % GW] !== "_") { best = dm[i]; bi = i; }
   return [bi % GW, (bi / GW) | 0];
 }
@@ -249,5 +251,6 @@ const sfx = {
   ding: () => { tone(1320, 0, .3, "sine", .06); tone(990, .25, .4, "sine", .06); }, stinger: () => { tone(110, 0, 1.6, "sawtooth", .04, 104); tone(116, 0, 1.6, "sawtooth", .03, 123); },
   car: () => { tone(90, 0, .6, "sawtooth", .05, 60); noise(0, .4, 300, 1, .06); }, spa: () => { tone(523, 0, .8, "sine", .05); tone(659, .2, .8, "sine", .05); tone(784, .4, 1, "sine", .05); },
   sus: () => tone(620, 0, .18, "sine", .04, 760), spot: () => { tone(700, 0, .12, "square", .04); tone(940, .12, .2, "square", .04); },
-  thunder: () => { noise(0, 2.4, 90, .6, .3, "lowpass"); noise(.1, 1.2, 300, .8, .08); }, tick: () => tone(2400, 0, .02, "square", .02), beep: () => tone(880, 0, .09, "sine", .04),
+  thunder: () => { noise(0, 2.4, 90, .6, .3, "lowpass"); noise(.1, 1.2, 300, .8, .08); }, tick: () => tone(2400, 0, .02, "square", .02), beep: () => tone(880, 0, .09, "sine", .04), door: () => { noise(0, .14, 260, 1, .14, "lowpass"); tone(190, .02, .3, "sawtooth", .018, 120); },
+  lift: () => { tone(988, 0, .5, "sine", .05); tone(784, .35, .7, "sine", .05); },
 };

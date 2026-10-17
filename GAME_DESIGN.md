@@ -103,6 +103,46 @@ Wer dich erwischt, startet ein Gespräch aus 1–3 Fragen. Am Ende ist man immer
 - **Alle Personen als echte 3D-Figuren:** Gelenke (Knie, Ellbogen), Gesicht mit Augen, Pupillen, Nase und Ohren, Frisuren, Kittel, Kasack, Anzug, Patientenhemd, Bademantel, Gegenstände in der Hand, Schatten am Boden
 - **Alle Gegenstände als 3D-Objekte** auf kleinen Beistelltischen: Tasse, Dose, Donut, Spray, Klemmbrett, Batterie usw. Keine Emoji-Figuren mehr in der 3D-Welt.
 
+## Version 5: Missionen, Zimmer, Treppen
+
+### Wann bekommt man Missionen? Die Flucht-Zentrale
+- **Leitung:** Frau Bozkurt (Reinigung, seit 1994 im Haus, kennt jeden Gang). Sie meldet sich am Ende der Intro-Geschichte per Pager: „Ich hol dich hier raus.“
+- **Whiteboard im Arztzimmer** = Flucht-Zentrale: Gesamtplan aller sieben Stockwerke und Wahl der Nebenmissionen.
+- **Pro Stockwerk** kommt eine Titelkarte im GTA-Stil („MISSION · DER SCHLÜSSELDIENST“) und danach eine Pager-Nachricht von Frau Bozkurt mit dem Briefing.
+- **Erledigt** → „MISSION ERFÜLLT“ bzw. „NEBENJOB ERLEDIGT“ (+10 Energie), danach direkt die nächste Mission.
+- **Pager-Panel** (Missionszettel antippen oder Tab): aktuelle Mission mit Briefing, Missionen hier, Nebenmissionen, Aufgaben, Tasche, Jobangebote.
+
+Missionen mit Titel:
+
+| Stock | Mission | Nebenjob |
+| --- | --- | --- |
+| Innere | Der Schlüsseldienst | Spind-Raid, Die Abkürzung |
+| Orthopädie | Bizeps-Bürokratie | Flüssige Bestechung |
+| Radiologie | Licht aus, Herz aus | Stets bemüht |
+| Dermatologie | Gurkenscheiben-Protokoll | Glanz für unterwegs |
+| Keller | Keine Sicherung, kein Feierabend · Es werde Licht | |
+| Notaufnahme | Das teuerste Stück Papier | |
+| Parkhaus | Schranke des Schicksals · Freiheit, Diesel | |
+
+### Weniger Labyrinth, mehr Spiel
+- Karten wie echte Stationen: lange Flure, Zimmer links und rechts, Rundwege zum Ausweichen, offene Hallen (Orthopädie-Wartehalle, Notaufnahme).
+- **Türen öffnen und schließen.** Zimmer sind Verstecke. Geschlossene Türen blockieren die Sicht. Personen öffnen Türen manchmal selbst („Klack. Jemand kommt rein.“), Türen zu Ruheräumen nie.
+- **Verschlossene Türen** mit Gags: Chefarzt, Controlling, Qualitätsmanagement, Bettenzentrale, Serverraum, Personalrat, Privatstation, Archiv.
+- **Treppenhaus** als Ausgang: echte Stufen nach unten, Geländer, Schild zum nächsten Stock. Die Brandschutztür geht erst auf, wenn die Mission erledigt ist.
+- **Aufzug** als Alternative: fährt nur nach erledigter Mission. Dann: ruhige Fahrt mit Panflöte, steckenbleiben (+12 min) oder Fahrstuhlgespräch mit dem Chefarzt.
+
+### Arztzimmer
+Zwei Schreibtische mit Computern (KIS 2003, Mails, Solitaire, Dienstplan), Tastaturen, Diensttelefone, Schreibtischlampen, Kaffeebecher (einer mit Schimmel), Papierstapel, Klebezettel („PW: Sommer2019!“), kaputter Bürostuhl mit Klebeband und abgefallener Rolle, umgekippter Stuhl, Bereitschaftsliege, Pinnwand, Ordnerregal, Sideboard mit defekter Kaffeemaschine und Mikrowelle, Garderobe mit Kitteln, Fenster mit Vorhängen, Kalender voller Dienste, überquellender Mülleimer mit Pizzakarton, tote Pflanze („hat gekündigt“), Wanduhr. Benutzbar: Computer, Telefon, Kaffeemaschine, Liege, Whiteboard.
+
+### Gespräche
+61 verschiedene Gespräche in Pools pro Personentyp. Keine Wiederholung im selben Lauf. Mechaniken: Quiz, Ja/Nein, Wetten, Ausreden mit Erfolgsquote, Tauschhandel mit Gegenständen, mehrstufige Gespräche mit Zufriedenheitswert.
+
+### Bedienung und Anzeige
+- Radar-Minikarte wie bei GTA: dreht sich mit, Blickkegel nach vorn, Norden am Rand, Sichtkegel der Gegner. Antippen öffnet den großen Lageplan (Taste M).
+- Umsehen: überall tippen und ziehen, nur unten links ist der Lauf-Stick.
+- Querformat: kompaktes HUD. Pager antippen klappt das HUD ein.
+- Schatten (abschaltbar), zusammengefasste statische Geometrie für flüssige Bildrate.
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten
