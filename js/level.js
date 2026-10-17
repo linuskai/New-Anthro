@@ -90,7 +90,7 @@ function buildLevel(idx) {
 
   // walls
   const walls = [];
-  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] === "#") walls.push([x, y]);
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if ("#^l".includes(grid[y][x])) walls.push([x, y]); // elevators and locked doors sit in a real wall block
   const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex(theme)), walls.length);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Matrix4();
   walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));

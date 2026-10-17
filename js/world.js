@@ -276,7 +276,7 @@ sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -14
 const lampLight = new THREE.PointLight(0xe8f4ff, 0, 10, 1.6); scene.add(lampLight);
 /* a handful of real point lights hop between the ceiling panels closest to the player: local light, falloff, depth */
 const ceilLights = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xfff6e8, 0, 8.5, 2); scene.add(l); return l; });
-const flashlight = new THREE.SpotLight(0xfff2d8, 0, 20, .5, .55, 1.1);
+const flashlight = new THREE.SpotLight(0xfff2d8, 0, 22, .48, .75, 1.1);
 flashlight.shadow.mapSize.set(512, 512); flashlight.shadow.bias = -.002; flashlight.shadow.camera.near = .3; flashlight.shadow.camera.far = 20;
 flashlight.position.set(.15, -.15, 0); camera.add(flashlight); flashlight.target.position.set(0, -.08, -1); camera.add(flashlight.target);
 const reaLight = new THREE.PointLight(0xff3020, 0, 8); scene.add(reaLight);
@@ -584,11 +584,8 @@ const fpHand = new THREE.Group();
   const palm = mesh(GEO.ball, skin, .042, .04, .06); palm.position.set(.018, -.012, .045); fpHand.add(palm);
   for (let i = 0; i < 4; i++) { const f = mesh(GEO.taper, skin, .011, .05, .011); f.position.set(-.02, -.016 + .002 * i, .015 + i * .019); f.rotation.set(0, 0, -1.9); fpHand.add(f); }
   const thumb = mesh(GEO.taper, skin, .012, .05, .012); thumb.position.set(-.012, .022, .02); thumb.rotation.set(-1.4, 0, .4); fpHand.add(thumb);
-  // the beam: an open cone, additive, fading with distance
-  const beamTex = canvasTex(8, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(255,240,210,0)"); gr.addColorStop(.06, "rgba(255,240,210,.55)"); gr.addColorStop(.35, "rgba(255,240,210,.22)"); gr.addColorStop(1, "rgba(255,240,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, "beam");
-  const cg = new THREE.CylinderGeometry(.03, 1.25, 6, 24, 1, true); cg.translate(0, -3, 0); cg.rotateX(Math.PI / 2);
-  const beam = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .16, side: THREE.DoubleSide, toneMapped: false, fog: false }));
-  beam.position.set(.1, -.15, -.62); beam.rotation.set(.04, .05, 0); camera.add(beam); fpHand.userData.beam = beam; beam.visible = false;
+  // no geometric cone (it read as a grey wedge): the real spotlight does the work, the lens just glows
+  const glow = sprite(glowTex("rgba(255,240,200,1)"), .12, .12); glow.material.blending = THREE.AdditiveBlending; glow.material.depthTest = false; glow.position.set(0, 0, -.19); fl.add(glow); fpHand.userData.glow = glow;
   }
 fpHand.position.set(.12, -.25, -.5); fpHand.rotation.set(.45, -.2, .1); fpHand.visible = false; camera.add(fpHand);
 

@@ -562,6 +562,7 @@ addEventListener("resize", resize);
 
 let last = performance.now();
 function frame(now) {
+  if (fightOn) { last = now; requestAnimationFrame(frame); return; } // the fight has the screen to itself
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (mode === "outro" && outro) { updateOutro(dt); if (outro) { renderer.render(outro.sc, outro.cam); requestAnimationFrame(frame); return; } }
   if (mode === "play" && !document.hidden) update(dt);
