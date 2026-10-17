@@ -485,6 +485,113 @@ body.hudmin .mission { display: none; }
 .fg-btns button { appearance: none; border: 0; border-radius: 12px; padding: 10px 4px; background: #1d2a26; color: #f3f8f1; box-shadow: inset 0 0 0 2px #3a5a50; font-size: 24px; display: grid; gap: 2px; justify-items: center; touch-action: none; cursor: pointer; }
 .fg-btns button b { font: 800 13px/1.05 var(--display); text-transform: uppercase; } .fg-btns button small { font: 600 10px/1 var(--display); opacity: .7; }
 .fg-btns button:active { background: #f2b33d; color: #2a2610; }
+
+/* ---------- v13: missions, briefing, Mission Control, leaderboard, phone scenes, paperwork ---------- */
+.card.sel { width: min(100%, 620px); }
+.sel-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 8px; }
+.sel-card { --mc: #1f9d55; appearance: none; border: 0; cursor: pointer; text-align: left; color: #f3f8f1; border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 10px; align-items: start;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mc) 55%, #0b1513), #0f1a17); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mc) 70%, #fff 0%); touch-action: manipulation; }
+.sel-card:active { transform: scale(.98); } .sel-card:focus-visible { outline: 3px solid #f2b33d; outline-offset: 2px; }
+.sel-av { width: 50px; height: 50px; border-radius: 12px; display: grid; place-items: center; font-size: 28px; background: rgba(0,0,0,.25); }
+.sel-body { display: grid; gap: 3px; min-width: 0; }
+.sel-kind { font: 700 11px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; opacity: .8; } .sel-kind .ok { font-style: normal; color: #8affc0; }
+.sel-card b { font: 900 22px/1 var(--display); text-transform: uppercase; }
+.sel-card small { font: 600 14px/1.2 var(--display); opacity: .9; }
+.sel-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 700 12px/1.2 var(--mono); color: #ffe08a; }
+.sel-card em { font: 600 12px/1.2 var(--mono); font-style: normal; opacity: .75; }
+.card.sheet { width: min(100%, 560px); background: #f4f4ef; color: #1d2622; box-shadow: 0 0 0 4px #9aa3a0, 0 18px 50px rgba(0,0,0,.55); }
+.card.sheet .eyebrow { color: #c0322a; } .card.sheet h2 { color: #1d2622; }
+.card.sheet .btn { background: var(--sign); color: var(--sign-ink); } .card.sheet .btn.ghost { background: transparent; color: #1d2622; border-color: #1d2622; }
+.card.sheet h3 { margin: 6px 0 0; color: #34514c; }
+.ms-head { --mc: #1f9d55; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--mc); color: #fff; border-radius: 10px; padding: 10px 12px; }
+.ms-av { width: 56px; height: 56px; border-radius: 12px; background: rgba(0,0,0,.22); display: grid; place-items: center; font-size: 32px; }
+.ms-head small { display: block; font: 700 12px/1.2 var(--mono); opacity: .9; } .ms-head b { display: block; font: 900 28px/1 var(--display); text-transform: uppercase; margin: 2px 0; } .ms-head span { font: 600 15px/1.2 var(--display); }
+.ms-clock { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; }
+.ms-clock div { background: #1d2622; color: var(--lcd); border-radius: 8px; padding: 6px 8px; } .ms-clock div.warn { background: #6a1f1a; color: #ffd2cc; }
+.ms-clock small { display: block; font: 700 11px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: #cfe; opacity: .7; } .ms-clock b { font: 19px/1.1 var(--lcd-font); white-space: nowrap; }
+.ms-goals, .ms-kit, .ms-tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.ms-goals li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: start; font: 500 16px/1.2 var(--display); background: #fff; border-radius: 7px; padding: 7px 9px; box-shadow: inset 0 0 0 1px #d8dcd6; }
+.ms-goals li small { display: block; font: 700 12px/1.2 var(--mono); color: #6a7a72; margin-top: 2px; }
+.ms-goals .ck { width: 22px; height: 22px; border-radius: 5px; border: 2px solid #1d2622; display: grid; place-items: center; font-weight: 900; }
+.ms-goals li.done { background: #e6f3ec; } .ms-goals li.done .ck { background: #1f9d55; border-color: #1f9d55; color: #fff; } .ms-goals li.done b { text-decoration: line-through; }
+.ms-goals b { font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+.ms-floors { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font: 700 13px/1 var(--display); text-transform: uppercase; }
+.ms-floors .fl { background: #fff; border-radius: 5px; padding: 5px 7px; box-shadow: inset 0 0 0 1px #c9cfc9; } .ms-floors .fl.now { background: #f2b33d; } .ms-floors .fl.done { opacity: .45; text-decoration: line-through; } .ms-floors .fl.fin { background: #1d2622; color: #fff; text-transform: none; }
+.ms-floors .arr { font-style: normal; opacity: .5; }
+.ms-boss { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; background: #2a1414; color: #ffe2dc; border-radius: 8px; padding: 8px 10px; }
+.ms-boss > span { font-size: 28px; text-align: center; } .ms-boss b { display: block; font: 800 16px/1.1 var(--display); text-transform: uppercase; } .ms-boss small { font: 500 14px/1.2 var(--display); opacity: .9; }
+.ms-kit li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; align-items: center; font: 500 15px/1.2 var(--display); }
+.ms-kit .kit-ico { width: 34px; height: 34px; border-radius: 8px; background: #1d2622; display: grid; place-items: center; font-size: 20px; }
+.ms-kit b { font-weight: 800; text-transform: uppercase; } .ms-kit em { font-style: normal; font: 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; background: #f2b33d; color: #2a1c00; padding: 2px 5px; border-radius: 3px; vertical-align: 2px; } .ms-kit small { display: block; opacity: .8; }
+.ms-tasks li { display: flex; justify-content: space-between; gap: 8px; align-items: center; font: 500 15px/1.2 var(--display); background: #fff8d6; border-radius: 6px; padding: 5px 8px; }
+.ms-tasks .task-x { appearance: none; border: 1px solid #c0322a; color: #c0322a; background: #fff; border-radius: 5px; padding: 4px 8px; font: 800 12px/1 var(--display); text-transform: uppercase; cursor: pointer; }
+.legend.how li { grid-template-columns: 28px 1fr; align-items: start; font-size: 15px; } .legend.how .ico { background: #1d2622; color: #fff; font-size: 14px; }
+#mcHow { background: #fff; border-radius: 8px; padding: 8px 10px; } #mcHow summary { font: 800 15px/1.2 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; } #mcHow[open] summary { margin-bottom: 8px; }
+.mc-btns, .end-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; } .end-btns { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } .end-btns .btn { font-size: 15px; padding: 10px 12px; }
+.btn.night-now { background: #1b2236; color: #e8ecff; }
+.ticker { background: #c0322a; color: #fff; border-radius: 6px; padding: 7px 10px; font: 600 15px/1.25 var(--display); display: grid; gap: 2px; }
+.ticker b { font: 900 12px/1 var(--display); letter-spacing: .2em; color: #ffe08a; }
+.endscore .sc-k { font: 700 11px/1 var(--display) !important; letter-spacing: .14em; text-transform: uppercase; }
+.prof { display: grid; gap: 6px; background: #fff; border-radius: 8px; padding: 10px; } .prof label b { display: block; font: 800 15px/1 var(--display); text-transform: uppercase; } .prof label small { font: 500 13px/1.2 var(--display); opacity: .75; }
+.prof-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; } .prof-row input { font: 600 18px/1 var(--display); padding: 10px; border-radius: 6px; border: 2px solid #9aa3a0; min-width: 0; background: #fff; color: #1d2622; } .prof-row .btn { font-size: 15px; padding: 10px 12px; gap: 8px; }
+.av-row { display: flex; flex-wrap: wrap; gap: 4px; } .av-pick { appearance: none; border: 2px solid transparent; background: #eef1ee; border-radius: 8px; font-size: 22px; width: 40px; height: 40px; cursor: pointer; } .av-pick.on { border-color: var(--sign); background: #e6f3ec; }
+.b-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; } .b-tabs button { appearance: none; border: 0; background: #e2e6e2; color: #1d2622; border-radius: 7px; padding: 6px 2px; font-size: 20px; cursor: pointer; display: grid; gap: 2px; justify-items: center; }
+.b-tabs button span { font: 700 10px/1 var(--display); text-transform: uppercase; letter-spacing: .04em; } .b-tabs button.on { background: #1d2622; color: #fff; }
+.b-sort { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .b-sort button { appearance: none; border: 2px solid #1d2622; background: transparent; color: #1d2622; border-radius: 6px; padding: 7px; font: 800 13px/1 var(--display); text-transform: uppercase; cursor: pointer; } .b-sort button.on { background: #1d2622; color: #fff; }
+.b-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.b-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; grid-template-areas: "pos who val" "pos sub sub"; gap: 0 8px; align-items: center; background: #fff; border-radius: 7px; padding: 6px 9px; font: 500 15px/1.2 var(--display); }
+.b-list li.me { background: #fff3c4; box-shadow: inset 0 0 0 2px #f2b33d; } .b-list li.empty { display: block; text-align: center; opacity: .7; }
+.b-list .pos { grid-area: pos; font: 900 18px/1 var(--display); color: #c0322a; } .b-list .who { grid-area: who; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .b-list .who i { font-style: normal; font: 800 10px/1 var(--display); background: #1d2622; color: #fff; padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
+.b-list .val { grid-area: val; font: 800 17px/1 var(--display); font-variant-numeric: tabular-nums; } .b-list .sub { grid-area: sub; font: 600 12px/1.2 var(--mono); opacity: .65; }
+.t-mode.cont { background: linear-gradient(135deg, #2d3f8f, #1b2550); } .t-mode.cont .t-play { color: #1b2550; }
+.t-ghost.snd { min-width: 44px; }
+.icon-btn.mc { background: #f2b33d; border-color: #7a5a10; font-size: 20px; } .icon-btn.snd { font-size: 18px; }
+#hudClock.hit { animation: clockHit .9s ease-out; }
+@keyframes clockHit { 0%, 40% { color: #ff6a5a; text-shadow: 0 0 10px #ff3a2a; transform: scale(1.25); } 100% { transform: none; } }
+.clock-loss { position: fixed; z-index: 9; pointer-events: none; background: #c0322a; color: #fff; font: 800 15px/1 var(--display); text-transform: uppercase; letter-spacing: .04em; padding: 5px 8px; border-radius: 5px; box-shadow: 0 6px 16px rgba(0,0,0,.4); animation: lossUp 2.6s ease-out forwards; }
+@keyframes lossUp { 0% { opacity: 0; transform: translateY(6px) scale(.9); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }
+/* the phone in the intro film */
+.story-mid { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; }
+#storyPhone { width: min(78vw, 300px); max-height: 100%; animation: phoneIn .6s cubic-bezier(.2,1.3,.4,1); }
+@keyframes phoneIn { from { transform: translateY(40px) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.phone { background: #111; border-radius: 26px; padding: 10px; box-shadow: 0 0 0 3px #2a2a2a, 0 20px 50px rgba(0,0,0,.6); display: grid; gap: 6px; max-height: 44vh; overflow: hidden; }
+.ph-top { background: #1f2a26; color: #fff; border-radius: 16px 16px 4px 4px; padding: 7px 10px; display: grid; } .ph-top b { font: 800 15px/1.1 var(--display); } .ph-top small { font: 600 11px/1.2 var(--mono); opacity: .7; }
+.ph-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; align-content: start; padding: 4px; border-radius: 4px 4px 16px 16px; min-height: 120px; overflow: hidden; }
+.phone.chat .ph-top { background: #075e54; } .phone.chat .ph-body { background: #e5ddd5; }
+.phone.insta .ph-top { background: linear-gradient(90deg, #833ab4, #c13584, #fd1d1d); } .phone.insta .ph-body { background: #fff; }
+.bub { margin: 0; justify-self: start; width: fit-content; max-width: 86%; box-sizing: border-box; background: #fff; color: #111; border-radius: 10px 10px 10px 2px; padding: 6px 9px; font: 500 14px/1.25 -apple-system, system-ui, sans-serif; box-shadow: 0 1px 1px rgba(0,0,0,.15); opacity: 0; animation: bubIn .35s var(--d) forwards; }
+.bub.me { justify-self: end; background: #dcf8c6; border-radius: 10px 10px 2px 10px; }
+.phone.insta .bub { background: #efefef; } .phone.insta .bub.me { background: #3797f0; color: #fff; }
+@keyframes bubIn { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+.phone.slides .ph-top { background: #c43e1c; } .phone.slides .ph-body { background: #fff; }
+.slide { margin: 0; background: #fff; color: #1d2622; border-left: 5px solid #c43e1c; padding: 7px 9px; font: 700 14px/1.25 var(--display); box-shadow: 0 2px 6px rgba(0,0,0,.15); opacity: 0; animation: bubIn .4s var(--d) forwards; }
+.phone.video .ph-body, .phone.call .ph-body, .phone.voice .ph-body { background: linear-gradient(180deg, #23313a, #0e1418); color: #fff; justify-items: center; text-align: center; }
+.phone.video .ph-top small { color: #ff6a5a; opacity: 1; }
+.ph-face { width: 72px; height: 72px; border-radius: 50%; background: #3a4a52; display: grid; place-items: center; font: 900 30px/1 var(--display); color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.2); animation: talkPulse 1.2s ease-in-out infinite; }
+@keyframes talkPulse { 50% { box-shadow: 0 0 0 9px rgba(140,255,190,.12); } }
+.ph-face .wave { width: 46px; height: 22px; background: repeating-linear-gradient(90deg, #8affc0 0 3px, transparent 3px 6px); border-radius: 3px; animation: wave .5s steps(3) infinite alternate; }
+@keyframes wave { to { transform: scaleY(.4); } }
+.ph-sub { margin: 0; font: 600 14px/1.25 var(--display); background: rgba(0,0,0,.45); border-radius: 6px; padding: 4px 8px; opacity: 0; animation: bubIn .4s var(--d) forwards; }
+/* paperwork mini-game */
+#form { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(11,21,19,.78); padding: 16px; box-sizing: border-box; overflow-y: auto; }
+.fm-card { width: min(100%, 440px); background: #fbfaf4; color: #1d2622; border-radius: 4px; padding: 14px; box-shadow: 0 0 0 1px #d8d4c8, 6px 6px 0 #c9c3b2, 0 20px 50px rgba(0,0,0,.5); display: grid; gap: 10px; position: relative;
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, #e3ecf5 27px 28px); }
+.fm-head b { display: block; font: 900 22px/1 var(--display); letter-spacing: .06em; } .fm-head small { font: 600 14px/1.2 var(--display); opacity: .8; }
+.fm-now { font: 600 16px/1.2 var(--display); background: #fff3a8; padding: 7px 9px; border-radius: 4px; } .fm-now b { font-weight: 900; text-transform: uppercase; color: #c0322a; }
+.fm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.fm-btn { appearance: none; border: 1.5px dashed #6a7a72; background: #fff; color: #1d2622; border-radius: 3px; padding: 11px 6px; font: 700 14px/1.15 var(--display); cursor: pointer; touch-action: manipulation; min-height: 44px; }
+.fm-btn.ok { background: #e6f3ec; border-style: solid; border-color: #1f9d55; color: #1f9d55; text-decoration: line-through; }
+.fm-btn.bad { animation: fmBad .35s; } @keyframes fmBad { 30% { background: #ffd2cc; transform: translateX(-4px); } 60% { transform: translateX(4px); } }
+.fm-foot { display: flex; justify-content: space-between; font: 700 14px/1 var(--mono); } .fm-lost { color: #c0322a; }
+.fm-card.stamped::after { content: "GENEHMIGT"; position: absolute; right: 18px; top: 40%; font: 900 34px/1 var(--display); color: rgba(192,50,42,.85); border: 4px solid rgba(192,50,42,.85); padding: 4px 10px; transform: rotate(-14deg); border-radius: 6px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .sel-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sel-card { grid-template-columns: 1fr; } .sel-av { width: 40px; height: 40px; font-size: 22px; } .sel-card small { display: none; }
+  .card.sel, .card.sheet { width: min(100%, 760px); }
+  #storyPhone { position: fixed; right: max(14px, env(safe-area-inset-right, 0px)); top: 8px; width: min(40vw, 300px); z-index: 7; }
+  .phone { max-height: calc(100vh - 16px); } .ph-body { min-height: 0; }
+  #story .bar-top { height: 6vh; } #story .bar-bot { min-height: 0; } #storyPhone:not([hidden]) ~ * { }
+  #story:has(#storyPhone:not([hidden])) #storyText { max-width: calc(100vw - min(40vw, 300px) - 70px); }
+}
 </style>
 </head>
 <body>
@@ -526,7 +633,9 @@ body.hudmin .mission { display: none; }
       </div>
       <div class="hud-right">
         <canvas id="mini" width="200" height="200" aria-label="Lageplan"></canvas>
+        <button class="icon-btn mc" id="btnMC" type="button" aria-label="Mission Control">🎯</button>
         <button class="icon-btn" id="btnPause" type="button" aria-label="Pause">II</button>
+        <button class="icon-btn snd" id="btnSound" type="button" aria-label="Ton an oder aus">🔊</button>
         <button class="icon-btn" id="btnHud" type="button" aria-label="Anzeige verkleinern">▤</button>
       </div>
     </div>
@@ -552,19 +661,6 @@ body.hudmin .mission { display: none; }
     <div id="callText"></div>
     <div class="call-btns"><button id="btnDecline" type="button">Ablehnen</button><button id="btnAccept" type="button">Annehmen</button></div>
   </div>
-  <div id="tasks" hidden>
-    <div class="fz-head"><span class="fz-av">🧹</span><div><b>FLUCHT-ZENTRALE</b><small>Leitung: Frau Bozkurt · Reinigung, seit 1994 · per Pager</small></div></div>
-    <div id="fzNow"></div>
-    <h3>Missionen hier</h3><ul id="objList"></ul>
-    <h3 id="routeHead" hidden>Dein Ausweg</h3><ul id="routeList" hidden></ul>
-    <h3>Nebenmissionen</h3><ul id="sideList"></ul>
-    <h3>Rückrufe</h3><ul id="cbList"></ul><button type="button" id="btnCallbacks">Alle zurückrufen (+3 Min je)</button>
-    <h3>Aufgaben</h3><ol id="taskList"></ol>
-    <h3>Tasche</h3><ul id="bagList"></ul>
-    <h3>Jobangebote</h3><ul id="offerList"></ul>
-    <button type="button" id="btnTasksClose">Zuklappen</button>
-  </div>
-
   <div id="dlg" hidden>
     <div class="dlg-card" id="dlgCard">
       <div class="dlg-badge"><div class="stripe"></div><div class="clip"></div><div id="dlgPhoto"><span id="dlgAvatar"></span></div><div id="dlgName"></div><div id="dlgRole"></div><div class="barcode"></div></div>
@@ -586,7 +682,7 @@ body.hudmin .mission { display: none; }
 
   <div id="story" hidden>
     <div class="bar-top"></div>
-    <div></div>
+    <div class="story-mid"><div id="storyPhone" hidden></div></div>
     <div class="bar-bot">
       <div id="storyTime">16:59</div>
       <div id="storyText" aria-live="polite"></div>
@@ -609,9 +705,14 @@ body.hudmin .mission { display: none; }
       <p class="t-tag">Klinikum St. Sparen · seit 2009 „konsequent kostenoptimiert“. Dein Dienst ist vorbei. Das Krankenhaus sieht das anders.</p>
       <div class="err" id="loadErr" hidden>Die 3D-Engine konnte nicht geladen werden. Bitte Internetverbindung prüfen und neu laden.</div>
       <div class="t-modes">
+        <button class="t-mode cont" id="btnContinue" type="button" hidden>
+          <span class="t-mode-art" aria-hidden="true">💾</span>
+          <span class="t-mode-body"><span class="t-mode-kind">Gespeichert</span><b>Fortsetzen</b><small></small></span>
+          <span class="t-play" aria-hidden="true">▶</span>
+        </button>
         <button class="t-mode" id="btnStart" type="button">
           <span class="t-mode-art day" aria-hidden="true">🚗</span>
-          <span class="t-mode-body"><span class="t-mode-kind">Mission</span><b>Feierabend</b><small>Wähle deinen Ausweg. Schleich dich durch acht Stockwerke bis zum Fluchtfahrzeug.</small><em id="bestLine" hidden></em></span>
+          <span class="t-mode-body"><span class="t-mode-kind">Escape · 6 Missionen</span><b>Feierabend</b><small>Heim, Pharma, Beratung, Ästhetik, Kreuzfahrt oder Medfluencer. Jede Mission hat ihre eigene Geschichte und ihre Frist.</small><em id="bestLine" hidden></em></span>
           <span class="t-play" aria-hidden="true">▶</span>
         </button>
         <button class="t-mode night" id="btnNight" type="button">
@@ -623,6 +724,9 @@ body.hudmin .mission { display: none; }
       <div class="t-bar">
         <label class="t-diff" for="setDiffTitle"><span>Schwierigkeit</span><select id="setDiffTitle"><option value="easy">Entspannt</option><option value="normal">Dienstalltag</option></select></label>
         <button class="t-ghost" id="btnHowTo" type="button" aria-expanded="false" aria-controls="howTo">So spielst du</button>
+        <button class="t-ghost" id="btnBoard" type="button">🏆 Bestenliste</button>
+        <button class="t-ghost" id="profChip" type="button">🧑‍⚕️ Profil</button>
+        <button class="t-ghost snd" id="btnSoundTitle" type="button" aria-label="Ton an oder aus">🔊</button>
       </div>
       <div class="t-howto" id="howTo" hidden>
         <ul class="legend">
@@ -630,7 +734,8 @@ body.hudmin .mission { display: none; }
           <li><span class="ico" style="background:#c9a77a">⌂</span><span><b>Sichere Räume</b> · Arztzimmer, Küche, Kammer. Da kommt niemand rein.</span></li>
           <li><span class="ico" style="background:#f3f8f1">👣</span><span><b>Schleichen</b> · Stick leicht ziehen oder SCHLEICHEN. Rennen macht Lärm.</span></li>
           <li><span class="ico" style="background:#f3f8f1">💬</span><span><b>Erwischt?</b> Ein Gespräch, dann geht die Person für immer.</span></li>
-          <li><span class="ico" style="background:#f3f8f1">📟</span><span><b>Anrufe &amp; Aufträge</b> · annehmen gibt Goodwill, ablehnen spart Zeit, hat aber Folgen.</span></li>
+          <li><span class="ico" style="background:#f3f8f1">📞</span><span><b>Anrufe</b> · annehmen kostet Spielzeit. Ablehnen spart sie, aber dann kommt der Anrufer dich suchen.</span></li>
+          <li><span class="ico" style="background:#f3f8f1">⏱</span><span><b>Die Uhr</b> · Jede Mission hat eine Frist. Was dich Zeit kostet, blinkt rot an der Uhr. 🎯 oben rechts: Mission Control.</span></li>
           <li><span class="ico" style="background:#2d6fd8;color:#fff">⇅</span><span><b>Aufzug</b> · blaues Symbol auf Radar und Karte. Treppenhaus: grüne Schilder.</span></li>
         </ul>
         <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion, F Lampe, M Lageplan, P Pause.</p>
@@ -638,35 +743,45 @@ body.hudmin .mission { display: none; }
     </div>
   </section>
 
-  <section class="overlay" id="ovMail" hidden>
-    <div class="card mail">
-      <div class="mail-bar"><span>KIS 2003 · Outlook 97</span><span>Posteingang (1.384)</span></div>
-      <div id="mailListWrap">
-        <h2>Dein Ausweg</h2>
-        <p class="small">Zwischen 1.377 Mails vom Controlling liegen sieben, die nach Freiheit riechen. Wähle eine. Sie bestimmt deine Missionen und wer dich im Parkhaus abholt.</p>
-        <div class="inbox" id="mailList"></div>
-      </div>
-      <div class="mailview" id="mailView" hidden>
-        <div class="mail-head"><span class="mail-av" id="mailAv"></span><div><b id="mailFrom"></b><span id="mailSubj"></span></div></div>
-        <p id="mailBody"></p>
-        <div class="perks" id="mailPerks"></div>
-        <div class="dossier" id="mailDossier"></div>
-        <div class="mail-needs"><b>Unter-Missionen (in dieser Reihenfolge)</b><ul id="mailNeeds"></ul></div>
-        <div class="mail-btns"><button class="btn ghost" id="btnMailBack" type="button"><span>Zurück</span><span>←</span></button><button class="btn" id="btnMailTake" type="button"><span>Zusagen · los geht's</span><span>✓</span></button></div>
-      </div>
+  <section class="overlay" id="ovSelect" hidden>
+    <div class="card sel">
+      <div class="eyebrow">Klinikum St. Sparen · 16:40 · Station 5B</div>
+      <h2>Wähle deine Flucht</h2>
+      <p class="small">Sechs Abende, sechs Auswege. Jede Mission hat ihre eigene Geschichte, eigene Etagen, eine Frist und einen Endgegner am Ausgang.</p>
+      <div class="sel-list" id="selList"></div>
+      <button class="btn ghost" id="btnSelBack" type="button"><span>Zurück</span><span>←</span></button>
     </div>
   </section>
 
   <section class="overlay" id="ovBrief" hidden>
-    <div class="card board">
-      <div class="eyebrow">Flucht-Zentrale · Whiteboard im Arztzimmer</div>
-      <h2>Operation Feierabend</h2>
-      <p class="small">Leitung: Frau Bozkurt (Reinigung, kennt jeden Gang). Sie schickt dir pro Stockwerk die Missionen auf den Pager. Ziel: unbemerkt bis zum Auto.</p>
-      <p class="small" id="briefRoute"></p>
-      <ol class="plan" id="planList"></ol>
-      <h3 id="sideHead">Nebenmissionen · wähle bis zu 3</h3>
-      <div class="sides" id="sideBox"></div>
-      <button class="btn" id="btnBrief" type="button"><span>Mission verstanden</span><span>→</span></button>
+    <div class="card sheet">
+      <div class="eyebrow">Mission · Briefing</div>
+      <div id="briefBody"></div>
+      <button class="btn" id="btnBrief" type="button"><span>Mission starten</span><span>→</span></button>
+    </div>
+  </section>
+  <section class="overlay" id="ovMC" hidden>
+    <div class="card sheet">
+      <div class="eyebrow">🎯 Mission Control · Spiel pausiert</div>
+      <div id="mcBody"></div>
+      <details id="mcHow"><summary>So funktioniert's</summary><div id="mcHowBody"></div></details>
+      <div class="mc-btns"><button class="btn ghost" id="btnMCSave" type="button"><span>Speichern</span><span>💾</span></button><button class="btn" id="btnMCClose" type="button"><span>Weiter</span><span>▶</span></button></div>
+    </div>
+  </section>
+  <section class="overlay" id="ovBoard" hidden>
+    <div class="card sheet">
+      <div class="eyebrow">🏆 Bestenliste · Klinikum St. Sparen</div>
+      <h2>Wer flieht am besten?</h2>
+      <div class="prof">
+        <label for="profName"><b>Dein Spielername</b><small>Dein Konto ist dein Claude-Login. Der Name hier steht in der Bestenliste.</small></label>
+        <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
+        <div class="av-row" id="profAvs"></div>
+      </div>
+      <div class="b-tabs" id="boardTabs"></div>
+      <div class="b-sort" id="boardSort"><button type="button" data-s="score" class="on">Meiste Punkte</button><button type="button" data-s="time">Schnellste Flucht</button></div>
+      <ol class="b-list" id="boardList"></ol>
+      <p class="small" id="boardNote"></p>
+      <button class="btn ghost" id="btnBoardClose" type="button"><span>Zurück</span><span>←</span></button>
     </div>
   </section>
 
@@ -696,7 +811,7 @@ body.hudmin .mission { display: none; }
       <label class="setting" for="setBob"><span>Kopfwippen</span><input type="checkbox" id="setBob" checked></label>
       <p class="keys">iPhone: unten links laufen (leicht = schleichen) · überall sonst tippen und ziehen = umsehen · SCHLEICHEN / RENNEN · gelber Knopf Aktion (auch Türen) · Radar antippen = Lageplan · Pager antippen = HUD klein · LAMPE antippen<br>Tastatur: WASD · Maus (ins Bild klicken) oder ←/→ · C schleichen · Shift rennen · E Aktion · F Lampe · 1–6 Inventar · J/N Anruf · Tab Flucht-Zentrale · M Lageplan · B Whiteboard · P Pause</p>
       <button class="btn" id="btnResume" type="button"><span>Weiter</span><span>▶</span></button>
-      <button class="btn ghost" id="btnPlan" type="button"><span>Missionsplan</span><span>☰</span></button>
+      <button class="btn ghost" id="btnPlan" type="button"><span>Mission Control</span><span>🎯</span></button>
       <button class="btn ghost" id="btnQuit" type="button"><span>Schicht abbrechen</span><span>✕</span></button>
     </div>
   </section>
@@ -717,10 +832,12 @@ body.hudmin .mission { display: none; }
         <dt>Anrufe an / ab</dt><dd id="stCalls">0 / 0</dd>
         <dt>Co-Autorenschaften</dt><dd id="stPapers">0</dd>
       </dl>
-      <ul class="sideres" id="sideRes"></ul>
+      <div class="ticker" id="endTicker" hidden></div>
       <div class="roster" id="roster"></div>
       <p class="small" id="endBest" hidden></p>
       <button class="btn" id="btnAgain" type="button"><span>Nächste Schicht</span><span>↻</span></button>
+      <button class="btn night-now" id="btnNightNow" type="button" hidden><span>Nachtdienst spielen</span><span>🕯️</span></button>
+      <div class="end-btns"><button class="btn ghost" id="btnShare" type="button" hidden><span>Ergebnis teilen</span><span>↗</span></button><button class="btn ghost" id="btnEndBoard" type="button"><span>Bestenliste</span><span>🏆</span></button><button class="btn ghost" id="btnEndMenu" type="button"><span>Missionen</span><span>☰</span></button></div>
     </div>
   </section>
 </div>
@@ -744,6 +861,8 @@ body.hudmin .mission { display: none; }
 <script src="js/outro.js"></script>
 <script src="js/score.js"></script>
 <script src="js/scenarios.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/social.js"></script>
 <script src="js/flow.js"></script>
 </body>
 </html>

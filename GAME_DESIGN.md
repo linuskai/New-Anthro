@@ -314,11 +314,49 @@ Alle ein bis zwei Minuten eine Situation mit Entscheidung: führerloser Rollstuh
 - **Mehr Details**: Stoffstruktur mit Falten und Nähten auf Kleidung, Hautstruktur, Haarsträhnen, Relief auf Böden (Fugen) und Wänden (Putz), Lichtschalter und Steckdosen neben Türen, Rauchmelder mit grüner LED, Sprinkler.
 - **Auflösung**: bis zu 2× Pixeldichte und schärfere Texturen (Einstellung „Hohe Auflösung“, abschaltbar, falls es ruckelt).
 
+## Version 13: Neu gedacht – sechs Missionen, jede mit eigener Geschichte
+
+### Grundidee
+Der Krankenhausalltag ist der Gegner. Er will dich nicht töten, er will nur, dass du *noch kurz* etwas machst. Ein Abend ist eine Mission: Story, Frist, Unter-Missionen, ein Endgegner am Ausgang, ein eigenes Ende.
+
+### Ablauf
+1. **Missionswahl** (frei): Einfach heim, Pharma, Beratung, Ästhetik, Kreuzfahrt, Medfluencer.
+2. **Intro-Film**: Kamerafahrt durchs Arztzimmer (Arbeit, abstürzendes KIS), dann kommt das Angebot aufs Handy: WhatsApp von Kim, Videocall von Fr. Goldmann, PowerPoint von Kevin, Sprachnachricht von Dr. Glatt, Anruf von Kapitän Hansen, Instagram-DM von GlowUp Talents.
+3. **Briefing**: Geschichte, Frist (Uhrzeit), Unter-Missionen mit Etage, Weg durch die Etagen, Endgegner, Ausrüstung mit Zweck (Tarnen, Ablenken, Verteidigen) und „So funktioniert's“.
+4. **Etagen**: jede Mission nur die Etagen, die sie braucht. Neu: die Intensivstation (Kreuzfahrt: Reisetabletten, Medfluencer: Reel).
+5. **Endgegner** am Ausgang: Chefarzt, Compliance, Betriebsrat, Hygienefachkraft, Pförtner, Datenschutzbeauftragte. Reden (Chance hängt an den Nerven), Formular ausfüllen (klappt immer, kostet Zeit) oder kämpfen.
+6. **Ende**: Fahrzeug fährt weg, Eilmeldung, DRG-Erlös, Rang, Bestenliste, Teilen.
+
+| Mission | Frist | Etagen | Unter-Missionen |
+|---|---|---|---|
+| Einfach heim | 24:00 | Innere, Ortho, Keller, ZNA, Parkhaus | Autoschlüssel, Brotdose, Parkticket |
+| Pharma | 22:00 | Innere, Radiologie, Gastro, Parkhaus | Approbation, Arbeitszeugnis, Studienordner |
+| Beratung | 21:00 | Innere, Ortho, ZNA | Fax-Foto, Wartezeit-Foto, Excel von Hr. Paragraf, Foto Nr. 999 |
+| Ästhetik | 22:00 | Innere, Ortho, Derma, Parkhaus | Approbation, Vorher-Foto, Probetag |
+| Kreuzfahrt | 23:00 | Innere, Derma, Intensiv, Keller, ZNA | Approbation, Sonnencreme, Reisetabletten, Koffer |
+| Medfluencer | 23:30 | Innere, Radiologie, Intensiv, Derma, ZNA | Ringlicht, Intensiv-Reel, Collab, 3 Patienten-Storys |
+
+### Zeit, Energie, Scheitern
+- **Uhr**: 1 echte Sekunde = ½ Spielminute (Entspannt: weniger). Pager zeigt die Uhrzeit, das gelbe Feld die Restzeit bis zur Frist.
+- **Zeit verlieren**: Gespräche, angenommene Anrufe, Reanimationen, Papierkram. Jeder Verlust blinkt rot an der Uhr („+12 Min · Papierkram“).
+- **Aufgaben** werden im Treppenhaus als Formular fällig (Minispiel: Felder in der richtigen Reihenfolge antippen).
+- **Anrufe** sind Störungen (Pflege, Controlling, IT, Chefsekretariat, Angehörige, QM, Brandschutz). Ablehnen spart Zeit, dann sucht dich der Anrufer.
+- **Nerven** sind Leben (alle weg: Burnout, Nachtdienst). **Energie** fürs Rennen und Kämpfen.
+- **Scheitern**: Frist verpasst = Job weg (mit Eilmeldung). Burnout = Nachtdienst, direkt spielbar.
+
+### Satire
+DRG-Erlös statt Punkte (Kostenstelle … Leistungsträger:in), Durchsagen der Klinikleitung, Plakate („Wir sind Familie“ / „Stellenabbau“), Eilmeldungen am Ende.
+
+### Mitspielen und Vergleichen
+Profil mit Spielername und Avatar. Als geteiltes claude.ai-Artefakt eine gemeinsame Bestenliste pro Mission (meiste Euro oder schnellste Flucht), Spielstand über Geräte hinweg. Ergebnis teilen über das Teilen-Menü des Telefons.
+
+### Entfernt
+Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Posteingang mit sieben Mails, Jobangebote per Anruf, Umsatteln im Parkhaus, Startup und Gesundheitsamt.
+
 ## Ideen für später
 
-- Speicherpunkte zwischen den Abschnitten
 - Stimmen und Musik, Radio im Bereitschaftsraum
 - Tag-/Nachtdienst-Modus (Nachtdienst = Horror-Modus)
 - Mehrere Kliniken (Uniklinik, Kreiskrankenhaus, Privatklinik)
-- Bestenliste, Achievements („Kein Laborzettel angefasst“)
+- Achievements („Kein Laborzettel angefasst“)
 - Echte iPhone-App mit Unity oder Godot, wenn die Web-Version trägt

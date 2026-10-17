@@ -1,8 +1,9 @@
 /* Hospital Escape 3D · fighting mini-game: you (stethoscope) vs. an orthopaedist (reflex hammer). Tekken-ish, one round. */
 let fightOn = false;
-function fightGame(e, done) {
+function fightGame(e, done, o = {}) {
+  const weapon = o.weapon || "Reflexhammer", coat = o.coat || "#2a5f8a", place = o.place || "ORTHOPÄDIE · KRAFTRAUM-FLUR";
   const ov = document.createElement("div"); ov.id = "fight";
-  ov.innerHTML = `<div class="fg-top"><div class="fg-bar you"><b>DU</b><i></i><span>Stethoskop</span></div><div class="fg-timer">45</div><div class="fg-bar him"><b>${esc((e.name || "Dr. Bizeps").toUpperCase())}</b><i></i><span>Reflexhammer</span></div></div>
+  ov.innerHTML = `<div class="fg-top"><div class="fg-bar you"><b>DU</b><i></i><span>Stethoskop</span></div><div class="fg-timer">45</div><div class="fg-bar him"><b>${esc((e.name || "Dr. Bizeps").toUpperCase())}</b><i></i><span>${esc(weapon)}</span></div></div>
     <canvas class="fg-cv"></canvas><div class="fg-msg"></div>
     <div class="fg-btns"><button type="button" data-a="light">👂<b>Abhören</b><small>schnell</small></button><button type="button" data-a="heavy">🌀<b>Stethoskop-Peitsche</b><small>stark, langsam</small></button><button type="button" data-a="block">🛡️<b>Block</b><small>halten</small></button><button type="button" data-a="dodge">↩️<b>Ausweichen</b><small>Konter!</small></button></div>`;
   document.body.appendChild(ov); mode = "dialog"; fightOn = true;
@@ -49,15 +50,15 @@ function fightGame(e, done) {
     if (E.t <= 0) {
       if (E.st === "idle" || E.st === "hit" || E.st === "stagger" || E.st === "recover" || E.st === "block") {
         const r = Math.random();
-        if (r < .14 && E.hp < 100) { E.st = "flex"; E.t = 1.3; say(pick(["Er flext. Jetzt!", "„Schau dir DAS an.“ Er flext.", "Er bewundert seinen Bizeps."])); }
+        if (r < .14 && E.hp < 100) { E.st = "flex"; E.t = 1.3; say(o.boss ? pick(["Pause für ein Telefonat. Jetzt!", "Kurz abgelenkt. Jetzt!", "Blick aufs Handy. Jetzt!"]) : pick(["Er flext. Jetzt!", "„Schau dir DAS an.“ Er flext.", "Er bewundert seinen Bizeps."])); }
         else if (r < .26 && P.st === "idle") { E.st = "block"; E.t = .9; }
-        else { E.st = "wind"; E.t = easy ? .75 : .55; E.kind = Math.random() < .3 ? "smash" : "tap"; say(E.kind === "smash" ? "⚠️ PATELLA-SMASH!" : "⚠️ Er holt aus!", 700); }
+        else { E.st = "wind"; E.t = easy ? .75 : .55; E.kind = Math.random() < .3 ? "smash" : "tap"; say(E.kind === "smash" ? (o.boss ? "⚠️ " + weapon.toUpperCase() + "-ANGRIFF!" : "⚠️ PATELLA-SMASH!") : "⚠️ Holt aus!", 700); }
       } else if (E.st === "wind") {
         E.st = "strike"; E.t = .3;
         const dmg = (E.kind === "smash" ? 22 : 12) * (easy ? .7 : 1);
         if (P.st === "dodge") { P.counter = 1.2; say("Ausgewichen! Konter!"); spark(.34, .3, "MISS", "#8affc0"); }
         else if (P.block) { hurt(P, Math.round(dmg * .2), "geblockt"); }
-        else { hurt(P, dmg, E.kind === "smash" ? "REFLEX 4+!" : "TOCK!"); run.energy = Math.max(0, run.energy - 3); }
+        else { hurt(P, dmg, E.kind === "smash" ? (o.boss ? "AUTSCH!" : "REFLEX 4+!") : "TOCK!"); run.energy = Math.max(0, run.energy - 3); }
       } else if (E.st === "strike") { E.st = "recover"; E.t = .5 + Math.random() * .5; }
       else if (E.st === "flex") { E.st = "idle"; E.t = .4; }
     }
@@ -85,7 +86,8 @@ function fightGame(e, done) {
     g.beginPath(); g.moveTo(20, -18); const ax = 20 + Math.cos(arm) * 42, ay = -18 - Math.sin(arm) * 42; g.lineTo(ax, ay); g.stroke();
     if (flip && st === "flex") { g.fillStyle = skin; g.beginPath(); g.arc(30, -40, 15, 0, 7); g.fill(); }
     // weapon
-    if (flip) { g.save(); g.translate(ax, ay); g.rotate(-arm - .6); g.fillStyle = "#c8ccd0"; g.fillRect(-3, -2, 6, 40); g.fillStyle = "#e25a3d"; g.beginPath(); g.ellipse(0, 42, 16, 9, 0, 0, 7); g.fill(); g.restore(); }
+    if (flip && o.boss) { g.save(); g.translate(ax, ay); g.rotate(-arm - .6); g.fillStyle = "#2d3f8f"; g.fillRect(-14, 4, 28, 38); g.fillStyle = "#f4f4ef"; g.fillRect(-10, 10, 20, 4); g.fillRect(-10, 18, 14, 3); g.restore(); }
+    else if (flip) { g.save(); g.translate(ax, ay); g.rotate(-arm - .6); g.fillStyle = "#c8ccd0"; g.fillRect(-3, -2, 6, 40); g.fillStyle = "#e25a3d"; g.beginPath(); g.ellipse(0, 42, 16, 9, 0, 0, 7); g.fill(); g.restore(); }
     else { g.strokeStyle = "#222"; g.lineWidth = 4; g.beginPath(); g.moveTo(ax, ay); const reach = st === "heavy" && t < .4 ? 70 : st === "light" ? 26 : 8; g.quadraticCurveTo(ax + reach * .6, ay + 30, ax + reach, ay + (reach > 30 ? -6 : 18)); g.stroke(); g.fillStyle = "#b8bec4"; g.beginPath(); g.arc(ax + reach, ay + (reach > 30 ? -6 : 18), 6, 0, 7); g.fill(); }
     g.strokeStyle = flip ? skin : coat; g.lineWidth = flip ? 22 : 13; g.beginPath(); g.moveTo(-20, -18); g.lineTo(-30, st === "block" ? -46 : 18); g.stroke();
     // head
@@ -101,10 +103,10 @@ function fightGame(e, done) {
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, "#dfe6e2"); bg.addColorStop(.62, "#b9c6c0"); bg.addColorStop(.63, "#8fa29a"); bg.addColorStop(1, "#6f827a"); g.fillStyle = bg; g.fillRect(-20, 0, W + 40, H);
     g.fillStyle = "rgba(255,255,255,.6)"; for (let i = 0; i < 5; i++) g.fillRect(W * (.1 + i * .2) - 30 * dpr, 6 * dpr, 60 * dpr, 6 * dpr);
     g.fillStyle = "#b08a62"; g.fillRect(0, H * .5, W, 5 * dpr);
-    g.fillStyle = "rgba(0,0,0,.08)"; g.font = `800 ${28 * dpr}px ${SF}`; g.textAlign = "center"; g.fillText("ORTHOPÄDIE · KRAFTRAUM-FLUR", W / 2, H * .3);
+    g.fillStyle = "rgba(0,0,0,.08)"; g.font = `800 ${28 * dpr}px ${SF}`; g.textAlign = "center"; { const k = Math.min(1, W * .92 / g.measureText(place).width); g.font = `800 ${28 * dpr * k}px ${SF}`; } g.fillText(place, W / 2, H * .3);
     const s = Math.min(W / 380, H / 290), y = Math.min(H * .66, H * .95 - 118 * s);
     fighter(W * P.x, y, s, false, "#f4f4f0", "#f1c9a5", P.block ? "block" : P.st, P.t, P.hp);
-    fighter(W * E.x, y, s * 1.12, true, "#2a5f8a", "#e0ac7e", E.st, E.t, E.hp);
+    fighter(W * E.x, y, s * (o.boss ? 1.02 : 1.12), true, coat, o.skin || "#e0ac7e", E.st, E.t, E.hp);
     if (E.st === "wind") { g.fillStyle = "#e2483d"; g.font = `900 ${40 * dpr}px ${SF}`; g.fillText("!", W * E.x, y - 120 * s); }
     for (const sp of sparks) { g.globalAlpha = 1 - sp.t / .8; g.fillStyle = sp.col; g.font = `900 ${26 * dpr}px ${SF}`; g.fillText(sp.txt, W * sp.x, H * sp.y - sp.t * 60 * dpr); g.globalAlpha = 1; }
     ov.querySelector(".you i").style.width = P.hp + "%"; ov.querySelector(".him i").style.width = E.hp + "%";

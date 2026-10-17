@@ -3,11 +3,11 @@
 const escapeBoardTex = () => canvasTex(512, 288, (g, w, h) => {
   g.fillStyle = "#f6f6f2"; g.fillRect(0, 0, w, h);
   const M = `"Marker Felt","Comic Sans MS",${SF}`;
-  g.fillStyle = "#c0322a"; g.font = `800 34px ${M}`; g.fillText("FLUCHT-ZENTRALE", 20, 44);
+  g.fillStyle = "#c0322a"; g.font = `800 34px ${M}`; g.fillText("MISSION CONTROL", 20, 44);
   g.fillStyle = "#1d2622"; g.font = `600 19px ${M}`;
-  ["1. Schlüssel → Dr. KURZ!!", "2. Ortho: 3× Bizeps (Shake?)", "3. Radio: Lampe AUS = unsichtbar", "4. GASTRO: Lüftung!! (stinkt)", "5. DERMA = Wellness ♥", "6. Keller: Sicherung (Dr. Ewig??)", "7. ZNA: Parkticket", "8. P2 → AUTO → FREIHEIT"].forEach((l, i) => g.fillText(l, 22, 78 + i * 25));
+  ["Heim vor 24:00 (Kim!!)", "Pharma: Zeugnis? Approbation?", "Kevin: 3 Fotos + EXCEL", "Dr. Glatt: Probetag (Gurken)", "MS Sorgenfrei: Koffer im Keller", "@dr.feierabend: Ringlicht!", "Chef am Ausgang ⚠", "Formulare = ZEIT"].forEach((l, i) => g.fillText(l, 22, 78 + i * 25));
   g.strokeStyle = "#2d3f8f"; g.lineWidth = 3; g.beginPath(); g.moveTo(340, 150); g.lineTo(470, 100); g.stroke();
-  g.fillStyle = "#2d3f8f"; g.font = `700 20px ${M}`; g.fillText("Pharma?", 400, 92); g.fillText("Kreuzfahrt??", 380, 196); g.fillText("Amt?!", 430, 240);
+  g.fillStyle = "#2d3f8f"; g.font = `700 20px ${M}`; g.fillText("Frist!!", 410, 92); g.fillText("nicht erwischen", 350, 196); g.fillText("⏱ 17:00", 410, 240);
   g.fillStyle = "#1f9d55"; g.font = `800 22px ${M}`; g.fillText("Leise. Schleichen.", 300, 270);
 }, "escapeboard");
 const roomFloorTex = theme => canvasTex(256, 256, (g, w, h) => {
@@ -341,6 +341,13 @@ function routeModel(obj) {
     if (obj === "ringlight") { const t = new THREE.Mesh(GEO.torus, basic(0xfff6e0)); t.scale.set(.5, .5, .5); t.position.set(0, 1.45, .17); g.add(t); g.add(at(mesh(GEO.pole, lambert(0x222222), .5, .4, .5), 0, 1.15, .17)); }
     if (obj === "lunchbox") { g.add(at(rmesh(.3, .12, .2, .03, 0x6fcf97), 0, 1.08, .17)); g.add(at(plate(stickyTex("NICHT|ESSEN!!", "#fff59a"), .14, .14), 0, 1.1, .275)); }
     if (obj === "helmet") { const h = mesh(GEO.cap, lambert(0xe8a33a), .18, .14, .2); h.position.set(0, 1.03, .17); g.add(h); }
+  } else if (obj === "suitcase") {
+    const c = rmesh(.5, .7, .26, .05, 0x2d6fd8); c.position.set(0, .4, .2); g.add(c);
+    g.add(at(boxMesh(.18, .04, .04, 0x222222), 0, .8, .2)); for (const sx of [-.16, .16]) g.add(at(mesh(GEO.wheel, lambert(0x1a1a1a), .07, .05, .07), sx, .04, .2));
+    g.add(at(plate(stickyTex("KARIBIK|2023 (abgesagt)", "#f2c300"), .22, .16), .05, .5, .335));
+  } else if (obj === "reel") {
+    const d = monitorMesh(textTex(["HF 72  SpO2 98 %", "RR 118/76 · BOX 3", "~~~^~~~^~~~^~~"], "#061410", "#3cff8a", 512, 220, 44)); d.scale.set(.9, .45, .08); d.position.set(0, 1.85, .06); g.add(d);
+    g.add(at(plate(textTex(["KEINE FOTOS", "Datenschutz! (gilt auch für Reels)"], "#c0322a", "#fff", 256, 110, 26), .55, .24), 0, 1.25, .02));
   } else if (obj === "meds") {
     g.add(at(boxMesh(.8, .7, .3, 0xf4f4f0), 0, 1.4, .15)); g.add(at(plate(textTex(["MEDIKAMENTE", "abgeschlossen (offen)"], "#1f9d55", "#fff", 256, 110, 28), .7, .3), 0, 1.4, .31));
   }
@@ -371,6 +378,14 @@ function vehicleModel(route) {
     const f1 = mesh(GEO.cyl, lambert(0x2d3f8f), .02, 1, .02); f1.rotation.x = Math.PI / 2; f1.position.set(0, .55, 0); g.add(f1);
     g.add(at(mesh(GEO.cyl, lambert(0x2d3f8f), .02, .5, .02), 0, .6, -.2)); g.add(at(boxMesh(.12, .04, .22, 0x111111), 0, .88, -.2)); g.add(at(boxMesh(.45, .03, .03, 0x333333), 0, .98, .45));
     g.add(at(boxMesh(.3, .22, .25, 0x8a6a4a), 0, .85, .62)); g.add(at(plate(textTex(["AMT"], "#2d3f8f", "#fff", 128, 60, 40), .2, .1), 0, .85, .75));
+  } else if (v === "stretch") {
+    const c = makeCar(0xf2f2f2, true, { plate: "CONSULT 1" }); c.scale.set(1.05, 1, 1.8); g.add(c);
+    const p = makePerson({ skin: SKIN[4], hair: 0x9a6b3f, hairStyle: "spiky", shirt: 0xffffff, pants: 0x2a3550, jacket: 0x2a3550, acc: "laptop", glasses: "sunTop", mood: "smile" }); p.group.position.set(1.4, 0, .5); p.group.rotation.y = -.6; g.add(p.group);
+  } else if (v === "van") {
+    const b = new THREE.Mesh(GEO.box, [lambert(0xffffff, textTex(["GLOWUP TALENTS ✨"], "#c13584", "#fff", 512, 100, 40)), lambert(0xffffff, textTex(["GLOWUP TALENTS ✨"], "#c13584", "#fff", 512, 100, 40)), phong(0xff7ab8), phong(0xff7ab8), phong(0xff7ab8), phong(0xff7ab8)]);
+    b.scale.set(2, 2, 4.6); b.position.y = 1.35; g.add(b);
+    const ring = new THREE.Mesh(GEO.torus, basic(0xfff6e0)); ring.scale.set(.6, .6, .6); ring.rotation.x = Math.PI / 2; ring.position.set(0, 2.5, .8); g.add(ring);
+    for (const [x, z] of [[-.95, -1.5], [.95, -1.5], [-.95, 1.5], [.95, 1.5]]) { const w = mesh(GEO.wheel, lambert(0x1a1a1a), 1.1, .9, 1.1); w.rotation.z = Math.PI / 2; w.position.set(x, .35, z); g.add(w); }
   } else if (v === "bus") {
     const b = new THREE.Mesh(GEO.box, [lambert(0xffffff, textTex(["HAFEN-SHUTTLE · MS SORGENFREI"], "#1f7a8c", "#fff", 512, 100, 34)), lambert(0xffffff, textTex(["HAFEN-SHUTTLE · MS SORGENFREI"], "#1f7a8c", "#fff", 512, 100, 34)), phong(0x1f7a8c), phong(0x1f7a8c), phong(0x1f7a8c), phong(0x1f7a8c)]);
     b.scale.set(2.2, 2.3, 5.4); b.position.y = 1.45; g.add(b);

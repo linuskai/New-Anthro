@@ -27,9 +27,9 @@ addEventListener("keydown", e => {
     if (call && k === "n") declineCall();
     if (k === "p" || k === "escape") pause();
     if (k === "m") openMap();
-    if (k === "b") showBrief(true);
-    if (k === "tab") { e.preventDefault(); $("tasks").hidden = !$("tasks").hidden; }
+    if (k === "b" || k === "tab") { e.preventDefault(); openMC(); }
   } else if (mode === "pause" && (k === "p" || k === "escape")) resume();
+  else if (mode === "mc" && (k === "b" || k === "tab" || k === "escape")) { e.preventDefault(); closeMC(); }
   else if (mode === "map" && (k === "m" || k === "escape")) closeMap();
 });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
@@ -45,7 +45,6 @@ let locked = false;
 function clearInputs() { ptr.move = null; ptr.look = null; $("moveStick").hidden = true; $("lookStick").hidden = true; player.sprint = false; $("btnSprint").classList.remove("on"); }
 touchLayer.addEventListener("pointerdown", e => {
   if (mode !== "play") return;
-  $("tasks").hidden = true;
   if (e.pointerType === "mouse" && !locked && touchLayer.requestPointerLock) { try { const p = touchLayer.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
   const left = e.pointerType !== "mouse" && e.clientX < innerWidth * .45 && e.clientY > innerHeight * .42;
   if (left && !ptr.move) {
@@ -114,21 +113,22 @@ function findFocus() {
   const consider = (x, y, range, item) => { const dx = x - player.x, dy = y - player.y, d = Math.hypot(dx, dy); if (d > range) return; if (d > .55 && (dx * fx + dy * fy) / d < .1) return; if (d < bd) { bd = d; best = item; } };
   for (const f of level.friends) consider(f.x, f.y, 1.4, { type: "friend", ref: f, label: "Sprechen", name: FRIENDS[f.kind].name });
   for (const it of level.items) if (!it.taken) consider(it.wx, it.wy, 1.05, { type: "item", ref: it, label: "Nehmen", name: ITEMS[it.kind].name });
-  if (run.route === "amt" && !run.flags.has("stamp1")) for (const e of level.enemies) if (e.type === "V" && !e.done && !e.gone) consider(e.x, e.y, 1.7, { type: "stampV", ref: e, label: "Stempel holen", name: e.name });
+  if (run.route === "consult" && !run.flags.has("excel")) for (const e of level.enemies) if (e.type === "V" && !e.done && !e.gone) consider(e.x, e.y, 1.7, { type: "stampV", ref: e, label: "Excel holen", name: e.name });
   for (const e of level.enemies) if (e.type === "U" && !e.cleared) consider(e.x, e.y, 1.45, { type: "bouncer", ref: e, label: "Ansprechen", name: "Orthopäde" });
+  if (level.boss && !level.boss.cleared) consider(level.boss.x, level.boss.y, 1.6, { type: "boss", ref: level.boss, label: "Ansprechen", name: level.boss.def.name + " · Endgegner" });
   for (const p of level.props) {
     if (p.kind === "M" && p.uses < 3) consider(p.x, p.y, 1.35, { type: "machine", ref: p, label: "Automat", name: "Snackautomat" });
     if (p.kind === "L" && !run.flags.has("approbation")) consider(p.x, p.y, 1.35, { type: "locker", ref: p, label: "Öffnen", name: "Dein Spind" });
     if (p.kind === "G" && !run.flags.has("power")) consider(p.x, p.y, 1.35, { type: "fuse", ref: p, label: run.flags.has("fuse") ? "Reparieren" : "Ansehen", name: "Sicherungskasten" });
     if (p.kind === "bedhide") consider(p.x, p.y, 1.25, { type: "bedhide", ref: p, label: player.hidden ? "Aufstehen" : "Hinlegen", name: "Bett · neben dem Patienten" });
     if (p.kind === "w") consider(p.x, p.y, .95, { type: "cart", ref: p, label: player.hidden ? "Raus" : "Verstecken", name: "Wäschewagen" });
-    if (p.kind === "v") consider(p.x, p.y, 1.5, { type: "board", ref: p, label: "Öffnen", name: "Flucht-Zentrale" });
+    if (p.kind === "v" && run.mode === "mission") consider(p.x, p.y, 1.5, { type: "board", ref: p, label: "Öffnen", name: "Mission Control" });
     if (p.kind === "W" && !p.used) consider(p.x, p.y, 1.4, { type: "spa", ref: p, label: "Liegen", name: "Wellness-Liege" });
     if (p.kind === "sofa" && (run.mode === "night" ? !(p.room.restT > run.minutes) : !p.room.rested)) consider(p.x, p.y, 1.3, { type: "sofa", ref: p, label: p.bed ? "Hinlegen" : "Ausruhen", name: p.bed ? "Bereitschaftsliege" : "Sofa" });
     if (p.kind === "t" && !run.flags.has("ticket")) consider(p.x, p.y, 1.35, { type: "ticket", ref: p, label: "Bezahlen", name: "Parkticket-Automat" });
     if (p.kind === "=" && !run.flags.has("barrier")) consider(p.x, p.y, 1.5, { type: "barrier", ref: p, label: "Ticket rein", name: "Schranke" });
     if (p.kind === "y" && !run.flags.has("vent")) consider(p.x, p.y, 1.4, { type: "vent", ref: p, label: "Einschalten", name: "Lüftung" });
-    if (p.kind === "j") consider(p.x, p.y, 1.7, { type: "car", ref: p, label: "Einsteigen", name: "Dein Auto" });
+    if (p.kind === "j") consider(p.x, p.y, 1.7, { type: "car", ref: p, label: "Einsteigen", name: run.route === "stay" ? "Dein Auto" : mission().ride });
   }
   for (const d of level.doors) {
     const tx = d.x + .5, ty = d.y + .5, inTile = Math.floor(player.x) === d.x && Math.floor(player.y) === d.y;
@@ -141,7 +141,7 @@ function findFocus() {
     if (p.kind === "phone") consider(p.x, p.y, 1.3, { type: "phone", ref: p, label: "Abheben", name: "Diensttelefon" });
     if (p.kind === "fire") consider(p.x, p.y, 1.3, { type: "fire", ref: p, label: "Feuermelder", name: "Nur im Notfall" });
     if (p.kind === "brew") consider(p.x, p.y, 1.3, { type: "brew", ref: p, label: "Kaffee", name: "Kaffeemaschine" });
-    if ((p.kind === "photo" || p.kind === "stamp" || p.kind === "meds" || p.kind === "grab") && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.kind === "stamp" ? "Stempeln" : p.kind === "grab" ? p.grab[1] : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
+    if (["photo", "stamp", "meds", "grab", "film"].includes(p.kind) && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.grab ? p.grab[1] : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
   }
   if (run.task && run.mode === "night") consider(run.task.x + .5, run.task.y + .5, 1.5, { type: "nighttask", label: "Versorgen", name: "Zi. " + run.task.room });
   if (run.rea && !run.rea.done) consider(run.rea.x + .5, run.rea.y + .5, 1.3, { type: "rea", label: "Reanimieren", name: "Patient ohne Puls" });
@@ -153,6 +153,7 @@ function act() {
   if (f.type === "friend") friendDialog(f.ref);
   else if (f.type === "item") pickupItem(f.ref);
   else if (f.type === "bouncer") bouncerDialog(f.ref);
+  else if (f.type === "boss") bossDialog(f.ref);
   else if (f.type === "machine") {
     f.ref.uses++; const v = Math.random();
     if (v < .45) { addItem("$"); showToast("🍩", "#f3f8f1", "Snackautomat", "Ein Donut fällt. 4,50 €. Du hattest 5 €. Kein Wechselgeld.", [good("🍩 eingepackt")]); }
@@ -167,7 +168,7 @@ function act() {
     player.hidden = !player.hidden;
     if (player.hidden) { sfx.step(); showToast("🛏️", "#9cc6e6", "Unter der Decke", pick(["Du legst dich neben Hr. Brösel und ziehst die Decke hoch. Er sagt: „Na endlich mal ein Arzt, der Zeit hat.“", "Unter der Decke. Der Patient neben dir flüstert: „Ich verrate nichts. Aber ich will morgen Schnitzel.“", "Du bist jetzt Flurbett 24b. Niemand schaut zweimal hin. Flurbetten sind unsichtbar, sagt das Controlling."]), [good("Versteckt")]); }
   } else if (f.type === "cart") { player.hidden = !player.hidden; if (player.hidden) setMsg("Im Wäschewagen. Riecht nach Station 4. Nicht bewegen.", 2.5); }
-  else if (f.type === "board") showBrief(true);
+  else if (f.type === "board") openMC();
   else if (f.type === "vent") player.channel = { t: 0, total: 2.4, label: "Hebel umlegen…", done: () => { run.flags.add("vent"); sfx.power(); showToast("🌬️", "#7a9a3a", "Operation Frischluft", pick(["Die Lüftung röchelt, hustet, läuft. Zum ersten Mal seit 2017 riecht die Station nach… Station.", "Ein Brummen. Dann ein Luftzug. Ein Gastroenterologe ruft: „Was ist das für ein komischer Geruch?“ Es ist frische Luft."]), [good("Lüftung an")]); updateHud(); } };
   else if (f.type === "spa") player.channel = { t: 0, total: 2.2, label: "Entspannen…", done: () => { f.ref.used = true; run.spa++; run.flags.add("spa"); sfx.spa(); showToast("🧖", "#f6c1d4", "Wellness-Liege", "Gurkenscheiben auf den Augen. Du vergisst kurz, dass du Ärztin oder Arzt bist.", gain({ energy: 40, nerves: 1 })); updateHud(); } };
   else if (f.type === "sofa" && run.mode === "night") player.channel = { t: 0, total: 3, label: "Schlafen…", done: () => { f.ref.room.restT = run.minutes + 85; run.minutes += 25; sfx.spa(); showToast("😴", "#2d3f8f", "Powernap", pick(["Du schläfst 25 Minuten. Der Pager schläft nicht. Er wartet nur.", "Du träumst vom Feierabend. Im Traum klingelt das Telefon. Auch in echt.", "Augen zu. Irgendwo flüstert jemand „Kurven…“. Augen wieder auf."]), gain({ energy: 45, nerves: 1 }).concat([{ text: "+25 Min" }])); updateHud(); } };
@@ -178,7 +179,7 @@ function act() {
     if (!run.flags.has("ticket")) { showToast("🚧", "#c0322a", "Schranke", "„Bitte Ticket einführen.“ Du hast keins. Der Automat steht in der Notaufnahme.", []); return; }
     run.flags.add("barrier"); grid[Math.floor(f.ref.y)][Math.floor(f.ref.x)] = "."; f.ref.open = true; sfx.ding();
     showToast("🎫", "#1f9d55", "Schranke", "Piep. Sie öffnet sich. 12 € für 9 Stunden Überstunden-Parken. Fair.", [good("Schranke offen")]); updateHud();
-  } else if (f.type === "car") { if (!run.flags.has("key")) { showToast("🔑", "#c0322a", "Dein Auto", "Kein Schlüssel. Der liegt noch bei Dr. Kurz.", []); return; } finale(); }
+  } else if (f.type === "car") { if (level.boss && !level.boss.cleared) { showToast(mission().boss.av, "#e2483d", mission().boss.name, "„Moment!“ " + mission().boss.name + " stellt sich dir in den Weg. Erst an mir vorbei.", []); return; } if (run.route === "stay" && !run.flags.has("key")) { showToast("🔑", "#c0322a", "Dein Auto", "Kein Schlüssel. Der liegt noch bei Dr. Kurz.", []); return; } finale(); }
   else if (f.type === "rea") startCpr();
   else if (f.type === "door") toggleDoor(f.ref);
   else if (f.type === "lift") liftDialog(f.ref);
@@ -189,10 +190,11 @@ function act() {
   else if (f.type === "fire") fireAlarmDialog(f.ref);
   else if (f.type === "routeprop") {
     const p = f.ref; run.flags.add(p.goal); sfx.pick();
-    if (p.kind === "photo") { flash(); tone(1800, 0, .05, "square", .05); showToast("📸", "#f2b33d", "Beweisfoto", pick(["Klick. Kevin wird das auf Folie 12 „Quick Wins“ packen.", "Klick. Im Hintergrund winkt eine Pflegekraft. Sie ahnt nicht, dass sie gerade „Optimierungspotenzial“ ist.", "Klick. Du fühlst dich schmutzig. Und sechsstellig."]), [good(BAG_NAMES[p.goal])]); }
+    if (p.kind === "photo") { flash(); tone(1800, 0, .05, "square", .05); showToast("📸", "#f2b33d", "Beweisfoto", pick(run.route === "botox" ? ["Klick. Vorher. Dr. Glatt wird ein Nachher daraus machen. Mit Filter.", "Klick. Dr. Kreuzband flext automatisch. Er spürt Kameras."] : ["Klick. Kevin wird das auf Folie 12 „Quick Wins“ packen.", "Klick. Im Hintergrund winkt eine Pflegekraft. Sie ahnt nicht, dass sie gerade „Optimierungspotenzial“ ist.", "Klick. Du fühlst dich schmutzig. Und sechsstellig."]), [good(BAG_NAMES[p.goal] || "Foto")]); }
+    else if (p.kind === "film") { flash(); sfx.spa(); showToast(p.grab[0], "#c13584", "Reel im Kasten", p.grab[2], [good("Reel"), good("+3.200 Follower")]); }
     else if (p.kind === "stamp") showToast("🖃", "#2d3f8f", "Stempel", pick(["Ratsch. Ein Stempel, leicht schief. Behörden lieben schief.", "Ratsch. Das Datum ist von 2019. Egal, Stempel ist Stempel."]), [good(BAG_NAMES[p.goal])]);
     else if (p.kind === "grab") showToast(p.grab[0], "#1f9d55", BAG_NAMES[p.goal] || "Eingepackt", p.grab[2], [good(BAG_NAMES[p.goal] || "Eingepackt")]);
-    else showToast("💊", "#1f9d55", "Reisetabletten", "Eingepackt. Das Butterbrot lässt du liegen. Es hat hier Rechte.", [good("Reisetabletten")]);
+    else showToast("💊", "#1f9d55", "Reisetabletten", p.grab ? p.grab[2] : "Eingepackt.", [good("Reisetabletten")]);
     updateHud();
   }
   else if (f.type === "stampV") stampDialog(f.ref);
@@ -248,7 +250,7 @@ function updatePlayer(dt) {
   stepAxis(vx, 0); stepAxis(0, vy);
   if (level.exit && !exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) {
     player.x = ox; player.y = oy;
-    const lk = LEVELS[run.idx].lock || "Erst die Mission erledigen.";
+    const miss = objectives().filter(o => o.main && !o.done && !o.isExit), lk = miss.length && (miss[0].route || miss[0].boss || !LEVELS[run.idx].lock) ? "Noch nicht: " + miss.map(o => o.title || o.text).join(", ") : LEVELS[run.idx].lock || "Erst die Mission erledigen.";
     if (msg.text !== lk) setMsg(lk, 3, true);
   }
   run.energy = Math.max(0, run.energy - dt * (sprinting ? 6 : moving ? (sneaking ? .2 : .4) : .1));
@@ -359,7 +361,7 @@ function updateEnemy(e, dt) {
   if (e.gone) return;
   if (e.static) {
     if (e.cool > 0) e.cool -= dt;
-    if (!e.cleared && Math.hypot(player.x - e.x, player.y - e.y) < .95 && !(e.cool > 0) && player.inv <= 0) { e.cool = 3; bouncerDialog(e); }
+    if (!e.cleared && Math.hypot(player.x - e.x, player.y - e.y) < .95 && !(e.cool > 0) && player.inv <= 0) { e.cool = 3; (e.boss ? bossDialog : bouncerDialog)(e); }
     return;
   }
   if (e.state === "leaving") {
@@ -397,7 +399,11 @@ function updateEnemy(e, dt) {
   if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (settings.diff === "easy" ? .85 : 1)); return; }
   if (e.state === "lured") { walkTo(e, lure.x, lure.y, t.approach * 1.2, dt); return; }
   if (e.state === "nerd" && nerdLure) { if (Math.hypot(e.x - nerdLure.x, e.y - nerdLure.y) > .8) walkTo(e, Math.floor(nerdLure.x), Math.floor(nerdLure.y), t.approach, dt); return; }
-  if (e.hunter) { walkTo(e, Math.floor(player.x), Math.floor(player.y), t.walk * .9, dt); return; }
+  if (e.hunter) {
+    // a declined caller searches for a while, but a safe room or a long hide makes them give up
+    if (e.huntT != null && (e.huntT -= dt * (playerSafe() || player.hidden ? 4 : 1)) <= 0) { e.hunter = false; e.label.material.map = labelFor(t); e.label.material.needsUpdate = true; emote(e, "🤷"); }
+    else { walkTo(e, Math.floor(player.x), Math.floor(player.y), t.walk * 1.1, dt); return; }
+  }
   patrol(e, t, dt);
 }
 function updateHorde(dt) {
@@ -472,65 +478,62 @@ function pickupPaper(p) {
 // ---------- calls ----------
 // what accepting or declining a call actually does, printed on the buttons
 function callHints(def) {
-  const a = def.acc || {}, d = def.dec || {}, A = [], D = [];
+  const a = def.acc || {}, A = [];
   if (def.onAccept) return ["Auftrag übernehmen · Zeit läuft", "Ruhe · evtl. −1 Nerv"];
-  if (a.mins) A.push(`−${a.mins} Min`); if (a.energy) A.push(`+${a.energy} Energie`); if (a.nerves > 0) A.push("+1 Nerv"); if (a.nerves < 0) A.push("−1 Nerv");
-  if (a.task) A.push("+1 Aufgabe"); if (a.duties) A.push(`+${a.duties} Dienst`); if (a.offer) A.push("neuer Ausweg im Parkhaus");
-  if (def.dept) A.push(`${DEPT_NAME[def.dept]} lässt dich 1× ziehen`);
-  if (def.offer) D.push(d.retry ? "ruft wieder an" : "Angebot verfällt");
-  else if (d.task) { const n = run.callbacks.length + 1; D.push(`Rückruf ${n}/2` + (n >= 2 ? " → du wirst ausgerufen!" : "")); }
-  else D.push("keine Folgen");
-  return [A.join(" · ") || "nichts", D.join(" · ")];
+  if (a.mins) A.push(`+${a.mins} Min`); if (a.energy) A.push(`+${a.energy} Energie`); if (a.nerves > 0) A.push("+1 Nerv"); if (a.nerves < 0) A.push("−1 Nerv"); if (a.duties) A.push(`+${a.duties} Dienst`); if (def.hunt) A.push(`${DEPT_NAME[def.hunt]} lässt dich 1× ziehen`);
+  return [A.join(" · ") || "nichts", def.hunt ? `${DEPT_HUNT[def.hunt]} kommt dich suchen` : "keine Folgen"];
 }
 function startCall(def) {
   call = { def, t: 0, loud: false };
   $("callFrom").textContent = def.from; $("callSub").textContent = def.sub + " · ruft an…"; $("callAvatar").textContent = def.av; $("callText").textContent = def.text;
   const [ha, hd] = callHints(def); $("btnAccept").innerHTML = `Annehmen<small>${esc(ha)}</small>`; $("btnDecline").innerHTML = `Ablehnen<small>${esc(hd)}</small>`;
-  const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud"); el.classList.toggle("offer", !!def.offer);
+  const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud", "offer");
   sfx.ring();
 }
-function endCall() { call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 40 + Math.random() * 25; }
+function endCall() { call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 45 + Math.random() * 30; }
 function applyEffect(eff, title, av) {
   let st = [];
-  if (eff.mins) st = st.concat(pen({ mins: eff.mins }));
+  if (eff.mins) { run.minutes += eff.mins; st.push({ text: "+" + eff.mins + " Min" }); }
   if (eff.task) st = st.concat(pen({ tasks: [eff.task] }));
   if (eff.duties) st = st.concat(pen({ duties: eff.duties }));
   if (eff.nerves > 0 || eff.energy) st = st.concat(gain({ nerves: Math.max(0, eff.nerves || 0), energy: eff.energy }));
   if (eff.nerves < 0) st = st.concat(pen({ nerves: -eff.nerves }));
-  if (eff.offer) { run.offers.add(eff.offer); st.push(good("Jobangebot")); }
   if (!st.length) st.push(good("Aufgelegt"));
   showToast(av, "#e6ece9", title, eff.note || eff.task || "Aufgelegt.", st);
   updateHud(); checkDeath();
 }
-const DEPT_NAME = { N: "Pflege", V: "Verwaltung", C: "Chefetage", I: "Innere" };
 function acceptCall() {
   if (!call) return; const c = call.def;
   if (c.onAccept) { call = null; endCall(); c.onAccept(); return; } run.callsAcc++; endCall(); applyEffect(c.acc, c.from + " · angenommen", c.av);
-  if (c.dept) { run.goodwill[c.dept] = (run.goodwill[c.dept] || 0) + 1; setTimeout(() => showToast("🤝", "#1f9d55", "Telefon-Karma", `Die ${DEPT_NAME[c.dept]} hat das mitbekommen. Wer von dort dich das nächste Mal erwischt, lässt dich gehen.`, [good("Goodwill " + DEPT_NAME[c.dept])]), 1800); }
+  if (c.hunt) run.goodwill[c.hunt] = (run.goodwill[c.hunt] || 0) + 1;
 }
+/* declining (or ignoring) a call: whoever called now comes looking for you */
 function missCall(c, verb) {
   run.callsDec++; endCall();
-  if (c.offer) { applyEffect(c.dec, c.from + " · " + verb, c.av); if (c.dec.retry) run.headhunterT = 45; return; }
-  run.callbacks.push(c.from);
-  const n = run.callbacks.length;
-  showToast(c.av, "#e6ece9", c.from + " · " + verb, n >= 2 ? `Rückruf fällig. ${n} offene Rückrufe: Gleich wirst du ausgerufen.` : "Rückruf fällig. Ab zwei offenen Rückrufen lassen sie dich ausrufen.", [{ text: "Rückrufe: " + n }]);
-  if (n >= 2 && run.pageT == null) run.pageT = 6;
+  if (!c.hunt || LEVELS[run.idx].safe || LEVELS[run.idx].final || run.mode !== "mission") { showToast(c.av, "#e6ece9", c.from + " · " + verb, (c.dec && c.dec.note) || "Aufgelegt. Erstaunlich folgenlos.", [good("Zeit gespart")]); updateHud(); return; }
+  showToast(c.av, "#e2483d", c.from + " · " + verb, `${DEPT_HUNT[c.hunt]} lässt das nicht auf sich sitzen und kommt dich suchen. Versteck dich oder lauf.`, [{ text: "Gesucht" }]);
+  setTimeout(() => {
+    if (!run || mode !== "play" || !level) return;
+    const h = spawnFar(c.hunt); if (!h) return;
+    h.hunter = true; h.aw = .6; h.huntT = 50;
+    h.label.material.map = labelTex("SUCHT DICH · " + (TYPES[c.hunt].label.split(" ")[0]), "#c0322a", "#fff"); h.label.material.needsUpdate = true;
+    setMsg(`${DEPT_HUNT[c.hunt]} sucht dich. Rotes Schild über dem Kopf.`, 3.5, true);
+  }, 3500);
   updateHud();
 }
 function declineCall() { if (!call) return; const c = call.def; if (c.onDecline) { endCall(); c.onDecline(); return; } missCall(c, "abgelehnt"); }
 $("btnAccept").addEventListener("click", acceptCall); $("btnDecline").addEventListener("click", declineCall);
 function updateCalls(dt) {
   if (call && call.def.onAccept) { call.t += dt; if (call.t > 20) acceptCall(); return; } // pager jobs: silence counts as yes
-  if (LEVELS[run.idx].safe || run.mode === "night") return;
-  if (run.headhunterT != null && !call) { run.headhunterT -= dt; if (run.headhunterT <= 0) { run.headhunterT = null; if (!run.offers.has("pharma")) startCall(HEADHUNTER); } }
+  if (LEVELS[run.idx].safe || run.mode === "night" || isLastFloor()) return;
   if (call) {
     call.t += dt;
     if (call.t > 9 && !call.loud) { call.loud = true; $("call").classList.add("loud"); player.hidden = false; setMsg("Das Handy klingelt LAUT. Alle in der Nähe horchen auf.", 2.5, true); }
     if (call.loud && Math.floor(call.t * 2) !== Math.floor((call.t - dt) * 2)) { sfx.ring(); makeNoise(6, .25); }
     if (call.t > 18) { missCall(call.def, "verpasst"); }
-  } else if (player.airplane <= 0 && run.headhunterT == null) {
+  } else if (player.airplane <= 0) {
     run.nextCall -= dt;
-    if (run.nextCall <= 0) { const offers = CALLS.filter(c => c.offer && !run.offers.has(c.offer)); startCall(offers.length && Math.random() < .35 ? pick(offers) : pick(CALLS.filter(c => !c.offer))); }
+    if (run.nextCall <= 0) startCall(pick(CALLS));
   }
 }
 
@@ -616,12 +619,12 @@ function updateStorm(dt) {
 
 // ---------- main update ----------
 function update(dt) {
-  level.t += dt; run.minutes += dt * (run.mode === "night" ? 1.25 : 1);
+  level.t += dt; run.minutes += dt * (run.mode === "night" ? 1.25 : CLOCK * (settings.diff === "easy" ? .8 : 1));
   player.inv = Math.max(0, player.inv - dt); player.coffee = Math.max(0, player.coffee - dt);
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
   player.phoneT = Math.max(0, (player.phoneT || 0) - dt); player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
-  updateStink(dt); updateEmotes(dt); updateScenarios(dt);
+  updateStink(dt); updateEmotes(dt); updateScenarios(dt); missionTick(dt);
   if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
   if (nerdLure) { nerdLure.t -= dt; if (nerdLure.t <= 0) { if (nerdLure.mesh) level.group.remove(nerdLure.mesh); nerdLure = null; for (const e of level.enemies) if (e.state === "nerd") e.state = "idle"; } }
   updatePlayer(dt);

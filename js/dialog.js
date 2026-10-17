@@ -125,7 +125,7 @@ function finishEncounter(e) {
   if (e.done) return;
   e.done = true; e.state = "leaving"; e.leaving = 3; e.aw = 0; player.inv = 5; run.talks++;
   setExpression(e.person, "smile"); emote(e, pick(["👋", "😌", "🙄", "👍"]));
-  if ("PZF".includes(e.type)) { run.testi = (run.testi || 0) + 1; if (run.route === "tele" && run.testi <= 3) setTimeout(() => showToast("🎥", "#ff3fa4", "DocFlix", `Testimonial ${run.testi}/3 im Kasten. „Authentisch! Roh! Echt!“ – das Team`, []), 1200); }
+  if ("PZF".includes(e.type)) { run.testi = (run.testi || 0) + 1; if (run.route === "influ" && run.testi <= 3) setTimeout(() => showToast("🤳", "#c13584", "Story " + run.testi + "/3", pick(["„Ich warte seit 2019.“ Authentisch! Roh! +900 Follower.", "„Ist das hier die Toilette?“ Viral. +1.400 Follower.", "Er hustet direkt in die Kamera. Die Kommentare eskalieren. +2.000 Follower."]), []), 1200); }
   e.tri.visible = false;
   e.label.material.map = labelFor(TYPES[e.type], e.type === "Z" ? "✓ TRIAGIERT" : "✓ ERLEDIGT"); e.label.material.needsUpdate = true;
   const dm = distMap(e.tx, e.ty); let best = -1, bi = 0;
@@ -298,9 +298,10 @@ function dermaProbe(base) {
       opt("„Ich verschreibe Ibuprofen.“", () => ({ next: () => q2() }))] });
 }
 function stampDialog(e) {
-  openDialog({ sp: e.person.sp, av: "🤓", color: "#9aa3a0", name: e.name, role: "Controlling · Stempelhoheit", text: "„Ein Stempel? Für das GESUNDHEITSAMT? Haben Sie Formular A38?“",
+  const got = text => { run.flags.add("excel"); finishEncounter(e); sfx.pick(); return { text, stamps: [good("Controlling-Excel")] }; };
+  openDialog({ sp: e.person.sp, av: "🤓", color: "#9aa3a0", name: e.name, role: "Controlling · Hüter der Excel (48 Reiter)", text: "„Die Excel? MEINE Excel? Für eine Unternehmensberatung? Die hat 48 Reiter. Drei davon sind farbig. Wissen Sie, was das bedeutet?“",
     options: [
-      opt("Formular A38 vorlegen", () => { run.flags.add("stamp1"); finishEncounter(e); return { text: "Er prüft das Formular 4 Minuten. Er riecht daran. Dann stempelt er. Zweimal. „Der zweite ist gratis. Ausnahmsweise.“", stamps: [good("Stempel Controlling")] }; }, () => run.flags.has("a38") ? "📄" : "braucht A38", () => !run.flags.has("a38")),
-      opt("„Ich kodiere Ihnen eine Nebendiagnose.“", () => { if (!chance(.5)) { e.stun = 5; player.inv = 3; return { text: "„Netter Versuch. Erst Formular 17b, dann reden wir.“ Er blättert beleidigt in seinem Ordner.", stamps: pen({ tasks: ["Formular 17b"] }) }; } run.flags.add("stamp1"); finishEncounter(e); return { text: "Seine Augen leuchten. „R45.4?“ – „R45.4.“ Ratsch. Stempel.", stamps: [good("Stempel Controlling")] }; }, "50 %"),
+      opt("„Kevin sagt, Ihre Pivot-Tabellen sind legendär.“", () => chance(.65) ? got("Er wird rot. „Legendär… das hat noch nie jemand gesagt.“ Er zieht die Datei auf einen USB-Stick mit Hello-Kitty-Anhänger. „Bringen Sie ihn zurück. Bitte.“") : (e.stun = 5, player.inv = 3, { text: "„Kevin? Der Kevin, der meine Makros gelöscht hat?“ Er klappt den Laptop zu. Versuch es nochmal.", stamps: pen({ mins: 5 }) }), "65 % · sonst +5 Min"),
+      opt("„Ich kodiere Ihnen drei Nebendiagnosen nach.“", () => { run.minutes += 10; return got("Seine Augen leuchten. „Drei? Mit Schweregrad?“ Du kodierst zehn Minuten. Er schickt dir die Excel per Mail. Betreff: „Danke!!! :) :)“"); }, "+10 Min · klappt sicher"),
       opt("Später", () => { e.stun = 5; player.inv = 3; e.aw = 0; return { text: "„Später kostet extra.“ Er vertieft sich wieder in eine Tabelle." }; })] });
 }

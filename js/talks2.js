@@ -141,7 +141,7 @@ function hostileDialog(e) {
   if (navigator.vibrate) try { navigator.vibrate(100); } catch (_) {}
   if (call && !call.def.forced) endCall();
   if (e.type === "D" && (!TALKS.D || Math.random() < .6)) return phdQuiz(e);
-  if (e.type === "V" && run.route === "amt" && !run.flags.has("stamp1")) return stampDialog(e);
+  if (e.type === "V" && run.route === "consult" && !run.flags.has("excel")) return stampDialog(e);
   if (run.goodwill[e.type] > 0) {
     run.goodwill[e.type]--;
     const line = { N: "„Du bist doch vorhin rangegangen! Danke. Geh, ich mach das hier.“", V: "„Sie haben mit der Bettendisposition telefoniert? Vorbildlich. Ich halte Sie nicht auf.“", C: "„Ah, Sie haben mein Sekretariat zurückgerufen. Gehen Sie, gehen Sie.“", I: "„Du hast dein Passwort geändert? Respekt. Lauf, bevor es wieder abläuft.“" }[e.type];
@@ -161,7 +161,7 @@ function liftDialog(p) {
   sfx.lift(); p.open = 1.6;
   if (run.mode === "night") { sfx.stinger(); showToast("🛗", "#12161f", "Aufzug B · 03:00", pick(["Die Tür geht auf. Der Aufzug ist leer. Das Licht flackert. Auf dem Boden liegt eine Schwesternhaube. Die Tür geht zu. Du gehst nicht rein.", "Ding. Niemand drin. Aus dem Lautsprecher: „Kurven …“. Ding. Weg."]), []); return; }
   if (!level.exit || !exitOpen()) { showToast("🛗", "#9aa3a8", "Aufzug B", pick(["Er kommt. Die Tür geht auf. Drinnen ein Schild: „Fährt nur nach erledigter Mission (Dienstanweisung 12/2019).“ Die Tür geht wieder zu.", "Ding! Drinnen steht ein leeres Bett. Und ein Schild: „Erst die Mission.“ Die Tür schließt sich langsam. Sehr langsam.", "Er kommt, öffnet sich, spielt drei Töne Panflöte und fährt ohne dich weiter."]), []); return; }
-  const next = LEVELS[run.idx + 1];
+  const next = run.mode === "mission" && !isLastFloor() ? nextLevel() : null;
   openDialog({ av: "🛗", color: "#9aa3a8", name: "Aufzug B", role: "Fährt (heute) · nächster Halt: " + (next ? next.short : "?"), text: "Er ist tatsächlich gekommen. Drinnen riecht es nach Desinfektionsmittel und Panik. Aus dem Lautsprecher: „Stayin' Alive“ auf Panflöte.",
     options: [
       opt("Einsteigen", () => {

@@ -1,16 +1,16 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovMail", "ovBrief", "ovIntro", "ovPause", "ovEnd"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
-function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
+function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
 // ---------- story in the doctors' room ----------
 let story = null, ceilT = 0, titleT = 0, fxOff = false;
-let lastMode = "mission";
-function startStory(m) {
-  m = m === "night" ? "night" : "mission"; lastMode = m;
+let lastMode = "mission", lastRoute = "stay";
+function startStory(m, route) {
+  m = m === "night" ? "night" : "mission"; lastMode = m; if (route) lastRoute = route;
   initAudio(); hidePopups(); show(null); clearInputs();
-  newRun(m); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -1);
-  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? STORY_NIGHT : STORY };
+  newRun(m, lastRoute); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
+  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? STORY_NIGHT : STORY_OPEN.concat(mission().story) };
   $("story").hidden = false; document.body.classList.add("cine");
   storyNext();
   setTimeout(() => $("btnStoryNext").focus({ preventScroll: true }), 50);
@@ -20,21 +20,22 @@ function storyNext() {
   if (story.shown < story.full.length) { story.shown = story.full.length; $("storyText").textContent = story.full; return; }
   story.i++;
   if (story.i >= story.lines.length) { endStory(); return; }
-  const [time, text] = story.lines[story.i];
-  story.full = text; story.shown = 0; story.t = 0; if (story.cam && (run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS)[story.i]?.cut) story.cam = null;
+  const [time, text, shot, ui] = story.lines[story.i];
+  story.full = text; story.shown = 0; story.t = 0; story.shot = shot != null ? shot : story.i; story.clock = lineMinutes(time); story.cam = null;
   $("storyTime").textContent = time; $("storyText").textContent = "";
-  $("btnStoryNext").textContent = story.i === story.lines.length - 1 ? (run.mode === "night" ? "Dienst beginnen" : "Zum Posteingang") : "Weiter";
+  $("btnStoryNext").textContent = story.i === story.lines.length - 1 ? (run.mode === "night" ? "Dienst beginnen" : "Zur Mission") : "Weiter";
+  storyPhone(run.mode === "night" ? null : ui);
   if (run.mode === "night") { if (story.i === 2) { sfx.stinger(); setTimeout(() => sfx.beep(), 500); } return; }
-  if (story.i === 2) { sfx.tick(); setTimeout(() => sfx.beep(), 300); setTimeout(() => sfx.beep(), 650); }
-  if (story.i === 4) { for (let k = 0; k < 5; k++) setTimeout(() => sfx.step(), 200 + k * 380); setTimeout(() => sfx.knock(), 2300); }
-  if (story.i === 5) { sfx.stinger(); setTimeout(() => sfx.whisper(), 900); }
+  if (story.i === 1) { sfx.knock(); setTimeout(() => sfx.beep(), 400); }
+  if (ui) { sfx.ring(); }
+  if (story.i === story.lines.length - 1) { sfx.tick(); setTimeout(() => sfx.ding(), 500); }
 }
 function endStory() {
   if (!story) return;
-  story = null; $("story").hidden = true; document.body.classList.remove("cine");
+  story = null; $("story").hidden = true; storyPhone(null); document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
   if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = "Pager-Aufgaben erledigen · Arztzimmer ist sicher · Hildegard nie aus den Augen lassen"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
-  showMail();
+  showBrief(false);
 }
 $("btnStoryNext").addEventListener("click", () => { if (mode === "outro") { if (outro && outro.shown < outro.full.length) { outro.shown = outro.full.length; $("storyText").textContent = outro.full; } else endOutro(); } else storyNext(); });
 $("btnSkip").addEventListener("click", endStory);
@@ -42,7 +43,7 @@ function updateStory(dt) {
   story.t += dt;
   if (story.shown < story.full.length) { story.shown = Math.min(story.full.length, story.shown + dt * 46); $("storyText").textContent = story.full.slice(0, Math.floor(story.shown)); if (Math.random() < .25) sfx.tick(); }
   // film shots in the doctors' room: each line has its own camera, eased in, with a slow push
-  const shots = run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS, sh = shots[Math.min(story.i, shots.length - 1)];
+  const shots = run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS, sh = shots[Math.min(story.shot, shots.length - 1)];
   if (sh) {
     const push = Math.min(1, story.t / 7) * .25, [cx, cy, ch] = sh.cam, [lx, ly, lz] = sh.look;
     const tp = new THREE.Vector3(cx * S, ch, cy * S), tl = new THREE.Vector3(lx * S, ly, lz * S);
@@ -53,8 +54,7 @@ function updateStory(dt) {
     story.cam.p.lerp(tp, e); story.cam.l.lerp(tl, e); story.cam.fov += ((sh.fov || 60) - story.cam.fov) * e;
     player.x = story.cam.p.x / S; player.y = story.cam.p.z / S;
   }
-  if (story.i === 5 && run.mode !== "night") blackout = Math.sin(story.t * 23) > .6 ? .2 : 0;
-  if (story.i === 4 && run.mode !== "night") { const d = doorAt(3, 4); if (d && d.mesh) d.mesh.rotation.z = Math.sin(story.t * 40) * .004 * (Math.sin(story.t * 2.3) > .2 ? 1 : 0); }
+  if (story.shot === 4 && run.mode !== "night") { const d = doorAt(3, 4); if (d && d.mesh) d.mesh.rotation.z = Math.sin(story.t * 40) * .004 * (Math.sin(story.t * 2.3) > .2 ? 1 : 0); }
 }
 // [camera tile x, tile y, height m] → [look tile x, height m, tile y]
 const STORY_SHOTS = [
@@ -102,106 +102,41 @@ function trackObjectives() {
   if (changed) { updateHud(); setTimeout(() => { if (mode === "play") announceObjective(); }, 3900); }
 }
 
-// ---------- inbox: choose your way out ----------
-let mailPick = null;
-const routeNeeds = k => { const R = ROUTES[k], out = R.promote.map(id => (BAG_NAMES[id] || id) + " (" + (id === "approbation" ? "Innere, Spind" : id === "zeugnis" ? "Radiologie" : id === "cream" ? "Dermatologie" : "") + ")"); for (const g of R.goals) out.push(g.title + ": " + (typeof g.text === "function" ? g.text().replace(/ \(.*\)$/, "") : g.text) + " (" + LEVELS[g.lvl].short.split(" · ")[1] + ")"); return out.length ? out : ["Nichts. Einfach raus."]; };
-function showMail() {
-  mode = "brief"; mailPick = null; $("mailView").hidden = true; $("mailListWrap").hidden = false;
-  $("mailList").innerHTML = ROUTE_ORDER.map(k => { const R = ROUTES[k]; return `<button type="button" class="mailrow" data-k="${k}"><span class="mail-av">${R.av}</span><span><b>${esc(R.from)}</b><span class="subj">${esc(R.subject)}</span><span class="snip">${esc(R.mail.slice(0, 90))}…</span><span class="rec">${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)} · ${R.deadline ? "Frist " + fmtLeft(routeDeadline(k)) + " Min" : "ohne Frist"} · ${esc(recordLine(k))}</span></span></button>`; }).join("");
-  show("ovMail"); sfx.beep();
-  setTimeout(() => { const f = document.querySelector(".mailrow"); if (f) f.focus({ preventScroll: true }); }, 50);
-}
-$("mailList").addEventListener("click", e => {
-  const b = e.target.closest(".mailrow"); if (!b) return;
-  const k = b.dataset.k, R = ROUTES[k]; mailPick = k; sfx.tick();
-  $("mailAv").textContent = R.av; $("mailFrom").textContent = R.from; $("mailSubj").textContent = R.subject; $("mailBody").textContent = R.mail;
-  $("mailPerks").innerHTML = R.perks.map(p => `<span>${esc(p)}</span>`).join("");
-  $("mailNeeds").innerHTML = routeNeeds(k).map(n => `<li>${esc(n)}</li>`).join("");
-  $("mailDossier").innerHTML = `<div><b>Schwierigkeit</b>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</div><div><b>Frist</b>${R.deadline ? fmtLeft(routeDeadline(k)) + " Min Spielzeit" : "keine"}</div><div><b>Belohnung</b>${1000 + R.stars * 250} Punkte + Ende „${esc(R.name)}“</div><div><b>Scheitern</b>${R.deadline ? "Frist verpasst: −400, dann nur heim" : "geht nicht. Heim geht immer."}</div><div style="grid-column:1/-1"><b>Dein Rekord</b>${esc(recordLine(k))}</div>`;
-  $("btnMailTake").firstElementChild.textContent = k === "stay" ? "Einfach heim · los geht's" : "Zusagen · los geht's";
-  $("mailListWrap").hidden = true; $("mailView").hidden = false; $("ovMail").scrollTop = 0;
-  setTimeout(() => $("btnMailTake").focus({ preventScroll: true }), 30);
-});
-$("btnMailBack").addEventListener("click", () => { $("mailView").hidden = true; $("mailListWrap").hidden = false; });
-$("btnMailTake").addEventListener("click", () => {
-  if (!mailPick) return;
-  run.route = mailPick; if (mailPick !== "stay") run.offers.add(mailPick);
-  buildRouteProps(level, run.idx); sfx.ding(); updateHud();
-  showBrief(false);
-});
-
-// ---------- briefing ----------
-let briefReturn = null;
-function sideButtons(locked) {
-  $("sideBox").innerHTML = SIDE.map(s => {
-    const on = run.sides.has(s.id);
-    if (locked && !on) return "";
-    return `<button type="button" class="side" data-id="${s.id}" aria-pressed="${on}"${locked ? " disabled" : ""}><span class="box">${on ? "✓" : ""}</span><span><b>${esc(s.name)}</b>${esc(s.desc)}</span></button>`;
-  }).join("") || '<p class="small">Keine Nebenmissionen gewählt. Auch eine Haltung.</p>';
-}
-$("sideBox").addEventListener("click", e => {
-  const b = e.target.closest(".side"); if (!b || b.disabled) return;
-  const id = b.dataset.id;
-  if (run.sides.has(id)) run.sides.delete(id); else if (run.sides.size < 3) run.sides.add(id); else { sfx.knock(); return; }
-  sfx.tick(); sideButtons(false); $("sideHead").textContent = `Nebenmissionen · ${run.sides.size} von 3 gewählt`;
-});
-function showBrief(fromGame) {
-  $("planList").innerHTML = PLAN.map((n, i) => { const [h, ...rest] = n.split(": "); return `<li class="${i < run.idx ? "done" : i === run.idx ? "now" : ""}"><span><b>${esc(h)}</b> · ${esc(rest.join(": "))}</span></li>`; }).join("");
-  const R = ROUTES[run.route || "stay"];
-  $("briefRoute").innerHTML = `Deine Route: <span class="route-tag">${esc(R.name)}</span> · ${esc(R.perks[0])}. Zu tun: ${esc(routeNeeds(run.route || "stay").join(" · "))}`;
-  briefReturn = fromGame ? mode : null;
-  if (fromGame) clearInputs();
-  sideButtons(!!fromGame);
-  $("sideHead").textContent = fromGame ? "Deine Nebenmissionen" : `Nebenmissionen · wähle bis zu 3 (${run.sides.size} gewählt)`;
-  $("btnBrief").firstElementChild.textContent = fromGame ? "Zurück" : "Mission verstanden · los geht's";
-  mode = "brief"; show("ovBrief");
-  setTimeout(() => $("btnBrief").focus({ preventScroll: true }), 50);
-}
-$("btnBrief").addEventListener("click", () => {
-  if (briefReturn) { const r = briefReturn === "pause" ? "pause" : "play"; briefReturn = null; if (r === "pause") { mode = "pause"; show("ovPause"); } else { show(null); mode = "play"; } return; }
-  initAudio(); show(null); mode = "play"; blackout = 0; updateHud(); trackObjectives();
-  announceObjective();
-  const h = $("hint"); h.textContent = "Linker Stick: laufen (leicht ziehen = schleichen) · rechts: umsehen · gelber Knopf: benutzen · folge dem ◆"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000);
-});
 function showIntro(bonus) {
   const L = LEVELS[run.idx];
-  $("introEyebrow").textContent = `${L.floor} · Abschnitt ${run.idx + 1} von ${MISSION_LEVELS}`;
+  $("introEyebrow").textContent = `${L.floor} · Etappe ${run.step + 1} von ${missionFloors().length} · ${fmtTime(run.minutes)} · Frist ${fmtTime(routeDeadline(run.route))}`;
   $("introName").textContent = L.name; $("introTip").textContent = L.tip;
-  $("introObj").innerHTML = objectives().filter(o => !o.isExit).map(o => `<li><span class="ico" style="background:${o.main ? "#f2b33d" : "#f3f8f1"}">${o.main ? "!" : "?"}</span><span><b>${o.route ? "Route " + esc(o.route) : o.main ? "Mission" : "Nebenjob"}</b> · ${esc(o.title ? o.title + ": " : "")}${esc(o.text)}</span></li>`).join("");
+  $("introObj").innerHTML = objectives().filter(o => !o.isExit).map(o => `<li><span class="ico" style="background:${o.route ? mission().color : o.boss ? "#e2483d" : "#f2b33d"};color:#fff">${o.route ? mission().av : o.boss ? "⚔" : "!"}</span><span><b>${o.route ? "Unter-Mission" : o.boss ? "Endgegner" : "Hindernis"}</b> · ${esc(o.title ? o.title + ": " : "")}${esc(o.text)}</span></li>`).join("") || "<li><span class='ico'>→</span><span>Nur durch. Unbemerkt, wenn’s geht.</span></li>";
   $("introBonus").hidden = !bonus; $("introBonus").textContent = bonus || "";
   $("btnGo").firstElementChild.textContent = L.env === "radio" || L.env === "cellar" ? "Taschenlampe an" : L.safe ? "Durchatmen" : L.final ? "Zum Auto" : "Weiter";
   mode = "intro"; show("ovIntro");
   setTimeout(() => $("btnGo").focus({ preventScroll: true }), 50);
 }
-$("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; trackObjectives(); announceObjective(); });
+$("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; run.clockSeen = run.minutes; trackObjectives(); announceObjective(); });
 function nextFloor() {
-  const n = run.tasks.length, mins = n * 8;
-  run.minutes += mins; run.tasks = [];
+  if (document.getElementById("form") || mode !== "play" && mode !== "dialog") return;
+  if (run.mode === "mission" && isLastFloor()) { finale(); return; }
+  endCall(); hidePopups(); clearInputs();
+  const n = run.tasks.length;
+  // open tasks come due in the stairwell: as paperwork that costs time
+  if (n) { formGame(`Dokumentation im Treppenhaus: ${n} liegengebliebene Aufgabe${n > 1 ? "n" : ""}`, n, lost => { run.tasks = []; enterFloor(`Im Treppenhaus ${n} Aufgabe${n > 1 ? "n" : ""} dokumentiert: +${lost} Min.`); }); return; }
+  enterFloor("Keine offenen Aufgaben. Kein Papierkram. Respekt.");
+}
+function enterFloor(note) {
   const before = run.nerves; run.nerves = Math.min(MAX_NERVES(), run.nerves + 1);
   run.energy = Math.min(100, run.energy + 10);
-  endCall(); sfx.floor(); hidePopups(); clearInputs();
-  run.idx++;
-  loadFloor(run.idx);
-  const parts = [n ? `Im Treppenhaus ${n} Aufgabe${n > 1 ? "n" : ""} dokumentiert: +${mins} Min.` : "Keine offenen Aufgaben. Respekt."];
-  if (run.nerves > before) parts.push("Kurz durchgeatmet: +1 Nerv, +10 Energie.");
-  showIntro(parts.join(" "));
+  sfx.floor(); run.step++; run.idx = missionFloors()[run.step];
+  loadFloor(run.idx); run.clockSeen = run.minutes; saveCheckpoint();
+  showIntro(note + (run.nerves > before ? " Kurz durchgeatmet: +1 Nerv, +10 Energie." : ""));
 }
 
 // ---------- endings ----------
 function finale() {
-  const n = run.tasks.length, R = ROUTES[run.route || "stay"], mine = run.route && run.route !== "stay" ? run.route : null;
-  const options = [];
-  if (mine) { const miss = routeMissing(mine); options.push({ label: `Einsteigen: ${R.name}`, hint: miss.length ? "fehlt: " + miss.join(", ") : "Route erfüllt", disabled: !!miss.length, act: () => { showEnd(mine, n); return { end: true }; } }); }
-  for (const k of ["pharma", "botox", "consult", "tele", "amt", "ship"]) {
-    if (k === mine || !run.offers.has(k)) continue;
-    const ready = ROUTES[k] && routeReady(k), o = OFFERS[k], miss = ROUTES[k] ? routeMissing(k) : o.need.filter(x => !run.flags.has(x)).map(x => BAG_NAMES[x]);
-    options.push({ label: `Umsatteln: ${o.name}`, hint: ready ? "möglich" : "fehlt: " + miss.slice(0, 2).join(", "), disabled: !ready, act: () => { showEnd(k, n); return { end: true }; } });
-  }
-  options.push({ label: mine ? "Doch nur heimfahren. Montag wiederkommen." : "Heimfahren. Montag wiederkommen.", act: () => { showEnd("stay", n); return { end: true }; } });
-  const lines = { pharma: "Fr. Goldmann lehnt an der Limousine und tippt auf ihre Uhr. „Approbation? Zeugnis?“", botox: "Dr. Glatt hupt aus dem pinken Cabrio. Das Verdeck ist offen. Es regnet. Sie lächelt trotzdem.", consult: "Das Business-Taxi wartet. Auf dem Rücksitz liegt ein Laptop mit 140 Folien. Folie 1: dein Foto vom Faxgerät.", tele: "Dein E-Scooter blinkt. Auf dem Lenker klebt ein Sticker: „Move fast and heal things“.", amt: "Das Dienstfahrrad lehnt an der Säule. Am Lenker hängt ein Klemmbrett mit Formular A39. Für morgen.", ship: "Der Hafen-Shuttle hupt dreimal. Der Fahrer trägt Hawaiihemd. „Leinen los, Doc!“" };
-  openDialog({ av: R.av, color: "#1f9d55", name: mine ? R.from.split(" · ")[0] : "Dein Auto", role: fmtTime(run.minutes) + " · Parkhaus P2 · der letzte Schritt",
-    text: mine ? lines[mine] + (routeReady(mine) ? " Alles dabei. Du musst nur noch einsteigen." : " Dir fehlt noch etwas. Du kannst zurückgehen oder es lassen.") : "Du sitzt im Auto. Motor an. Das Radio spielt „Highway to Hell“. Du schaltest um. „Stayin' Alive“. Wie passend.",
-    options: options.slice(0, 7) });
+  const R = mission(), k = run.route;
+  const lines = { stay: "Du sitzt im Auto. Motor an. Das Radio spielt „Highway to Hell“. Du schaltest um. „Stayin' Alive“. Wie passend. Kim schreibt: „Und?“", pharma: "Fr. Goldmann lehnt an der Limousine und tippt auf ihre Uhr. „Approbation? Zeugnis? Studie? Wunderbar. Unterschreiben Sie hier. Und hier. Und da, das ist nur die Seele.“", botox: "Dr. Glatt hupt aus dem pinken Cabrio. Das Verdeck ist offen. Es regnet. Sie lächelt trotzdem. „Steig ein, Liebling. Gurkenwasser im Handschuhfach.“", consult: "Die Limousine von Consultwerk gleitet vor den Haupteingang. Kevin lässt die Scheibe runter. „Krasse Fotos. Folie 12 wird legendär. Steig ein, wir billen ab jetzt.“", ship: "Der Hafen-Shuttle hupt dreimal. Der Fahrer trägt Hawaiihemd. „Leinen los, Doc! Die Karibik wartet nicht. Der Kapitän schon gar nicht.“", influ: "Ein pinker Van mit Ringlicht auf dem Dach. Die Schiebetür geht auf. „OMG, du bist es! Wir drehen gleich im Auto ein Reel. Smile!“" };
+  openDialog({ av: R.av, color: R.color, name: R.client.split(" · ")[0], role: fmtTime(run.minutes) + " · " + (LEVELS[run.idx].final ? "Parkhaus P2" : "Haupteingang") + " · der letzte Schritt",
+    text: lines[k] || lines.stay,
+    options: [{ label: k === "stay" ? "Losfahren. Heim." : `Einsteigen: ${R.title}`, hint: `vor ${fmtTime(routeDeadline(k))} · geschafft!`, act: () => { showEnd(k, run.tasks.length); return { end: true }; } }] });
 }
 const rankFor = over => over < 60 ? "Legende der Pünktlichkeit" : over < 120 ? "Fast pünktlich" : over < 200 ? "Typische Assistenzärztin, typischer Assistenzarzt" : over < 300 ? "Wohnt im Bereitschaftsraum" : "Gehört zum Inventar";
 function buildRoster(ending) {
@@ -229,13 +164,6 @@ function buildRoster(ending) {
   else html += `<div class="legend-line">${Object.entries(DUTIES).map(([k, v]) => `<span><b class="d-${k}">${k}</b> ${v}</span>`).join("")}${overflow.length ? `<span>+${overflow.length} weitere im Folgemonat</span>` : ""}</div>`;
   $("roster").innerHTML = html;
 }
-function sideResults(won) {
-  const chosen = SIDE.filter(s => run.sides.has(s.id));
-  if (!chosen.length) { $("sideRes").innerHTML = ""; return 0; }
-  let n = 0;
-  $("sideRes").innerHTML = chosen.map(s => { const ok = won && s.check(); if (ok) n++; return `<li>${ok ? "✅" : "❌"} <b>${esc(s.name)}</b> · ${esc(s.desc)}</li>`; }).join("");
-  return n;
-}
 function fillStats(ending) {
   $("stOver").textContent = fmtDur(run.minutes); $("stLives").textContent = run.lives; $("stTasks").textContent = run.tasksTotal;
   $("stDuty").textContent = run.duties.length; $("stCalls").textContent = run.callsAcc + " / " + run.callsDec; $("stTalks").textContent = run.talks; $("stPapers").textContent = run.coauthor;
@@ -250,14 +178,14 @@ function showGameOver() {
   run.duties.push("N");
   if (run.mode === "night") {
     $("endText").textContent = `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
-    fillStats(); sideResults(false); $("endBest").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
+    fillStats(); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
     mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
   }
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
   $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Nerven sind weg. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
-  fillStats(); sideResults(false);
-  const best = getBest(); $("endBest").hidden = best == null; if (best != null) $("endBest").textContent = "Frühester Feierabend bisher: " + fmtTime(best);
-  $("btnAgain").firstElementChild.textContent = "Nochmal versuchen";
+  fillStats(); clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
+  $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Nerven sind deine Leben. Sichere Räume, Kaffee und Donuts bringen sie zurück.";
+  $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = false;
   mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 function showEnd(key, n) { playOutro(key, () => showEndScreen(key, n)); }
@@ -271,21 +199,20 @@ function showNightEnd() {
   $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
   $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im Arztzimmer versteckt";
-  $("sideRes").innerHTML = ""; $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Nachtdienst-Rekord." : "Bester Nachtdienst: " + best + " Aufgaben";
-  $("btnAgain").firstElementChild.textContent = "Noch eine Nacht"; sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  $("endTicker").hidden = true; $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Nachtdienst-Rekord." : "Bester Nachtdienst: " + best + " Aufgaben";
+  $("btnAgain").firstElementChild.textContent = "Noch eine Nacht"; $("btnShare").hidden = $("btnNightNow").hidden = true; $("endScore").hidden = true; sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 function showEndScreen(key, n) {
-  const E = ENDINGS[key];
-  mode = "win"; clearInputs(); hidePopups(); endCall();
-  const best = getBest(), isBest = best == null || run.minutes < best; if (isBest) setBest(run.minutes);
+  const E = ENDINGS[key], R = ROUTES[key];
+  mode = "win"; clearInputs(); hidePopups(); endCall(); clearCheckpoint();
   $("endEyebrow").textContent = E.eyebrow + " · " + fmtTime(run.minutes); $("endTitle").textContent = E.title;
-  const sides = sideResults(true), chosen = run.sides.size; run.sideDone = sides;
-  $("endText").textContent = E.text + (n ? ` (${n} offene Aufgabe${n > 1 ? "n" : ""} hast du einfach liegen lassen. Mutig.)` : "") + (chosen ? ` Nebenmissionen: ${sides} von ${chosen}.` : "");
+  $("endText").textContent = E.text + (n ? ` (${n} offene Aufgabe${n > 1 ? "n" : ""} hast du einfach liegen lassen. Mutig.)` : "");
+  $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.ticker)}</span>`;
   fillStats(key);
-  { const sc = renderScore(key); $("endRank").textContent = "Rang " + sc.rank + " · " + $("endRank").textContent; }
-  if (run.routeFailed) $("endText").textContent = ROUTES[run.routeFailed].failText + " " + $("endText").textContent;
-  $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Rekord für den frühesten Feierabend." : "Frühester Feierabend bisher: " + fmtTime(best);
-  $("btnAgain").firstElementChild.textContent = "Nächste Schicht";
+  const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
+  $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
+  $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
+  submitScore(key, sc.total, run.minutes, sc.rank);
   setMsg("Pager aus.", 0); sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
@@ -293,9 +220,9 @@ function showEndScreen(key, n) {
 function pause() { if (mode !== "play") return; mode = "pause"; clearInputs(); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
 function resume() { if (mode !== "pause") return; show(null); mode = "play"; }
 $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
-$("btnPlan").addEventListener("click", () => showBrief(true));
-$("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); });
-$("mission").addEventListener("click", () => { $("tasks").hidden = !$("tasks").hidden; });
+$("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
+$("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
+$("mission").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
 if (settings.hudmin) document.body.classList.add("hudmin");
 function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); $("mapView").hidden = false; drawBigMap(); }
@@ -307,12 +234,14 @@ function applyShadows() {
   sun.castShadow = !!settings.shadows && !dark; flashlight.castShadow = !!settings.shadows && !!dark;
   scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); });
 }
-$("btnTasksClose").addEventListener("click", () => { $("tasks").hidden = true; });
-$("btnCallbacks").addEventListener("click", () => { if (mode === "play") workCallbacks(); });
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
 bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
 bindSet("setHires", "hires"); $("setHires").addEventListener("change", () => { applyRes(); resize(); });
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
+// sound on/off from the HUD and the title (the pause menu has the same switch)
+function syncSound() { const on = !!settings.sound; for (const id of ["btnSound", "btnSoundTitle"]) { $(id).textContent = on ? "🔊" : "🔇"; $(id).setAttribute("aria-pressed", String(!on)); } $("setSound").checked = on; if (master) master.gain.value = on ? 1 : 0; }
+for (const id of ["btnSound", "btnSoundTitle"]) $(id).addEventListener("click", ev => { ev.stopPropagation(); settings.sound = !settings.sound; saveSettings(); initAudio(); syncSound(); if (settings.sound) sfx.ding(); });
+$("setSound").addEventListener("change", syncSound); syncSound();
 const lookSel = $("setLook"); lookSel.value = settings.look; lookSel.addEventListener("change", () => { settings.look = lookSel.value; saveSettings(); });
 for (const id of ["setDiff", "setDiffTitle"]) {
   const el = $(id); el.value = settings.diff;
@@ -321,9 +250,11 @@ for (const id of ["setDiff", "setDiffTitle"]) {
     if (run) { run.nerves = Math.min(run.nerves, MAX_NERVES()); updateHud(); }
   });
 }
-$("btnStart").addEventListener("click", () => startStory("mission"));
+$("btnStart").addEventListener("click", () => { initAudio(); showSelect(); });
 $("btnNight").addEventListener("click", () => startStory("night"));
 $("btnAgain").addEventListener("click", () => startStory(lastMode));
+$("btnEndMenu").addEventListener("click", () => { hidePopups(); newRun(); loadFloor(0); if (lastMode === "mission") showSelect(); else { mode = "title"; show("ovTitle"); } });
+$("btnNightNow").addEventListener("click", () => startStory("night"));
 
 // ---------- render ----------
 const mini = $("mini"), mctx = mini.getContext("2d");
@@ -547,7 +478,7 @@ function render(time, dt) {
   for (const h of level.hazards) if (h.kind === "z") for (const s of h.sparks) { s.visible = !!h.active && Math.random() < .7; s.position.set((Math.random() - .5) * .8, .3 + Math.random() * 2.2, (Math.random() - .5) * .8); }
   for (const d of level.drips) { d.y -= dt * 4; if (d.y < .2) d.y = WALL_H; d.mesh.position.y = d.y; }
   for (const p of level.props) if (p.kind === "=" && p.arm) p.arm.rotation.z += ((p.open ? Math.PI / 2 : 0) - p.arm.rotation.z) * Math.min(1, dt * 3);
-  const tm = SHIFT_END + (mode === "story" && story ? Math.max(-1, story.i - 2) : run.minutes);
+  const tm = SHIFT_END + (mode === "story" && story ? story.clock || 0 : run.minutes);
   for (const c of level.clocks) { c.m.rotation.z = -((tm % 60) / 60) * Math.PI * 2; c.h.rotation.z = -(((tm / 60) % 12) / 12) * Math.PI * 2; }
   if (run.rea && run.rea.beam) { const p = .5 + .5 * Math.sin(time * 8); run.rea.beam.material.opacity = .12 + .25 * p; reaLight.intensity = 1.2 * p; }
   if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .38 + Math.sin(time * 2) * .1 : .05;
@@ -567,7 +498,8 @@ function frame(now) {
   if (mode === "outro" && outro) { updateOutro(dt); if (outro) { renderer.render(outro.sc, outro.cam); requestAnimationFrame(frame); return; } }
   if (mode === "play" && !document.hidden) update(dt);
   else if (mode === "story" && story) { updateStory(dt); applyEnv(); }
-  if (["title", "story", "outro", "over", "win", "brief", "intro"].includes(mode) && !fxOff) { fxOff = true; for (const id of ["shieldFx", "frostFx", "stinkFx"]) $(id).style.opacity = 0; $("buffs").innerHTML = ""; } else if (mode === "play") fxOff = false;
+  if (mode === "play") clockWatch();
+  if (["title", "story", "outro", "over", "win", "brief", "intro", "select", "mc"].includes(mode) && !fxOff) { fxOff = true; for (const id of ["shieldFx", "frostFx", "stinkFx"]) $(id).style.opacity = 0; $("buffs").innerHTML = ""; } else if (mode === "play") fxOff = false;
   if ((mode === "title") !== document.body.classList.contains("titlemode")) document.body.classList.toggle("titlemode", mode === "title");
   if (mode === "title") {
     // attract mode: a slow dolly down the ward corridor, looking around a little
@@ -582,8 +514,7 @@ function frame(now) {
 
 // ---------- boot ----------
 {
-  const best = getBest();
-  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = "Rekord: Feierabend um " + fmtTime(best); }
+  refreshTitle();
   let nb = null; try { nb = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   if (nb >= 0) { $("nightBestLine").hidden = false; $("nightBestLine").textContent = "Rekord: " + nb + " Pager-Aufgaben überlebt"; }
   // the LED clock on the title flips to 17:00
@@ -592,7 +523,7 @@ function frame(now) {
   newRun(); loadFloor(0); resize(); requestAnimationFrame(frame);
 }
 if (location.hash === "#debug") window.__he = { get run() { return run; }, get level() { return level; }, player, get mode() { return mode; }, set mode(v) { mode = v; },
-  goto: i => { run.idx = i; loadFloor(i); mode = "play"; show(null); hidePopups(); }, startRea, startCall: d => startCall(d || HEADHUNTER), act, nextFloor, storyNext, endStory,
+  goto: i => { run.idx = i; run.step = Math.max(0, missionFloors().indexOf(i)); loadFloor(i); mode = "play"; show(null); hidePopups(); }, startRea, startCall: d => startCall(d || CALLS[0]), act, startStory, showSelect, openMC, closeMC, missionFailed, nextFloor, storyNext, endStory,
   tp: (x, y) => { player.x = x + .5; player.y = y + .5; }, hostile: i => hostileDialog(level.enemies[i]), friend: i => friendDialog(level.friends[i]),
   bouncer: () => bouncerDialog(level.enemies.find(e => e.type === "U" && !e.cleared)), finale, chooseOption, closeDialog, startCpr, cprPress, useItem, addItem,
   flags: () => [...run.flags], focus: () => focus && focus.type, setYaw: y => { player.yaw = y; }, show };

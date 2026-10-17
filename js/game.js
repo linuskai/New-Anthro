@@ -7,12 +7,19 @@ const player = { x: 0, y: 0, yaw: 0, pitch: 0, coffee: 0, busy: 0, airplane: 0, 
 let msg = { text: "", t: 0 };
 let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 0, lightMul = 1, ceilPower = 1, zoneMsgT = 0, boltT = 0, nextBolt = 25, scare = null, scareCd = 20;
 
-function newRun(m = "mission") {
-  run = { idx: 0, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
+function newRun(m = "mission", route = "stay") {
+  run = { idx: 0, step: 0, route, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
+    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 40 + Math.random() * 15, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
+    announceT: 50 + Math.random() * 30, lostMin: 0 };
   run.mode = m;
+  if (m === "mission") run.idx = ROUTES[route].floors[0];
   if (m === "night") Object.assign(run, { idx: LEVELS.length - 1, minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
+const mission = () => ROUTES[run.route || "stay"];
+const missionFloors = () => mission().floors;
+const isLastFloor = () => run.mode === "mission" && run.step >= missionFloors().length - 1;
+const nextLevel = () => LEVELS[missionFloors()[run.step + 1]];
+const floorLabel = i => LEVELS[i].short.split(" · ")[1] || LEVELS[i].short;
 const playerSafe = () => cell(Math.floor(player.x), Math.floor(player.y)) === "_";
 
 function loadFloor(idx) {
@@ -24,12 +31,12 @@ function loadFloor(idx) {
   Object.assign(player, { coffee: 0, busy: 0, inv: 0, hidden: false, stun: 0, slip: 0, channel: null, lampOn: true });
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
   lure = null; nerdLure = null; blackout = 0; scare = null; endCall();
-  run.headhunterT = L.headhunter && !run.offers.has("pharma") ? 10 : null;
   run.pageT = run.callbacks.length >= 2 ? 8 : null;
   run.reaRandomT = L.reaRandom ? 45 + Math.random() * 30 : null;
   run.reaScriptT = L.reaScript || null;
   run.nextBlackout = 16 + Math.random() * 8;
   $("hudFloor").textContent = L.short;
+  if (run.mode === "mission") prepareMissionFloor();
   setMsg(run.mode === "night" ? "Nachtdienst. Überlebe bis 07:00." : "Feierabend war um 17:00. Leise raus.", 0);
   if (run.mode === "night") player.lamp = 100;
   naviT = 0; applyEnv(true); updateHud(); renderInv();
@@ -73,22 +80,24 @@ function objectives() {
     list.push({ id: "survive", title: "Überleben bis 07:00", text: `Überlebe bis 07:00 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
     return list;
   }
-  const L = LEVELS[run.idx], R = run.route ? ROUTES[run.route] : null;
-  const list = L.objectives.map(o => { const promoted = !o.main && R && R.promote.includes(o.id); return { ...o, main: o.main || promoted, route: promoted ? R.name : null, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }; });
-  if (R) for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: !g.bonus, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: g.done ? g.done() : run.flags.has(g.id) });
-  if (!L.final) list.push({ id: "exit", title: "Abgang", text: L.exitText, brief: "Die Brandschutztür ist offen. Treppe runter. Oder Aufzug, wenn du Nerven hast.", main: true, at: "exit", done: false, isExit: true });
+  const L = LEVELS[run.idx], R = mission(), last = isLastFloor();
+  const list = [], fin = [];
+  for (const o of L.objectives) {
+    if (!o.main || (o.for && !o.for.includes(run.route))) continue;
+    (o.fin ? fin : list).push({ ...o, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) });
+  }
+  for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: true, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: goalDone(g) });
+  if (last && level && level.boss) list.push({ id: "boss", title: "Endgegner: " + level.boss.def.name, text: level.boss.def.name + " steht dir im Weg", main: true, at: "boss", done: !!level.boss.cleared, boss: true,
+    how: "Ansprechen: reden, Formular ausfüllen oder kämpfen", brief: level.boss.def.line });
+  list.push(...fin);
+  if (!L.final) list.push(last
+    ? { id: "exit", title: "Haupteingang", text: "Raus! " + R.ride[0].toUpperCase() + R.ride.slice(1) + " wartet", brief: "Der Haupteingang. Dahinter: Freiheit. Und " + R.ride + ".", main: true, at: "exit", done: false, isExit: true }
+    : { id: "exit", title: "Treppenhaus", text: "Treppenhaus → " + floorLabel(missionFloors()[run.step + 1]), brief: "Die Brandschutztür ist offen. Treppe runter. Oder Aufzug, wenn du Nerven hast.", main: true, at: "exit", done: false, isExit: true });
   return list;
 }
-function routeReady(k) {
-  const R = ROUTES[k]; if (!R) return false;
-  return R.promote.every(id => run.flags.has(id) || (id === "cream" && run.picked.has("+"))) && R.goals.every(g => g.bonus || (g.done ? g.done() : run.flags.has(g.id)));
-}
-function routeMissing(k) {
-  const R = ROUTES[k]; const miss = [];
-  for (const id of R.promote) if (!(run.flags.has(id) || (id === "cream" && run.picked.has("+")))) miss.push(BAG_NAMES[id] || id);
-  for (const g of R.goals) if (!g.bonus && !(g.done ? g.done() : run.flags.has(g.id))) miss.push(g.title);
-  return miss;
-}
+const goalDone = g => g.done ? g.done() : run.flags.has(g.id);
+function routeReady(k) { return ROUTES[k].goals.every(goalDone); }
+function routeMissing(k) { return ROUTES[k].goals.filter(g => !goalDone(g)).map(g => g.title); }
 const exitOpen = () => objectives().every(o => !o.main || o.done || o.isExit);
 function currentObjective() {
   const obj = objectives();
@@ -99,6 +108,7 @@ function targetOf(o) {
   if (o.at === "task") return run.task ? [run.task.x + .5, run.task.y + .5] : null;
   if (o.at === "exit") return level.exit ? [level.exit[0] + .5, level.exit[1] + .5] : null;
   if (o.at === "rea") return run.rea && !run.rea.done ? [run.rea.x + .5, run.rea.y + .5] : (level.reaSpot ? [level.reaSpot[0] + .5, level.reaSpot[1] + .5] : null);
+  if (o.at === "boss") return level.boss && !level.boss.cleared ? [level.boss.x, level.boss.y] : null;
   if (o.at === "bouncer") { const e = level.enemies.find(e => e.type === "U" && !e.cleared); return e ? [e.x, e.y] : null; }
   const [kind, key] = o.at.split(":");
   if (kind === "friend") { const f = level.friends.find(f => f.kind === key); return f ? [f.x, f.y] : null; }
@@ -144,7 +154,7 @@ function howTo(o) {
   if (kind === "friend") return (FRIENDS[key] ? FRIENDS[key].name : "Person") + " ansprechen (grüner Punkt)";
   if (kind === "item") return (ITEMS[key] ? ITEMS[key].name : "Gegenstand") + " aufheben (gelber Punkt)";
   if (kind === "enemy") return (TYPES[key] ? TYPES[key].role : "Person") + " finden und reden";
-  if (kind === "prop") return { t: "Am Automaten AKTION drücken", "=": "Mit Ticket: AKTION an der Schranke", j: "AKTION: einsteigen", grab: "Hingehen, AKTION: mitnehmen (★ Schild)", y: "Am Schalter AKTION gedrückt halten", pc: "Am Computer im Arztzimmer AKTION", photo: "Hingehen, AKTION: Beweisfoto", stamp: "AKTION: Stempel abholen", meds: "AKTION: einpacken", G: "Sicherungskasten: AKTION" }[key] || "Hingehen und AKTION drücken";
+  if (kind === "prop") return { t: "Am Automaten AKTION drücken", "=": "Mit Ticket: AKTION an der Schranke", j: "AKTION: einsteigen", grab: "Hingehen, AKTION: mitnehmen (★ Schild)", film: "Hingehen, AKTION: Reel drehen", L: "Zum Spind in der Umkleide, AKTION", y: "Am Schalter AKTION gedrückt halten", pc: "Am Computer im Arztzimmer AKTION", photo: "Hingehen, AKTION: Beweisfoto", stamp: "AKTION: Stempel abholen", meds: "AKTION: einpacken", G: "Sicherungskasten: AKTION" }[key] || "Hingehen und AKTION drücken";
   return "";
 }
 const ARROWS = ["⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖"];
@@ -168,30 +178,10 @@ function updateHud() {
   $("chipTasks").textContent = "AUFG " + run.tasks.length; $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
-  $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && cur.route ? "Unter-Mission · " + cur.route : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
+  $("missionHead").textContent = run.mode === "night" ? "Nachtdienst" : cur && cur.boss ? "Endgegner" : cur && cur.isExit ? (isLastFloor() ? "Fast geschafft" : "Weiter") : cur && cur.route ? `${mission().av} Unter-Mission · ${goalsDoneCount()}/${mission().goals.length}` : `Hindernis · ${floorLabel(run.idx)}`;
   $("missionText").textContent = cur ? cur.text : "Zum Auto!";
   updateMissionHow(cur);
-  // the whole route at a glance: every sub-mission with its floor
-  const RRt = run.mode === "mission" && run.route && ROUTES[run.route];
-  $("routeHead").hidden = $("routeList").hidden = !RRt;
-  if (RRt) {
-    const left = typeof routeTimeLeft === "function" ? routeTimeLeft() : null;
-    $("routeHead").textContent = `Dein Ausweg: ${RRt.name}` + (left != null ? ` · noch ${fmtLeft(left)}` : "");
-    const items = RRt.promote.map(id => ({ t: BAG_NAMES[id] || id, where: id === "approbation" ? "Innere (Spind)" : id === "zeugnis" ? "Radiologie" : id === "cream" ? "Dermatologie" : "", ok: run.flags.has(id) || (id === "cream" && run.picked.has("+")) }))
-      .concat(RRt.goals.map(g => ({ t: g.title, where: LEVELS[g.lvl].short.split(" · ")[1], ok: g.done ? g.done() : run.flags.has(g.id), bonus: g.bonus })));
-    $("routeList").innerHTML = items.length ? items.map(i => `<li class="${i.ok ? "done" : ""}">${i.ok ? "✅" : "⬜"} ${esc(i.t)} <span class="opt-tag">${esc(i.where)}${i.bonus ? " · Bonus" : ""}</span></li>`).join("") : "<li>Nichts. Einfach raus.</li>";
-  }
-  $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${o.title ? `<span class="obj-title">${esc(o.title)}</span>` : ""}${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">Nebenjob</span>'}</li>`).join("");
-  const RR = run.route && ROUTES[run.route];
-  $("fzNow").innerHTML = (RR ? `<span class="route-tag">Route: ${esc(RR.name)}</span> ` : "") + (cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>");
-  $("sideList").innerHTML = run.sides.size ? SIDE.filter(s => run.sides.has(s.id)).map(s => `<li>${esc(s.name)} <span class="opt-tag">${esc(s.desc)}</span></li>`).join("") : "<li>Keine gewählt.</li>";
-  $("cbList").innerHTML = run.callbacks.length ? run.callbacks.map(c => `<li>${esc(c)}</li>`).join("") + (run.callbacks.length >= 2 ? '<li class="opt-tag">Ab 2 offenen Rückrufen wirst du ausgerufen.</li>' : "") : "<li>Keine. Erstaunlich.</li>";
-  $("btnCallbacks").hidden = !run.callbacks.length;
-  $("taskList").innerHTML = run.tasks.length ? run.tasks.map((t, i) => `<li><span>${esc(t)}</span><button type="button" class="task-x" data-i="${i}" aria-label="Aufgabe ablehnen">Ablehnen</button></li>`).join("") : "<li>Nichts. Verdächtig.</li>";
-  const bag = Object.keys(BAG_NAMES).filter(k => run.flags.has(k)).map(k => `<li>${esc(BAG_NAMES[k])}</li>`);
-  $("bagList").innerHTML = bag.length ? bag.join("") : "<li>Leer. Wie das Budget.</li>";
-  const offers = [...run.offers].map(k => { const o = OFFERS[k], miss = o.need.filter(n => !run.flags.has(n)).map(n => BAG_NAMES[n]); return `<li>${esc(o.name)} <span class="opt-tag">${miss.length ? "fehlt: " + esc(miss.join(", ")) : "bereit"}</span></li>`; });
-  $("offerList").innerHTML = offers.length ? offers.join("") : "<li>Noch keins. Geh ans Telefon.</li>";
+  updateRouteChip();
   updateEnergy();
 }
 function updateEnergy() {
@@ -349,11 +339,11 @@ const sfx = {
 };
 
 // declining a task: sometimes the PJ student takes it, sometimes the roster takes revenge
-$("taskList").addEventListener("click", ev => {
+document.addEventListener("click", ev => {
   const b = ev.target.closest(".task-x"); if (!b || !run) return;
   const i = +b.dataset.i, t = run.tasks[i]; if (t == null) return;
   run.tasks.splice(i, 1); run.declined = (run.declined || 0) + 1;
   if (Math.random() < .5) showToast("🥺", "#6fcf97", "Abgelehnt", pick([`Jonas, der PJler, übernimmt „${t}“. Er ist begeistert. Noch.`, `„${t}“ landet im Fach vom Spätdienst. Der Spätdienst bist morgen wieder du, aber egal.`, `Du schreibst „${t}“ auf ein Post-it und klebst es an den Kühlschrank. Problem gelöst.`]), [good("Erledigt (irgendwie)")]);
   else showToast("📅", "#e2483d", "Abgelehnt", pick([`Der Oberarzt hat es gesehen. „${t}“ ist weg, dafür hast du Samstag Dienst.`, `Abgelehnt. Das Controlling vermerkt: „mangelnde Teamfähigkeit“. Und plant dich ein.`]), pen({ duties: 1 }));
-  sfx.pick(); updateHud();
+  sfx.pick(); updateHud(); if (typeof clockWatch === "function") clockWatch();
 });
