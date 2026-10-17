@@ -9,7 +9,7 @@ let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 
 
 function newRun(m = "mission") {
   run = { idx: 0, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
+    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
   run.mode = m;
   if (m === "night") Object.assign(run, { idx: LEVELS.length - 1, minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
@@ -119,16 +119,45 @@ function updateNavi(dt) {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const pts = [[player.x, player.y]].concat(path.slice(1).map(([x, y]) => [x + .5, y + .5]));
   let c = 0, walked = 0, next = .8; const ch = level.chev;
-  for (let i = 0; i < pts.length - 1 && c < 16; i++) {
+  for (let i = 0; i < pts.length - 1 && c < 10; i++) {
     const [ax, ay] = pts[i], [bx, by] = pts[i + 1], len = Math.hypot(bx - ax, by - ay); if (len < .01) continue;
     const yaw = Math.atan2(bx - ax, by - ay); q.setFromAxisAngle(up, yaw + Math.PI);
-    while (next <= walked + len && c < 16) { const k = (next - walked) / len; pos.set((ax + (bx - ax) * k) * S, .02, (ay + (by - ay) * k) * S); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); next += .6; }
+    while (next <= walked + len && c < 10) { const k = (next - walked) / len; pos.set((ax + (bx - ax) * k) * S, .02, (ay + (by - ay) * k) * S); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); next += .85; }
     walked += len;
   }
   nv.count = 0; nv.instanceMatrix.needsUpdate = true; if (ch) { ch.count = c; ch.instanceMatrix.needsUpdate = true; }
 }
 
 // ---------- HUD ----------
+/* "what now?" – every objective gets a one-line how-to plus distance and direction */
+function howTo(o) {
+  if (!o) return "";
+  if (o.how) return typeof o.how === "function" ? o.how() : o.how;
+  if (o.isExit || o.at === "exit") return "Grünen Treppenhaus-Schildern folgen · oder Aufzug (⇅)";
+  if (o.at === "rea") return "Hin und AKTION: Herzdruckmassage im Takt tippen";
+  if (o.at === "bouncer") return "Orthopäden ansprechen: Shake, Fachwissen oder Liegestütze";
+  if (o.at === "task") return "Ins Zimmer, AKTION: versorgen";
+  if (o.id === "survive") return "Arztzimmer = sicher · Hildegard nie aus den Augen lassen";
+  const [kind, key] = (o.at || "").split(":");
+  if (kind === "friend") return (FRIENDS[key] ? FRIENDS[key].name : "Person") + " ansprechen (grüner Punkt)";
+  if (kind === "item") return (ITEMS[key] ? ITEMS[key].name : "Gegenstand") + " aufheben (gelber Punkt)";
+  if (kind === "enemy") return (TYPES[key] ? TYPES[key].role : "Person") + " finden und reden";
+  if (kind === "prop") return { t: "Am Automaten AKTION drücken", "=": "Mit Ticket: AKTION an der Schranke", j: "AKTION: einsteigen", y: "Am Schalter AKTION gedrückt halten", pc: "Am Computer im Arztzimmer AKTION", photo: "Hingehen, AKTION: Beweisfoto", stamp: "AKTION: Stempel abholen", meds: "AKTION: einpacken", G: "Sicherungskasten: AKTION" }[key] || "Hingehen und AKTION drücken";
+  return "";
+}
+const ARROWS = ["⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖"];
+function updateMissionHow(cur) {
+  const el = $("missionHow"); if (!el) return;
+  const how = howTo(cur), t = cur ? targetOf(cur) : null;
+  let where = "";
+  if (t && level) {
+    const dx = t[0] - player.x, dy = t[1] - player.y, d = Math.hypot(dx, dy) * S;
+    const rel = Math.atan2(-dx, -dy) - player.yaw, k = ((Math.round(-rel / (Math.PI / 4)) % 8) + 8) % 8;
+    where = d < 2.2 ? "hier!" : `${Math.round(d)} m ${ARROWS[k]}`;
+  }
+  el.innerHTML = (how ? esc(how) : "") + (where ? ` <i>· ${where}</i>` : "");
+  el.hidden = !how && !where;
+}
 function setMsg(text, secs, alert) { msg = { text, t: secs }; $("hudMsg").textContent = text; $("hudMsg").classList.toggle("alert", !!alert); }
 function updateHud() {
   let h = "";
@@ -139,6 +168,7 @@ function updateHud() {
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
   $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
   $("missionText").textContent = cur ? cur.text : "Zum Auto!";
+  updateMissionHow(cur);
   $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${o.title ? `<span class="obj-title">${esc(o.title)}</span>` : ""}${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">Nebenjob</span>'}</li>`).join("");
   const RR = run.route && ROUTES[run.route];
   $("fzNow").innerHTML = (RR ? `<span class="route-tag">Route: ${esc(RR.name)}</span> ` : "") + (cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>");
@@ -192,8 +222,21 @@ const stampsHtml = st => st.map(s => `<span class="stamp${s.good ? " good" : ""}
 function showToast(avatar, bg, who, line, stamps) {
   $("toastAvatar").textContent = avatar; $("toastAvatar").style.background = bg;
   $("toastWho").textContent = who; $("toastLine").textContent = line; $("toastStamps").innerHTML = stampsHtml(stamps || []);
-  const t = $("toast"); t.hidden = false; t.classList.remove("pop"); void t.offsetWidth; t.classList.add("pop"); toastT = 3.4;
+  const t = $("toast"); t.hidden = false; t.classList.remove("pop", "swipe"); t.style.transform = ""; void t.offsetWidth; t.classList.add("pop"); toastT = Math.min(9, 3 + String(line || "").length / 28);
 }
+// swipe (or tap) messages away
+function swipeAway(el, onGone) {
+  let x0 = null, y0 = 0, dx = 0, dy = 0;
+  const base = () => getComputedStyle(el).transform === "none" ? "" : "";
+  el.addEventListener("pointerdown", e => { x0 = e.clientX; y0 = e.clientY; dx = dy = 0; el.setPointerCapture(e.pointerId); e.stopPropagation(); });
+  el.addEventListener("pointermove", e => { if (x0 == null) return; dx = e.clientX - x0; dy = e.clientY - y0; el.style.translate = `${dx}px ${Math.min(0, dy)}px`; el.style.opacity = String(1 - Math.min(.8, Math.hypot(dx, dy) / 200)); e.stopPropagation(); });
+  const end = e => { if (x0 == null) return; x0 = null; e.stopPropagation(); const far = Math.abs(dx) > 50 || dy < -40, tap = Math.hypot(dx, dy) < 6; el.style.translate = ""; el.style.opacity = ""; if (far || tap) { el.hidden = true; if (onGone) onGone(); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  for (const ev of ["touchstart", "touchmove", "touchend", "mousedown"]) el.addEventListener(ev, e => e.stopPropagation(), { passive: true });
+  void base;
+}
+swipeAway($("toast"), () => { toastT = 0; });
+
 function flash(kind) { const f = $("flash"); f.className = ""; void f.offsetWidth; f.className = "on" + (kind ? " " + kind : ""); }
 
 // ---------- inventory ----------
@@ -242,6 +285,7 @@ function useItem(k) {
     case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für PD-Phil auf."; break;
     case "p": takeItem(k); { const n = throwPen(); st = [good(n ? n + " abgelenkt" : "Klack")]; line = n ? "Klack! Der Kuli landet irgendwo da hinten. Alle drehen sich um und gehen nachsehen. Kugelschreiber: das Schweizer Taschenmesser der Medizin." : "Klack. Niemand in der Nähe, der sich dafür interessiert. Der Kuli ist trotzdem weg."; } break;
     case "c": toggleCoat(); line = player.civil ? "Kittel aus. Ohne Kittel erkennt dich das Personal nicht mehr: nur ein weiterer müder Besucher. Patienten und Angehörige fragen dich dafür nach der Toilette." : "Kittel wieder an. Du bist wieder Ärztin oder Arzt. Leider."; st = [good(player.civil ? "Zivil" : "Kittel an")]; break;
+    case "f": takeItem(k); player.phoneT = 10; sfx.beep(); st = [good("10 s Ruhe vor dem Personal")]; line = pick(["„Ja, Herr Professor. Nein, Herr Professor. Die Studie, natürlich.“ Du redest mit niemandem. Alle machen einen Bogen um dich.", "„Ja, hier ist der Hintergrunddienst… nein, das kann ich nicht am Telefon…“ Niemand stört einen Arzt, der ernst ins Handy schaut.", "„Mhm. Mhm. Ganz schlechte Werte. Ich komme.“ Du gehst. Wohin, weiß keiner. Du auch nicht."]); break;
     case "9": takeItem(k); player.lamp = 100; player.lampOn = true; st = [good("Lampe 100 %")]; line = "Frische Batterie. Die letzte im Haus. Das Controlling weiß davon nichts."; break;
   }
   showToast(def.emoji, "#f3f8f1", def.name, line, st); updateHud();

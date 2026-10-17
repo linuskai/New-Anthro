@@ -544,8 +544,8 @@ function render(time, dt) {
   for (const c of level.clocks) { c.m.rotation.z = -((tm % 60) / 60) * Math.PI * 2; c.h.rotation.z = -(((tm / 60) % 12) / 12) * Math.PI * 2; }
   if (run.rea && run.rea.beam) { const p = .5 + .5 * Math.sin(time * 8); run.rea.beam.material.opacity = .12 + .25 * p; reaLight.intensity = 1.2 * p; }
   if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .38 + Math.sin(time * 2) * .1 : .05;
-  if (level.navi) { level.chevMat.opacity = .38 + .14 * Math.sin(time * 3); level.navi.visible = mode === "play"; if (level.chev) level.chev.visible = mode === "play"; }
-  if (level.callMat) level.callMat.color.setHex(Math.sin(time * 5) > 0 ? 0xff3020 : 0x5a1410);
+  if (level.navi) { level.chevMat.opacity = .24 + .1 * Math.sin(time * 3); level.navi.visible = mode === "play"; if (level.chev) level.chev.visible = mode === "play"; }
+  if (level.callMat) level.callMat.color.setHex(Math.sin(time * 2.2) > 0 ? 0xffb84a : 0x6a4a20);
   renderer.render(scene, camera);
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }
   drawWaypoint();

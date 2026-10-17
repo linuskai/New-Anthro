@@ -47,10 +47,10 @@ const LEVELS = [
     map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2...x...I...3....N..E#", "############l############"] },
   { key: "ortho", short: "4 · ORTHOPÄDIE", name: "Orthopädie · 4. OG", floor: "4. OG", room: 4, env: "ortho",
     safeNames: [["UMKLEIDE", "Riecht nach Deo und Verzweiflung"]],
-    tip: "Die Orthopädie hat den Sicherheitsdienst eingespart. Jetzt stehen drei Orthopäden in den Türen und trainieren dabei Bizeps. Proteinshake hilft. Fachwissen auch. Armdrücken eher nicht.",
+    tip: "In der Orthopädie stehen die Orthopäden einfach im Flur herum, zwischen zwei Sätzen Bizeps-Curls. Lauchige Futzis wie Internisten lassen sie nicht durch. Beweise, dass du keiner bist: Proteinshake, Fachwissen, Liegestütze. Oder Schmeicheln.",
     objectives: [
-      { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Orthopäden vorbei (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
-        brief: "Drei Orthopäden, drei Türen, sechs Bizepse. Sie stehen da „nur kurz zwischen zwei Sätzen“. Wer durchwill, braucht Proteine, Fachwissen oder Respekt vor dem Pump." },
+      { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Orthopäden vorbeikommen (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
+        brief: "Drei Orthopäden stehen im Flur herum und halten jeden für einen Internisten. Internisten kommen hier nicht durch. Zu lauchig. Beweis das Gegenteil: Shake, Liegestütze, Rotatorenmanschette oder ein ehrliches Kompliment für den Bizeps." },
       { id: "protein", title: "Flüssige Bestechung", text: "Proteinshake aus dem Kraftraum", at: "item:6", done: () => run.picked.has("6"),
         brief: "Im Kraftraum steht ein Proteinshake. Vanille. Für Orthopäden die härteste Währung der Welt." }],
     exitText: "Treppenhaus → Radiologie", lock: "", headhunter: true,
@@ -149,7 +149,7 @@ const TYPES = {
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "messy", coat: true, shirt: 0xd9c46b, pants: 0x4a4a3a, glasses: "thick", pens: true, acc: "book", build: "thin" }),
        walk: .55, approach: 1.0, range: 5, fov: .45, detect: .7, barks: ["Warte! Hast du an Morbus Whipple gedacht?", "Interessanter Fall!", "Natrium 134!"] },
   U: { label: "ORTHOPÄDE", role: "Orthopädie · Oberarzt Kraftraum", who: () => rnd(["Dr. Bizeps", "Dr. Quadrizeps", "Dr. Kreuzband"]), av: "💪", color: "#3a3a3a",
-       spec: () => ({ skin: rnd(SKIN), hair: rnd([0x1b1b1b, 0x5a3a22, 0x8a6a3a]), hairStyle: rnd(["short", "baldSides", "spiky"]), shirt: 0x2a5f8a, pants: 0x2a5f8a, scrubs: true, pens: true, badge: true, build: "muscle", steth: true, pose: "flex", scale: 1.06, short: true, acc: "shake", mood: rnd(["smile", "neutral"]) }),
+       spec: () => ({ skin: rnd(SKIN), hair: rnd([0x1b1b1b, 0x5a3a22, 0x8a6a3a]), hairStyle: rnd(["short", "baldSides", "spiky"]), shirt: 0x2a5f8a, pants: 0x2a5f8a, scrubs: true, pens: true, badge: true, build: "muscle", steth: true, pose: rnd(["flex", "curl", "curl"]), scale: 1.06, short: true, acc: "shake", mood: rnd(["smile", "neutral"]) }),
        static: true },
   A: { label: "RADIOLOGE", role: "Radiologie", who: () => rnd(["Dr. Schatten", "Dr. Kontrast", "Dr. Voraufnahme"]), av: "🩻", color: "#6a7a9a",
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "short", coat: true, apron: true, shirt: 0x333a44, pants: 0x2a2f38, glasses: "normal", acc: "mug", lamp: true }),
@@ -202,9 +202,10 @@ const ITEMS = {
   "+": { emoji: "🫙", name: "Wundercreme", desc: "+60 Energie, +1 Nerv" },
   p: { emoji: "✏️", name: "Kugelschreiber", desc: "Werfen: macht Lärm, lenkt ab" },
   c: { emoji: "🥼", name: "Kittel", desc: "Ausziehen: Personal erkennt dich nicht mehr" },
+  f: { emoji: "📱", name: "Fake-Telefonat", desc: "10 s lang wichtig telefonieren: Personal stört dich nicht" },
   "&": { emoji: "📜", name: "Arbeitszeugnis", desc: "„…war stets bemüht…“", mission: "zeugnis" },
 };
-const INV_ORDER = ["c", "p", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
+const INV_ORDER = ["c", "p", "f", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
 
 const OFFERS = {
   pharma: { name: "Pharmazeutika AG (Pharma)", need: ["approbation", "zeugnis"] },

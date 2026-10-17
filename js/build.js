@@ -114,8 +114,8 @@ function buildDoor(lv, x, y, theme, num, plateText) {
   g.add(pivot);
   // patient call light above the door: some patients ring. Always.
   if (!safe && theme !== "cellar") {
-    if (!lv.callMat) { lv.callMat = new THREE.MeshBasicMaterial({ color: 0xff3020 }); lv.perMat.push(lv.callMat); }
-    const ringing = Math.random() < .4, lamp = new THREE.Mesh(GEO.box, ringing ? lv.callMat : lambert(0xe8e4d8)); lamp.scale.set(.16, .1, .16);
+    if (!lv.callMat) { lv.callMat = new THREE.MeshBasicMaterial({ color: 0xffb84a, toneMapped: false }); lv.perMat.push(lv.callMat); }
+    const ringing = Math.random() < .15, lamp = new THREE.Mesh(GEO.box, ringing ? lv.callMat : lambert(0xe8e4d8)); lamp.scale.set(.16, .1, .16);
     lamp.position.set(axis === "x" ? cx + cs * (S / 2 + .06) : cx + hw + .28, 2.5, axis === "x" ? cz + hw + .28 : cz + cs * (S / 2 + .06)); g.add(lamp);
   }
   const signT = safe ? textTex([lv.nextSafeName ? lv.nextSafeName[0] : "RUHERAUM", lv.nextSafeName ? lv.nextSafeName[1] : ""], "#c9a77a", "#2a1c00", 512, 150, 46) : textTex([num, plateText || ""], "#f6f6ef", "#1d2622", 512, 150, 50);
@@ -367,4 +367,48 @@ function vehicleModel(route) {
     for (const [x, z] of [[-1, -1.8], [1, -1.8], [-1, 1.8], [1, 1.8]]) { const w = mesh(GEO.wheel, lambert(0x1a1a1a), 1.2, 1, 1.2); w.rotation.z = Math.PI / 2; w.position.set(x, .35, z); g.add(w); }
   }
   return g;
+}
+
+// ---------- wear and tear: a few run-down stretches per ward (not everywhere) ----------
+const SHABBY_TEX = {
+  peel: () => canvasTex(128, 128, (g, w, h) => { const r = rng(31); g.fillStyle = "rgba(170,165,150,.9)"; g.beginPath(); for (let i = 0; i < 14; i++) { const a = i / 14 * 7, rr = 34 + r() * 26; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); } g.fill(); g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 3; g.stroke(); g.fillStyle = "rgba(120,110,95,.5)"; for (let i = 0; i < 40; i++) g.fillRect(30 + r() * 68, 30 + r() * 68, 2, 2); }, "shabby:peel"),
+  damp: () => canvasTex(128, 128, (g, w, h) => { for (let i = 0; i < 4; i++) { const gr = g.createRadialGradient(64, 40 + i * 10, 4, 64, 50 + i * 8, 50 - i * 6); gr.addColorStop(0, "rgba(140,110,60,.0)"); gr.addColorStop(.75, "rgba(140,110,60,.22)"); gr.addColorStop(.85, "rgba(110,80,40,.35)"); gr.addColorStop(1, "rgba(110,80,40,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } g.fillStyle = "rgba(110,80,40,.25)"; g.fillRect(60, 60, 5, 68); }, "shabby:damp"),
+  crack: () => canvasTex(128, 128, (g, w, h) => { const r = rng(7); g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); let x = 64, y = 64; g.moveTo(x, y); for (let i = 0; i < 9; i++) { x += (r() - .5) * 30; y += (r() - .5) * 30; g.lineTo(x, y); } g.stroke(); } }, "shabby:crack"),
+  tape: () => canvasTex(128, 64, (g, w, h) => { g.fillStyle = "rgba(170,172,170,.95)"; g.save(); g.translate(64, 32); g.rotate(.25); g.fillRect(-60, -9, 120, 18); g.rotate(-.5); g.fillRect(-60, -9, 120, 18); g.restore(); g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(0, 30, w, 2); }, "shabby:tape"),
+  tiles: () => canvasTex(128, 128, (g, w, h) => { const r = rng(9); for (let i = 0; i < 5; i++) { g.fillStyle = `rgba(${60 + r() * 30},${60 + r() * 30},55,.55)`; g.fillRect(r() * 96, r() * 96, 24 + r() * 16, 24 + r() * 16); } }, "shabby:tiles"),
+};
+const SCRIBBLES = ["Tage bis zur Rente: 4.311", "Dr. K. war hier (2014–?)", "IIII IIII IIII IIII II\nDienste ohne Pause", "„Nur kurz“ – seit 2019", "Hier stand mal ein Kaffeeautomat. RIP", "BITTE NICHT AN DIE WAND LEHNEN\n(sie fällt um)", "Wasserschaden gemeldet: 03/2017\nStatus: in Prüfung"];
+const scribbleTex = t => canvasTex(256, 96, (g, w, h) => { g.fillStyle = "rgba(40,50,90,.75)"; g.font = `italic 600 20px "Comic Sans MS", "Marker Felt", ${SF}`; g.textAlign = "center"; t.split("\n").forEach((l, i, a) => g.fillText(l, w / 2, h / 2 + (i - (a.length - 1) / 2) * 24 + 7, w - 12)); }, "scrib:" + t);
+const decalMats = new Map();
+function decal(tex, w, h) {
+  if (!decalMats.has(tex.uuid)) decalMats.set(tex.uuid, new THREE.MeshStandardMaterial({ map: tex, transparent: true, depthWrite: false, roughness: .9, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const m = new THREE.Mesh(GEO.plane, decalMats.get(tex.uuid)); m.scale.set(w, h, 1); return m;
+}
+function decorateShabby(lv, theme, r) {
+  const zones = { ward: 3, ortho: 2, er: 3, gastro: 4, radio: 2 }[theme] || 0; if (!zones) return;
+  const cands = []; for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] === "." && lv.zone[y * GW + x] === 1 && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) > 4) cands.push([x, y]);
+  const used = new Set();
+  for (let z = 0; z < zones && cands.length; z++) {
+    const [sx, sy] = cands[Math.floor(r() * cands.length)]; (lv.shabby || (lv.shabby = [])).push([sx, sy]);
+    for (let y = sy - 2; y <= sy + 2; y++) for (let x = sx - 2; x <= sx + 2; x++) {
+      if (cell(x, y) !== "." || zoneAt(lv, x, y) !== 1 || used.has(x + "," + y)) continue; used.add(x + "," + y);
+      for (const [dx, dy] of DIRS) if (cell(x + dx, y + dy) === "#" && r() < .55) {
+        const v = r(), along = (r() - .5) * 1.6;
+        if (v < .35) wallPlace(lv, decal(SHABBY_TEX.peel(), .5 + r() * .5, .5 + r() * .5), x, y, dx, dy, along, .4 + r() * 1.8).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
+        else if (v < .65) wallPlace(lv, decal(SHABBY_TEX.damp(), 1 + r() * .6, 1.1), x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
+        else if (v < .78) wallPlace(lv, decal(scribbleTex(SCRIBBLES[Math.floor(r() * SCRIBBLES.length)]), .9, .34), x, y, dx, dy, along, 1.15 + r() * .5).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
+        else if (v < .88) { const c = new THREE.Mesh(GEO.cable, lambert(0x1a1a1a)); wallPlace(lv, c, x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .06, 0, -dy * .06)); c.rotation.z = .15; }
+      }
+      const fv = r();
+      if (fv < .3) { const d = decal(SHABBY_TEX.crack(), 1.4, 1.4); d.rotation.x = -Math.PI / 2; d.rotation.z = r() * 6; d.position.set((x + .2 + r() * .6) * S, .015, (y + .2 + r() * .6) * S); lv.group.add(d); }
+      else if (fv < .45) { const d = decal(SHABBY_TEX.tape(), 1.0, .5); d.rotation.x = -Math.PI / 2; d.rotation.z = r() * 3; d.position.set((x + .3 + r() * .4) * S, .016, (y + .3 + r() * .4) * S); lv.group.add(d); }
+      else if (fv < .6) { const d = decal(SHABBY_TEX.tiles(), S * .9, S * .9); d.rotation.x = -Math.PI / 2; d.position.set((x + .5) * S, .014, (y + .5) * S); lv.group.add(d); }
+      // missing ceiling panel (only between lamps) with a dangling one next to it
+      if ((x + y) % 2 && r() < .3) {
+        lv.group.add(at(boxMesh(.62, .02, .62, 0x0b0c0c), (x + .5) * S + .3, WALL_H - .012, (y + .5) * S - .3));
+        const pnl = boxMesh(.6, .02, .6, 0xd8d8cc); pnl.position.set((x + .5) * S + .55, WALL_H - .35, (y + .5) * S - .3); pnl.rotation.z = .9; lv.group.add(pnl);
+        if (r() < .5) lv.group.add(at(new THREE.Mesh(GEO.cable, lambert(0x2a2a2a)), (x + .5) * S + .2, WALL_H - .6, (y + .5) * S - .2));
+      }
+    }
+  }
 }

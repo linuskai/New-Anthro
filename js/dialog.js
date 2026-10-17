@@ -45,6 +45,16 @@ function optIcon(o, i) {
   if (/^Losreißen|weg$/.test(l)) return ["run", "🏃"];
   return ["", String(i + 1)];
 }
+// the person you talk to moves their mouth while the text types
+let talker = null;
+function setTalker(sp, text) {
+  if (talker) talker.talking = false;
+  talker = null; if (!level || !sp) return;
+  for (const e of level.enemies) if (e.person && e.person.sp === sp) talker = e.person;
+  for (const f of level.friends) if (f.person && f.person.sp === sp) talker = f.person;
+  if (!talker) return;
+  const who = talker; who.talking = true; clearTimeout(who.talkTO); who.talkTO = setTimeout(() => { who.talking = false; }, Math.min(6000, 400 + String(text || "").length * 28));
+}
 function openDialog(d) {
   const val = v => typeof v === "function" ? v() : v;
   d = { ...d, options: d.options.map(o => ({ ...o, hint: val(o.hint), disabled: !!val(o.disabled) })) };
@@ -54,7 +64,7 @@ function openDialog(d) {
   const url = portraitFor(d.sp), ph = $("dlgPhoto");
   ph.innerHTML = url ? `<img src="${url}" alt="">` : `<span id="dlgAvatar">${esc(d.av || "?")}</span>`;
   $("dlgName").textContent = d.name; $("dlgRole").textContent = d.role || "";
-  typeText(d.text); $("dlgStamps").innerHTML = "";
+  typeText(d.text); setTalker(d.sp, d.text); $("dlgStamps").innerHTML = "";
   const box = $("dlgOpts"); box.innerHTML = "";
   d.options.forEach((o, i) => {
     const [cls, ico] = optIcon(o, i);
@@ -72,7 +82,7 @@ function chooseOption(i) {
   const res = o.act() || {};
   if (res.end) { $("dlg").hidden = true; dlgState = null; return; }
   if (res.next) { dlgState = null; res.next(); return; }
-  typeText(res.text || "…");
+  typeText(res.text || "…"); setTalker(dlgState.sp, res.text);
   $("dlgStamps").innerHTML = stampsHtml(res.stamps || []);
   const box = $("dlgOpts"); box.innerHTML = "";
   const b = document.createElement("button"); b.type = "button"; b.className = "opt go"; b.textContent = "Weiter";
@@ -82,7 +92,7 @@ function chooseOption(i) {
 }
 function closeDialog() {
   if (!dlgState) return;
-  const d = dlgState; dlgState = null; clearInterval(typeTimer);
+  const d = dlgState; dlgState = null; clearInterval(typeTimer); if (talker) { talker.talking = false; talker = null; }
   $("dlg").hidden = true;
   if (mode === "dialog") mode = "play";
   if (d.onClose) d.onClose();
@@ -114,6 +124,7 @@ const breakFree = (cost, text) => ({ label: "Losreißen und weg", hint: "−" + 
 function finishEncounter(e) {
   if (e.done) return;
   e.done = true; e.state = "leaving"; e.leaving = 3; e.aw = 0; player.inv = 5; run.talks++;
+  setExpression(e.person, "smile"); emote(e, pick(["👋", "😌", "🙄", "👍"]));
   if ("PZF".includes(e.type)) { run.testi = (run.testi || 0) + 1; if (run.route === "tele" && run.testi <= 3) setTimeout(() => showToast("🎥", "#ff3fa4", "DocFlix", `Testimonial ${run.testi}/3 im Kasten. „Authentisch! Roh! Echt!“ – das Team`, []), 1200); }
   e.tri.visible = false;
   e.label.material.map = labelFor(TYPES[e.type], e.type === "Z" ? "✓ TRIAGIERT" : "✓ ERLEDIGT"); e.label.material.needsUpdate = true;
@@ -138,26 +149,47 @@ function phdQuiz(e) {
 }
 
 function bouncerDialog(e) {
-  const t = TYPES.U;
+  const t = TYPES.U, base = { sp: e.person.sp, av: t.av, color: "#2a5f8a", name: e.name, role: "Orthopädie · Lauch-Kontrolle · " + (bouncersCleared() + 1) + " von " + bouncersTotal() };
+  setExpression(e.person, "angry");
   const clear = text => {
     e.cleared = true; e.done = true; grid[e.ty][e.tx] = "."; run.talks++;
     const side = DIRS.find(([dx, dy]) => cell(e.tx + dx, e.ty + dy) === "#" && dx !== 0) || [1, 0];
-    e.x = e.tx + .5 + side[0] * .62; e.tri.visible = false; e.label.material.map = labelFor(t, "✓ DURCHGELASSEN"); e.label.material.needsUpdate = true; sfx.ding();
-    return { text, stamps: [good("Tür frei")] };
+    e.x = e.tx + .5 + side[0] * .62; e.tri.visible = false; e.label.material.map = labelFor(t, "✓ KEIN LAUCH"); e.label.material.needsUpdate = true; sfx.ding();
+    setExpression(e.person, "happy"); emote(e, pick(["💪", "🤝", "👊"]));
+    return { text, stamps: [good("Durchgelassen")] };
   };
-  openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Orthopädie · Oberarzt Kraftraum · Tür " + (bouncersCleared() + 1) + " von " + bouncersTotal(),
-    text: "„" + pick(["Moment, ich bin mitten im Satz. Zwölf Wiederholungen. Danach Visite.", "Hier kommt nur durch, wer seine Rotatorenmanschette kennt. Persönlich.", "Wir haben die Tür zu. Zugluft ist schlecht für die Regeneration.", "Kollege, Sie sehen aus, als hätten Sie seit 2019 kein Bein-Training gehabt."]) + "“",
+  const lauch = (text, p) => { setExpression(e.person, "smile"); emote(e, "🥬"); return { text, stamps: pen(p || { energy: 8 }) }; };
+  openDialog({ ...base,
+    text: "„" + pick(["Halt. Du siehst aus wie ein Internist. Lauchig. Blass. Liest Leitlinien zum Spaß.", "Lauch-Kontrolle. Arm zeigen. Nein, den anderen. Okay, beide sind traurig.", "Wir stehen hier nur rum. Zwischen zwei Sätzen. Aber durch kommst du trotzdem nicht.", "Wie viel drückst du? Und sag jetzt nicht ‚Kalium 4,2‘."]) + "“",
     options: [
-      { label: "Proteinshake anbieten", hint: hasItem("6") ? "🥤 verbrauchen" : "braucht 🥤", disabled: !hasItem("6"), act: () => { takeItem("6"); return clear("Er trinkt ihn in einem Zug. „Vanille. Respekt.“ Er tritt zur Seite."); } },
-      { label: "„Ich bin auch Orthopäde.“", act: () => ({ next: () => openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette.“",
+      { label: "Proteinshake anbieten", hint: () => hasItem("6") ? "🥤 verbrauchen" : "braucht 🥤", disabled: () => !hasItem("6"), act: () => { takeItem("6"); return clear("Er trinkt ihn in einem Zug, ohne zu schlucken. „Vanille. Respekt. Du bist kein Lauch. Du bist… ein Frühlingslauch.“"); } },
+      { label: "Liegestütze! Jetzt! Hier!", hint: "Minispiel · Energie", disabled: () => run.energy < 10, act: () => ({ next: () => pushupGame(e, ok => openDialog({ ...base, text: ok ? "Er zählt mit. Laut. Der ganze Flur zählt mit. Ein Patient weint vor Rührung." : "Bei Nummer sechs liegst du flach. Er stellt dir den Fuß auf den Rücken und macht ein Foto für die Gruppe.",
+        options: [{ label: ok ? "Aufstehen. Lässig." : "Liegen bleiben. Würde zeigen.", act: () => ok ? clear("„Kein Lauch. Ein Spargel vielleicht. Aber kein Lauch.“ Er tritt zur Seite und klatscht dich ab. Deine Hand ist taub.") : lauch("„Lauch.“ Er tätschelt dir den Kopf. Wie einem Golden Retriever.", { energy: 12 }) }], onClose: () => { player.inv = 1; e.cool = 2; } })) }) },
+      { label: "„Ist das ein Bizeps oder trägst du ein Kleinkind unterm Ärmel?“", hint: "60 %", act: () => chance(.6) ? clear("Er errötet. Er flext. Er flext nochmal, für sich selbst. Er hat vergessen, dass es dich gibt.") : lauch("„Billig.“ Aber er flext trotzdem. Du stehst immer noch davor.") },
+      { label: "„Ich bin Unfallchirurg.“", act: () => ({ next: () => openDialog({ ...base, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette. Ohne Googeln. Ohne Leitlinie.“",
         options: [
-          { label: "Bizeps, Trizeps, Quadrizeps, Wadl", act: () => ({ text: "„Wadl ist kein Muskel. Wadl ist ein Lebensgefühl.“ Er bleibt stehen.", stamps: pen({ nerves: 1 }) }) },
-          { label: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis", act: () => clear("Er nickt anerkennend. „SITS. Bruder.“ Ihr macht einen Faustcheck.") },
-          { label: "Links, rechts, oben, unten", act: () => ({ text: "Er lacht so laut, dass im Gipsraum ein Gips reißt. Du stehst immer noch draußen.", stamps: pen({ energy: 5 }) }) },
+          { label: "Bizeps, Trizeps, Quadrizeps, Wadl", act: () => lauch("„Wadl ist kein Muskel. Wadl ist ein Lebensgefühl.“", { nerves: 1 }) },
+          { label: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis", act: () => clear("Er nickt anerkennend. „SITS. Bruder.“ Ihr macht einen Faustcheck. Deine Fingerknöchel knacken.") },
+          { label: "„Hängt vom Natriumwert ab.“", act: () => lauch("„WUSST ICH'S! INTERNIST!“ Die anderen Orthopäden drehen sich um. Einer zeigt mit der Hantel auf dich.", { energy: 10 }) },
         ], onClose: () => { player.inv = 1; e.cool = 2; } }) }) },
-      { label: "Armdrücken!", hint: "−30 Energie · 45 %", disabled: run.energy < 30, act: () => { run.energy -= 30; if (chance(.45)) return clear("Unfassbar. Du gewinnst. Er weint ein bisschen. Dann lässt er dich durch."); return { text: "Dein Arm macht ein Geräusch. Kein gutes. Er bleibt stehen.", stamps: pen({ nerves: 1 }).concat([{ text: "−30 Energie" }]) }; } },
-      { label: "„Ich komm später wieder.“", act: () => ({ text: "„Später ist auch zu.“" }) },
+      { label: "„Da hinten verschreibt ein Internist Physio ohne Indikation!“", hint: "50 %", act: () => { if (chance(.5)) { const r = clear("„WAS?!“ Er rennt los, die Hantel noch in der Hand. Du hörst ihn den ganzen Flur entlang schnauben."); return r; } return lauch("Er schaut hin. Da ist niemand. Er schaut zurück. „Netter Versuch, Lauch.“"); } },
+      { label: "„Ich komm später wieder.“", act: () => ({ text: "„Später ist Beintag. Da sind wir noch schlechter gelaunt.“" }) },
     ], onClose: () => { player.inv = 1; e.cool = 2; } });
+}
+// push-up challenge: tap as fast as you can
+function pushupGame(e, done) {
+  const need = settings.diff === "easy" ? 10 : 13, secs = 5;
+  let n = 0, t0 = null, over = false; // the clock starts with the first push-up
+  const ov = document.createElement("div"); ov.id = "pushup";
+  ov.innerHTML = `<div class="pu-card"><b>LIEGESTÜTZE</b><small>${need} in ${secs} Sekunden · die Zeit läuft ab dem ersten Tippen</small><div class="pu-count">0</div><div class="pu-bar"><i></i></div><button type="button" class="pu-btn">💪 RUNTER · HOCH</button></div>`;
+  document.body.appendChild(ov); mode = "dialog";
+  const cnt = ov.querySelector(".pu-count"), bar = ov.querySelector(".pu-bar i");
+  const tap = ev => { ev.preventDefault(); if (over) return; if (t0 == null) t0 = performance.now(); n++; cnt.textContent = n; cnt.classList.remove("bump"); void cnt.offsetWidth; cnt.classList.add("bump"); sfx.step(); if (n >= need) finish(true); };
+  ov.querySelector(".pu-btn").addEventListener("pointerdown", tap);
+  const key = ev => { if (ev.key === " " || ev.key === "Enter" || ev.key.toLowerCase() === "e") tap(ev); }; addEventListener("keydown", key);
+  const tick = () => { if (over) return; const k = t0 == null ? 0 : (performance.now() - t0) / 1000 / secs; bar.style.width = Math.max(0, 100 - k * 100) + "%"; if (k >= 1) finish(false); else requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  function finish(ok) { over = true; run.energy = Math.max(0, run.energy - (ok ? 8 : 15)); removeEventListener("keydown", key); setTimeout(() => { ov.remove(); done(ok); }, 450); }
 }
 
 function friendDialog(f) {

@@ -120,6 +120,7 @@ function findFocus() {
     if (p.kind === "M" && p.uses < 3) consider(p.x, p.y, 1.35, { type: "machine", ref: p, label: "Automat", name: "Snackautomat" });
     if (p.kind === "L" && !run.flags.has("approbation")) consider(p.x, p.y, 1.35, { type: "locker", ref: p, label: "Öffnen", name: "Dein Spind" });
     if (p.kind === "G" && !run.flags.has("power")) consider(p.x, p.y, 1.35, { type: "fuse", ref: p, label: run.flags.has("fuse") ? "Reparieren" : "Ansehen", name: "Sicherungskasten" });
+    if (p.kind === "bedhide") consider(p.x, p.y, 1.25, { type: "bedhide", ref: p, label: player.hidden ? "Aufstehen" : "Hinlegen", name: "Bett · neben dem Patienten" });
     if (p.kind === "w") consider(p.x, p.y, .95, { type: "cart", ref: p, label: player.hidden ? "Raus" : "Verstecken", name: "Wäschewagen" });
     if (p.kind === "v") consider(p.x, p.y, 1.5, { type: "board", ref: p, label: "Öffnen", name: "Flucht-Zentrale" });
     if (p.kind === "W" && !p.used) consider(p.x, p.y, 1.4, { type: "spa", ref: p, label: "Liegen", name: "Wellness-Liege" });
@@ -162,6 +163,9 @@ function act() {
   else if (f.type === "fuse") {
     if (!run.flags.has("fuse")) { showToast("⚡", "#f2c300", "Sicherungskasten", "Eine Sicherung fehlt. Der Hausmeister hat sicher Ersatz.", []); return; }
     player.channel = { t: 0, total: 2.6, label: "Einsetzen…", done: () => { run.flags.add("power"); sfx.power(); blackout = 0; applyEnv(true); showToast("💡", "#f2c300", "Strom ist da!", "Licht! Die Tür zum Treppenhaus summt auf. Der Aufzug bleibt natürlich kaputt.", [good("Strom an")]); updateHud(); } };
+  } else if (f.type === "bedhide") {
+    player.hidden = !player.hidden;
+    if (player.hidden) { sfx.step(); showToast("🛏️", "#9cc6e6", "Unter der Decke", pick(["Du legst dich neben Hr. Brösel und ziehst die Decke hoch. Er sagt: „Na endlich mal ein Arzt, der Zeit hat.“", "Unter der Decke. Der Patient neben dir flüstert: „Ich verrate nichts. Aber ich will morgen Schnitzel.“", "Du bist jetzt Flurbett 24b. Niemand schaut zweimal hin. Flurbetten sind unsichtbar, sagt das Controlling."]), [good("Versteckt")]); }
   } else if (f.type === "cart") { player.hidden = !player.hidden; if (player.hidden) setMsg("Im Wäschewagen. Riecht nach Station 4. Nicht bewegen.", 2.5); }
   else if (f.type === "board") showBrief(true);
   else if (f.type === "vent") player.channel = { t: 0, total: 2.4, label: "Hebel umlegen…", done: () => { run.flags.add("vent"); sfx.power(); showToast("🌬️", "#7a9a3a", "Operation Frischluft", pick(["Die Lüftung röchelt, hustet, läuft. Zum ersten Mal seit 2017 riecht die Station nach… Station.", "Ein Brummen. Dann ein Luftzug. Ein Gastroenterologe ruft: „Was ist das für ein komischer Geruch?“ Es ist frische Luft."]), [good("Lüftung an")]); updateHud(); } };
@@ -267,9 +271,9 @@ function perceive(e, t, dx, dy, d) {
   const fx = Math.sin(e.yaw), fy = Math.cos(e.yaw), dot = (dx * fx + dy * fy) / d;
   if (d > 1.2 && dot < t.fov) return 0;
   if (!t.ghost && !los(e.x, e.y, player.x, player.y)) return 0;
-  const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1;
+  const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1, phone = player.phoneT > 0 && "NOCVIADnU".includes(e.type) ? .2 : 1;
   const grace = player.inv > 0 ? .15 : 1; // right after a conversation the others give you a moment
-  return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace;
+  return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace * phone;
 }
 function walkTo(e, gx, gy, sp, dt) {
   const step = sp * dt;
@@ -314,6 +318,25 @@ function toggleDoor(d) {
   } else setDoor(d, true);
   makeNoise(2.5, .08);
 }
+// who is delighted to see a doctor (patients, relatives, dermatologists) and who is not
+const FANS = ["P", "F", "Z", "R", "Q"];
+function exprFor(e) {
+  if (e.done) return "smile";
+  if (e.state === "sus") return "surprised";
+  if (e.state === "spot") return FANS.includes(e.type) ? "happy" : e.type === "N" ? "worried" : "angry";
+  if (e.state === "lured" || e.state === "nerd") return "surprised";
+  return e.person.sp.mood || "neutral";
+}
+function emote(e, txt) {
+  if (!level || !e.mesh) return;
+  const s = sprite(emoteTex(txt), .42, .42); s.position.set(0, 2.55 * (e.person.sp.scale || 1), 0); e.mesh.add(s);
+  (level.emotes || (level.emotes = [])).push({ s, t: 0, parent: e.mesh });
+}
+function updateEmotes(dt) {
+  if (!level.emotes) return;
+  for (const m of level.emotes) { m.t += dt; m.s.position.y += dt * .25; m.s.material.opacity = Math.max(0, 1 - Math.max(0, m.t - .9) / .6); }
+  level.emotes = level.emotes.filter(m => { if (m.t < 1.5) return true; m.parent.remove(m.s); m.s.material.dispose(); return false; });
+}
 function updateEnemy(e, dt) {
   const t = TYPES[e.type];
   e.moving = false;
@@ -340,8 +363,9 @@ function updateEnemy(e, dt) {
   else if (e.aw >= 1 || (e.state === "spot" && e.aw > .4)) e.state = "spot";
   else if (e.aw >= .35) e.state = "sus";
   else e.state = "idle";
-  if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); }
-  if (e.state === "sus" && prev === "idle") sfx.sus();
+  if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); emote(e, FANS.includes(e.type) ? pick(["😍", "🙋", "🤩"]) : pick(["❗", "😠", "☝️"])); }
+  if (e.state === "sus" && prev === "idle") { sfx.sus(); emote(e, pick(["❓", "🤨", "👀"])); }
+  if (e.state !== prev || !e.person.expr) setExpression(e.person, exprFor(e));
   if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { hostileDialog(e); return; }
   if (t.ghost) {
     if (e.state === "spot") { const sp = t.approach * (blackout > 0 ? 1.5 : 1) * dt; e.x += dx / d * sp; e.y += dy / d * sp; e.tyaw = Math.atan2(dx, dy); e.moving = true; if (Math.random() < dt * .4) sfx.whisper(); }
@@ -570,8 +594,8 @@ function update(dt) {
   player.inv = Math.max(0, player.inv - dt); player.coffee = Math.max(0, player.coffee - dt);
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
-  player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
-  updateStink(dt);
+  player.phoneT = Math.max(0, (player.phoneT || 0) - dt); player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
+  updateStink(dt); updateEmotes(dt);
   if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
   if (nerdLure) { nerdLure.t -= dt; if (nerdLure.t <= 0) { if (nerdLure.mesh) level.group.remove(nerdLure.mesh); nerdLure = null; for (const e of level.enemies) if (e.state === "nerd") e.state = "idle"; } }
   updatePlayer(dt);
@@ -600,7 +624,7 @@ function update(dt) {
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
   updateNavi(dt);
-  level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); }
+  level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); updateMissionHow(currentObjective()); }
   focus = findFocus();
   const ab = $("btnAct");
   if (player.channel) { $("actLabel").textContent = player.channel.label; $("actProg").style.height = (player.channel.t / player.channel.total * 100) + "%"; ab.classList.add("ready"); }

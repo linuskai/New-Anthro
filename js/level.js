@@ -142,7 +142,10 @@ function buildLevel(idx) {
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
     if ("#Hdl^,".includes(grid[y][x]) || (x + y) % 2) continue;
     const v = r(), creepy = lv.dark[y * GW + x] && !env.dark;
-    if (creepy || v < env.flicker) lv.flickers.push({ x, y, a: 3 + r() * 20, b: 1 + r() * 9, p: r() * 10, th: creepy ? .6 + r() * .6 : .2 + r() * .9, on: true, creepy, tint: creepy ? pick([0xff6a5a, 0x8affb0, 0xfdfdf6]) : env.lamp });
+    // a few flickering tubes are funny, a whole floor of them is a disco. Never red: red means "spotted" or "emergency".
+    const flick = creepy || v < env.flicker, cap = env.dark ? 4 : creepy ? 3 : 2;
+    if (flick && (creepy ? (lv.nCreep = (lv.nCreep || 0) + 1) : (lv.nFlick = (lv.nFlick || 0) + 1)) <= cap) lv.flickers.push({ x, y, a: 3 + r() * 20, b: 1 + r() * 9, p: r() * 10, th: creepy ? .6 + r() * .6 : .2 + r() * .9, on: true, creepy, tint: creepy ? pick([0xfdfdf6, 0xd8e8ff, 0xfff0c8]) : env.lamp });
+    else if (flick) { if (creepy) panelsBroken.push([x, y]); else panelsOk.push([x, y]); }
     else if (v < env.flicker + env.broken) panelsBroken.push([x, y]);
     else panelsOk.push([x, y]);
   }
@@ -291,6 +294,7 @@ function buildLevel(idx) {
   }
   if (theme === "er") for (const [x, y] of [[15, 3], [19, 3], [23, 3], [15, 5], [19, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); grid[y][x] = "K"; } // seat rows block their tile, so paths go around
   // rooms and safe rooms
+  decorateShabby(lv, theme, r);
   for (const rg of lv.rooms) decorateRoom(lv, rg, theme, r);
   for (const rg of lv.safeRooms) {
     if (idx === 0 && rg.tiles.some(([a, b]) => a === lv.start[0] && b === lv.start[1])) decorateDoctorsRoom(lv, rg);
@@ -315,6 +319,7 @@ function buildLevel(idx) {
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
     const ch = grid[y][x], wx = (x + .5) * S, wz = (y + .5) * S, alongZ = openTile(x, y - 1) || openTile(x, y + 1);
     if (ch === "B") {
+      if (idx !== 2) { const n = DIRS.find(([dx, dy]) => cell(x + dx, y + dy) === "." || cell(x + dx, y + dy) === ":"); if (n) lv.props.push({ kind: "bedhide", x: x + .5 + n[0] * .75, y: y + .5 + n[1] * .75 }); }
       const g = idx === 2 ? stretcher() : hospitalBed({ blanket: pick([0x8fb7d9, 0xb9d3a8, 0xe8d8b8, 0xc8b8d8]) });
       const pat = makePerson({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "messy", gown: true, shirt: 0x9cc6e6, noShadow: true });
       pat.group.rotation.x = -Math.PI / 2 + (idx === 2 ? 0 : .16); pat.group.position.set(0, idx === 2 ? .93 : .7, .95); pat.group.scale.setScalar(.95); g.add(pat.group);
@@ -463,7 +468,7 @@ function buildLevel(idx) {
   lv.naviMat = new THREE.MeshBasicMaterial({ color: 0x3cff8a, transparent: true, opacity: .8, depthWrite: false }); lv.perMat.push(lv.naviMat);
   const lineGeo = new THREE.PlaneGeometry(.2, 1); lineGeo.rotateX(-Math.PI / 2); lv.perGeo.push(lineGeo);
   lv.navi = new THREE.InstancedMesh(lineGeo, lv.naviMat, 90); lv.navi.count = 0; lv.navi.frustumCulled = false; group.add(lv.navi);
-  const chev = new THREE.Shape(); chev.moveTo(-.16, -.09); chev.lineTo(0, .09); chev.lineTo(.16, -.09); chev.lineTo(.1, -.09); chev.lineTo(0, .015); chev.lineTo(-.1, -.09); chev.closePath();
+  const chev = new THREE.Shape(); chev.moveTo(-.12, -.07); chev.lineTo(0, .07); chev.lineTo(.12, -.07); chev.lineTo(.08, -.07); chev.lineTo(0, .012); chev.lineTo(-.08, -.07); chev.closePath();
   const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2); lv.perGeo.push(chevGeo);
   lv.chevMat = new THREE.MeshBasicMaterial({ color: 0x8affc0, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }); lv.perMat.push(lv.chevMat);
   lv.chev = new THREE.InstancedMesh(chevGeo, lv.chevMat, 60); lv.chev.count = 0; lv.chev.frustumCulled = false; group.add(lv.chev);

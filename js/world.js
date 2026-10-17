@@ -87,6 +87,7 @@ const textTex = (lines, bg, fg, w = 256, h = 128, size = 26) => canvasTex(w, h, 
   g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle";
   lines.forEach((l, i) => { g.font = `${i === 0 ? 800 : 600} ${i === 0 ? size : Math.round(size * .7)}px ${SF}`; g.fillText(l, w / 2, h / 2 + (i - (lines.length - 1) / 2) * size * 1.05, w - 16); });
 }, "txt:" + lines.join("|") + bg + fg + w + h);
+const emoteTex = txt => canvasTex(96, 96, (g, w) => { g.fillStyle = "#fff"; g.beginPath(); g.arc(48, 44, 38, 0, 7); g.fill(); g.beginPath(); g.moveTo(38, 76); g.lineTo(48, 94); g.lineTo(58, 76); g.fill(); g.font = `46px ${EF}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(txt, 48, 46); }, "emote:" + txt);
 const glowTex = color => canvasTex(64, 64, (g, w) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, color); gr.addColorStop(.35, color.replace(/[\d.]+\)$/, ".5)")); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "glow:" + color);
 
 const WALL_COL = { gastro: ["#e6e4d2", "#b4ae84"], ward: ["#e4ece6", "#a9c3b8"], ortho: ["#e3eaf0", "#9fb4c6"], er: ["#efeee2", "#c8c39e"], derma: ["#f4e6d6", "#b88a5e"], radio: ["#4a5058", "#2e333a"] };
@@ -334,7 +335,9 @@ function makePerson(sp) {
     const knee = new THREE.Group(); knee.position.y = -.44; hip.add(knee);
     add(GEO.ball, pants, .062 * limbR, .062 * limbR, .062 * limbR, 0, 0, 0, knee);
     add(GEO.taper, pants, .062 * limbR, .43, .062 * limbR, 0, 0, 0, knee);
-    add(GEO.box, shoes, .11 * Math.max(1, limbR * .8), .08, .25, 0, -.45, .05, knee);
+    const sw = .11 * Math.max(1, limbR * .8);
+    add(GEO.box, shoes, sw, .07, .2, 0, -.44, .03, knee); add(GEO.ball, shoes, sw * .5, .045, .07, 0, -.45, .13, knee);
+    add(GEO.box, new THREE.Color(shoes).multiplyScalar(.45).getHex(), sw * 1.04, .022, .27, 0, -.485, .055, knee);
     legs.push(hip); knees.push(knee);
   }
   add(GEO.torso, sp.shirt || 0x777777, tw / 2, .58, td / 2, 0, 1.2, 0);
@@ -345,12 +348,19 @@ function makePerson(sp) {
     if (sp.coat || sp.jacket) {
       add(GEO.box, sp.shirt || 0x777777, .13, .42, .01, 0, 1.28, td / 2 + .03);
       for (const s of [-1, 1]) { const l = add(GEO.box, c, .06, .26, .012, s * .07, 1.34, td / 2 + .035); l.rotation.z = s * .35; }
-      if (sp.coat) add(GEO.box, 0xdcdcdc, .09, .07, .012, -tw * .26, 1.26, td / 2 + .036);
+      if (sp.coat) {
+        add(GEO.box, 0xdcdcdc, .09, .07, .012, -tw * .26, 1.26, td / 2 + .036);
+        for (const s2 of [-1, 1]) add(GEO.box, 0xe4e4df, .13, .11, .012, s2 * tw * .3, .86, td / 2 + .07);   // lower pockets
+        if (!sp.pens) add(GEO.box, 0x2d3f8f, .012, .08, .012, -tw * .3, 1.3, td / 2 + .045);
+        add(GEO.box, 0xffffff, .055, .075, .006, tw * .27, 1.3, td / 2 + .045); add(GEO.box, 0xc0322a, .055, .014, .007, tw * .27, 1.33, td / 2 + .046); // name badge
+        for (let i = 0; i < 3; i++) add(GEO.ball, 0xd0d0cc, .009, .009, .004, tw * .07, 1.12 - i * .12, td / 2 + .065);
+      }
     }
     if (sp.gown) for (let i = 0; i < 6; i++) add(GEO.ball, 0x6f9fc6, .02, .02, .005, -.12 + (i % 3) * .12, 1.15 + Math.floor(i / 3) * .2, td / 2 + .034);
   }
   if (sp.scrubs) { for (const s of [-1, 1]) { const v = add(GEO.box, shade(sp.shirt, .7), .016, .17, .012, s * .045, 1.38, td / 2 + .012); v.rotation.z = s * -.45; } add(GEO.box, shade(sp.shirt, .85), tw * .34, .12, .012, tw * .2, 1.1, td / 2 + .012); }
   if (sp.badge) { add(GEO.box, 0xffffff, .06, .085, .008, -tw * .26, 1.3, td / 2 + .03); add(GEO.box, 0x2d3f8f, .06, .018, .009, -tw * .26, 1.335, td / 2 + .031); }
+  if (!sp.gown && !sp.robe && !sp.coat && !sp.scrubs) { const belt = add(GEO.cyl, 0x2a2420, tw / 2 + .006, .04, td / 2 + .006, 0, 1.0, 0); belt.userData.belt = true; add(GEO.box, 0xc0b080, .035, .03, .01, 0, 1.0, td / 2 + .01); }
   if (sp.tie) add(GEO.box, sp.tie, .045, .32, .012, 0, 1.24, td / 2 + .04);
   if (sp.pens) for (let i = 0; i < 3; i++) add(GEO.box, [0x2d3f8f, 0xc0322a, 0x1f9d55][i], .014, .09, .014, -tw * .3 + i * .03, 1.36, td / 2 + .04);
   if (sp.apron) add(GEO.box, 0x4a5568, tw + .06, .78, .03, 0, 1.12, td / 2 + .045);
@@ -362,6 +372,7 @@ function makePerson(sp) {
   if (!sp.ghost && !sp.shadowFig) for (const sx of [-1, 1]) add(GEO.ball, warm(skin), .03, .024, .02, sx * .06, -.028, .084, head);
   const mood = sp.mood || pick(["neutral", "neutral", "tired", "smile", "angry", "worried"]), eyeC = sp.eye || pick([0x4a6fa5, 0x5a3a22, 0x3a6a4a, 0x2a2420, 0x6a8aa0]);
   sp.mood = mood; sp.eye = eyeC;
+  const face = { brows: [], lids: [], corners: [], up: null, lo: null, o: null, tired: mood === "tired" || !!sp.coat };
   for (const sx of [-1, 1]) {
     add(GEO.ball, skin, .022, .034, .018, sx * .112, -.005, 0, head);
     add(GEO.ball, shade(skin, .7), .011, .018, .008, sx * .118, -.005, .006, head);
@@ -371,11 +382,9 @@ function makePerson(sp) {
       add(GEO.ball, sp.pose === "zombie" ? 0x8a1a1a : eyeC, .0115, .0115, .006, sx * .041, .015, .11, head);
       add(GEO.ball, 0x0a0c10, .0058, .0058, .004, sx * .041, .015, .1145, head);
       add(GEO.ball, 0xffffff, .0022, .0022, .002, sx * .041 + .004, .019, .1175, head).material = basic(0xffffff);
-      const lidDrop = mood === "tired" || sp.coat ? .006 : 0;
-      const lid = add(GEO.ball, skin, .025, .011, .013, sx * .041, .029 - lidDrop, .101, head); lid.rotation.z = sx * (mood === "tired" ? -.12 : .05);
+      const lid = add(GEO.ball, skin, .025, .011, .013, sx * .041, .029, .101, head); lid.userData.sx = sx; face.lids.push(lid);
       if (sp.coat || sp.chart || mood === "tired") add(GEO.ball, shade(skin, .78), .021, .007, .006, sx * .041, -.004, .1, head);
-      const brow = add(GEO.box, sp.hair || 0x333333, .048, .011, .012, sx * .044, .054, .108, head);
-      brow.rotation.z = sx * (mood === "angry" ? -.28 : mood === "worried" ? .3 : mood === "tired" ? .15 : -.05);
+      const brow = add(GEO.box, new THREE.Color(sp.hair || 0x333333).multiplyScalar(.7).getHex(), .05, .015, .014, sx * .044, .054, .108, head); brow.userData.sx = sx; face.brows.push(brow);
     } else add(GEO.ball, 0x222233, .02, .025, .01, sx * .042, .015, .108, head);
   }
   if (!sp.ghost && !sp.shadowFig) {
@@ -383,9 +392,9 @@ function makePerson(sp) {
     const nose = add(GEO.taper, skin, .019, .045, .023, 0, .012, .118, head); nose.rotation.x = .25;
     add(GEO.ball, shade(skin, .9), .02, .011, .012, 0, -.022, .121, head);
     const lipC = sp.pose === "zombie" ? 0x5a2a2a : warm(shade(skin, .82));
-    const up = add(GEO.ball, lipC, .026, .007, .008, 0, -.052, .109, head), lo = add(GEO.ball, warm(shade(skin, .9)), .022, .008, .008, 0, -.063, .106, head);
-    if (mood === "smile") { up.scale.x = .03; lo.position.y = -.06; for (const sx of [-1, 1]) { const c = add(GEO.ball, lipC, .007, .006, .006, sx * .027, -.047, .104, head); c.rotation.z = sx * .5; } }
-    if (mood === "angry" || mood === "worried") { for (const sx of [-1, 1]) add(GEO.ball, lipC, .007, .006, .006, sx * .026, -.06, .104, head); }
+    face.up = add(GEO.ball, lipC, .026, .007, .008, 0, -.052, .115, head); face.lo = add(GEO.ball, warm(shade(skin, .9)), .022, .008, .008, 0, -.063, .113, head);
+    for (const sx of [-1, 1]) { const c = add(GEO.ball, shade(lipC, .75), .012, .006, .007, sx * .028, -.05, .111, head); c.userData.sx = sx; face.corners.push(c); }
+    face.o = add(GEO.ball, 0x3a1414, .019, .024, .006, 0, -.058, .115, head); face.o.visible = false;
   }
   const hs = sp.hairStyle || "short", hc = sp.hair || 0x333333;
   if (["short", "messy", "long", "bun", "spiky"].includes(hs)) { add(GEO.cap, hc, .122, hs === "messy" ? .15 : .13, .127, 0, .01, -.008, head); const fr = add(GEO.ball, hc, .1, .035, .05, hs === "long" ? -.02 : .015, .088, .07, head); fr.rotation.z = hs === "long" ? .3 : -.2; for (const sx of [-1, 1]) add(GEO.ball, hc, .024, .055, .07, sx * .103, .03, -.025, head); }
@@ -417,6 +426,7 @@ function makePerson(sp) {
     const el = new THREE.Group(); el.position.y = -.29; sh.add(el);
     add(GEO.taper, fore, .043 * limbR, .26, .043 * limbR, 0, 0, 0, el);
     add(GEO.ball, skin, .046 * Math.max(1, limbR * .8), .055, .03 * Math.max(1, limbR * .9), 0, -.3, 0, el);
+    const th = add(GEO.ball, skin, .016, .03, .016, side * -.03, -.29, .022, el); th.rotation.z = side * .5;
     arms.push(sh); elbows.push(el);
   }
   if (sp.steth) { const st = new THREE.Mesh(GEO.steth, lambert(0x2b2b2b)); st.rotation.set(Math.PI / 2 - .3, 0, Math.PI * .9); st.position.set(0, 1.47, .05); body.add(st); }
@@ -427,6 +437,7 @@ function makePerson(sp) {
   if (acc === "folder") add(GEO.box, 0xc0322a, .03, .3, .22, .05, -.3, .04, hand);
   if (acc === "laptop") add(GEO.box, 0xb9c1c8, .03, .24, .32, .05, -.27, .04, hand);
   if (acc === "mug") add(GEO.cyl, 0xf2f2ee, .04, .09, .04, 0, -.34, .06, hand);
+  if (sp.pose === "curl") { const db = new THREE.Group(); db.position.set(0, -.32, .02); hand.add(db); const bar = mesh(GEO.cyl, phong(0x8a8f94, 80), .015, .3, .015); bar.rotation.z = Math.PI / 2; db.add(bar); for (const sx of [-1, 1]) { const w = mesh(GEO.cyl, lambert(0x1e1f22), .07, .06, .07); w.rotation.z = Math.PI / 2; w.position.x = sx * .13; db.add(w); } }
   if (acc === "shake") { const h0 = elbows[0]; add(GEO.cyl, 0x2b2b2b, .045, .16, .045, 0, -.36, .05, h0); add(GEO.cyl, 0xf2c300, .047, .03, .047, 0, -.27, .05, h0); }
   if (acc === "jar") add(GEO.cyl, 0xf6c1d4, .05, .07, .05, 0, -.34, .06, hand);
   if (acc === "phone") add(GEO.box, 0x111111, .065, .13, .012, 0, -.36, .07, hand);
@@ -436,7 +447,29 @@ function makePerson(sp) {
   if (acc === "iv") { add(GEO.pole, 0xb9c1bc, 1, 1, 1, .45, .95, .05, g); add(GEO.box, 0xd8eef8, .16, .26, .05, .5, 1.75, .05, g); add(GEO.ball, 0x444444, .06, .03, .06, .45, .02, .05, g); }
   if (sp.trolley) { add(GEO.box, 0xf2c300, .52, .68, .78, .66, .38, .1, g); add(GEO.cyl, 0x3f8fb3, .14, .3, .14, .66, .85, .2, g); }
   g.traverse(o => { if (o.isMesh && o.material !== shadowMat) o.castShadow = true; });
-  return { group: g, body, legs, knees, arms, elbows, head, sp, phase: Math.random() * 6, amp: 0 };
+  const person = { group: g, body, legs, knees, arms, elbows, head, sp, face, phase: Math.random() * 6, amp: 0, expr: null };
+  setExpression(person, mood);
+  return person;
+}
+/* faces: brows, lids and mouth are moved, not rebuilt, so people can react live */
+const EXPR = {
+  neutral:   { brow: -.05, by: 0, lid: 0, up: [1, 1], lo: -.063, cy: -.051, cr: 0, cv: false, o: false },
+  smile:     { brow: -.1, by: .004, lid: -.003, up: [1.15, .5], lo: -.059, cy: -.044, cr: .75, cv: true, o: false },
+  angry:     { brow: -.48, by: -.009, lid: -.006, up: [1, 1.1], lo: -.065, cy: -.062, cr: -.6, cv: true, o: false },
+  worried:   { brow: .45, by: .007, lid: 0, up: [.85, 1], lo: -.065, cy: -.062, cr: -.6, cv: true, o: false },
+  surprised: { brow: -.02, by: .018, lid: .007, up: [.4, .6], lo: -.074, cy: -.055, cr: 0, cv: false, o: true },
+  tired:     { brow: .15, by: -.002, lid: -.008, up: [1, 1], lo: -.063, cy: -.052, cr: 0, cv: false, o: false },
+  disgust:   { brow: -.32, by: -.004, lid: -.006, up: [.9, 1.3], lo: -.066, cy: -.06, cr: -.5, cv: true, o: false, skew: .5 },
+  happy:     { brow: .05, by: .01, lid: -.004, up: [.4, .6], lo: -.066, cy: -.046, cr: .6, cv: true, o: true },
+};
+function setExpression(p, name) {
+  const f = p.face; if (!f || p.expr === name) return; p.expr = name;
+  const e = EXPR[name] || EXPR.neutral, tiredLid = f.tired && name === "neutral" ? -.006 : 0;
+  for (const b of f.brows) { const sx = b.userData.sx; b.rotation.z = sx * e.brow + (e.skew && sx > 0 ? e.skew * .3 : 0); b.position.y = .054 + e.by; }
+  for (const l of f.lids) { l.position.y = .029 + e.lid + tiredLid; l.rotation.z = l.userData.sx * (name === "tired" ? -.12 : .05); }
+  if (f.up) { f.up.scale.set(.026 * e.up[0], .007 * e.up[1], .008); f.up.position.y = -.052 + (e.skew ? .003 : 0); f.up.rotation.z = e.skew ? .2 : 0; f.lo.position.y = e.lo; f.lo.visible = !e.o || name === "happy"; }
+  for (const c of f.corners) { const sx = c.userData.sx; c.visible = e.cv; c.position.y = e.cy + (e.skew && sx > 0 ? .006 : 0); c.rotation.z = sx * e.cr; }
+  if (f.o) f.o.visible = e.o;
 }
 function animatePerson(p, dt, moving, speed) {
   p.amp += ((moving ? 1 : 0) - p.amp) * Math.min(1, dt * 8);
@@ -453,14 +486,43 @@ function animatePerson(p, dt, moving, speed) {
     p.arms[0].rotation.set(-.3, 0, -.12); p.elbows[0].rotation.set(-1.1, 0, 0);
     p.head.rotation.y = -.35 + (p.look || 0);
   }
+  else if (pose === "curl") {
+    // biceps curls, endlessly, while blocking the corridor
+    const c2 = (Math.sin(p.phase * .9) + 1) / 2;
+    p.arms[1].rotation.set(-.12, 0, .12); p.elbows[1].rotation.set(-.25 - c2 * 1.9, 0, 0);
+    p.arms[0].rotation.set(-.3, 0, -.12); p.elbows[0].rotation.set(-1.1, 0, 0);
+    p.head.rotation.y = .5 + (p.look || 0); p.head.rotation.x = -.05 * c2;
+  }
   else if (pose === "crossed") { p.arms[0].rotation.set(-.55, 0, .25); p.arms[1].rotation.set(-.55, 0, -.25); p.elbows[0].rotation.set(-1.7, 0, 0); p.elbows[1].rotation.set(-1.7, 0, 0); p.arms[0].position.z = p.arms[1].position.z = .02; }
   else {
     const holding = p.sp.acc && !["iv", "mop", "handbag", "toolbox"].includes(p.sp.acc);
     p.arms[0].rotation.x = -s * .45; p.elbows[0].rotation.x = -.25 - Math.max(0, s) * .4;
     p.arms[1].rotation.x = holding ? -.35 + s * .1 : s * .45; p.elbows[1].rotation.x = holding ? -1.0 : -.25 - Math.max(0, -s) * .4;
     p.head.rotation.y = p.look || 0;
+    // idle life: while standing, people scratch their head, check the watch or the phone, stretch, look around
+    if (p.amp < .3 && !p.sp.lowDetail) {
+      p.idleT = (p.idleT ?? 2 + Math.random() * 4) - dt;
+      if (p.idleT <= 0) { p.idleT = 4 + Math.random() * 6; p.gesture = pick(holding ? ["watch", "look", "none"] : ["scratch", "watch", "phone", "stretch", "look", "none", "none"]); p.gT = 0; }
+      if (p.gesture && p.gesture !== "none") {
+        p.gT += dt; const k = Math.min(1, p.gT * 3, Math.max(0, 2.6 - p.gT) * 3) * (1 - p.amp / .3);
+        const A = p.arms[1], E = p.elbows[1], L = p.arms[0], F = p.elbows[0];
+        if (p.gesture === "scratch") { A.rotation.x += (-2.6 - A.rotation.x) * k; A.rotation.z = -.4 * k; E.rotation.x += (-1.6 - E.rotation.x) * k + Math.sin(p.gT * 18) * .08 * k; p.head.rotation.z = -.12 * k; }
+        if (p.gesture === "watch") { L.rotation.x += (-1.1 - L.rotation.x) * k; L.rotation.z = .3 * k; F.rotation.x += (-1.4 - F.rotation.x) * k; p.head.rotation.x = .35 * k; p.head.rotation.y = .25 * k; }
+        if (p.gesture === "phone") { A.rotation.x += (-.9 - A.rotation.x) * k; E.rotation.x += (-1.5 - E.rotation.x) * k; p.head.rotation.x = .45 * k; }
+        if (p.gesture === "stretch") { A.rotation.x += (-3 - A.rotation.x) * k; L.rotation.x += (-3 - L.rotation.x) * k; E.rotation.x *= 1 - k; F.rotation.x *= 1 - k; p.head.rotation.x = -.25 * k; }
+        if (p.gesture === "look") p.head.rotation.y = Math.sin(p.gT * 1.6) * .8 * k;
+        if (p.gT > 2.6) { p.gesture = null; p.head.rotation.x = p.head.rotation.z = 0; }
+      }
+    }
   }
+  // breathing, and a mouth that moves while they talk
+  const breath = Math.sin(p.phase * .35 + 1) * .012 * (1 - p.amp);
   p.body.position.y = Math.abs(Math.sin(p.phase)) * .025 * p.amp + (p.amp < .1 ? Math.sin(p.phase * .3) * .006 : 0);
+  p.body.scale.y = (p.sp.scale || 1) * (1 + breath * .5);
+  if (p.face && p.face.lo) {
+    if (p.talking) { p.tk = (p.tk || 0) + dt * 14; p.face.lo.position.y = -.063 - Math.abs(Math.sin(p.tk)) * .012; if (p.face.o) p.face.o.visible = Math.sin(p.tk) > .4; }
+    else if (p.tk) { p.tk = 0; const e = p.expr; p.expr = null; setExpression(p, e || "neutral"); }
+  }
 }
 
 // ---------- items as 3D objects ----------

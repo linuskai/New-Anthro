@@ -222,6 +222,31 @@ Der bisherige Modus: Posteingang, Route wählen, sieben Stockwerke, Fluchtfahrze
 - **Pager-Aufträge im Nachtdienst** kommen als Karte mit Annehmen/Ablehnen. Ablehnen gibt Ruhe, kann aber Nerven kosten. Wer nichts tut, hat nach 20 Sekunden angenommen.
 - **Aufgaben** in der Flucht-Zentrale haben einen Ablehnen-Knopf: Mal übernimmt der PJler, mal gibt es dafür einen Samstagsdienst.
 
+## Version 9: Gefühle, Abnutzung, Klarheit
+
+### Figuren
+- **Emotionen**: Augenbrauen, Lider und Mund bewegen sich live. Misstrauisch = überrascht (❓), entdeckt = wütend (❗). Patienten, Angehörige und Dermatologinnen freuen sich dagegen (😍: endlich ein Arzt!). Nach dem Gespräch lächeln sie und winken (👋). Im Stinknebel: Ekel.
+- **Leben im Stand**: Atmen, am Kopf kratzen, auf die Uhr schauen, aufs Handy starren, strecken, umschauen. Wer mit dir redet, bewegt den Mund.
+- **Details**: Kittel mit Taschen, Kuli, Namensschild und Knöpfen, Gürtel, Schuhe mit Sohle, Daumen.
+
+### Krankenhaus
+- **Abgeranzt, aber nicht überall**: pro Station zwei bis vier heruntergekommene Flurabschnitte mit abblätternder Farbe, Wasserflecken, Kritzeleien („Tage bis zur Rente: 4.311“), Rissen, Klebeband, fehlenden und herunterhängenden Deckenplatten, Kabeln. Die Dermatologie bleibt makellos.
+- **Flackern dosiert**: höchstens zwei flackernde Röhren pro Station (plus wenige in dunklen Abschnitten), nie rot. Rufleuchten über Türen sind bernsteinfarben, blinken langsam und seltener.
+
+### Klarheit
+- **Missionszettel** hat jetzt eine zweite Zeile: *wie* (z. B. „Orthopäden ansprechen: Shake, Fachwissen oder Liegestütze“) und *wo* (Entfernung und Richtungspfeil, aktualisiert sich beim Laufen).
+- **Bodenpfeile** kleiner, blasser, weniger (abschaltbar in der Pause).
+- **Meldungen** bleiben länger stehen und lassen sich wegwischen oder wegtippen.
+- **Anruf-Karte** wackelt nicht mehr (nur das Telefon-Symbol), im Hochformat sitzt sie unten über den Knöpfen.
+
+### Orthopäden
+Sie stehen einfach im Flur herum, flexen oder machen Bizeps-Curls mit Hantel, und lassen keine „lauchigen Futzis“ wie Internisten durch. Wege vorbei: Proteinshake, **Liegestütz-Minispiel** (10 bzw. 13 Mal tippen in 5 Sekunden, die Zeit läuft ab dem ersten Tippen), Kompliment für den Bizeps (60 %), Rotatorenmanschetten-Quiz, oder ein erfundener Internist, der Physio ohne Indikation verschreibt (50 %).
+
+### Ausweichen
+- **Fake-Telefonat** (📱, dreimal pro Lauf): 10 Sekunden lang wichtig ins Handy reden, das Personal lässt dich in Ruhe.
+- **Unter die Decke**: zu einem Patienten ins Bett legen. Er verrät nichts. Will aber Schnitzel.
+- **13 neue Gespräche**, absurder und mit mehr Auswahl: Horoskop-Patient, Google-Bewertung, PowerPoint der Familie (47 Folien), Heilpraktiker mit Wünschelrute, „unterschreib, dass du unterschrieben hast“, „nur EIN Dienst“ (acht), dritte Meinung, Klinik-Maskottchen, das Controlling bucht deine Atmung, 45 Minuten Natrium, krankes WLAN, „Ich sehe was, was du nicht siehst“ im Dunkeln, „Ist Blut vegan?“.
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten
