@@ -294,6 +294,7 @@ details.more[open] summary { margin-bottom: 8px; }
 .roster .legend-line { font: 12px/1.3 var(--mono); display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .roster .legend-line b { display: inline-block; padding: 1px 4px; border-radius: 2px; color: #fff; font: 800 11px/1.2 var(--display); }
 
+body.titlemode .hud, body.titlemode .pad, body.titlemode #inv, body.titlemode .stick-base, body.titlemode #crosshair, body.titlemode #wp, body.titlemode #compass, body.titlemode #mcard,
 body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine #crosshair, body.cine #wp { display: none !important; }
 
 @media (max-height: 520px) {
@@ -373,6 +374,51 @@ body.hudmin .mission { display: none; }
 .mode-card:focus-visible { outline: 3px solid #f2b33d; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
 #stinkFx { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s; background: radial-gradient(ellipse at center, rgba(140,160,60,.12) 30%, rgba(90,100,30,.55) 100%); z-index: 2; }
+
+/* ---------- title screen ---------- */
+#ovTitle { place-items: end center; background: linear-gradient(180deg, rgba(5,10,9,.05) 0%, rgba(5,10,9,.2) 30%, rgba(5,10,9,.82) 62%, rgba(5,10,9,.96) 100%); }
+.title-wrap { width: min(100%, 520px); display: grid; gap: 14px; color: #f3f8f1; }
+.t-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.t-sign svg { display: block; filter: drop-shadow(0 0 18px rgba(40,220,120,.55)); animation: tsign 4s infinite; }
+@keyframes tsign { 0%, 92%, 100% { opacity: 1; } 94% { opacity: .35; } 96% { opacity: .9; } 97% { opacity: .4; } }
+.t-clock { text-align: right; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: .16em; color: rgba(243,248,241,.7); display: grid; gap: 6px; justify-items: end; }
+.t-led { font: 400 40px/1 var(--lcd-font); color: #ff5a3a; background: #120807; padding: 4px 10px 2px; border-radius: 6px; box-shadow: inset 0 0 0 2px #2a1210, 0 0 22px rgba(255,90,58,.25); text-shadow: 0 0 10px rgba(255,90,58,.7); }
+.t-led.done { color: #6dff9a; text-shadow: 0 0 10px rgba(109,255,154,.7); box-shadow: inset 0 0 0 2px #10301c, 0 0 22px rgba(109,255,154,.25); background: #06120b; }
+.t-word { margin: 0; font: 900 clamp(54px, 17vw, 92px)/.84 var(--display); text-transform: uppercase; letter-spacing: -.01em; text-shadow: 0 4px 30px rgba(0,0,0,.6); }
+.t-word span { color: #6dff9a; text-shadow: 0 0 26px rgba(60,255,140,.45), 0 4px 30px rgba(0,0,0,.6); }
+.t-tag { margin: 0; font: 600 16px/1.3 var(--display); color: rgba(243,248,241,.82); max-width: 30em; }
+.t-modes { display: grid; gap: 10px; }
+.t-mode { appearance: none; border: 0; cursor: pointer; text-align: left; display: grid; grid-template-columns: 64px minmax(0, 1fr) 36px; align-items: center; gap: 14px; padding: 12px 14px 12px 12px; border-radius: 12px;
+  background: linear-gradient(135deg, #12945a, #0b6b44); color: #f3f8f1; box-shadow: 0 0 0 2px rgba(243,248,241,.18) inset, 0 10px 30px rgba(0,0,0,.45); touch-action: manipulation; transition: transform .12s; }
+.t-mode:active { transform: scale(.98); }
+.t-mode:focus-visible { outline: 3px solid #f2b33d; outline-offset: 3px; }
+.t-mode.night { background: linear-gradient(135deg, #1b2236, #0d111c); box-shadow: 0 0 0 2px #3a4a6a inset, 0 10px 30px rgba(0,0,0,.45); }
+.t-mode-art { width: 64px; height: 64px; border-radius: 10px; display: grid; place-items: center; font-size: 34px; background: rgba(0,0,0,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+.t-mode-art.day { background: radial-gradient(circle at 30% 30%, #ffd27a, #f08a4a 60%, #7a3a6a); }
+.t-mode-body { display: grid; gap: 3px; min-width: 0; }
+.t-mode-kind { font: 700 11px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; opacity: .7; }
+.t-mode b { font: 900 26px/1 var(--display); text-transform: uppercase; }
+.t-mode small { font: 600 14px/1.22 var(--display); opacity: .86; }
+.t-mode em { font: 600 12px/1.2 var(--mono); font-style: normal; color: #ffe08a; margin-top: 2px; }
+.t-play { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #f3f8f1; color: #0b6b44; font-size: 15px; }
+.t-mode.night .t-play { color: #1b2236; }
+.t-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.t-diff { display: flex; align-items: center; gap: 8px; font: 700 13px/1 var(--display); text-transform: uppercase; letter-spacing: .1em; color: rgba(243,248,241,.75); }
+.t-diff select { appearance: none; background: rgba(243,248,241,.1); color: #f3f8f1; border: 1px solid rgba(243,248,241,.3); border-radius: 999px; padding: 8px 14px; font: 700 15px/1 var(--display); }
+.t-ghost { appearance: none; background: transparent; color: #f3f8f1; border: 1px solid rgba(243,248,241,.35); border-radius: 999px; padding: 9px 16px; font: 700 15px/1 var(--display); text-transform: uppercase; letter-spacing: .08em; cursor: pointer; }
+.t-howto { background: rgba(243,248,241,.08); border: 1px solid rgba(243,248,241,.16); border-radius: 12px; padding: 12px 14px; }
+.t-howto .legend { margin: 0; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #ovTitle { place-items: center; }
+  .title-wrap { width: min(100%, 860px); grid-template-columns: 1fr 1.15fr; column-gap: 22px; align-items: end; }
+  .t-head, .t-word, .t-tag { grid-column: 1; } .t-modes, .t-bar, .t-howto, #loadErr { grid-column: 2; }
+  .t-head { grid-row: 1; } .t-word { grid-row: 2; font-size: 58px; } .t-tag { grid-row: 3; font-size: 14px; }
+  .t-modes { grid-row: 1 / span 2; align-self: end; } .t-bar { grid-row: 3; }
+  .t-mode { padding: 9px 12px 9px 9px; grid-template-columns: 52px minmax(0, 1fr) 32px; } .t-mode-art { width: 52px; height: 52px; font-size: 28px; } .t-mode b { font-size: 22px; } .t-mode small { font-size: 13px; }
+  .t-led { font-size: 30px; }
+}
+#taskList li { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.task-x { appearance: none; flex: none; border: 1px solid rgba(226,72,61,.6); background: transparent; color: #e2483d; border-radius: 999px; padding: 4px 9px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -478,34 +524,45 @@ body.hudmin .mission { display: none; }
   </div>
 
   <section class="overlay" id="ovTitle">
-    <div class="card">
-      <div class="eyebrow">Ein Schleichspiel über Feierabend</div>
-      <h1>Hospital Escape <small>3D</small></h1>
-      <p>17:00. Dein Dienst ist vorbei. Zwischen dir und deinem Auto liegt ein Krankenhaus, das seit 2009 „konsequent kostenoptimiert“ wird. Du kämpfst nicht. Du schleichst, versteckst dich und redest dich raus.</p>
-      <ul class="legend">
-        <li><span class="ico" style="background:#dfe6e3">▼</span><span><b>Weißes Dreieck</b> · hat dich nicht bemerkt</span></li>
-        <li><span class="ico" style="background:#f2b33d">▼</span><span><b>Gelb</b> · wird misstrauisch, schaut zu dir</span></li>
-        <li><span class="ico" style="background:#e2483d">▼</span><span><b>Rot</b> · hat dich entdeckt und will reden</span></li>
-        <li><span class="ico" style="background:#6fcf97">▼</span><span><b>Grün</b> · freundlich, hat etwas für dich</span></li>
-        <li><span class="ico" style="background:#c9a77a">⌂</span><span><b>Sichere Räume</b> · Bereitschaftsraum, Küche, Kammer. Da kommt niemand rein.</span></li>
-      </ul>
-      <details class="more">
-        <summary>So spielst du</summary>
-        <ul class="legend">
-          <li><span class="ico" style="background:#f3f8f1">👣</span><span><b>Schleichen</b> · Stick nur leicht ziehen oder Schleichen-Knopf. Rennen macht Lärm.</span></li>
-          <li><span class="ico" style="background:#f3f8f1">🔦</span><span><b>Taschenlampe</b> · im Dunkeln an, aber sie verrät dich. Antippen zum Ausschalten.</span></li>
-          <li><span class="ico" style="background:#f3f8f1">💬</span><span><b>Erwischt?</b> Kurzes Gespräch, Quiz oder Ja/Nein. Danach geht die Person und kommt nie wieder.</span></li>
-          <li><span class="ico" style="background:#f3f8f1">◆</span><span><b>Navigation</b> · Wegpunkt, Kompass, Navi-Punkte, Lageplan</span></li>
-          <li><span class="ico" style="background:#f3f8f1">🎒</span><span><b>Inventar</b> · Kaffee, Spray, Klemmbrett, Fallbericht, Proteinshake, Taschenrechner…</span></li>
-        </ul>
-      </details>
-      <label class="setting" for="setDiffTitle"><span>Schwierigkeit</span><select id="setDiffTitle"><option value="easy">Entspannt</option><option value="normal">Dienstalltag</option></select></label>
-      <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion (auch Türen), F Lampe, M Lageplan, P Pause.</p>
-      <p class="small" id="bestLine" hidden></p>
+    <div class="title-wrap">
+      <header class="t-head">
+        <div class="t-sign" aria-hidden="true">
+          <svg viewBox="0 0 120 72" width="96" height="58"><rect x="1.5" y="1.5" width="117" height="69" rx="6" fill="#0f8a4a" stroke="#f3f8f1" stroke-width="3"/>
+            <rect x="74" y="12" width="32" height="48" fill="none" stroke="#f3f8f1" stroke-width="4"/><path d="M80 60V18h20" fill="none" stroke="#f3f8f1" stroke-width="3" opacity=".5"/>
+            <circle cx="46" cy="16" r="6" fill="#f3f8f1"/><path d="M44 24l-12 8 4 5 9-5 3 12-12 14 5 4 13-14 9 13 6-3-11-18-3-12 9 6 9-2-1-6-8 1-12-8z" fill="#f3f8f1"/>
+            <path d="M14 36h14l-5-5M28 36l-5 5" fill="none" stroke="#f3f8f1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="t-clock" aria-label="Dienstende 17 Uhr"><span class="t-led"><span id="tClock">16:59</span></span><small>Dienstende</small></div>
+      </header>
+      <h1 class="t-word">Hospital<br><span>Escape</span></h1>
+      <p class="t-tag">Klinikum St. Sparen · seit 2009 „konsequent kostenoptimiert“. Dein Dienst ist vorbei. Das Krankenhaus sieht das anders.</p>
       <div class="err" id="loadErr" hidden>Die 3D-Engine konnte nicht geladen werden. Bitte Internetverbindung prüfen und neu laden.</div>
-      <div class="modes">
-        <button class="mode-card" id="btnStart" type="button"><span class="mode-ico">🚗</span><span><b>Feierabend</b><small>Mission · Wähle deinen Ausweg und schleich dich durch sieben Stockwerke bis zum Fluchtfahrzeug.</small></span></button>
-        <button class="mode-card night" id="btnNight" type="button"><span class="mode-ico">🕯️</span><span><b>Nachtdienst</b><small>Survival · Allein von 22:00 bis 07:00. Pager, Schlafwandler, Stromausfälle. Und Schwester Hildegard.</small></span></button>
+      <div class="t-modes">
+        <button class="t-mode" id="btnStart" type="button">
+          <span class="t-mode-art day" aria-hidden="true">🚗</span>
+          <span class="t-mode-body"><span class="t-mode-kind">Mission</span><b>Feierabend</b><small>Wähle deinen Ausweg. Schleich dich durch acht Stockwerke bis zum Fluchtfahrzeug.</small><em id="bestLine" hidden></em></span>
+          <span class="t-play" aria-hidden="true">▶</span>
+        </button>
+        <button class="t-mode night" id="btnNight" type="button">
+          <span class="t-mode-art" aria-hidden="true">🕯️</span>
+          <span class="t-mode-body"><span class="t-mode-kind">Survival</span><b>Nachtdienst</b><small>22:00 bis 07:00. Allein. Pager, Stromausfälle und Schwester Hildegard.</small><em id="nightBestLine" hidden></em></span>
+          <span class="t-play" aria-hidden="true">▶</span>
+        </button>
+      </div>
+      <div class="t-bar">
+        <label class="t-diff" for="setDiffTitle"><span>Schwierigkeit</span><select id="setDiffTitle"><option value="easy">Entspannt</option><option value="normal">Dienstalltag</option></select></label>
+        <button class="t-ghost" id="btnHowTo" type="button" aria-expanded="false" aria-controls="howTo">So spielst du</button>
+      </div>
+      <div class="t-howto" id="howTo" hidden>
+        <ul class="legend">
+          <li><span class="ico" style="background:#dfe6e3">▼</span><span><b>Dreieck über Köpfen</b> · weiß: ahnungslos, gelb: misstrauisch, rot: will reden, grün: freundlich</span></li>
+          <li><span class="ico" style="background:#c9a77a">⌂</span><span><b>Sichere Räume</b> · Arztzimmer, Küche, Kammer. Da kommt niemand rein.</span></li>
+          <li><span class="ico" style="background:#f3f8f1">👣</span><span><b>Schleichen</b> · Stick leicht ziehen oder SCHLEICHEN. Rennen macht Lärm.</span></li>
+          <li><span class="ico" style="background:#f3f8f1">💬</span><span><b>Erwischt?</b> Ein Gespräch, dann geht die Person für immer.</span></li>
+          <li><span class="ico" style="background:#f3f8f1">📟</span><span><b>Anrufe &amp; Aufträge</b> · annehmen gibt Goodwill, ablehnen spart Zeit, hat aber Folgen.</span></li>
+          <li><span class="ico" style="background:#2d6fd8;color:#fff">⇅</span><span><b>Aufzug</b> · blaues Symbol auf Radar und Karte. Treppenhaus: grüne Schilder.</span></li>
+        </ul>
+        <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion, F Lampe, M Lageplan, P Pause.</p>
       </div>
     </div>
   </section>

@@ -454,7 +454,8 @@ function applyEffect(eff, title, av) {
 }
 const DEPT_NAME = { N: "Pflege", V: "Verwaltung", C: "Chefetage", I: "Innere" };
 function acceptCall() {
-  if (!call) return; const c = call.def; run.callsAcc++; endCall(); applyEffect(c.acc, c.from + " · angenommen", c.av);
+  if (!call) return; const c = call.def;
+  if (c.onAccept) { call = null; endCall(); c.onAccept(); return; } run.callsAcc++; endCall(); applyEffect(c.acc, c.from + " · angenommen", c.av);
   if (c.dept) { run.goodwill[c.dept] = (run.goodwill[c.dept] || 0) + 1; setTimeout(() => showToast("🤝", "#1f9d55", "Telefon-Karma", `Die ${DEPT_NAME[c.dept]} hat das mitbekommen. Wer von dort dich das nächste Mal erwischt, lässt dich gehen.`, [good("Goodwill " + DEPT_NAME[c.dept])]), 1800); }
 }
 function missCall(c, verb) {
@@ -466,9 +467,10 @@ function missCall(c, verb) {
   if (n >= 2 && run.pageT == null) run.pageT = 6;
   updateHud();
 }
-function declineCall() { if (!call) return; missCall(call.def, "abgelehnt"); }
+function declineCall() { if (!call) return; const c = call.def; if (c.onDecline) { endCall(); c.onDecline(); return; } missCall(c, "abgelehnt"); }
 $("btnAccept").addEventListener("click", acceptCall); $("btnDecline").addEventListener("click", declineCall);
 function updateCalls(dt) {
+  if (call && call.def.onAccept) { call.t += dt; if (call.t > 20) acceptCall(); return; } // pager jobs: silence counts as yes
   if (LEVELS[run.idx].safe || run.mode === "night") return;
   if (run.headhunterT != null && !call) { run.headhunterT -= dt; if (run.headhunterT <= 0) { run.headhunterT = null; if (!run.offers.has("pharma")) startCall(HEADHUNTER); } }
   if (call) {
@@ -711,9 +713,17 @@ function newTask() {
   const d = pick(doors), inner = DIRS.map(([dx, dy]) => [d.x + dx, d.y + dy]).find(([x, y]) => level.zone[y * GW + x] === 2 && !solidMove(cell(x, y)));
   if (!inner) { run.taskT = 3; return; }
   if (run.hour >= 1 && !run.rea && Math.random() < .15) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
-  run.task = { x: inner[0], y: inner[1], room: d.num, text: pick(NIGHT_TASKS), deadline: run.minutes + 72 };
-  sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440); naviT = 0;
-  showToast("📟", "#a6e38f", "Pager · Zi. " + run.task.room, run.task.text + ". Du hast 72 Minuten.", []); updateHud();
+  // the pager asks first: you may accept the job or palm it off (with consequences)
+  const t = { x: inner[0], y: inner[1], room: d.num, text: pick(NIGHT_TASKS) };
+  run.taskT = 9999; sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440);
+  startCall({ from: "Pager · Zi. " + t.room, sub: "Station 5B", av: "📟", text: t.text + ". 72 Minuten.",
+    onAccept: () => { run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · Zi. " + t.room, t.text + ". Du hast 72 Minuten.", []); updateHud(); },
+    onDecline: () => {
+      run.taskT = 20 + Math.random() * 15; run.nightDeclined = (run.nightDeclined || 0) + 1;
+      if (Math.random() < .55) showToast("🙅", "#a6e38f", "Abgelehnt", pick(["Schwester Ayşe übernimmt. Ihr Seufzer kommt durch den Pager. In HD.", "Der Pager schweigt beleidigt. Zi. " + t.room + " klingelt jetzt bei der Notaufnahme.", "Du tippst „Bin in REA“. Du bist auf dem Sofa. Niemand prüft das. Noch."]), [good("Ruhe")]);
+      else showToast("🙅", "#e2483d", "Abgelehnt", pick(["Zi. " + t.room + " klingelt jetzt alle 30 Sekunden. Bis 7 Uhr.", "Die Stationsleitung notiert: „Arzt nicht erreichbar.“ Mit Datum. Und Uhrzeit. Und Smiley.", "Hildegard hat es gehört. Sie lächelt. Das ist schlimmer."]), pen({ nerves: 1 }));
+      updateHud(); checkDeath();
+    } });
 }
 function completeTask() {
   run.nightDone++; run.task = null; run.taskT = 8 + Math.random() * 16; sfx.ding();

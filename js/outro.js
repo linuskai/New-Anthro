@@ -76,7 +76,8 @@ function buildOutro(kind) {
   // the ride
   const route = kind === "night" ? "stay" : kind, veh = vehicleModel(route);
   if (route === "tele" || route === "amt") { const p = makePerson({ skin: SKIN[2], hair: 0x2b1d14, hairStyle: "messy", coat: true, shirt: 0x5aa17a, pants: 0x2f3440, mood: "smile" }); p.group.position.set(0, route === "amt" ? .35 : .18, -.05); p.group.scale.setScalar(.95); veh.add(p.group); }
-  veh.rotation.y = 0; sc.add(veh);
+  veh.rotation.y = 0; dyn(veh); sc.add(veh);
+  mergeStatic(sc, []); // ~400 static meshes → a few dozen draw calls
   const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .1, 500);
   return { sc, cam, veh, t: 0, kind, dur: 9.5 };
 }

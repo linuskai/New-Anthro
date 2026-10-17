@@ -4,7 +4,7 @@ function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
 // ---------- story in the doctors' room ----------
-let story = null, ceilT = 0;
+let story = null, ceilT = 0, titleT = 0;
 let lastMode = "mission";
 function startStory(m) {
   m = m === "night" ? "night" : "mission"; lastMode = m;
@@ -21,7 +21,7 @@ function storyNext() {
   story.i++;
   if (story.i >= story.lines.length) { endStory(); return; }
   const [time, text] = story.lines[story.i];
-  story.full = text; story.shown = 0; story.t = 0;
+  story.full = text; story.shown = 0; story.t = 0; if (story.cam && (run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS)[story.i]?.cut) story.cam = null;
   $("storyTime").textContent = time; $("storyText").textContent = "";
   $("btnStoryNext").textContent = story.i === story.lines.length - 1 ? (run.mode === "night" ? "Dienst beginnen" : "Zum Posteingang") : "Weiter";
   if (run.mode === "night") { if (story.i === 2) { sfx.stinger(); setTimeout(() => sfx.beep(), 500); } return; }
@@ -41,12 +41,36 @@ $("btnSkip").addEventListener("click", endStory);
 function updateStory(dt) {
   story.t += dt;
   if (story.shown < story.full.length) { story.shown = Math.min(story.full.length, story.shown + dt * 46); $("storyText").textContent = story.full.slice(0, Math.floor(story.shown)); if (Math.random() < .25) sfx.tick(); }
-  // slow look around the room: screen, door, window, then towards the corridor
-  const k = (story.i + Math.min(1, story.t / 5)) / STORY.length;
-  player.yaw = story.yaw0 + Math.sin(k * Math.PI * 2.2) * .9;
-  player.pitch = -.12 + Math.sin(k * Math.PI * 3) * .08;
-  if (story.i === 5) blackout = Math.sin(story.t * 23) > .6 ? .2 : 0;
+  // film shots in the doctors' room: each line has its own camera, eased in, with a slow push
+  const shots = run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS, sh = shots[Math.min(story.i, shots.length - 1)];
+  if (sh) {
+    const push = Math.min(1, story.t / 7) * .25, [cx, cy, ch] = sh.cam, [lx, ly, lz] = sh.look;
+    const tp = new THREE.Vector3(cx * S, ch, cy * S), tl = new THREE.Vector3(lx * S, ly, lz * S);
+    tp.lerp(tl, push * (sh.push || 1) * .3);
+    if (sh.shake) { const a = Math.max(0, Math.sin(story.t * 3)) * .02; tp.x += (Math.random() - .5) * a; tp.y += (Math.random() - .5) * a; }
+    if (!story.cam) story.cam = { p: tp.clone(), l: tl.clone(), fov: sh.fov || 60 };
+    const e = Math.min(1, dt * 2.2);
+    story.cam.p.lerp(tp, e); story.cam.l.lerp(tl, e); story.cam.fov += ((sh.fov || 60) - story.cam.fov) * e;
+    player.x = story.cam.p.x / S; player.y = story.cam.p.z / S;
+  }
+  if (story.i === 5 && run.mode !== "night") blackout = Math.sin(story.t * 23) > .6 ? .2 : 0;
+  if (story.i === 4 && run.mode !== "night") { const d = doorAt(3, 4); if (d && d.mesh) d.mesh.rotation.z = Math.sin(story.t * 40) * .004 * (Math.sin(story.t * 2.3) > .2 ? 1 : 0); }
 }
+// [camera tile x, tile y, height m] → [look tile x, height m, tile y]
+const STORY_SHOTS = [
+  { cam: [4.55, 1.25, 2.4], look: [1.6, .7, 3.1], fov: 66 },          // establishing: the whole room
+  { cam: [2.05, 3.05, 1.3], look: [1.12, 1.12, 3.55], fov: 38, cut: 1 },  // the screen: 23 letters
+  { cam: [3.5, 2.55, 1.75], look: [3.5, 2.72, 3.95], fov: 30, cut: 1 },   // the wall clock jumps to 17:00
+  { cam: [3.7, 3.05, 1.45], look: [4.75, .8, 3.4], fov: 42, cut: 1 },     // the desk: the note from Dr. Kurz
+  { cam: [2.5, 2.0, 1.55], look: [3.5, 1.1, 4.0], fov: 50, cut: 1, shake: 1 }, // the door: voices outside
+  { cam: [3.9, 1.5, 1.35], look: [2.6, 3.15, 2.2], fov: 58, cut: 1 },     // the flickering lamp
+  { cam: [3.6, 2.6, 1.6], look: [4.5, 1.65, 1.05], fov: 48, cut: 1 },     // the whiteboard: Frau Bozkurt's plan
+];
+const STORY_SHOTS_NIGHT = [
+  { cam: [4.55, 1.25, 2.4], look: [1.6, .7, 3.1], fov: 66 },
+  { cam: [2.5, 2.0, 1.55], look: [3.5, 1.1, 4.0], fov: 50, cut: 1 },
+  { cam: [3.9, 1.5, 1.35], look: [2.6, 3.15, 2.2], fov: 58, cut: 1 },
+];
 
 // ---------- mission cards (GTA style) and the dispatcher ----------
 let mcardT = null;
@@ -439,6 +463,8 @@ function render(time, dt) {
   const crouch = mode === "play" && player.moveMag === .5 ? .18 : 0;
   camera.position.set(player.x * S + shake, EYE + bob - crouch - (player.hidden ? .7 : 0), player.y * S);
   camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
+  if (mode === "story" && story && story.cam) { camera.position.copy(story.cam.p); camera.lookAt(story.cam.l); if (Math.abs(camera.fov - story.cam.fov) > .01) { camera.fov = story.cam.fov; camera.updateProjectionMatrix(); } }
+  else if (camera.fov !== 72) { camera.fov = 72; camera.updateProjectionMatrix(); }
   fpHand.position.y = -.2 + Math.sin(player.bob * 2) * .008;
 
   let near = null, nd = 3.4;
@@ -533,7 +559,13 @@ function frame(now) {
   if (mode === "outro" && outro) { updateOutro(dt); if (outro) { renderer.render(outro.sc, outro.cam); requestAnimationFrame(frame); return; } }
   if (mode === "play" && !document.hidden) update(dt);
   else if (mode === "story" && story) { updateStory(dt); applyEnv(); }
-  if (mode === "title") { player.yaw += dt * .18; player.pitch = -.05; }
+  if ((mode === "title") !== document.body.classList.contains("titlemode")) document.body.classList.toggle("titlemode", mode === "title");
+  if (mode === "title") {
+    // attract mode: a slow dolly down the ward corridor, looking around a little
+    titleT += dt; const k = (Math.sin(titleT * .05 - 1.2) + 1) / 2;
+    player.x = 2 + k * 19; player.y = 5.5; player.yaw = -Math.PI / 2 + Math.sin(titleT * .13) * .55; player.pitch = -.04 + Math.sin(titleT * .09) * .04;
+    applyEnv();
+  }
   if (mode === "cpr" && cpr) { const ph = ((now - cpr.t0) % cpr.period) / cpr.period; $("cprHeart").style.transform = `scale(${1 + .18 * Math.max(0, 1 - ph * 4)})`; }
   render(now / 1000, dt);
   requestAnimationFrame(frame);
@@ -542,7 +574,12 @@ function frame(now) {
 // ---------- boot ----------
 {
   const best = getBest();
-  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = "Frühester Feierabend bisher: " + fmtTime(best); }
+  if (best != null) { $("bestLine").hidden = false; $("bestLine").textContent = "Rekord: Feierabend um " + fmtTime(best); }
+  let nb = null; try { nb = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
+  if (nb >= 0) { $("nightBestLine").hidden = false; $("nightBestLine").textContent = "Rekord: " + nb + " Pager-Aufgaben überlebt"; }
+  // the LED clock on the title flips to 17:00
+  setTimeout(() => { $("tClock").textContent = "17:00"; $("tClock").parentElement.classList.add("done"); }, 2200);
+  $("btnHowTo").addEventListener("click", () => { const h = $("howTo"), open = h.hidden; h.hidden = !open; $("btnHowTo").setAttribute("aria-expanded", String(open)); });
   newRun(); loadFloor(0); resize(); requestAnimationFrame(frame);
 }
 if (location.hash === "#debug") window.__he = { get run() { return run; }, get level() { return level; }, player, get mode() { return mode; }, set mode(v) { mode = v; },

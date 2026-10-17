@@ -289,7 +289,7 @@ function buildLevel(idx) {
     group.add(at(sprite(labelTex("BEHANDLUNG 1–5", "#2b7bb9", "#fff"), 2, .32), 8 * S, 2.75, 8.5 * S));
     group.add(at(sprite(labelTex("SCHOCKRAUM", "#c0322a", "#fff"), 1.7, .3), 20.5 * S, 2.75, 8.6 * S));
   }
-  if (theme === "er") for (const [x, y] of [[12, 3], [17, 3], [22, 3], [12, 5], [17, 5], [21, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); addCollider(lv, (x + .5) * S - 1, (y + .5) * S - .3, (x + .5) * S + 1, (y + .5) * S + .3); }
+  if (theme === "er") for (const [x, y] of [[15, 3], [19, 3], [23, 3], [15, 5], [19, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); grid[y][x] = "K"; } // seat rows block their tile, so paths go around
   // rooms and safe rooms
   for (const rg of lv.rooms) decorateRoom(lv, rg, theme, r);
   for (const rg of lv.safeRooms) {

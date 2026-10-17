@@ -145,7 +145,7 @@ function updateHud() {
   $("sideList").innerHTML = run.sides.size ? SIDE.filter(s => run.sides.has(s.id)).map(s => `<li>${esc(s.name)} <span class="opt-tag">${esc(s.desc)}</span></li>`).join("") : "<li>Keine gewählt.</li>";
   $("cbList").innerHTML = run.callbacks.length ? run.callbacks.map(c => `<li>${esc(c)}</li>`).join("") + (run.callbacks.length >= 2 ? '<li class="opt-tag">Ab 2 offenen Rückrufen wirst du ausgerufen.</li>' : "") : "<li>Keine. Erstaunlich.</li>";
   $("btnCallbacks").hidden = !run.callbacks.length;
-  $("taskList").innerHTML = run.tasks.length ? run.tasks.map(t => `<li>${esc(t)}</li>`).join("") : "<li>Nichts. Verdächtig.</li>";
+  $("taskList").innerHTML = run.tasks.length ? run.tasks.map((t, i) => `<li><span>${esc(t)}</span><button type="button" class="task-x" data-i="${i}" aria-label="Aufgabe ablehnen">Ablehnen</button></li>`).join("") : "<li>Nichts. Verdächtig.</li>";
   const bag = Object.keys(BAG_NAMES).filter(k => run.flags.has(k)).map(k => `<li>${esc(BAG_NAMES[k])}</li>`);
   $("bagList").innerHTML = bag.length ? bag.join("") : "<li>Leer. Wie das Budget.</li>";
   const offers = [...run.offers].map(k => { const o = OFFERS[k], miss = o.need.filter(n => !run.flags.has(n)).map(n => BAG_NAMES[n]); return `<li>${esc(o.name)} <span class="opt-tag">${miss.length ? "fehlt: " + esc(miss.join(", ")) : "bereit"}</span></li>`; });
@@ -291,3 +291,13 @@ const sfx = {
   thunder: () => { noise(0, 2.4, 90, .6, .3, "lowpass"); noise(.1, 1.2, 300, .8, .08); }, tick: () => tone(2400, 0, .02, "square", .02), beep: () => tone(880, 0, .09, "sine", .04), door: () => { noise(0, .14, 260, 1, .14, "lowpass"); tone(190, .02, .3, "sawtooth", .018, 120); },
   lift: () => { tone(988, 0, .5, "sine", .05); tone(784, .35, .7, "sine", .05); },
 };
+
+// declining a task: sometimes the PJ student takes it, sometimes the roster takes revenge
+$("taskList").addEventListener("click", ev => {
+  const b = ev.target.closest(".task-x"); if (!b || !run) return;
+  const i = +b.dataset.i, t = run.tasks[i]; if (t == null) return;
+  run.tasks.splice(i, 1); run.declined = (run.declined || 0) + 1;
+  if (Math.random() < .5) showToast("🥺", "#6fcf97", "Abgelehnt", pick([`Jonas, der PJler, übernimmt „${t}“. Er ist begeistert. Noch.`, `„${t}“ landet im Fach vom Spätdienst. Der Spätdienst bist morgen wieder du, aber egal.`, `Du schreibst „${t}“ auf ein Post-it und klebst es an den Kühlschrank. Problem gelöst.`]), [good("Erledigt (irgendwie)")]);
+  else showToast("📅", "#e2483d", "Abgelehnt", pick([`Der Oberarzt hat es gesehen. „${t}“ ist weg, dafür hast du Samstag Dienst.`, `Abgelehnt. Das Controlling vermerkt: „mangelnde Teamfähigkeit“. Und plant dich ein.`]), pen({ duties: 1 }));
+  sfx.pick(); updateHud();
+});

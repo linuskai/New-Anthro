@@ -198,6 +198,30 @@ Der bisherige Modus: Posteingang, Route wählen, sieben Stockwerke, Fluchtfahrze
 - **Powernap** auf der Bereitschaftsliege: +45 Energie, +1 Nerv, aber 25 Minuten vergehen (und der Pager wartet nicht).
 - **Sieg** um 07:00: Sonnenaufgang, Übergabe („Ruhige Nacht?“). Wertung nach erledigten Aufgaben, Rekord wird gespeichert.
 
+## Version 8: Realistischere Grafik, Gastro, große Notaufnahme
+
+### Grafik
+- **Physikalisch basierte Materialien** (Rauheit, Metall) mit ACES-Tone-Mapping und einer kleinen, selbst erzeugten Umgebungs-Map (hell bzw. dunkel bei Stromausfall). Glänzende Böden, matte Wände, leuchtende Bildschirme.
+- **Licht und Tiefe**: vier echte Punktlichter wandern mit dir von Deckenlampe zu Deckenlampe, dazu Lichtflecken auf dem Boden, Kontaktschatten an den Wandsockeln und Raumecken (Fake Ambient Occlusion), weiter entfernter und dunklerer Nebel.
+- **Neue Modelle** mit abgerundeten Kanten: Krankenhausbetten (Hubsäule, Rollen, Kopfteil hochgestellt, Seitengitter), Notfall-Liegen, Wellness-Liegen, Schreibtische mit Metallgestell, flache Monitore mit Leuchten, Autos (Profil mit Scheiben, Felgen, Kennzeichen, Spiegel), Rettungswagen.
+- **Figuren**: rundere Körper und Schultern, dezentere Wangen, Haare ohne Kanten. Orthopäden sind jetzt muskulöse Ärzte in Kasack mit riesigem Bizeps, Stethoskop und Proteinshake, die nebenbei flexen.
+- **Taschenlampe** ist eine Pupillenleuchte in der Hand. **Navigation**: kleine, halbtransparente Bodenpfeile statt der dicken Linie.
+- **Endszene**: Asphalt mit Rissen, Bordsteine, Gehwege, Zebrastreifen, Straßenlaternen mit Lichtkegeln, Häuserzeilen.
+
+### Level
+- **Gastroenterologie** (neu, Abschnitt 4 von 8): Die Lüftung wurde 2017 eingespart. Grün-braune Stinkwolken kosten Energie und alle paar Sekunden einen Nerv. Hauptmission: Lüftungsschalter im Endoskopie-Raum. Gastroenterologen riechen nichts mehr und fragen nach der Bristol-Skala.
+- **Notaufnahme** fast doppelt so groß: Liegendanfahrt mit Rettungswagen, Wartehalle mit Wartezeit-Anzeige, Triage-Tresen, fünf Behandlungskojen mit Vorhängen, Schockraum, Personalraum.
+- **Aufzug** hat ein leuchtendes Hängeschild im Flur und ein blaues ⇅-Symbol auf Radar und Karte.
+- **Weniger Gedränge**: Auf vollen Stationen fehlt jede dritte optionale Person, die Notaufnahme spawnt seltener und weniger, Wahrnehmung etwas schwächer. Nach einem Gespräch gibt dir der Rest fünf Sekunden Ruhe.
+
+### Start und Intro
+- **Titelbildschirm** neu: leuchtendes Notausgang-Schild als Logo, LED-Uhr springt von 16:59 auf 17:00, großer Schriftzug, zwei Modus-Karten mit Rekorden, Kamerafahrt durch den Flur im Hintergrund, „So spielst du“ zum Aufklappen.
+- **Intro** in Kameraeinstellungen: Raumtotale, Bildschirm mit 23 Arztbriefen, Wanduhr, Zettel von Dr. Kurz, zitternde Tür, flackernde Lampe, Whiteboard.
+
+### Ablehnen
+- **Pager-Aufträge im Nachtdienst** kommen als Karte mit Annehmen/Ablehnen. Ablehnen gibt Ruhe, kann aber Nerven kosten. Wer nichts tut, hat nach 20 Sekunden angenommen.
+- **Aufgaben** in der Flucht-Zentrale haben einen Ablehnen-Knopf: Mal übernimmt der PJler, mal gibt es dafür einen Samstagsdienst.
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten
