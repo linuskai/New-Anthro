@@ -4,7 +4,7 @@ function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
 // ---------- story in the doctors' room ----------
-let story = null, ceilT = 0, titleT = 0;
+let story = null, ceilT = 0, titleT = 0, fxOff = false;
 let lastMode = "mission";
 function startStory(m) {
   m = m === "night" ? "night" : "mission"; lastMode = m;
@@ -347,7 +347,8 @@ function mapMarks(ctx, c, fog, blink, scaleMark) {
   for (const f of level.friends) if (!fog || nearVisited(Math.floor(f.x), Math.floor(f.y))) mark(f.x, f.y, "#6fcf97");
   if (run.rea && !run.rea.done && blink) mark(run.rea.x + .5, run.rea.y + .5, "#e2483d", .55);
   for (const e of level.enemies) {
-    if (e.gone || TYPES[e.type].ghost || e.done) continue;
+    if (e.gone || e.done) continue;
+    if (TYPES[e.type].ghost) { if (Math.hypot(e.x - player.x, e.y - player.y) < 7 && blink) { ctx.fillStyle = "rgba(160,190,255,.55)"; ctx.beginPath(); ctx.arc(e.x * c, e.y * c, c * .7 * scaleMark, 0, 7); ctx.fill(); } continue; }
     if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) > 8) continue;
     const col = e.static ? "#f2b33d" : e.state === "spot" ? "#e2483d" : e.state === "sus" ? "#f2b33d" : "#dfe6e3";
     if (!e.static) { ctx.fillStyle = col + "55"; ctx.beginPath(); ctx.moveTo(e.x * c, e.y * c); const a = Math.atan2(Math.cos(e.yaw), Math.sin(e.yaw)), w = Math.acos(Math.max(-1, Math.min(1, TYPES[e.type].fov || .5))); ctx.arc(e.x * c, e.y * c, c * 2.2, a - w, a + w); ctx.closePath(); ctx.fill(); }
@@ -564,6 +565,7 @@ function frame(now) {
   if (mode === "outro" && outro) { updateOutro(dt); if (outro) { renderer.render(outro.sc, outro.cam); requestAnimationFrame(frame); return; } }
   if (mode === "play" && !document.hidden) update(dt);
   else if (mode === "story" && story) { updateStory(dt); applyEnv(); }
+  if (["title", "story", "outro", "over", "win", "brief", "intro"].includes(mode) && !fxOff) { fxOff = true; for (const id of ["shieldFx", "frostFx", "stinkFx"]) $(id).style.opacity = 0; $("buffs").innerHTML = ""; } else if (mode === "play") fxOff = false;
   if ((mode === "title") !== document.body.classList.contains("titlemode")) document.body.classList.toggle("titlemode", mode === "title");
   if (mode === "title") {
     // attract mode: a slow dolly down the ward corridor, looking around a little

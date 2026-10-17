@@ -274,6 +274,7 @@ function perceive(e, t, dx, dy, d) {
   if (!t.ghost && !los(e.x, e.y, player.x, player.y)) return 0;
   const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1, phone = player.phoneT > 0 && "NOCVIADnU".includes(e.type) ? .2 : 1;
   const grace = player.inv > 0 ? .15 : 1; // right after a conversation the others give you a moment
+  if ((phone < 1 || civil < 1) && d < 4.5 && player.moveMag > 0 && !e.shrugged) { e.shrugged = true; emote(e, phone < 1 ? "🤫" : "🤷"); }
   return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace * phone;
 }
 function walkTo(e, gx, gy, sp, dt) {
@@ -458,9 +459,22 @@ function pickupPaper(p) {
 }
 
 // ---------- calls ----------
+// what accepting or declining a call actually does, printed on the buttons
+function callHints(def) {
+  const a = def.acc || {}, d = def.dec || {}, A = [], D = [];
+  if (def.onAccept) return ["Auftrag übernehmen · Zeit läuft", "Ruhe · evtl. −1 Nerv"];
+  if (a.mins) A.push(`−${a.mins} Min`); if (a.energy) A.push(`+${a.energy} Energie`); if (a.nerves > 0) A.push("+1 Nerv"); if (a.nerves < 0) A.push("−1 Nerv");
+  if (a.task) A.push("+1 Aufgabe"); if (a.duties) A.push(`+${a.duties} Dienst`); if (a.offer) A.push("neuer Ausweg im Parkhaus");
+  if (def.dept) A.push(`${DEPT_NAME[def.dept]} lässt dich 1× ziehen`);
+  if (def.offer) D.push(d.retry ? "ruft wieder an" : "Angebot verfällt");
+  else if (d.task) { const n = run.callbacks.length + 1; D.push(`Rückruf ${n}/2` + (n >= 2 ? " → du wirst ausgerufen!" : "")); }
+  else D.push("keine Folgen");
+  return [A.join(" · ") || "nichts", D.join(" · ")];
+}
 function startCall(def) {
   call = { def, t: 0, loud: false };
   $("callFrom").textContent = def.from; $("callSub").textContent = def.sub + " · ruft an…"; $("callAvatar").textContent = def.av; $("callText").textContent = def.text;
+  const [ha, hd] = callHints(def); $("btnAccept").innerHTML = `Annehmen<small>${esc(ha)}</small>`; $("btnDecline").innerHTML = `Ablehnen<small>${esc(hd)}</small>`;
   const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud"); el.classList.toggle("offer", !!def.offer);
   sfx.ring();
 }
@@ -626,6 +640,11 @@ function update(dt) {
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
   updateNavi(dt);
   level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); updateMissionHow(currentObjective()); updateRouteClock(); updateRouteChip(); }
+  // ghosts announce themselves: cold screen edges, whispers, a shimmering aura
+  { let gd = 99; for (const e of level.enemies) if (!e.gone && TYPES[e.type].ghost) { gd = Math.min(gd, Math.hypot(e.x - player.x, e.y - player.y)); if (e.aura) e.aura.material.opacity = .35 + Math.sin(level.t * 3 + e.x) * .15; if (e.ghostLight) e.ghostLight.intensity = .9 + Math.sin(level.t * 7) * .25; }
+    $("frostFx").style.opacity = gd < 7 ? Math.min(1, (7 - gd) / 5).toFixed(2) : 0;
+    if (gd < 6 && (level.whisperT = (level.whisperT || 0) - dt) <= 0) { level.whisperT = 2.5 + gd; sfx.whisper(); if (gd < 4) setMsg(pick(["Es wird kalt…", "Jemand atmet hinter dir.", "„Bleib doch…“"]), 1.6, true); } }
+  level.buffT = (level.buffT || 0) - dt; if (level.buffT <= 0) { level.buffT = .2; updateBuffs(); }
   focus = findFocus();
   const ab = $("btnAct");
   if (player.channel) { $("actLabel").textContent = player.channel.label; $("actProg").style.height = (player.channel.t / player.channel.total * 100) + "%"; ab.classList.add("ready"); }
@@ -793,4 +812,20 @@ function updateHildegard(e, t, dt) {
   e.moving = false; e.tyaw = Math.atan2(dx, dy);
   if (d < 8 && Math.random() < dt * 1.2) tone(160 + Math.random() * 40, 0, .06, "sine", .03);
   if (d < .75 && player.inv <= 0) hildegardCatch(e);
+}
+
+// ---------- active protection: what is working right now ----------
+function updateBuffs() {
+  const B = [];
+  if (player.phoneT > 0) B.push(["📱", "Telefonat", player.phoneT / 10, true]);
+  if (player.civil) B.push(["🥼", "Zivil · Personal sieht dich kaum", null, true]);
+  if (player.hidden) B.push(["🙈", "Versteckt", null, true]);
+  if (player.inv > 0 && mode === "play") B.push(["😌", "Atempause", player.inv / 5, true]);
+  if (level.fireT > 0) B.push(["🔥", "Feueralarm · Flure leer", level.fireT / 20, true]);
+  if (lure && lure.t > 0) B.push(["✏️", "Ablenkung", Math.min(1, lure.t / 8), false]);
+  if (nerdLure && nerdLure.t > 0) B.push(["📄", "Nerds lesen", Math.min(1, nerdLure.t / 20), false]);
+  if (player.coffee > 0) B.push(["☕", "Koffein · schneller", player.coffee / 8, false]);
+  for (const [d, n] of Object.entries(run.goodwill || {})) if (n > 0 && DEPT_NAME[d]) B.push(["🤝", `${DEPT_NAME[d]} lässt dich ziehen ×${n}`, null, false]);
+  $("buffs").innerHTML = B.map(([i, t, k]) => `<div class="buff"><i>${i}</i><span>${esc(t)}${k != null ? `<s style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></s>` : ""}</span></div>`).join("");
+  $("shieldFx").style.opacity = B.some(b => b[3]) && mode === "play" ? 1 : 0;
 }

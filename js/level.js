@@ -25,7 +25,10 @@ function spawnEnemy(lv, type, x, y, r) {
     k.group.position.set(-.5, 0, -.3); g.add(k.group);
     e.persons.push(a, k);
   }
-  if (t.ghost) { e.ghostLight = new THREE.PointLight(0x9fb8ff, .6, 5); e.ghostLight.position.y = 1.4; g.add(e.ghostLight); }
+  if (t.ghost) {
+    e.ghostLight = new THREE.PointLight(0x9fb8ff, 1.1, 7); e.ghostLight.position.y = 1.4; g.add(e.ghostLight);
+    e.aura = sprite(glowTex("rgba(160,190,255,1)"), 2.2, 3.2); e.aura.material = e.aura.material.clone(); e.aura.material.blending = THREE.AdditiveBlending; e.aura.material.opacity = .5; e.aura.position.y = 1.1; g.add(e.aura);
+  }
   const top = 1.9 * (p.sp.scale || 1);
   e.label = sprite(labelFor(t), 1.3, .25); e.label.position.y = top + .55; g.add(e.label);
   e.tri = triMesh(TRI_MAT.idle); e.tri.position.y = top + .22; g.add(e.tri);

@@ -444,6 +444,15 @@ body.hudmin .mission { display: none; }
 .dossier { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
 .dossier div { background: rgba(0,0,0,.06); border-radius: 6px; padding: 6px 8px; font: 600 13px/1.2 var(--display); } .dossier div b { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .65; }
 .mailrow .stars { color: #c08a00; font-size: 12px; margin-left: 6px; } .mailrow .rec { display: block; font: 600 11px/1.2 var(--mono); color: #1f6b3f; margin-top: 2px; }
+#call .call-btns button small { display: block; font: 600 11px/1.2 var(--display); opacity: .9; margin-top: 3px; text-transform: none; letter-spacing: 0; }
+#buffs { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 300px); display: grid; gap: 5px; pointer-events: none; z-index: 3; }
+.buff { display: grid; grid-template-columns: 22px auto; align-items: center; gap: 6px; background: rgba(18,40,60,.82); color: #e8f4ff; border-radius: 999px; padding: 3px 10px 3px 4px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: .05em; box-shadow: 0 0 0 1px rgba(140,200,255,.35); }
+.buff i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(140,200,255,.18); font-size: 13px; }
+.buff s { text-decoration: none; display: block; height: 3px; border-radius: 2px; background: #8cc8ff; margin-top: 3px; }
+#shieldFx { position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: 0; transition: opacity .4s; box-shadow: inset 0 0 60px 10px rgba(110,190,255,.45); animation: shieldPulse 2s ease-in-out infinite; }
+@keyframes shieldPulse { 50% { box-shadow: inset 0 0 80px 18px rgba(110,190,255,.55); } }
+@media (orientation: landscape) and (max-height: 520px) { #buffs { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); } }
+#frostFx { position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: 0; background: radial-gradient(ellipse at center, rgba(160,190,255,0) 45%, rgba(160,190,255,.35) 85%, rgba(220,235,255,.6) 100%); }
 </style>
 </head>
 <body>
@@ -498,6 +507,9 @@ body.hudmin .mission { display: none; }
     <button class="round" id="btnAct" type="button"><div class="prog" id="actProg"></div><span id="actLabel">Aktion</span></button>
   </div>
   <div class="hint" id="hint" hidden></div>
+  <div id="buffs" aria-live="polite"></div>
+  <div id="shieldFx" aria-hidden="true"></div>
+  <div id="frostFx" aria-hidden="true"></div>
 
   <div id="mcard" hidden><div id="mcEyebrow">Mission</div><div id="mcTitle"></div><div id="mcSub"></div></div>
   <div id="mapView" hidden><canvas id="mapBig" width="720" height="720" aria-label="Lageplan"></canvas><button class="btn ghost map-close" id="btnMapClose" type="button"><span>Schließen</span><span>✕</span></button><div class="map-legend">◆ Ziel · grün = freundlich · gelb/rot = Gefahr · braun = Tür · beige = sicherer Raum</div></div>
