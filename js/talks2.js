@@ -303,3 +303,27 @@ function hildegardCatch(e) {
       opt("Ihr deinen Kaffee anbieten", () => { takeItem("1"); return say("Sie trinkt ihn in einem Zug. Kalt. Sie lächelt. Zum ersten Mal seit 1978. Dann ist sie weg.", [good("Verschont")]); }, () => hasItem("1") ? "☕ abgeben" : "braucht ☕", () => !hasItem("1"))],
     onClose: () => { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; e.stun = 6; player.inv = 3; } });
 }
+
+// ---------- gastroenterologists: they stopped smelling it in 2018 ----------
+TALKS.n = [
+  { id: "riechen", go: T("„Kollege! Riechen Sie das auch? Ich riech nix mehr. Seit 2018.“", [
+    { q: "„Ist es schlimm?“", options: [
+      opt("„Es riecht nach Frühling.“", () => free("„Wirklich? Dann lass ich das Fenster zu.“ Sie strahlt und geht zufrieden weiter.")),
+      opt("„Es riecht wie ein Darm, der Überstunden macht.“", () => say("„Ah, also wie immer.“ Sie notiert: ‚Geruch: unverändert‘. Und dich als Zeugen.", pen({ tasks: ["Geruchsprotokoll gegenzeichnen"] }))),
+      bluff("Nur nicken und durch den Mund atmen", .6, "Sie nickt zurück. Ein stilles Einverständnis unter Leidenden.", "Du musst husten. Sie fühlt sich bestätigt und erzählt dir von ihrer letzten Koloskopie. Ausführlich.", { energy: 12 })] }]) },
+  { id: "bristol", go: e => runChain(e, "„Schnelle Frage für die Lehre: Bristol-Stuhlformen-Skala!“", [
+    quizStep("„Typ 4 ist…?“", ["„…wie eine Wurst, glatt und weich.“", "„…ein Kleinwagen von Opel.“", "„…die Antwort auf alles.“"], 0, "„Lehrbuch! Sie dürfen Bilder malen!“ Sie schenkt dir einen Kugelschreiber mit Darmzotten-Logo.", "„Nein, das wäre Typ 7. Vom Auto.“", { mins: 8 }),
+    quizStep("„Und wie viele Typen hat die Skala?“", ["Fünf", "Sieben", "Kommt auf das Mittagessen an"], 1, "„Sieben! Wie die Zwerge. Nur brauner.“", "„Falsch. Das tut mir richtig weh. Im Bauch.“", { energy: 10 })]) },
+  { id: "kantine", go: T("„Haben Sie schon gegessen? Kantine hat heute Linsen-Bohnen-Kohl-Eintopf. Für uns gibt's Rabatt.“", [
+    { q: "„Kommen Sie mit? Ich lade ein!“", options: yesNo(() => say("Du isst. Es schmeckt. In 40 Minuten wirst du verstehen, warum es hier so riecht.", pen({ mins: 15 }).concat(gain({ energy: 25 }))), () => free("„Schade. Mehr für mich.“ Er reibt sich den Bauch. Bedrohlich.")) }]) },
+  { id: "endo", go: T("„Ah, ein Freiwilliger! Wir brauchen jemanden, der beim Endoskop-Kurs die Rolle des Patienten spielt.“", [
+    { q: "„Nur kurz! Der Schlauch ist auch nur 1,60 m.“", options: [
+      opt("„Ich hab gleich Feierabend.“", () => say("„Feierabend? Ach, wie niedlich.“ Sie lacht. Lange. Dann darfst du gehen.", pen({ energy: 6 }))),
+      opt("„Ich bin allergisch gegen Schläuche.“", () => free("„Oh. Das ist selten. Darüber muss ich ein Case Report schreiben!“ Sie läuft davon, um es aufzuschreiben.")),
+      itemOpt("1", "Kaffee als Bestechung geben", "„Kaffee! Das regt die Peristaltik an!“ Sie trinkt und verschwindet zügig Richtung Toilette.")] }]) },
+  { id: "lueftung", go: T("„Sie wollen doch nicht etwa die LÜFTUNG anmachen?!“", [
+    { q: "„Die Verwaltung sagt, frische Luft kostet 4.000 € im Jahr!“", options: [
+      opt("„Ich wollte nur zum Treppenhaus.“", () => free("„Ach so. Na dann. Halten Sie die Luft an. Zwischen Zimmer 3 und 4 riecht es… lehrreich.“")),
+      bluff("„Die Lüftung ist ab heute Kassenleistung.“", .55, "„Wirklich? Dann machen Sie! Ich schreib's ins QM-Handbuch.“", "„Das hätte ich gelesen. Ich lese alles. Auf dem Klo hat man Zeit.“"),
+      opt("„Atmen ist ärztlich angeordnet.“", () => say("„Dann brauch ich das schriftlich.“ Sie gibt dir ein Formular. Es riecht.", pen({ tasks: ["Atemerlaubnis ausfüllen (Formular riecht)"] })))] }]) },
+];

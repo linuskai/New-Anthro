@@ -113,6 +113,37 @@ function modernMonitor(map, w = .56) {
   return g;
 }
 
+// ---------- ER ambulance, gastro ventilation switch, textures ----------
+const curtainTex = () => canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#cfe3ea"; g.fillRect(0, 0, w, h); g.fillStyle = "#9cc3d2"; for (let x = 0; x < w; x += 16) g.fillRect(x, 0, 6, h); g.fillStyle = "rgba(255,255,255,.5)"; g.fillRect(0, 0, w, 10); g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(0, h - 14, w, 14); }, "curtain");
+const stinkTex = () => canvasTex(128, 96, (g, w, h) => {
+  const r = rng(3);
+  for (let i = 0; i < 9; i++) { const x = 20 + r() * 88, y = 30 + r() * 40, rad = 18 + r() * 22, gr = g.createRadialGradient(x, y, 0, x, y, rad); const c = r() < .5 ? "120,140,60" : "110,95,50"; gr.addColorStop(0, `rgba(${c},.55)`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+  g.strokeStyle = "rgba(90,110,40,.7)"; g.lineWidth = 3; g.lineCap = "round";
+  for (const x0 of [40, 64, 88]) { g.beginPath(); for (let y = 70; y > 14; y -= 4) g.lineTo(x0 + Math.sin(y * .25) * 5, y); g.stroke(); }
+}, "stink");
+function ambulanceModel() {
+  const g = new THREE.Group(), white = new THREE.MeshStandardMaterial({ color: 0xf4f4ef, roughness: .35, metalness: .1 });
+  g.add(at(rmesh(1.9, 1.75, 1.9, .12, white), 0, 1.25, -.45));
+  g.add(at(rmesh(1.85, 1.15, 1.0, .12, white), 0, .95, .95));
+  g.add(at(rmesh(1.7, .5, .06, .04, new THREE.MeshStandardMaterial({ color: 0x141b24, roughness: .05, metalness: .6 })), 0, 1.25, 1.44)).rotation.x = 0;
+  for (const s of [-1, 1]) { g.add(at(rmesh(.02, .22, 2.9, .01, basic(0xd42b2b)), s * .965, .85, .05)); g.add(at(rmesh(.02, .5, .6, .02, new THREE.MeshStandardMaterial({ color: 0x141b24, roughness: .05, metalness: .6 })), s * .93, 1.3, .95)); }
+  const sign = plate(textTex(["RETTUNGSDIENST"], "#f4f4ef", "#d42b2b", 512, 90, 50), 1.6, .28); sign.position.set(0, 1.65, -1.405); sign.rotation.y = Math.PI; g.add(sign);
+  for (const x of [-.6, .6]) g.add(at(rmesh(.3, .12, .2, .05, basic(0x3a7aff)), x, 2.18, .3));
+  for (const [x, z] of [[-.85, -.95], [.85, -.95], [-.85, .95], [.85, .95]]) { const w = mesh(GEO.cyl, lambert(0x161718), .34, .24, .34); w.rotation.z = Math.PI / 2; w.position.set(x, .34, z); g.add(w); }
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function ventSwitch() {
+  const g = new THREE.Group(), metal = phong(0x9aa3a6, 70);
+  g.add(at(rmesh(.9, 1.6, .6, .05, metal), 0, .8, 0));
+  g.add(at(rmesh(.7, .5, .04, .02, 0x2b2f33), 0, 1.25, .31));
+  const fan = new THREE.Group(); fan.position.set(0, 1.25, .34); g.add(fan);
+  for (let i = 0; i < 4; i++) { const b = boxMesh(.28, .07, .01, 0xc8d0d4); b.rotation.z = i * Math.PI / 2; b.position.set(Math.cos(i * Math.PI / 2) * .12, Math.sin(i * Math.PI / 2) * .12, 0); fan.add(b); }
+  g.add(at(rmesh(.16, .26, .08, .03, basic(0xd42b2b)), .25, .6, .32));
+  g.userData.fan = fan; dyn(fan);
+  return g;
+}
+
 // ---------- cars: extruded side profile, glass, rims, lights, plates ----------
 const plateTex = text => canvasTex(256, 56, (g, w, h) => { g.fillStyle = "#f4f4f0"; g.fillRect(0, 0, w, h); g.fillStyle = "#1f3f9a"; g.fillRect(0, 0, 26, h); g.fillStyle = "#111"; g.font = `800 34px ${SF}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, w / 2 + 12, h / 2 + 2); g.strokeStyle = "#111"; g.lineWidth = 3; g.strokeRect(1, 1, w - 2, h - 2); }, "plate:" + text);
 const CAR_GEO = {};

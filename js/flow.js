@@ -327,6 +327,11 @@ function mapMarks(ctx, c, fog, blink, scaleMark) {
     mark(e.x, e.y, col, .36);
   }
   for (const tr of level.transports) if (Math.hypot(tr.x - player.x, tr.y - player.y) < 7) mark(tr.x, tr.y, "#e8682a");
+  // elevator: blue square with arrows, so you always know where it is
+  for (const p of level.props) if (p.kind === "lift" && (!fog || nearVisited(Math.floor(p.x), Math.floor(p.y)))) {
+    const s = c * .62 * scaleMark; ctx.fillStyle = "#2d6fd8"; ctx.fillRect(p.x * c - s / 2, p.y * c - s / 2, s, s); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.strokeRect(p.x * c - s / 2, p.y * c - s / 2, s, s);
+    ctx.fillStyle = "#fff"; ctx.font = `800 ${Math.round(s * .8)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("⇅", p.x * c, p.y * c + 1);
+  }
 }
 /* GTA-style radar: centred on you, rotating with your view, your view cone in front */
 function drawMini(time) {
@@ -443,6 +448,11 @@ function render(time, dt) {
     f.on = blackout <= 0 && (cd || f.creepy ? v > f.th : v > f.th - 1.2);
     f.mat.color.setHex(f.on ? f.tint : 0x1e201f);
     const d = Math.hypot(f.x + .5 - player.x, f.y + .5 - player.y); if (d < nd) { nd = d; near = f; }
+  }
+  if (level.clouds && level.clouds.length) {
+    const vent = run.flags.has("vent");
+    for (const c of level.clouds) { c.p += dt * .4; c.s.position.set(c.bx + Math.sin(c.p) * .5, c.by + Math.sin(c.p * 1.3) * .15, c.bz + Math.cos(c.p * .8) * .5); c.s.material.opacity += ((vent ? 0 : .55) - c.s.material.opacity) * Math.min(1, dt * .8); c.s.visible = c.s.material.opacity > .01; }
+    if (level.ventFan) level.ventFan.rotation.z += dt * (vent ? 14 : 0);
   }
   if ((ceilT -= dt) <= 0) {
     ceilT = .25;

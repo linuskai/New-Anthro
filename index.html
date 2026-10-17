@@ -372,11 +372,13 @@ body.hudmin .mission { display: none; }
 .mode-card.night { background: #12161f; color: #e8e4d0; border: 2px solid #3a4a6a; }
 .mode-card:focus-visible { outline: 3px solid #f2b33d; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
+#stinkFx { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s; background: radial-gradient(ellipse at center, rgba(140,160,60,.12) 30%, rgba(90,100,30,.55) 100%); z-index: 2; }
 </style>
 </head>
 <body>
 <div id="game">
   <canvas id="gl" aria-label="Krankenhausflur aus Sicht des Arztes"></canvas>
+  <div id="stinkFx" aria-hidden="true"></div>
   <div id="touch"></div>
   <div id="edge"></div>
   <div id="hideVeil" hidden></div>

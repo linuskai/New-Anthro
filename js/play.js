@@ -126,6 +126,7 @@ function findFocus() {
     if (p.kind === "sofa" && (run.mode === "night" ? !(p.room.restT > run.minutes) : !p.room.rested)) consider(p.x, p.y, 1.3, { type: "sofa", ref: p, label: p.bed ? "Hinlegen" : "Ausruhen", name: p.bed ? "Bereitschaftsliege" : "Sofa" });
     if (p.kind === "t" && !run.flags.has("ticket")) consider(p.x, p.y, 1.35, { type: "ticket", ref: p, label: "Bezahlen", name: "Parkticket-Automat" });
     if (p.kind === "=" && !run.flags.has("barrier")) consider(p.x, p.y, 1.5, { type: "barrier", ref: p, label: "Ticket rein", name: "Schranke" });
+    if (p.kind === "y" && !run.flags.has("vent")) consider(p.x, p.y, 1.4, { type: "vent", ref: p, label: "Einschalten", name: "Lüftung" });
     if (p.kind === "j") consider(p.x, p.y, 1.7, { type: "car", ref: p, label: "Einsteigen", name: "Dein Auto" });
   }
   for (const d of level.doors) {
@@ -163,6 +164,7 @@ function act() {
     player.channel = { t: 0, total: 2.6, label: "Einsetzen…", done: () => { run.flags.add("power"); sfx.power(); blackout = 0; applyEnv(true); showToast("💡", "#f2c300", "Strom ist da!", "Licht! Die Tür zum Treppenhaus summt auf. Der Aufzug bleibt natürlich kaputt.", [good("Strom an")]); updateHud(); } };
   } else if (f.type === "cart") { player.hidden = !player.hidden; if (player.hidden) setMsg("Im Wäschewagen. Riecht nach Station 4. Nicht bewegen.", 2.5); }
   else if (f.type === "board") showBrief(true);
+  else if (f.type === "vent") player.channel = { t: 0, total: 2.4, label: "Hebel umlegen…", done: () => { run.flags.add("vent"); sfx.power(); showToast("🌬️", "#7a9a3a", "Operation Frischluft", pick(["Die Lüftung röchelt, hustet, läuft. Zum ersten Mal seit 2017 riecht die Station nach… Station.", "Ein Brummen. Dann ein Luftzug. Ein Gastroenterologe ruft: „Was ist das für ein komischer Geruch?“ Es ist frische Luft."]), [good("Lüftung an")]); updateHud(); } };
   else if (f.type === "spa") player.channel = { t: 0, total: 2.2, label: "Entspannen…", done: () => { f.ref.used = true; run.spa++; run.flags.add("spa"); sfx.spa(); showToast("🧖", "#f6c1d4", "Wellness-Liege", "Gurkenscheiben auf den Augen. Du vergisst kurz, dass du Ärztin oder Arzt bist.", gain({ energy: 40, nerves: 1 })); updateHud(); } };
   else if (f.type === "sofa" && run.mode === "night") player.channel = { t: 0, total: 3, label: "Schlafen…", done: () => { f.ref.room.restT = run.minutes + 85; run.minutes += 25; sfx.spa(); showToast("😴", "#2d3f8f", "Powernap", pick(["Du schläfst 25 Minuten. Der Pager schläft nicht. Er wartet nur.", "Du träumst vom Feierabend. Im Traum klingelt das Telefon. Auch in echt.", "Augen zu. Irgendwo flüstert jemand „Kurven…“. Augen wieder auf."]), gain({ energy: 45, nerves: 1 }).concat([{ text: "+25 Min" }])); updateHud(); } };
   else if (f.type === "nighttask") player.channel = { t: 0, total: 2.2, label: "Versorgen…", done: () => completeTask() };
@@ -567,6 +569,7 @@ function update(dt) {
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
   player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
+  updateStink(dt);
   if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
   if (nerdLure) { nerdLure.t -= dt; if (nerdLure.t <= 0) { if (nerdLure.mesh) level.group.remove(nerdLure.mesh); nerdLure = null; for (const e of level.enemies) if (e.state === "nerd") e.state = "idle"; } }
   updatePlayer(dt);
@@ -626,6 +629,15 @@ function statusLine() {
   if (inDarkness() && player.lampOn && player.lamp <= 0) return "Taschenlampe leer. Batterie suchen!";
   const c = currentObjective();
   return c ? "Ziel: " + c.text : "Zum Auto!";
+}
+// gastro: standing in the stink fog costs energy, and every few seconds a nerve
+function updateStink(dt) {
+  const on = !!(level.stinkSet && !run.flags.has("vent") && !player.hidden && level.stinkSet.has(Math.floor(player.x) + "," + Math.floor(player.y)));
+  $("stinkFx").style.opacity = on ? 1 : 0;
+  if (!on) { run.stinkT = Math.max(0, (run.stinkT || 0) - dt); return; }
+  run.energy = Math.max(0, run.energy - dt * 1.4); run.stinkT = (run.stinkT || 0) + dt;
+  if (run.stinkT > 9) { run.stinkT = 0; flash(); showToast("🤢", "#7a9a3a", "Stink-Alarm", pick(["Du atmest aus Versehen ein. Fehler.", "Dein Kittel riecht jetzt auch so. Für immer.", "Irgendwo hat jemand „nur kurz“ gelüftet. 2017.", "Die Augen tränen. Die Nase kündigt."]), pen({ nerves: 1 })); updateHud(); checkDeath(); }
+  else if (Math.random() < dt * .25) setMsg(pick(["*hust*", "Bäh.", "Nicht durch die Nase atmen!", "Wer war das?!"]), 1.4);
 }
 function checkDeath() {
   if (run.nerves > 0 || ["dying", "over", "win", "dialog"].includes(mode)) return;

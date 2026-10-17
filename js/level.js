@@ -44,7 +44,7 @@ function buildLevel(idx) {
   const L = LEVELS[idx], env = ENV[L.env], theme = env.theme;
   grid = L.map.map(r => r.split("")); GW = grid[0].length; GH = grid.length;
   const group = new THREE.Group();
-  const lv = { idx, group, enemies: [], friends: [], items: [], papers: [], transports: [], props: [], hazards: [], flickers: [], secrets: [], spawns: [], drips: [], clocks: [], windows: [], safeRooms: [],
+  const lv = { idx, group, stink: [], curtains: [], enemies: [], friends: [], items: [], papers: [], transports: [], props: [], hazards: [], flickers: [], secrets: [], spawns: [], drips: [], clocks: [], windows: [], safeRooms: [],
     exit: null, start: null, reaSpot: null, doors: [], colliders: [], reserved: new Set(), orig: L.map, perTex: [], perMat: [], perGeo: [], visited: new Uint8Array(GW * GH), dark: new Uint8Array(GW * GH), t: 0, spawnT: 6 };
   level = lv; doorMap = new Map();
   const r = rng(idx * 97 + 11);
@@ -60,6 +60,9 @@ function buildLevel(idx) {
     else if (ch === "r") { lv.reaSpot = [x, y]; clear(); }
     else if (ch === "v" && idx === 0) { lv.board = [x, y]; clear(); }
     else if (ch === "~") { lv.spawns.push([x, y]); clear(); }
+    else if (ch === "f") { lv.stink.push([x, y]); clear(); }
+    else if (ch === '"') { lv.stink.push([x, y]); grid[y][x] = ":"; }
+    else if (ch === "|") { lv.curtains.push([x, y]); grid[y][x] = ":"; }
     else if (ch === "q") { lv.transports.push({ x: x + .5, y: y + .5, car: true }); clear(); }
     else if (TYPES[ch]) { pending.push([ch, x, y]); if (ch !== "U") clear(); }
     else if (FRIENDS[ch]) { lv.friends.push({ kind: ch, x: x + .5, y: y + .5, talked: 0 }); clear(); }
@@ -96,7 +99,7 @@ function buildLevel(idx) {
     if ("#Hdl^,".includes(grid[y][x]) || (lv.exit && x === lv.exit[0] && y === lv.exit[1])) continue;
     for (const [dx, dy] of DIRS) if (cell(x + dx, y + dy) === "#") faces.push([x, y, dx, dy]);
   }
-  const railTheme = ["ward", "ortho", "er", "radio"].includes(theme);
+  const railTheme = ["ward", "ortho", "er", "radio", "gastro"].includes(theme);
   const rail = new THREE.InstancedMesh(GEO.box, lambert(theme === "radio" ? 0x55595f : 0xb08a62), faces.length);
   const skirt = new THREE.InstancedMesh(GEO.box, lambert(theme === "derma" ? 0x7a5a3a : 0x4f5a55), faces.length);
   const railFaces = faces.filter(([x, y]) => lv.zone[y * GW + x] === 1);
@@ -253,7 +256,7 @@ function buildLevel(idx) {
     }
   }
   // nurse station on wards: counter, monitors, files, the phone that never stops
-  if (["ward", "ortho", "er"].includes(theme)) {
+  if (["ward", "ortho", "er", "gastro"].includes(theme)) {
     const cands = faces.filter(([x, y, dx, dy]) => lv.zone[y * GW + x] === 1 && grid[y][x] === "." && !DIRS.some(([a, b]) => "d,E".includes(cell(x + a, y + b))) && !lv.props.some(p => Math.hypot(p.x - x - .5, p.y - y - .5) < 1.2) && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) > 3);
     if (cands.length) {
       const [x, y, dx, dy] = cands[Math.floor(r() * cands.length)], st = new THREE.Group();
@@ -280,7 +283,13 @@ function buildLevel(idx) {
     }
   }
   // waiting room chairs in the emergency department
-  if (theme === "er") for (const [x, y] of [[2, 3], [5, 3], [8, 3], [2, 5], [6, 6]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); addCollider(lv, (x + .5) * S - 1, (y + .5) * S - .3, (x + .5) * S + 1, (y + .5) * S + .3); }
+  if (theme === "er") {
+    group.add(at(sprite(textTex(["WARTEZEIT AKTUELL", "9 Std. 40 Min.", "(Tendenz: ja)"], "#111", "#ff5a3a", 512, 200, 54), 2.6, 1.0), 18 * S, 2.45, 1.3 * S));
+    group.add(at(sprite(labelTex("TRIAGE · ANMELDUNG", "#c0322a", "#fff"), 2.2, .36), 26.9 * S, 2.7, 4.5 * S));
+    group.add(at(sprite(labelTex("BEHANDLUNG 1–5", "#2b7bb9", "#fff"), 2, .32), 8 * S, 2.75, 8.5 * S));
+    group.add(at(sprite(labelTex("SCHOCKRAUM", "#c0322a", "#fff"), 1.7, .3), 20.5 * S, 2.75, 8.6 * S));
+  }
+  if (theme === "er") for (const [x, y] of [[12, 3], [17, 3], [22, 3], [12, 5], [17, 5], [21, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); addCollider(lv, (x + .5) * S - 1, (y + .5) * S - .3, (x + .5) * S + 1, (y + .5) * S + .3); }
   // rooms and safe rooms
   for (const rg of lv.rooms) decorateRoom(lv, rg, theme, r);
   for (const rg of lv.safeRooms) {
@@ -318,6 +327,13 @@ function buildLevel(idx) {
       for (let i = 0; i < 5; i++) { const pp = boxMesh(.3, .04, .42, 0xfbfaf4); pp.position.set(wx - .8, 1.08 + i * .045, wz + .05); pp.rotation.y = r() * .4; group.add(pp); }
       group.add(at(mesh(GEO.cyl, lambert(0xf2f2ee), .045, .1, .045), wx + .85, 1.11, wz - .2));
       if (!lv.deskSign) { lv.deskSign = true; group.add(at(sprite(textTex([idx === 0 ? "ARZTZIMMER" : "STATIONSZIMMER", idx === 0 ? "Bitte nicht stören (stört trotzdem jeder)" : "Bitte klingeln (bringt nichts)"], "#2b7bb9", "#fff", 512, 140, 46), 2.3, .63), wx, 2.7, wz)); }
+    } else if (ch === "%") {
+      const g = ambulanceModel(); g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
+      group.add(at(sprite(labelTex("LIEGENDANFAHRT", "#c0322a", "#fff"), 1.6, .26), wx, 3.1, wz));
+    } else if (ch === "y") {
+      const g = ventSwitch(); g.position.set(wx, 0, wz); group.add(g); lv.ventFan = g.userData.fan;
+      group.add(at(sprite(labelTex("LÜFTUNG · AUS SEIT 2017", "#6a5a1a", "#fff"), 1.8, .28), wx, 2.55, wz));
+      lv.props.push({ kind: "y", x: x + .5, y: y + .5 });
     } else if (ch === "v") {
       group.add(at(boxMesh(.12, 1.4, S * .8, 0xffffff, boardTex()), wx, 1.5, wz));
       lv.props.push({ kind: "v", x: x + .5, y: y + .5 });
@@ -462,6 +478,30 @@ function buildLevel(idx) {
   for (const d of lv.drips) dyn(d.mesh);
   for (const p of lv.props) if (p.arm) dyn(p.arm);
   for (const f of lv.flickers) dyn(f.mesh);
+  // treatment bay curtains (ER): rail + half-drawn curtain towards the corridor
+  if (lv.curtains.length) {
+    const cg = new THREE.PlaneGeometry(1, 1, 16, 1), pos = cg.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin((pos.getX(i) + .5) * Math.PI * 7) * .05);
+    cg.computeVertexNormals(); lv.perGeo.push(cg);
+    const cm = new THREE.MeshStandardMaterial({ map: curtainTex(), side: THREE.DoubleSide, roughness: .9 }); lv.perMat.push(cm);
+    for (const [x, y] of lv.curtains) for (const [dx, dy] of DIRS) {
+      if (zoneAt(lv, x + dx, y + dy) !== 1 || solidMove(cell(x + dx, y + dy))) continue;
+      const th = Math.atan2(dx, dy), ex = (x + .5 + dx * .48) * S, ez = (y + .5 + dy * .48) * S, ax = Math.cos(th), az = -Math.sin(th);
+      const rail = boxMesh(S, .03, .03, 0xc8d0d4); rail.position.set(ex, 2.55, ez); rail.rotation.y = th; group.add(rail);
+      const c = new THREE.Mesh(cg, cm), side = (x + y) % 2 ? 1 : -1; c.scale.set(S * .42, 2.25, 1); c.position.set(ex + ax * side * S * .27, 1.42, ez + az * side * S * .27); c.rotation.y = th; group.add(c);
+    }
+  }
+  // stink fog (gastro): drifting green-brown clouds, gone once the ventilation runs
+  lv.clouds = [];
+  if (lv.stink.length) {
+    const tex = stinkTex();
+    for (const [x, y] of lv.stink) for (let k = 0; k < 2; k++) {
+      const sp = sprite(tex, 2.6 + r() * 1.2, 1.8 + r() * .8); sp.material = sp.material.clone(); sp.material.opacity = .55; sp.material.depthWrite = false; lv.perMat.push(sp.material);
+      sp.position.set((x + .2 + r() * .6) * S, .7 + k * .9 + r() * .3, (y + .2 + r() * .6) * S); group.add(sp); dyn(sp);
+      lv.clouds.push({ s: sp, bx: sp.position.x, bz: sp.position.z, by: sp.position.y, p: r() * 6 });
+    }
+    lv.stinkSet = new Set(lv.stink.map(([x, y]) => x + "," + y));
+  }
   lv.merged = mergeStatic(group, lv.perGeo);
   scene.add(group);
 }

@@ -8,7 +8,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 // ---------- grid ----------
 let grid = [], GW = 17, GH = 17;
-const SOLID_MOVE = "#BTMXHLYGvmWa=jtUdl^K", SOLID_SIGHT = "#MHLXvmUdl^K";
+const SOLID_MOVE = "#BTMXHLYGvmWa=jtUdl^K%y", SOLID_SIGHT = "#MHLXvmUdl^K%";
 const solidMove = ch => SOLID_MOVE.includes(ch);
 const solidSight = ch => SOLID_SIGHT.includes(ch);
 const cell = (x, y) => (x < 0 || y < 0 || x >= GW || y >= GH) ? "#" : grid[y][x];
@@ -89,7 +89,7 @@ const textTex = (lines, bg, fg, w = 256, h = 128, size = 26) => canvasTex(w, h, 
 }, "txt:" + lines.join("|") + bg + fg + w + h);
 const glowTex = color => canvasTex(64, 64, (g, w) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, color); gr.addColorStop(.35, color.replace(/[\d.]+\)$/, ".5)")); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "glow:" + color);
 
-const WALL_COL = { ward: ["#e4ece6", "#a9c3b8"], ortho: ["#e3eaf0", "#9fb4c6"], er: ["#efeee2", "#c8c39e"], derma: ["#f4e6d6", "#b88a5e"], radio: ["#4a5058", "#2e333a"] };
+const WALL_COL = { gastro: ["#e6e4d2", "#b4ae84"], ward: ["#e4ece6", "#a9c3b8"], ortho: ["#e3eaf0", "#9fb4c6"], er: ["#efeee2", "#c8c39e"], derma: ["#f4e6d6", "#b88a5e"], radio: ["#4a5058", "#2e333a"] };
 function drawWall(g, w, h, theme) {
   const r = rng(theme.length * 13);
   if (theme === "cellar" || theme === "park") {
@@ -125,7 +125,7 @@ function wallAO(g, w, h) {
 const wallTex = theme => canvasTex(256, 272, (g, w, h) => { drawWall(g, w, h, theme); wallAO(g, w, h); }, "wall:" + theme);
 const poolTex = () => canvasTex(128, 128, (g, w) => { const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,250,235,.55)"); gr.addColorStop(.45, "rgba(255,250,235,.2)"); gr.addColorStop(1, "rgba(255,250,235,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "pool");
 const aoTex = () => canvasTex(16, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, "ao");
-const FLOOR_COL = { cellar: "#6d706a", park: "#7a7a74", radio: "#3e434a", ortho: "#c9d6df", er: "#dcd8c2", ward: "#cfdcd3" };
+const FLOOR_COL = { gastro: "#d4d0b8", cellar: "#6d706a", park: "#7a7a74", radio: "#3e434a", ortho: "#c9d6df", er: "#dcd8c2", ward: "#cfdcd3" };
 const floorTex = theme => canvasTex(256, 256, (g, w, h) => {
   const r = rng(7);
   if (theme === "derma") {
@@ -232,7 +232,7 @@ const boardTex = () => canvasTex(512, 320, (g, w, h) => {
   g.fillStyle = "#f6f6f2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#9aa3a0"; g.lineWidth = 14; g.strokeRect(0, 0, w, h);
   g.fillStyle = "#c0322a"; g.font = `800 34px "Marker Felt","Comic Sans MS",${SF}`; g.fillText("MISSION FEIERABEND", 26, 52);
   g.fillStyle = "#1d2622"; g.font = `600 24px "Marker Felt","Comic Sans MS",${SF}`;
-  ["1. Schlüssel (Dr. Kurz!!)", "2. Ortho: Bizeps-Docs", "3. Radio: Taschenlampe", "4. DERMA = Wellness!!", "5. Keller (Dr. Ewig??)", "6. ZNA → Ticket", "7. Parkhaus → AUTO"].forEach((l, i) => g.fillText(l, 30, 94 + i * 32));
+  ["1. Schlüssel (Dr. Kurz!!)", "2. Ortho: Bizeps-Docs", "3. Radio: Taschenlampe", "4. Gastro: LÜFTUNG!", "5. DERMA = Wellness!!", "6. Keller (Dr. Ewig??)", "7. ZNA → Ticket", "8. Parkhaus → AUTO"].forEach((l, i) => g.fillText(l, 30, 92 + i * 28));
   g.strokeStyle = "#2d3f8f"; g.lineWidth = 4; g.beginPath(); g.moveTo(330, 210); g.lineTo(470, 120); g.stroke(); g.fillStyle = "#2d3f8f"; g.fillText("Pharma?", 380, 108);
 }, "board");
 const machineTex = () => canvasTex(128, 192, (g, w, h) => {

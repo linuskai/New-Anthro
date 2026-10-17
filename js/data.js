@@ -11,10 +11,11 @@ const HAIR = [0x2b1d14, 0x5a3a22, 0x9a6b3f, 0xd9b26c, 0x1b1b1b, 0x8c8c8c, 0xb546
 /* Map legend
    # wall · H secret door · X rubble · B corridor bed · T desk · M vending machine · L locker · Y gurney · G fuse box · v whiteboard · m MRT
    W spa lounger · a parked car · = barrier · j your car · t ticket machine · w laundry cart · o puddle · z sparking cable · u leaking bucket
+   % ambulance · y ventilation switch · | treatment bay with curtain · f/" stinking corridor/room
    S start · E stairwell (dead end) · r REA spot · ~ spawn point (ER) · x lab printout
    : room floor · _ safe room floor · d door (openable) · l locked door · ^ elevator (in a wall) · K furniture block
    hostile: P patient · F relatives · N nurse · O attending · C chief · V controlling · I internist nerd · U bouncer · A radiologist
-            Z pseudo-emergency · D PD Dr. Phil · g ghost · q moving car
+            n gastroenterologist · Z pseudo-emergency · D PD Dr. Phil · g ghost · q moving car
    friendly: k Dr. Kurz · b Frau Bozkurt · h caretaker · s PJ student · e Dr. Glatt · i influencer
    items: 1 coffee · 2 clipboard · 3 disinfectant · 4 airplane pager · 5 PA mic · 6 protein shake · 7 case report · 8 calculator
           9 battery · 0 energy drink · $ donut · + cream · & reference letter */
@@ -26,6 +27,7 @@ const ENV = {
   derma: { theme: "derma", fog: 0xf0e2d2, near: 6, far: 32, hemi: .7, amb: .35, dir: .3, flicker: 0, broken: 0, creep: 0, lamp: 0xfff1d6 },
   cellar:{ theme: "cellar", fog: 0x070b0a, near: 1.2, far: 12, hemi: .08, amb: .05, dir: 0, flicker: .45, broken: .35, creep: 0, lamp: 0x2a2d2b, dark: true },
   cellarOn: { theme: "cellar", fog: 0x18221f, near: 2.5, far: 19, hemi: .3, amb: .16, dir: .08, flicker: .3, broken: .35, creep: 2, lamp: 0xe8f0e8, dark: true },
+  gastro:{ theme: "gastro", fog: 0xb8c4a0, near: 4, far: 26, hemi: .52, amb: .25, dir: .25, flicker: .12, broken: .08, creep: 1, lamp: 0xf4f6e0 },
   er:    { theme: "er", fog: 0xd2d9d0, near: 5, far: 30, hemi: .58, amb: .27, dir: .3, flicker: .12, broken: .08, creep: 1, lamp: 0xfdfdf6, storm: true },
   park:  { theme: "park", fog: 0x1d1a14, near: 3, far: 24, hemi: .28, amb: .16, dir: .05, flicker: .25, broken: .15, creep: 2, lamp: 0xffb35a },
 };
@@ -61,9 +63,17 @@ const LEVELS = [
         brief: "Im CT hat ein Patient keinen Puls. Das Notfallteam wurde 2021 eingespart. Du bist jetzt das Notfallteam." },
       { id: "zeugnis", title: "Stets bemüht", text: "Arbeitszeugnis aus dem Befundungsraum", at: "item:&",
         brief: "Dein Arbeitszeugnis liegt seit drei Monaten zur Unterschrift in der Radiologie. Im Dunkeln. Die Pharma will es sehen." }],
-    exitText: "Treppenhaus → Dermatologie", lock: "Im CT wird reanimiert. Du gehst jetzt nicht.", reaScript: 8,
+    exitText: "Treppenhaus → Gastroenterologie", lock: "Im CT wird reanimiert. Du gehst jetzt nicht.", reaScript: 8,
     map: ["#########################", "#S......................#", "#.####d#######d########.#", "#.#:Y:::::#:::::::::::#.#", "#.#:::r:::#:::::m:::::#.^", "#O#:::::::#:::::::::::#.#", "#.######d#########d####.#", "#...........A.........x.#", "#.####d######d#########.#", "#.#::::::9#:::::#_____#.#", "#9#:&:::A:#:::B:#_____#.#", "#.#:::::::#:x:::#_____#.#", "#.####l######d#####d###.#", "#.................C.9...#", "############E############", "#########################"] },
-  { key: "derma", short: "2 · DERMATOLOGIE", name: "Dermatologie · Rettungsstation", floor: "2. OG", room: 2, env: "derma", safe: true,
+  { key: "gastro", short: "2 · GASTRO", name: "Gastroenterologie · Endoskopie", floor: "2. OG", room: 2, env: "gastro",
+    safeNames: [["ENDO-AUFWACHRAUM", "Niemand wacht hier freiwillig auf"]],
+    tip: "Die Lüftung wurde 2017 eingespart. Seitdem riecht die Gastroenterologie nach… Gastroenterologie. Die grünen Wolken kosten Energie und Nerven. Luft anhalten hilft nicht. Lüftung einschalten schon.",
+    objectives: [
+      { id: "vent", title: "Operation Frischluft", text: "Lüftung im Endoskopie-Raum einschalten", main: true, at: "prop:y",
+        brief: "Im Endoskopie-Raum hängt der Lüftungsschalter. Aus „Kostengründen“ seit 2017 aus. Die Gastroenterologen merken nichts mehr. Du schon." }],
+    exitText: "Treppenhaus → Dermatologie", lock: "Ohne Lüftung gehst du hier nicht durch. Du würdest es nicht überleben. Dein Kittel auch nicht.",
+    map: ["###########################", "#S......nffff.P...........#", "#.###d#######d######d####.#", "#.#:\"\":::#:::::::#:B::::#.#", "#.#:B::B:#::y::::#::::B:#.^", "#f#::::::#:::::::#::::::#.#", "#f##########l############.#", "#...$............nfffff...#", "#f####d######d#######d###.#", "#f#:::::::#______#:::::9#f#", "#n#::x::\"\"#_0__1_#::B:::#f#", "#.#:::::::#______#::::::#f#", "#.#######################.#", "#........x....ffff....N...#", "#########################E#"] },
+  { key: "derma", short: "1 · DERMATOLOGIE", name: "Dermatologie · Rettungsstation", floor: "1. OG", room: 1, env: "derma", safe: true,
     safeNames: [],
     tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Und vielleicht gibt es einen Job mit Feierabend um 15 Uhr.",
     objectives: [
@@ -89,7 +99,7 @@ const LEVELS = [
     objectives: [{ id: "ticket", title: "Das teuerste Stück Papier", text: "Parkticket am Automaten ziehen", main: true, at: "prop:t",
       brief: "Die Schranke im Parkhaus öffnet nur mit Ticket. Der Automat steht hinten in der Notaufnahme, hinter 40 Pseudo-Notfällen. Er nimmt nur Münzen." }],
     exitText: "Ausgang → Parkhaus", lock: "Ohne Parkticket kommst du aus dem Parkhaus nie raus. Erst zum Automaten.", reaRandom: true, horde: true,
-    map: ["##########^##############", "#...............O.....S.#", "#.~..~..~.....TT..N.....#", "#.......................#", "#...#.Z#...###d##########", "#..Z....3..#Y::::#::::0:#", "#.....x....#:::::#:1::::#", "#####.####.###d#####d####", "#...........Z..x.w......#", "####d#######d#######.####", "#:::::::#_______#......M#", "#:5:::::#_______#...t...#", "#:::::::#_______#.......#", "#######################E#", "#########################"] },
+    map: ["####################^############", "#.......#.....................S.#", "#.%..%..#..~....~....~..........#", "#.......#.......................#", "#.......#.....Z...........TT....#", "#...x...#...............Z...N...#", "#.......#.3.....................#", "#.......####..########..######.##", "#.........Z........O............#", "#.||#||#||#||#||####d######d###.#", "#.:5#::#::#::#::#::::::::#1___#.#", "#.B:#B:#B:#B:#B:#:x::Y:::#___0#.#", "#.#############################.#", "#.....x....................w....#", "########M#######t#######L######E#", "#################################"] },
   { key: "park", short: "P2 · PARKHAUS", name: "Parkhaus P2 · Personal", floor: "P2", room: 0, env: "park", safeNames: [],
     tip: "Das Personalparkhaus. Die Ärzteparkplätze wurden 2022 gestrichen, du parkst ganz hinten. Die Schranke öffnet nur mit Ticket. Der Chef parkt gerade aus. Rückwärts. Ohne zu schauen.",
     objectives: [
@@ -101,7 +111,7 @@ const LEVELS = [
     map: ["#################", "#S......a.a.a...#", "#.a.a.a.......a.#", "#.......a.a.a.D.#", "#.a.a.a.......a.#", "#.q.............#", "########=########", "#.a.a.....a.a.a.#", "#...........q...#", "#.a.a.a.O.a...j.#", "#################"] },
 ];
 
-const PLAN = ["Innere: Dr. Kurz hat deinen Autoschlüssel. Übergabe machen, Schlüssel zurück.", "Orthopädie: an drei Bizeps-Orthopäden vorbei. Proteinshake hilft.", "Radiologie: im Dunkeln durch. REA im CT.", "Dermatologie: Rettungsstation. Wellness, Creme, Jobangebot.", "Keller: Strom an. Dr. Ewig ausweichen.", "Notaufnahme: durch die Pseudo-Notfälle. Parkticket ziehen.", "Parkhaus: Schranke, Auto, Entscheidung."];
+const PLAN = ["Innere: Dr. Kurz hat deinen Autoschlüssel. Übergabe machen, Schlüssel zurück.", "Orthopädie: an drei Bizeps-Orthopäden vorbei. Proteinshake hilft.", "Radiologie: im Dunkeln durch. REA im CT.", "Gastro: Es stinkt. Lüftung einschalten, Luft anhalten.", "Dermatologie: Rettungsstation. Wellness, Creme, Jobangebot.", "Keller: Strom an. Dr. Ewig ausweichen.", "Notaufnahme: durch die Pseudo-Notfälle. Parkticket ziehen.", "Parkhaus: Schranke, Auto, Entscheidung."];
 
 const STORY = [
   ["16:59", "Station 5B, Arztzimmer. Du bist seit 31 Stunden wach. Dein letzter Kaffee war gestern. Die Kaffeemaschine wurde im März eingespart."],
@@ -144,6 +154,9 @@ const TYPES = {
   A: { label: "RADIOLOGE", role: "Radiologie", who: () => rnd(["Dr. Schatten", "Dr. Kontrast", "Dr. Voraufnahme"]), av: "🩻", color: "#6a7a9a",
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "short", coat: true, apron: true, shirt: 0x333a44, pants: 0x2a2f38, glasses: "normal", acc: "mug", lamp: true }),
        walk: .4, approach: .85, range: 4, fov: .5, detect: .5, barks: ["Wer ist da?", "Befund folgt…", "Psst!"] },
+  n: { label: "GASTROENTEROLOGE", role: "Gastroenterologie · riecht nichts mehr", who: () => rnd(["Dr. Darmstadt", "Dr. Flatulenzia", "Dr. Pförtner", "Dr. Kolon-Kowalski"]), av: "🧻", color: "#9a8a4a",
+       spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: rnd(["short", "bun", "baldSides"]), shirt: 0x6a8a5a, pants: 0x6a8a5a, scrubs: true, apron: true, glasses: rnd(["normal", "none"]), acc: rnd(["mug", "clipboard"]), mood: "smile" }),
+       walk: .5, approach: 1.0, range: 5, fov: .45, detect: .65, barks: ["Riechen Sie das auch? Nein? Gut.", "Kurze Frage zum Stuhlgang!", "Haben Sie schon gegessen?"] },
   Z: { label: "NOTFALL?", role: "Pseudo-Notfall", who: () => rnd(["Hr. Schnupfen", "Fr. Zeckenbiss (2019)", "Hr. Rezept-nur-kurz", "Fr. Seit-gestern-komisch"]), av: "🧟", color: "#a7c48a",
        spec: () => ({ skin: rnd([0xc9d6b0, 0xd8d0b0, 0xb8c8a0]), hair: rnd(HAIR), hairStyle: rnd(["messy", "bald", "long"]), robe: true, shirt: rnd([0x8a6fae, 0x6a8fae, 0xae6a6a, 0x7aa07a]), pants: 0x5a5a6a, pose: "zombie", lowDetail: true }),
        walk: .25, approach: .55, range: 5, fov: .2, detect: .55, barks: ["Ist das… ein Arzt?", "Ich hab Schnupfen!", "Rezept…"] },
@@ -302,32 +315,32 @@ const ROUTES = {
   botox: { name: "Dermatologie", vehicle: "cabrio", av: "🧴", from: "Dr. Glatt · Praxis für ästhetische Dermatologie", subject: "Re: Ihre Augenringe · Stellenangebot (Mo–Do, 9–15 Uhr)",
     mail: "Liebe Kollegin, lieber Kollege, ich habe Sie gestern im Aufzug gesehen und war erschüttert. Ihre Augenringe sind ein medizinischer Notfall. Kommen Sie zum Probetag in die Dermatologie (2. OG), Approbation mitbringen. Danach fahren wir mit meinem Cabrio in die Praxis. Gurkenwasser steht bereit. Herzlich, Dr. Glatt",
     perks: ["Pinkes Cabrio", "Keine Nachtdienste", "Patienten bezahlen vorher"], promote: ["approbation"],
-    goals: [{ lvl: 3, id: "probe", title: "Probetag", text: "Probetag bei Dr. Glatt bestehen", at: "friend:e", brief: "Dr. Glatt will sehen, ob du „Dermatologie kannst“. Kleiner Test. Es geht vor allem um Gurken." }] },
+    goals: [{ lvl: 4, id: "probe", title: "Probetag", text: "Probetag bei Dr. Glatt bestehen", at: "friend:e", brief: "Dr. Glatt will sehen, ob du „Dermatologie kannst“. Kleiner Test. Es geht vor allem um Gurken." }] },
   consult: { name: "Beratung", vehicle: "taxi", av: "📈", from: "Consultwerk GmbH · Healthcare Excellence", subject: "Wir suchen Sie: Senior Consultant Krankenhaus-Effizienz",
     mail: "Hi! Wir optimieren Krankenhäuser (hauptsächlich ihre Lichtschalter). Für Ihr Bewerbungsdeck brauchen wir drei Beweisfotos von Ineffizienz aus Ihrer eigenen Klinik. Sollte nicht schwer sein. Ein Business-Taxi holt Sie im Parkhaus ab. Best, Kevin (Partner, 27)",
     perks: ["Business-Taxi", "Sechsstellig", "Folien statt Patienten"], promote: [],
     goals: [
       { lvl: 0, id: "photo0", title: "Beweisfoto 1/3", text: "Das Faxgerät fotografieren (in Betrieb!)", at: "prop:photo", kind: "photo", spot: [6, 5], obj: "fax", brief: "Ein Faxgerät. 2026. Es faxt gerade Befunde. Kevin wird weinen vor Glück." },
       { lvl: 1, id: "photo1", title: "Beweisfoto 2/3", text: "Die Wartezeit-Anzeige fotografieren", at: "prop:photo", kind: "photo", spot: [5, 1], obj: "board", brief: "Die Anzeige im Gang zeigt „Wartezeit: 14 Std.“ Perfekt für Folie 12." },
-      { lvl: 5, id: "photo5", title: "Beweisfoto 3/3", text: "Die Wartenummer 999 fotografieren", at: "prop:photo", kind: "photo", spot: [3, 1], obj: "ticketboard", brief: "Wartenummer 999, aufgerufen: 12. Das Deck schreibt sich von selbst." }] },
+      { lvl: 6, id: "photo5", title: "Beweisfoto 3/3", text: "Die Wartenummer 999 fotografieren", at: "prop:photo", kind: "photo", spot: [12, 1], obj: "ticketboard", brief: "Wartenummer 999, aufgerufen: 12. Das Deck schreibt sich von selbst." }] },
   tele: { name: "Startup", vehicle: "scooter", av: "📱", from: "DocFlix · Telemedizin, aber cool", subject: "yo 👋 Chief Wellbeing Officer?",
     mail: "Hey du! Wir sind DocFlix: Krankschreibung per Video, aus dem Bett. Für unseren Pitch brauchen wir 3 echte Patienten-Testimonials (einfach mit Leuten reden!) und eine Kooperation mit einer Influencerin. Dein E-Scooter steht im Parkhaus. Obstkorb ist da. Equity auch (wert: 0 €). LG das Team (alle 24)",
     perks: ["E-Scooter", "Kicker, Obstkorb", "Hoodie statt Kittel"], promote: [],
     goals: [
-      { lvl: 3, id: "collab", title: "Kooperation", text: "Selfie mit @doc.wellness", at: "friend:i", brief: "Die Influencerin in der Dermatologie hat 400.000 Follower. Ein Selfie, und der Pitch läuft." },
-      { lvl: 5, id: "testi", title: "Content Creation", text: () => `3 Testimonials von Patienten (${Math.min(3, run.testi || 0)}/3)`, done: () => (run.testi || 0) >= 3, at: "enemy:Z", brief: "Lass dich von Patienten oder Pseudo-Notfällen ansprechen. Jedes Gespräch ist ein Testimonial. Ja, wirklich: Diesmal SOLLST du reden." }] },
+      { lvl: 4, id: "collab", title: "Kooperation", text: "Selfie mit @doc.wellness", at: "friend:i", brief: "Die Influencerin in der Dermatologie hat 400.000 Follower. Ein Selfie, und der Pitch läuft." },
+      { lvl: 6, id: "testi", title: "Content Creation", text: () => `3 Testimonials von Patienten (${Math.min(3, run.testi || 0)}/3)`, done: () => (run.testi || 0) >= 3, at: "enemy:Z", brief: "Lass dich von Patienten oder Pseudo-Notfällen ansprechen. Jedes Gespräch ist ein Testimonial. Ja, wirklich: Diesmal SOLLST du reden." }] },
   amt: { name: "Behörde", vehicle: "bike", av: "🏛️", from: "Gesundheitsamt · Amtsärztlicher Dienst", subject: "Az. 4.117/26-B: Einstellung zum 01. (Formular A38 erforderlich)",
     mail: "Sehr geehrte/r Bewerber/in, Ihre Einstellung ist beschlossen. Es fehlt lediglich Formular A38 (im KIS druckbar) mit drei Stempeln: Controlling, Archiv, Anmeldung der Notaufnahme. Ein Dienstfahrrad steht im Parkhaus bereit. Gleitzeit 7:30 bis 15:30. Hochachtungsvoll, i. A. Behrens",
     perks: ["Dienstfahrrad", "Gleitzeit", "Beamtenstatus"], promote: [],
     goals: [
       { lvl: 0, id: "a38", title: "Formular A38", text: "Formular A38 am Computer im Arztzimmer drucken", at: "prop:pc", brief: "Das KIS kann drucken. Theoretisch. Der Drucker hat Papierstau seit Montag. Versuch's trotzdem." },
       { lvl: 1, id: "stamp1", title: "Stempel 1/3", text: "Stempel von Hr. Paragraf (Controlling)", at: "enemy:V", brief: "Hr. Paragraf vom Controlling hat einen Stempel. Er gibt ihn nicht gern her. Sprich ihn an (ja, freiwillig)." },
-      { lvl: 4, id: "stamp2", title: "Stempel 2/3", text: "Archiv-Stempel im Keller", at: "prop:stamp", kind: "stamp", spot: [19, 3], obj: "stamp", brief: "Der Archiv-Stempel liegt im Keller. Neben Akten von 1987. Und Dr. Ewig." },
-      { lvl: 5, id: "stamp3", title: "Stempel 3/3", text: "Stempel der Notaufnahme-Anmeldung", at: "prop:stamp", kind: "stamp", spot: [13, 1], obj: "stamp", brief: "Die Anmeldung der Notaufnahme stempelt alles. Wirklich alles." }] },
+      { lvl: 5, id: "stamp2", title: "Stempel 2/3", text: "Archiv-Stempel im Keller", at: "prop:stamp", kind: "stamp", spot: [19, 3], obj: "stamp", brief: "Der Archiv-Stempel liegt im Keller. Neben Akten von 1987. Und Dr. Ewig." },
+      { lvl: 6, id: "stamp3", title: "Stempel 3/3", text: "Stempel der Notaufnahme-Anmeldung", at: "prop:stamp", kind: "stamp", spot: [26, 1], obj: "stamp", brief: "Die Anmeldung der Notaufnahme stempelt alles. Wirklich alles." }] },
   ship: { name: "Kreuzfahrt", vehicle: "bus", av: "🛳️", from: "MS Sorgenfrei · Reederei Wellengang", subject: "Schiffsarzt gesucht · Karibik · Abfahrt heute 22:00",
     mail: "Ahoi! Unser Schiffsarzt ist leider an Bord geblieben (Liebe). Wir legen heute um 22 Uhr ab. Bitte mitbringen: Approbation, Sonnencreme, Reisetabletten. Der Hafen-Shuttle wartet im Parkhaus. Häufigste Diagnose an Bord: Sonnenbrand. Kapitän Hansen",
     perks: ["Hafen-Shuttle", "Karibik", "Diagnose: Sonnenbrand"], promote: ["approbation", "cream"],
-    goals: [{ lvl: 5, id: "meds", title: "Seefest", text: "Reisetabletten aus dem Schockraum", at: "prop:meds", kind: "meds", spot: [13, 6], obj: "meds", brief: "Reisetabletten liegen im Schockraum. Zwischen Defibrillator und einem sehr alten Butterbrot." }] },
+    goals: [{ lvl: 6, id: "meds", title: "Seefest", text: "Reisetabletten aus dem Schockraum", at: "prop:meds", kind: "meds", spot: [17, 10], obj: "meds", brief: "Reisetabletten liegen im Schockraum. Zwischen Defibrillator und einem sehr alten Butterbrot." }] },
   stay: { name: "Einfach heim", vehicle: "car", av: "🛋️", from: "Dein Sofa", subject: "Wo bleibst du?",
     mail: "Hey. Ich bin's, dein Sofa. Die Decke liegt bereit, der Fernseher ist warm. Kein Jobwechsel, keine Formulare. Nur heim. Montag ist ein anderes Problem. Gruß, Sofa",
     perks: ["Dein eigenes Auto", "Montag: wieder hier", "Kein Papierkram"], promote: [], goals: [] },
@@ -347,7 +360,7 @@ LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nac
   tip: "Überlebe bis 07:00. Der Pager schickt dich in die Zimmer. Jede Stunde wird es schlimmer. Und Schwester Hildegard bewegt sich nur, wenn du nicht hinsiehst.",
   objectives: [], exitText: "", lock: "Das Treppenhaus ist nachts verriegelt. Dienstende 07:00.",
   map: LEVELS[0].map.map(r => r.replace(/[bIO]/g, ".").replace(/k/g, "9").replace(/F/g, "1").replace(/N/g, "9").replace(/P/g, "Q")) });
-const MISSION_LEVELS = 7;
+const MISSION_LEVELS = 8;
 const NIGHT_START = 300, NIGHT_END = 840;
 const STORY_NIGHT = [
   ["21:58", "Station 5B, Arztzimmer. Du hast Nachtdienst. Allein. Für 34 Patienten, zwei Stationen und „bei Bedarf“ die Notaufnahme."],

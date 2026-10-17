@@ -5,7 +5,7 @@ const escapeBoardTex = () => canvasTex(512, 288, (g, w, h) => {
   const M = `"Marker Felt","Comic Sans MS",${SF}`;
   g.fillStyle = "#c0322a"; g.font = `800 34px ${M}`; g.fillText("FLUCHT-ZENTRALE", 20, 44);
   g.fillStyle = "#1d2622"; g.font = `600 19px ${M}`;
-  ["1. Schlüssel → Dr. KURZ!!", "2. Ortho: 3× Bizeps (Shake?)", "3. Radio: Lampe AUS = unsichtbar", "4. DERMA = Wellness ♥", "5. Keller: Sicherung (Dr. Ewig??)", "6. ZNA: Parkticket", "7. P2 → AUTO → FREIHEIT"].forEach((l, i) => g.fillText(l, 22, 80 + i * 28));
+  ["1. Schlüssel → Dr. KURZ!!", "2. Ortho: 3× Bizeps (Shake?)", "3. Radio: Lampe AUS = unsichtbar", "4. GASTRO: Lüftung!! (stinkt)", "5. DERMA = Wellness ♥", "6. Keller: Sicherung (Dr. Ewig??)", "7. ZNA: Parkticket", "8. P2 → AUTO → FREIHEIT"].forEach((l, i) => g.fillText(l, 22, 78 + i * 25));
   g.strokeStyle = "#2d3f8f"; g.lineWidth = 3; g.beginPath(); g.moveTo(340, 150); g.lineTo(470, 100); g.stroke();
   g.fillStyle = "#2d3f8f"; g.font = `700 20px ${M}`; g.fillText("Pharma?", 400, 92); g.fillText("Kreuzfahrt??", 380, 196); g.fillText("Amt?!", 430, 240);
   g.fillStyle = "#1f9d55"; g.font = `800 22px ${M}`; g.fillText("Leise. Schleichen.", 300, 270);
@@ -178,6 +178,8 @@ function buildElevator(lv, x, y, idx) {
   const leafMat = phong(0xb8bec4, 90);
   const leaves = [-1, 1].map(s => { const l = mesh(GEO.box, leafMat, .64, 2.18, .04); l.position.set(s * .32, 1.09, .045); dg.add(l); return l; });
   lv.group.add(dg);
+  // a lit sign that hangs into the corridor, visible from far away
+  const hs = sprite(labelTex("⇅  AUFZUG", "#2d6fd8", "#fff"), 1.5, .28); hs.position.set((x + .5 + dx * 1.1) * S, 2.75, (y + .5 + dy * 1.1) * S); lv.group.add(hs);
   lv.props.push({ kind: "lift", x: x + .5 + dx * .8, y: y + .5 + dy * .8, leaves, open: 0 });
 }
 function buildLocked(lv, x, y, theme, r) {
