@@ -94,6 +94,7 @@ function buildLevel(idx) {
   const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex(theme)), walls.length);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Matrix4();
   walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));
+  if (!wallMesh.material.bumpMap) { wallMesh.material.bumpMap = plasterTex(); wallMesh.material.bumpScale = .006; wallMesh.material.needsUpdate = true; }
   wallMesh.receiveShadow = true; group.add(wallMesh); lv.wallMesh = wallMesh; lv.wallIdx = new Map(walls.map(([x, y], i) => [x + "," + y, i]));
 
   // wall faces → handrails + skirting (instanced)
@@ -304,6 +305,27 @@ function buildLevel(idx) {
     else decorateSafeRoom(lv, rg, theme, r);
   }
 
+  // small fixtures that make walls and ceilings feel real: light switches and outlets beside doors, smoke detectors, sprinklers
+  if (theme !== "park") {
+    const plateM = phong(0xeeeeea, 40), keyM = lambert(0xd8d8d2), holeM = lambert(0x2a2a2a);
+    for (const d of lv.doors) for (const [sx, sy] of DIRS) {
+      if (zoneAt(lv, d.x + sx, d.y + sy) !== 1 || solidMove(cell(d.x + sx, d.y + sy))) continue;
+      const ax = sy, ay = sx, base = new THREE.Vector3((d.x + .5) * S + sx * (S / 2 - .012), 0, (d.y + .5) * S + sy * (S / 2 - .012));
+      const sw = new THREE.Group(); sw.add(at(boxMesh(.09, .13, .012, 0xeeeeea), 0, 0, 0)); sw.add(at(new THREE.Mesh(GEO.box, keyM), 0, .015, .008)).children; sw.children[1].scale.set(.05, .035, .01);
+      sw.position.copy(base).add(new THREE.Vector3(ax * (S / 2 + .25), 1.08, ay * (S / 2 + .25))); sw.rotation.y = Math.atan2(sx, sy); group.add(sw);
+      const out = new THREE.Group(); const pl = new THREE.Mesh(GEO.box, plateM); pl.scale.set(.09, .09, .012); out.add(pl); for (const hx of [-.012, .012]) { const h = new THREE.Mesh(GEO.cyl, holeM); h.scale.set(.004, .01, .004); h.rotation.x = Math.PI / 2; h.position.set(hx, 0, .007); out.add(h); }
+      out.position.copy(base).add(new THREE.Vector3(-ax * (S / 2 + .25), .32, -ay * (S / 2 + .25))); out.rotation.y = Math.atan2(sx, sy); group.add(out);
+      break;
+    }
+    const smoke = [], sprink = [];
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) { if (solidMove(grid[y][x]) || lv.zone[y * GW + x] === 0) continue; if ((x * 7 + y * 3) % 5 === 0) smoke.push([x, y]); if ((x * 3 + y * 5) % 4 === 1) sprink.push([x, y]); }
+    const sd = new THREE.InstancedMesh(new THREE.CylinderGeometry(.075, .085, .045, 14), phong(0xf2f2ee, 40), Math.max(1, smoke.length)); lv.perGeo.push(sd.geometry);
+    smoke.forEach(([x, y], i) => sd.setMatrixAt(i, m4.makeTranslation((x + .5) * S + .9, WALL_H - .025, (y + .5) * S - .8))); group.add(sd);
+    const sp = new THREE.InstancedMesh(new THREE.CylinderGeometry(.02, .035, .06, 8), phong(0xb8bec4, 90), Math.max(1, sprink.length)); lv.perGeo.push(sp.geometry);
+    sprink.forEach(([x, y], i) => sp.setMatrixAt(i, m4.makeTranslation((x + .5) * S - .8, WALL_H - .03, (y + .5) * S + .7))); group.add(sp);
+    const led = new THREE.InstancedMesh(new THREE.SphereGeometry(.008, 6, 4), basic(0x50ff70), Math.max(1, smoke.length)); lv.perGeo.push(led.geometry);
+    smoke.forEach(([x, y], i) => led.setMatrixAt(i, m4.makeTranslation((x + .5) * S + .95, WALL_H - .05, (y + .5) * S - .8))); group.add(led);
+  }
   // pipes
   if (theme === "cellar" || theme === "park") {
     const pipeMat = lambert(theme === "park" ? 0x8a6a3a : 0x5f6b70);

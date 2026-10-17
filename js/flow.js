@@ -311,6 +311,7 @@ $("btnTasksClose").addEventListener("click", () => { $("tasks").hidden = true; }
 $("btnCallbacks").addEventListener("click", () => { if (mode === "play") workCallbacks(); });
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
 bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
+bindSet("setHires", "hires"); $("setHires").addEventListener("change", () => { applyRes(); resize(); });
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
 const lookSel = $("setLook"); lookSel.value = settings.look; lookSel.addEventListener("change", () => { settings.look = lookSel.value; saveSettings(); });
 for (const id of ["setDiff", "setDiffTitle"]) {

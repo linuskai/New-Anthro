@@ -75,9 +75,9 @@ function buildFloors(lv, theme) {
   const glossy = !["cellar", "park", "derma"].includes(theme);
   const ft = floorTex(theme), rt = roomFloorTex(theme), wt = floorTex("derma");
   const mats = {
-    1: new THREE.MeshStandardMaterial({ map: ft, color: glossy ? 0xd2d8d4 : 0xe4e4e4, roughness: glossy ? .3 : .85, metalness: 0 }),
-    2: new THREE.MeshStandardMaterial({ map: rt, roughness: .5, metalness: 0 }),
-    3: new THREE.MeshStandardMaterial({ map: wt, roughness: .55, metalness: 0 }),
+    1: new THREE.MeshStandardMaterial({ map: ft, bumpMap: ft, bumpScale: .012, color: glossy ? 0xd2d8d4 : 0xe4e4e4, roughness: glossy ? .3 : .85, metalness: 0 }),
+    2: new THREE.MeshStandardMaterial({ map: rt, bumpMap: rt, bumpScale: .01, roughness: .5, metalness: 0 }),
+    3: new THREE.MeshStandardMaterial({ map: wt, bumpMap: wt, bumpScale: .015, roughness: .55, metalness: 0 }),
   };
   const m4 = new THREE.Matrix4();
   for (const k of [1, 2, 3]) {

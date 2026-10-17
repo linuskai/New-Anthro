@@ -61,7 +61,7 @@ const bfsNextEnemy = (sx, sy, gx, gy) => { if (sx === gx && sy === gy) return nu
 
 // ---------- settings ----------
 const SET_KEY = "hospital-escape-3d-settings-v6";
-const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe", navi: true, diff: "easy", shadows: true };
+const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe", navi: true, diff: "easy", shadows: true, hires: true };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || "{}")); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
 
@@ -71,7 +71,7 @@ function canvasTex(w, h, draw, key) {
   if (key && texCache.has(key)) return texCache.get(key);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   draw(c.getContext("2d"), w, h);
-  const t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
   if (key) texCache.set(key, t);
   return t;
 }
@@ -88,6 +88,16 @@ const textTex = (lines, bg, fg, w = 256, h = 128, size = 26) => canvasTex(w, h, 
   lines.forEach((l, i) => { g.font = `${i === 0 ? 800 : 600} ${i === 0 ? size : Math.round(size * .7)}px ${SF}`; g.fillText(l, w / 2, h / 2 + (i - (lines.length - 1) / 2) * size * 1.05, w - 16); });
 }, "txt:" + lines.join("|") + bg + fg + w + h);
 const emoteTex = txt => canvasTex(96, 96, (g, w) => { g.fillStyle = "#fff"; g.beginPath(); g.arc(48, 44, 38, 0, 7); g.fill(); g.beginPath(); g.moveTo(38, 76); g.lineTo(48, 94); g.lineTo(58, 76); g.fill(); g.font = `46px ${EF}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(txt, 48, 46); }, "emote:" + txt);
+const fabricTex = () => canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); const r = rng(41);
+  for (let y = 0; y < h; y += 2) { g.fillStyle = `rgba(0,0,0,${.03 + (y % 4 ? .02 : 0)})`; g.fillRect(0, y, w, 1); }
+  for (let x = 0; x < w; x += 2) { g.fillStyle = "rgba(255,255,255,.05)"; g.fillRect(x, 0, 1, h); }
+  for (let i = 0; i < 7; i++) { const x = r() * w, gr = g.createLinearGradient(x - 12, 0, x + 12, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(.5, "rgba(0,0,0,.09)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(x - 12, 0, 24, h); } // folds
+  g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(0, h - 3, w, 1); g.fillRect(w / 2, 0, 1, h); // seams
+}, "fabric");
+const skinTex = () => canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); const r = rng(43); for (let i = 0; i < 1600; i++) { g.fillStyle = r() < .5 ? "rgba(120,60,40,.05)" : "rgba(255,255,255,.08)"; g.fillRect(r() * w, r() * h, 1, 1); } for (let i = 0; i < 6; i++) { const x = r() * w, y = r() * h, gr = g.createRadialGradient(x, y, 0, x, y, 20); gr.addColorStop(0, "rgba(200,90,80,.06)"); gr.addColorStop(1, "rgba(200,90,80,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } }, "skin");
+const hairTex = () => canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); const r = rng(47); g.lineWidth = 1; for (let i = 0; i < 260; i++) { const x = r() * w; g.strokeStyle = r() < .6 ? `rgba(0,0,0,${.12 + r() * .18})` : "rgba(255,255,255,.25)"; g.beginPath(); g.moveTo(x, 0); g.bezierCurveTo(x + (r() - .5) * 20, h * .3, x + (r() - .5) * 20, h * .7, x + (r() - .5) * 14, h); g.stroke(); } }, "hair");
+const plasterTex = () => { const t = canvasTex(256, 256, (g, w, h) => { g.fillStyle = "#808080"; g.fillRect(0, 0, w, h); const r = rng(53); for (let i = 0; i < 9000; i++) { const v = 100 + r() * 60; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(r() * w, r() * h, 1 + r() * 2, 1 + r() * 2); } }, "plaster"); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
 const glowTex = color => canvasTex(64, 64, (g, w) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, color); gr.addColorStop(.35, color.replace(/[\d.]+\)$/, ".5)")); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "glow:" + color);
 
 const WALL_COL = { gastro: ["#e6e4d2", "#b4ae84"], ward: ["#e4ece6", "#a9c3b8"], ortho: ["#e3eaf0", "#9fb4c6"], er: ["#efeee2", "#c8c39e"], derma: ["#f4e6d6", "#b88a5e"], radio: ["#4a5058", "#2e333a"] };
@@ -251,7 +261,7 @@ const calcTex = () => canvasTex(64, 96, (g, w, h) => { g.fillStyle = "#5a6a7a"; 
 // ---------- three ----------
 const canvas = $("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(1.75, window.devicePixelRatio || 1));
+const applyRes = () => renderer.setPixelRatio(Math.min(settings.hires ? 2 : 1.25, window.devicePixelRatio || 1)); applyRes();
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .9;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcbd8d1);
@@ -316,7 +326,9 @@ let ghostMat = null;
 function makePerson(sp) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   body.scale.setScalar(sp.scale || 1);
-  const M = c => sp.ghost && ghostMat ? ghostMat : sp.shadowFig ? lambert(0x050505) : lambert(c);
+  // materials with surface detail: woven fabric on clothes, pores on skin, strands in hair
+  const skinC = sp.skin || SKIN[0], hairC = sp.hair || 0x333333, cloth = new Set([sp.shirt, sp.pants, sp.jacket, 0xf4f4f0, 0x9cc6e6, 0x4a5568].filter(v => v != null));
+  const M = c => sp.ghost && ghostMat ? ghostMat : sp.shadowFig ? lambert(0x050505) : sp.lowDetail ? lambert(c) : lambert(c, c === skinC ? skinTex() : c === hairC ? hairTex() : cloth.has(c) ? fabricTex() : null);
   const add = (geo, c, sx, sy, sz, x, y, z, parent = body) => { const m = mesh(geo, M(c), sx, sy, sz); m.position.set(x, y, z); parent.add(m); return m; };
   const shade = (c, k) => new THREE.Color(c).multiplyScalar(k).getHex(), warm = c => new THREE.Color(c).lerp(new THREE.Color(0xe07a6a), .14).getHex();
   const build = sp.build || "normal";
