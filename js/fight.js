@@ -102,7 +102,7 @@ function fightGame(e, done) {
     g.fillStyle = "rgba(255,255,255,.6)"; for (let i = 0; i < 5; i++) g.fillRect(W * (.1 + i * .2) - 30 * dpr, 6 * dpr, 60 * dpr, 6 * dpr);
     g.fillStyle = "#b08a62"; g.fillRect(0, H * .5, W, 5 * dpr);
     g.fillStyle = "rgba(0,0,0,.08)"; g.font = `800 ${28 * dpr}px ${SF}`; g.textAlign = "center"; g.fillText("ORTHOPÄDIE · KRAFTRAUM-FLUR", W / 2, H * .3);
-    const s = Math.min(W / 380, H / 290), y = H * .66;
+    const s = Math.min(W / 380, H / 290), y = Math.min(H * .66, H * .95 - 118 * s);
     fighter(W * P.x, y, s, false, "#f4f4f0", "#f1c9a5", P.block ? "block" : P.st, P.t, P.hp);
     fighter(W * E.x, y, s * 1.12, true, "#2a5f8a", "#e0ac7e", E.st, E.t, E.hp);
     if (E.st === "wind") { g.fillStyle = "#e2483d"; g.font = `900 ${40 * dpr}px ${SF}`; g.fillText("!", W * E.x, y - 120 * s); }
