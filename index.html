@@ -458,6 +458,17 @@ body.hudmin .mission { display: none; }
 .du-zone { position: absolute; top: 0; bottom: 0; background: rgba(111,207,151,.7); }
 .du-mark { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #f2b33d; border-radius: 3px; box-shadow: 0 0 10px #f2b33d; }
 .du-msg { font: 600 14px/1.25 var(--display); min-height: 2.5em; }
+/* overlays: centred when they fit, scrollable from the top when they don't (landscape phones) */
+.overlay { display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
+.overlay > * { margin: auto; flex-shrink: 0; }
+#ovTitle > .title-wrap { margin: auto auto 0; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #ovTitle > .title-wrap { margin: auto; }
+  .card { padding: 14px 16px 12px; gap: 9px; }
+  .card h1, .card h2 { font-size: 30px; }
+  #tasks { top: calc(env(safe-area-inset-top, 0px) + 8px) !important; max-height: calc(100% - 16px) !important; }
+}
+#tasks { max-height: calc(100% - 230px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 </style>
 </head>
 <body>
