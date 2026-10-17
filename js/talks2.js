@@ -141,6 +141,12 @@ function hostileDialog(e) {
   if (navigator.vibrate) try { navigator.vibrate(100); } catch (_) {}
   if (call && !call.def.forced) endCall();
   if (e.type === "D") return phdQuiz(e);
+  if (e.type === "V" && run.route === "amt" && !run.flags.has("stamp1")) return stampDialog(e);
+  if (run.goodwill[e.type] > 0) {
+    run.goodwill[e.type]--;
+    const line = { N: "„Du bist doch vorhin rangegangen! Danke. Geh, ich mach das hier.“", V: "„Sie haben mit der Bettendisposition telefoniert? Vorbildlich. Ich halte Sie nicht auf.“", C: "„Ah, Sie haben mein Sekretariat zurückgerufen. Gehen Sie, gehen Sie.“", I: "„Du hast dein Passwort geändert? Respekt. Lauf, bevor es wieder abläuft.“" }[e.type];
+    return runChain(e, "", [{ q: line, options: [opt("„Danke!“", () => free("Telefon-Karma eingelöst. Manchmal lohnt es sich, ranzugehen.", [good("Goodwill")]))] }]);
+  }
   const pool = TALKS[e.type] || TALKS.P;
   if (!run.usedTalks) run.usedTalks = new Set();
   let fresh = pool.filter(t => !run.usedTalks.has(e.type + t.id));
@@ -159,7 +165,7 @@ function liftDialog(p) {
       opt("Einsteigen", () => {
         dlgState.onClose = () => nextFloor();
         const v = Math.random();
-        if (v < .35) return { next: () => openDialog({ av: "🤴", color: "#9b6bff", name: "Prof. Dr. Dr. h.c. Übermut", role: "steigt im 4. OG zu · Fahrstuhlgespräch", text: "„Ah, Kollege! Gut, dass ich Sie treffe. Drei Stockwerke, Zeit für ein kurzes Gespräch. Wie wär's mit Ostern?“",
+        if (v < .35) return { next: () => openDialog({ sp: TYPES.C.spec(), av: "🤴", color: "#9b6bff", name: "Prof. Dr. Dr. h.c. Übermut", role: "steigt im 4. OG zu · Fahrstuhlgespräch", text: "„Ah, Kollege! Gut, dass ich Sie treffe. Drei Stockwerke, Zeit für ein kurzes Gespräch. Wie wär's mit Ostern?“",
           options: [
             opt("„Ostern? Sehr gern.“", () => say("„Wunderbar.“ Die Tür geht auf. Er steigt aus. Du bist jetzt Ostern verplant.", pen({ duties: 1 }))),
             opt("Den Nothalt drücken", () => say("Alarm. Der Chef steht mit dir zwischen zwei Etagen. Er ruft den Hausmeister. Der Hausmeister ist im Keller. 15 Minuten Stille.", pen({ mins: 15 }))),
@@ -172,6 +178,7 @@ function liftDialog(p) {
 function pcDialog() {
   openDialog({ av: "💻", color: "#2b7bb9", name: "KIS 2003", role: "Bitte warten … (Programm reagiert nicht)", text: "23 offene Arztbriefe. 41 ungelesene Befunde. Ein Pop-up: „Ihr Passwort läuft heute ab.“ Ein zweites: „Möchten Sie die Pop-ups deaktivieren? Dafür ist ein Ticket nötig.“",
     options: [
+      opt("Formular A38 drucken", () => { run.flags.add("a38"); return say("Der Drucker ächzt. Papierstau. Du ziehst. Ein Formular A38 kommt heraus, leicht zerknittert, mit einem Kaffeefleck in Form von Bayern. Reicht.", [good("Formular A38")]); }, () => run.route === "amt" ? "Route Behörde" : "", () => run.route !== "amt" || run.flags.has("a38")),
       opt("Einen Arztbrief schreiben (nur einen!)", () => say("Du schreibst einen. Das KIS stürzt beim Speichern ab. Der Brief ist weg. Die 20 Minuten auch.", pen({ mins: 20 }))),
       opt("Passwort ändern", () => say("Mindestens 24 Zeichen, ein Emoji, eine Hieroglyphe, kein Wort aus dem Duden. „Feierabend!!11🙃𓀀“ ist zu kurz.", pen({ energy: 5 }))),
       opt("Dienstplan öffnen", () => say("Du stehst sechsmal drin. Einmal heute. Seit 7 Uhr. Laut Plan hast du jetzt frei. Laut Realität nicht.", [])),
@@ -185,6 +192,7 @@ function phoneDialog() {
         () => say("Kein Freizeichen. Die Telefonanlage läuft seit 2019 im Sparmodus. Man kann nur noch angerufen werden.", []),
         () => free("Die Zeitansage. Es ist 17:03. Du warst nie pünktlicher."),
       ])()),
+      opt("Rückrufe abarbeiten", () => { const n = run.callbacks.length; workCallbacks(); return say(n ? "Du rufst alle zurück. Jeder will „nur ganz kurz“ etwas. Danach mögen sie dich." : "Keine offenen Rückrufe. Das Telefon ist irritiert.", []); }, () => run.callbacks.length ? run.callbacks.length + " offen" : "", () => !run.callbacks.length),
       opt("Pizza bestellen", () => say("„Pizzeria Notaufnahme, Lieferzeit neun Stunden.“ Wie bei uns. Du legst auf.", [])),
       opt("Mama anrufen", () => run.flags.has("mama") ? say("Besetzt. Sie redet gerade mit deiner Tante über dich.", []) : (run.flags.add("mama"), free("„Isst du auch genug?“ Fünf Minuten Wärme. Dann musst du los.", gain({ nerves: 1 })))),
       opt("Den Hörer daneben legen", () => free("Niemand erreicht dich mehr. Für diese eine Station. Ein kleiner Sieg."))] });
@@ -197,3 +205,49 @@ function brewDialog(p) {
       opt("Sanft zureden", () => { p.used = true; addItem("1"); return free("„Du schaffst das.“ Sie schafft das. Du hast gerade eine Maschine motiviert. Die Personalabteilung wäre stolz.", [good("☕ eingepackt")]); }),
       opt("In Ruhe lassen", () => say("Sie bleibt allein im Dunkeln. Wie Dr. Ewig.", []))] });
 }
+
+/* Dermatologists who want to know what life as a "real" doctor is like */
+TALKS.R = [
+  { id: "botoxiv", go: T("„Kurze Frage, rein fachlich.“", [{ q: "„Darf man Botox eigentlich auch i.v. geben? Wenn der Patient beim Reanimieren so viele Falten hat?“", options: [
+    opt("„Bei der Reanimation zählt nur der Puls.“", () => free("Sie notiert: „Puls > Falten“. Sie wirkt erschüttert. Und ein bisschen inspiriert.")),
+    opt("„Nur mit Hyaluron-Bolus hinterher.“", () => say("Sie ist begeistert. Sie will sofort ein Paper schreiben. Mit dir als Erstautor. Über etwas, das es nicht gibt.", pen({ tasks: ["Paper „Botox in der Reanimation“ (Fiktion)"] }))),
+    opt("„Fragen Sie die Anästhesie.“", () => free("„Die Anästhesie? Die sind doch immer so … wach.“ Sie geht. Sie fragt nicht."))] }]) },
+  { id: "netflix", go: T("", [{ q: "„Wie ist das so, ein Nachtdienst? Ist das wie Netflix bis drei?“", options: [
+    opt("„Ja. Nur dass die Serie zurückruft.“", () => free("Sie lacht. Dann versteht sie es. Dann lacht sie nicht mehr.")),
+    opt("„Es ist wie Netflix. Aber alle Folgen gleichzeitig. Und du spielst mit.“", () => free("Sie greift nach ihrem Gurkenwasser. „Das klingt … intensiv.“", gain({ nerves: 1 }))),
+    opt("Ihr 20 Minuten lang einen Nachtdienst schildern", () => say("Sie weint. Du weinst. Ihr umarmt euch. Dermatologie und Innere, vereint im Schmerz.", pen({ mins: 20 }).concat(gain({ nerves: 1 }))))] }]) },
+  { id: "pieper", go: T("", [{ q: "„Was ist eigentlich ein Pieper? Ist das so ein Tamagotchi?“", options: [
+    opt("„Genau. Nur dass er dich füttert. Mit Arbeit.“", () => free("„Süß!“ Sie will auch einen. Zur Deko.")),
+    opt("Den Pieper zeigen", () => say("Er piept genau in dem Moment. Sie schreit. Du gehst ran. Station 3B.", pen({ tasks: ["Rückruf 3B (Pieper-Demo)"] }))),
+    opt("„Ein Gerät, das nachts um 3 deinen Namen kennt.“", () => free("Sie schaut lange aus dem Fenster. „Und das macht ihr … freiwillig?“"))] }]) },
+  { id: "drei", go: T("„Puh. Wir hatten heute DREI Patienten. Ich bin völlig fertig.“", [{ q: "„Wie viele hattet ihr so?“", options: [
+    opt("„34.“", () => free("Sie muss sich setzen. Auf eine Wellness-Liege. Sie bestellt sich eine Gurke.")),
+    opt("„Drei. Pro Stunde. Pro Flur.“", () => free("„Pro FLUR?“ Sie rechnet. Sie kann nicht so hoch rechnen. Sie geht.")),
+    opt("„Ich zähle nicht mehr. Ich spüre sie nur noch.“", () => { addItem("+"); return free("Sie reicht dir wortlos eine Creme. „Für innen.“", [good("🫙 eingepackt")]); })] }]) },
+  { id: "pickel", go: T("", [{ q: "„Ganz ehrlich: Kann man Pickel eigentlich reanimieren?“", options: [
+    opt("„Nur mit 100 Kompressionen pro Minute.“", () => free("Sie probiert es sofort an sich selbst. Du gehst langsam rückwärts.")),
+    opt("„Nein. Manche Dinge muss man gehen lassen.“", () => free("„Wow. Das ist … tief.“ Sie postet es mit Sonnenuntergang.", gain({ nerves: 1 }))),
+    opt("„Das ist eher Ihr Fachgebiet.“", () => say("Sie erklärt dir 15 Minuten lang Komedonen. Mit Bildern. Vom Handy.", pen({ mins: 15 })))] }]) },
+  { id: "kalium", go: T("„Ich hab heute im Labor ‚Kalium‘ gelesen.“", [quizStep("„Ist Kalium eigentlich ein Pflegeprodukt? Klingt so nach Peeling.“", ["„Ein Elektrolyt. Zu viel davon stoppt das Herz.“", "„Ja, für die Kopfhaut.“", "„Nur in der Bio-Variante.“"], 0, "Sie wird blass. „Das HERZ?“ Sie streicht Kalium von ihrer Wunschliste für die neue Pflegelinie.", "Sie bestellt 5 Liter. Für die Praxis. Du rufst morgen besser mal an.", { tasks: ["Dermatologie vor Kalium-Peeling warnen"] })]) },
+  { id: "pappbecher", go: T("", [{ q: "„Stimmt es, dass ihr Kaffee aus PAPPbechern trinkt? Ohne Hafermilch?“", options: [
+    opt("„Wenn wir Glück haben. Sonst aus dem Spritzenbecher.“", () => free("Sie hält sich die Hand vor den Mund. Sie schenkt dir ihren Oat-Flat-White.", gain({ energy: 30 }))),
+    opt("„Kaffee? Den haben wir eingespart.“", () => free("Sie startet sofort eine Spendenaktion. „Kaffee für Assistenzärzte“. Hashtag. Du bist frei.")),
+    opt("„Wir trinken ihn nicht. Wir inhalieren ihn.“", () => say("Sie glaubt dir. Sie will es ausprobieren. Sie hustet. Sehr lange.", pen({ mins: 5 })))] }]) },
+  { id: "dienste", go: T("„Wir überlegen, auch Dienste anzubieten.“", [{ q: "„Bis 15:30 Uhr. Ist das zu hart?“", options: [
+    opt("„Absolut. Das ist kein Leben.“", () => free("Sie nickt ernst. „Dann bis 15 Uhr.“ Sie fühlt sich sehr verantwortungsvoll.")),
+    opt("„Macht doch einen 24-Stunden-Dienst.“", () => free("Sie lacht herzlich. Sie dachte, es wäre ein Witz. Du lässt sie in dem Glauben.")),
+    opt("„Kann ich bei euch anfangen?“", () => { run.offers.add("botox"); return free("„Natürlich! Sprich mit Dr. Glatt. Wir haben eine Gurken-Flatrate.“", [good("Jobangebot Dermatologie")]); })] }]) },
+  { id: "kaschmir", go: T("", [{ q: "„Was trägt man denn so unter dem Kittel, wenn man keinen Kaschmir hat?“", options: [
+    opt("„Den Kasack von gestern.“", () => free("„Von GESTERN?“ Sie tritt einen Schritt zurück. Dann noch einen. Perfekt.")),
+    opt("„Verzweiflung. Atmungsaktiv.“", () => free("Sie notiert es für die Herbstkollektion.")),
+    opt("„Ein Funktionsshirt vom Halbmarathon 2014.“", () => free("Sie fragt nach der Größe. Sie will so eins. Vintage."))] }]) },
+  { id: "notfall", go: T("„Wie fühlt sich eigentlich ein Notfall an?“", [{ q: "„Ist das so wie wenn der Laser ausfällt?“", options: [
+    opt("„Genau so. Nur mit Blut. Und ohne Laser.“", () => free("Sie nickt verständnisvoll. Der Laser ist heute zweimal ausgefallen. Sie versteht dich jetzt.")),
+    opt("„Stell dir vor, der Laser ruft dich nachts an.“", () => free("Sie zittert. „Der Laser hat meine Nummer nicht. Oder?“ Sie geht nachsehen.")),
+    opt("Wortlos die Hand auf ihre Schulter legen", () => free("Sie beginnt zu weinen. Ein Notfall. Du bist zuständig. Wie immer.", pen({ energy: 8 })))] }]) },
+  { id: "herzinfarkt", go: T("„Ich hab noch nie einen Herzinfarkt gesehen.“", [quizStep("„War deiner eher trocken oder eher ölig?“", ["„Das ist kein Hauttyp. Das ist ein Gefäßverschluss.“", "„Mischhaut.“", "„Eher fettig, mit Glanz.“"], 0, "„GEFÄSSverschluss?“ Sie schaut auf ihre Hände. Sie geht sofort zum Kardiologen. Zum ersten Mal.", "Sie empfiehlt ein Serum dagegen. Du nickst. Der Patient von gestern hätte es gebraucht.", { energy: 8 })]) },
+  { id: "stehen", go: T("", [{ q: "„Ich hab gehört, ihr esst im Stehen. Ist das so ein Trend? Standing Lunch?“", options: [
+    opt("„Standing Lunch, Walking Dinner, Running Breakfast.“", () => free("„Wie in Kopenhagen!“ Sie will das in der Derma einführen. Mit Tischdecken.")),
+    opt("„Essen? Ich hatte heute ein Gummibärchen.“", () => free("Sie drückt dir einen Proteinriegel in die Hand. „Vegan, glutenfrei, schmeckt nach nichts.“", gain({ energy: 20 }))),
+    opt("„Wir essen nicht. Wir verstoffwechseln Stress.“", () => free("Sie macht ein Foto von dir. „Für die Vorher-Bilder.“"))] }]) },
+];

@@ -43,14 +43,14 @@ button { font-family: inherit; }
 .hud-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .hud-left { display: grid; gap: 6px; min-width: 0; }
 .pager { background: var(--pager); border: 2px solid #26332d; border-radius: 10px; box-shadow: inset 0 0 18px rgba(166,227,143,.08);
-  padding: 5px 9px 6px; font-family: var(--lcd-font); color: var(--lcd); font-size: 18px; line-height: 1.05; display: grid; gap: 3px; min-width: 0; }
+  padding: 5px 9px 6px; font-family: var(--lcd-font); color: var(--lcd); font-size: 16px; line-height: 1.05; display: grid; gap: 3px; min-width: 0; }
 .pager-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
 .pager-row > span { min-width: 0; }
-#hudClock { font-size: 24px; font-variant-numeric: tabular-nums; }
+#hudClock { font-size: 20px; font-variant-numeric: tabular-nums; }
 #hudMsg { min-height: 2.1em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #hudMsg.alert { color: #ffd27a; }
 .chips { display: flex; gap: 5px; flex-wrap: wrap; }
-.chip { border: 1px solid #2f4038; background: #0d1611; color: var(--lcd); font: 17px/1 var(--lcd-font); padding: 3px 6px; border-radius: 5px; white-space: nowrap; }
+.chip { border: 1px solid #2f4038; background: #0d1611; color: var(--lcd); font: 15px/1 var(--lcd-font); padding: 3px 6px; border-radius: 5px; white-space: nowrap; }
 .chip.warn { color: #ffd27a; border-color: #6b5a2a; }
 .chip.bad { color: #ff9a8f; border-color: #7a2f28; }
 .chip.good { color: #9fe0ff; border-color: #2c5468; }
@@ -95,7 +95,7 @@ button.chip { pointer-events: auto; cursor: pointer; touch-action: manipulation;
 .stick-base { position: absolute; width: 112px; height: 112px; border-radius: 50%; pointer-events: none; border: 2px dashed rgba(243,248,241,.25);
   display: grid; place-items: center; font: 600 13px var(--display); letter-spacing: .1em; color: rgba(243,248,241,.5); text-transform: uppercase; text-align: center; line-height: 1.2; }
 #moveBase { left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
-#lookBase { right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); width: 92px; height: 92px; }
+#lookBase { display: none; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 230px); width: 92px; height: 92px; }
 .stick { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; pointer-events: none;
   border: 2px solid rgba(243,248,241,.5); background: rgba(243,248,241,.08); }
 .stick .ring { position: absolute; inset: 28px; border-radius: 50%; border: 1px dashed rgba(166,227,143,.6); }
@@ -166,23 +166,33 @@ button.chip { pointer-events: auto; cursor: pointer; touch-action: manipulation;
 #btnAccept { background: #2fb457; }
 
 #dlg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; pointer-events: auto;
-  padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px));
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); padding-top: 40px; background: linear-gradient(to top, rgba(11,21,19,.88), rgba(11,21,19,0)); }
-.dlg-card { max-width: 520px; min-width: 0; box-sizing: border-box; margin: 0 auto; background: var(--paper); color: var(--paper-ink); border-radius: 10px; padding: 14px;
-  display: grid; gap: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.5); max-height: 72vh; overflow-y: auto; }
-.dlg-head { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; }
-#dlgAvatar { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; }
-#dlgName { font: 800 16px/1.1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
-#dlgRole { font: 500 14px/1.1 var(--display); opacity: .7; }
-#dlgText { font: 600 20px/1.2 var(--display); }
-#dlgOpts { display: grid; gap: 7px; }
-.opt { appearance: none; text-align: left; border: 2px solid #1d2622; background: #fff; color: var(--paper-ink); border-radius: 7px; padding: 10px 12px;
-  font: 600 17px/1.15 var(--display); cursor: pointer; touch-action: manipulation; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+  padding: 56px max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(to top, rgba(8,14,12,.94) 45%, rgba(8,14,12,0)); }
+.dlg-card { --role: #9aa3a0; max-width: 560px; min-width: 0; box-sizing: border-box; margin: 0 auto; display: grid; grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-areas: "badge bubble" "opts opts"; gap: 12px 14px; max-height: 76vh; overflow-y: auto; padding: 4px 2px; }
+.dlg-badge { grid-area: badge; align-self: start; background: #fbfaf4; color: #1d2622; border-radius: 8px; padding-bottom: 7px; text-align: center; position: relative; overflow: hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,.5); transform: rotate(-2.5deg); }
+.dlg-badge .stripe { height: 16px; background: var(--role); }
+.dlg-badge .clip { position: absolute; top: 3px; left: 50%; width: 24px; height: 6px; border-radius: 3px; background: rgba(0,0,0,.35); transform: translateX(-50%); }
+#dlgPhoto { width: 76px; height: 82px; margin: 6px auto 5px; border-radius: 5px; background: var(--role); display: grid; place-items: center; font-size: 40px; overflow: hidden; border: 2px solid #1d2622; }
+#dlgPhoto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#dlgName { font: 800 12px/1.05 var(--display); text-transform: uppercase; letter-spacing: .03em; padding: 0 5px; overflow-wrap: anywhere; }
+#dlgRole { font: 600 10px/1.15 var(--display); opacity: .72; padding: 3px 5px 0; overflow-wrap: anywhere; }
+.dlg-badge .barcode { height: 10px; margin: 6px 12px 0; background: repeating-linear-gradient(90deg, #1d2622 0 2px, transparent 2px 3px, #1d2622 3px 4px, transparent 4px 7px, #1d2622 7px 8px, transparent 8px 10px); }
+.dlg-bubble { grid-area: bubble; align-self: start; min-width: 0; background: #fff; color: #1d2622; border-radius: 16px; padding: 12px 14px; position: relative; box-shadow: 0 10px 22px rgba(0,0,0,.45); display: grid; gap: 8px; cursor: pointer; }
+.dlg-bubble::before { content: ""; position: absolute; left: -10px; top: 26px; border: 10px solid transparent; border-left: 0; border-right-color: #fff; }
+#dlgText { font: 600 18px/1.28 var(--display); min-height: 2.6em; }
+#dlgStamps:empty { display: none; }
+#dlgOpts { grid-area: opts; display: grid; gap: 7px; }
+.opt { appearance: none; text-align: left; border: 0; background: #fbfaf4; color: var(--paper-ink); border-radius: 10px; padding: 9px 11px; cursor: pointer; touch-action: manipulation;
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; font: 600 16px/1.2 var(--display); box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.opt .ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #1d2622; color: #fff; font: 800 14px/1 var(--display); }
+.opt.yes .ico { background: #1f9d55; } .opt.no .ico { background: #c0322a; } .opt.dice .ico { background: #f2b33d; color: #2a1c00; } .opt.run .ico { background: #3f6fb3; } .opt.item .ico { background: #fff; border: 2px solid #1d2622; font-size: 16px; }
 .opt span { min-width: 0; }
-.opt small { font: 600 12px/1.2 var(--mono); opacity: .7; text-align: right; flex: 0 1 auto; max-width: 45%; }
-.opt:active { background: #eef3ee; }
+.opt small { font: 600 12px/1.2 var(--mono); opacity: .7; text-align: right; max-width: 9em; }
+.opt:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
 .opt:disabled { opacity: .45; cursor: default; }
-.opt.go { background: var(--sign); color: var(--sign-ink); border-color: var(--sign-deep); justify-content: center; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
+.opt.go { background: var(--sign); color: var(--sign-ink); grid-template-columns: 1fr; text-align: center; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
 .opt:focus-visible, .btn:focus-visible, .icon-btn:focus-visible, .mission:focus-visible, .round:focus-visible, .slot:focus-visible, .side:focus-visible, #call button:focus-visible, .story-btns button:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
 
 #cpr { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(40,6,6,.75); pointer-events: auto; touch-action: none; }
@@ -228,7 +238,7 @@ button.chip { pointer-events: auto; cursor: pointer; touch-action: manipulation;
 .card.board .eyebrow { color: #c0322a; }
 .eyebrow { font-weight: 600; text-transform: uppercase; letter-spacing: .14em; font-size: 14px; opacity: .85; }
 .card h1, .card h2 { margin: 0; font-weight: 800; text-transform: uppercase; line-height: .92; text-wrap: balance; }
-.card h1 { font-size: clamp(46px, 14vw, 66px); }
+.card h1 { font-size: clamp(34px, 10vw, 48px); }
 .card h1 small { display: inline-block; font-size: .5em; background: var(--sign-ink); color: var(--sign); padding: 2px 8px; border-radius: 4px; vertical-align: middle; }
 .card h2 { font-size: 34px; }
 .card h3 { margin: 4px 0 0; font: 800 17px/1 var(--display); text-transform: uppercase; letter-spacing: .08em; }
@@ -303,11 +313,18 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
   #inv { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); } .slot { width: 40px; height: 40px; font-size: 20px; }
   .hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); font-size: 13px; }
   #mcard { top: 18%; } #mcTitle { font-size: 30px; }
+  #call { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); left: auto; right: calc(max(12px, env(safe-area-inset-right, 0px)) + 170px); transform: none; width: min(300px, 40vw); padding: 9px 11px; gap: 6px; border-radius: 16px; }
+  #callText { font-size: 13px; } #callAvatar { width: 34px; height: 34px; font-size: 18px; }
+  #dlg { padding-top: 8px; background: rgba(8,14,12,.6); top: 0; display: grid; align-items: center; }
+  .dlg-card { max-width: 860px; width: 100%; grid-template-columns: 88px minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: "badge bubble opts"; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
+  #dlgText { font-size: 16px; } .opt { font-size: 14px; padding: 7px 9px; }
+  #toast { top: calc(env(safe-area-inset-top, 0px) + 34px); transform: translateX(-50%); width: min(44vw, 400px); padding: 8px 10px; } #toastLine { font-size: 13px; } #toastWho { font-size: 11px; }
+  .card h1 { font-size: 34px; } .overlay .card { padding: 14px 16px; }
   #tasks { top: calc(env(safe-area-inset-top, 0px) + 40px); max-height: calc(100% - 60px); }
 }
 body.hudmin .pager .energy, body.hudmin .pager .chips, body.hudmin #hudMsg { display: none; }
 body.hudmin .mission { display: none; }
-.pager { pointer-events: auto; cursor: pointer; }
+
 #mini { border-radius: 50%; pointer-events: auto; cursor: pointer; }
 #mcard { position: absolute; left: 0; right: 0; top: 24%; text-align: center; pointer-events: none; z-index: 4; padding: 0 20px; }
 #mcard.show { animation: mcIn 3.6s ease forwards; }
@@ -328,6 +345,23 @@ body.hudmin .mission { display: none; }
 #mapView .map-close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 16px; }
 #mapView .map-legend { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); left: 16px; right: 16px; text-align: center; font: 600 13px/1.4 var(--display); color: #cfdcd4; }
 
+.card.mail { background: #eef1f4; color: #1d2622; padding: 0; overflow: hidden; width: min(100%, 520px); }
+.mail-bar { background: #1f3f8a; color: #fff; display: flex; justify-content: space-between; gap: 8px; padding: 7px 12px; font: 700 13px/1.2 var(--mono); }
+#mailListWrap, .mailview { padding: 14px 16px 16px; display: grid; gap: 10px; }
+.card.mail h2 { color: #1d2622; }
+.inbox { display: grid; gap: 2px; background: #c9d0d8; border-radius: 6px; overflow: hidden; }
+.mailrow { appearance: none; border: 0; background: #fff; text-align: left; padding: 9px 10px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: center; cursor: pointer; font-family: var(--display); color: #1d2622; }
+.mailrow:hover, .mailrow:focus-visible { background: #e6eefc; }
+.mailrow .mail-av { width: 34px; height: 34px; font-size: 18px; }
+.mailrow b { display: block; font-size: 14px; } .mailrow span.subj { display: block; font-size: 13px; font-weight: 600; } .mailrow span.snip { display: block; font-size: 12px; opacity: .65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mail-av { border-radius: 50%; background: #dfe6ee; display: grid; place-items: center; width: 44px; height: 44px; font-size: 24px; flex: none; }
+.mail-head { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; } .mail-head b { display: block; font-size: 15px; } .mail-head > div span { display: block; font-size: 14px; font-weight: 700; }
+.card.mail .btn.ghost { color: #1d2622; border-color: #1d2622; background: transparent; } .card.mail #btnMailTake { background: #1f9d55; color: #fff; border-color: #14713c; }
+#mailBody { font: 500 15px/1.4 var(--display); background: #fff; padding: 10px 12px; border-radius: 6px; }
+.perks { display: flex; flex-wrap: wrap; gap: 6px; } .perks span { background: #1f9d55; color: #fff; border-radius: 99px; padding: 3px 9px; font: 700 12px/1.3 var(--display); }
+.mail-needs { background: #fff8d6; border-radius: 6px; padding: 8px 12px; font-size: 14px; } .mail-needs ul { margin: 4px 0 0; padding-left: 1.2em; }
+.mail-btns { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
+.route-tag { display: inline-block; background: #f2b33d; color: #2a1c00; border-radius: 3px; padding: 1px 6px; font: 800 11px/1.4 var(--display); text-transform: uppercase; letter-spacing: .05em; }
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
 </style>
 </head>
@@ -369,6 +403,7 @@ body.hudmin .mission { display: none; }
       <div class="hud-right">
         <canvas id="mini" width="200" height="200" aria-label="Lageplan"></canvas>
         <button class="icon-btn" id="btnPause" type="button" aria-label="Pause">II</button>
+        <button class="icon-btn" id="btnHud" type="button" aria-label="Anzeige verkleinern">▤</button>
       </div>
     </div>
   </div>
@@ -395,6 +430,7 @@ body.hudmin .mission { display: none; }
     <div id="fzNow"></div>
     <h3>Missionen hier</h3><ul id="objList"></ul>
     <h3>Nebenmissionen</h3><ul id="sideList"></ul>
+    <h3>Rückrufe</h3><ul id="cbList"></ul><button type="button" id="btnCallbacks">Alle zurückrufen (+3 Min je)</button>
     <h3>Aufgaben</h3><ol id="taskList"></ol>
     <h3>Tasche</h3><ul id="bagList"></ul>
     <h3>Jobangebote</h3><ul id="offerList"></ul>
@@ -402,10 +438,9 @@ body.hudmin .mission { display: none; }
   </div>
 
   <div id="dlg" hidden>
-    <div class="dlg-card">
-      <div class="dlg-head"><div id="dlgAvatar"></div><div><div id="dlgName"></div><div id="dlgRole"></div></div></div>
-      <div id="dlgText"></div>
-      <div class="stamps" id="dlgStamps"></div>
+    <div class="dlg-card" id="dlgCard">
+      <div class="dlg-badge"><div class="stripe"></div><div class="clip"></div><div id="dlgPhoto"><span id="dlgAvatar"></span></div><div id="dlgName"></div><div id="dlgRole"></div><div class="barcode"></div></div>
+      <div class="dlg-bubble" id="dlgBubble"><div id="dlgText"></div><div class="stamps" id="dlgStamps"></div></div>
       <div id="dlgOpts"></div>
     </div>
   </div>
@@ -461,11 +496,30 @@ body.hudmin .mission { display: none; }
     </div>
   </section>
 
+  <section class="overlay" id="ovMail" hidden>
+    <div class="card mail">
+      <div class="mail-bar"><span>KIS 2003 · Outlook 97</span><span>Posteingang (1.384)</span></div>
+      <div id="mailListWrap">
+        <h2>Dein Ausweg</h2>
+        <p class="small">Zwischen 1.377 Mails vom Controlling liegen sieben, die nach Freiheit riechen. Wähle eine. Sie bestimmt deine Missionen und wer dich im Parkhaus abholt.</p>
+        <div class="inbox" id="mailList"></div>
+      </div>
+      <div class="mailview" id="mailView" hidden>
+        <div class="mail-head"><span class="mail-av" id="mailAv"></span><div><b id="mailFrom"></b><span id="mailSubj"></span></div></div>
+        <p id="mailBody"></p>
+        <div class="perks" id="mailPerks"></div>
+        <div class="mail-needs"><b>Was du dafür tun musst</b><ul id="mailNeeds"></ul></div>
+        <div class="mail-btns"><button class="btn ghost" id="btnMailBack" type="button"><span>Zurück</span><span>←</span></button><button class="btn" id="btnMailTake" type="button"><span>Zusagen · los geht's</span><span>✓</span></button></div>
+      </div>
+    </div>
+  </section>
+
   <section class="overlay" id="ovBrief" hidden>
     <div class="card board">
       <div class="eyebrow">Flucht-Zentrale · Whiteboard im Arztzimmer</div>
       <h2>Operation Feierabend</h2>
       <p class="small">Leitung: Frau Bozkurt (Reinigung, kennt jeden Gang). Sie schickt dir pro Stockwerk die Missionen auf den Pager. Ziel: unbemerkt bis zum Auto.</p>
+      <p class="small" id="briefRoute"></p>
       <ol class="plan" id="planList"></ol>
       <h3 id="sideHead">Nebenmissionen · wähle bis zu 3</h3>
       <div class="sides" id="sideBox"></div>
@@ -489,7 +543,7 @@ body.hudmin .mission { display: none; }
       <div class="eyebrow">Pause · Pager auf lautlos</div>
       <h2>Einstellungen</h2>
       <label class="setting" for="setDiff"><span>Schwierigkeit</span><select id="setDiff"><option value="easy">Entspannt</option><option value="normal">Dienstalltag</option></select></label>
-      <label class="setting" for="setLook"><span>Umsehen (rechts)</span><select id="setLook"><option value="stick">Joystick</option><option value="swipe">Wischen</option></select></label>
+      <label class="setting" for="setLook"><span>Umsehen</span><select id="setLook"><option value="swipe">Wischen (direkt)</option><option value="stick">Joystick (halten)</option></select></label>
       <label class="setting" for="setSens"><span>Empfindlichkeit</span><input type="range" id="setSens" min="0.4" max="2.2" step="0.1" value="1"></label>
       <label class="setting" for="setInvert"><span>Blick vertikal umkehren</span><input type="checkbox" id="setInvert"></label>
       <label class="setting" for="setNavi"><span>Navi-Punkte am Boden</span><input type="checkbox" id="setNavi" checked></label>

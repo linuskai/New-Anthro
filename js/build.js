@@ -112,6 +112,12 @@ function buildDoor(lv, x, y, theme, num, plateText) {
   for (const s of [-1, 1]) { const p = new THREE.Mesh(GEO.box, fm); if (axis === "x") { p.scale.set(.1, 2.36, .1); p.position.set(cx + cs * (S / 2 + .02), 1.18, cz + s * (hw + .02)); } else { p.scale.set(.1, 2.36, .1); p.position.set(cx + s * (hw + .02), 1.18, cz + cs * (S / 2 + .02)); } g.add(p); }
   const top = new THREE.Mesh(GEO.box, fm); top.scale.set(axis === "x" ? .1 : hw * 2 + .14, .1, axis === "x" ? hw * 2 + .14 : .1); top.position.set(axis === "x" ? cx + cs * (S / 2 + .02) : cx, 2.36, axis === "x" ? cz : cz + cs * (S / 2 + .02)); g.add(top);
   g.add(pivot);
+  // patient call light above the door: some patients ring. Always.
+  if (!safe && theme !== "cellar") {
+    if (!lv.callMat) { lv.callMat = new THREE.MeshBasicMaterial({ color: 0xff3020 }); lv.perMat.push(lv.callMat); }
+    const ringing = Math.random() < .4, lamp = new THREE.Mesh(GEO.box, ringing ? lv.callMat : lambert(0xe8e4d8)); lamp.scale.set(.16, .1, .16);
+    lamp.position.set(axis === "x" ? cx + cs * (S / 2 + .06) : cx + hw + .28, 2.5, axis === "x" ? cz + hw + .28 : cz + cs * (S / 2 + .06)); g.add(lamp);
+  }
   const signT = safe ? textTex([lv.nextSafeName ? lv.nextSafeName[0] : "RUHERAUM", lv.nextSafeName ? lv.nextSafeName[1] : ""], "#c9a77a", "#2a1c00", 512, 150, 46) : textTex([num, plateText || ""], "#f6f6ef", "#1d2622", 512, 150, 50);
   const sign = plate(signT, safe ? 1.8 : 1.3, safe ? .52 : .38);
   if (axis === "x") { sign.position.set(cx + cs * (S / 2 + .015), 2.78, cz); sign.rotation.y = cs * Math.PI / 2; } else { sign.position.set(cx, 2.78, cz + cs * (S / 2 + .015)); sign.rotation.y = cs > 0 ? 0 : Math.PI; }
@@ -204,7 +210,7 @@ function decorateRoom(lv, reg, theme, r) {
       else if (v < .45) wallPlace(lv, bedsideTable(), x, y, dx, dy, (r() - .5), 0, [.5, .5]);
       else if (v < .55 && !sink) { sink = true; wallPlace(lv, sinkModel(), x, y, dx, dy, 0, 0, [.6, .5]); }
       else if (v < .65 && !tv) { tv = true; wallPlace(lv, wallTV(), x, y, dx, dy, 0, 2.25); }
-      else if (v < .75) wallPlace(lv, framed(paintingTex(), .7, .5, 0x8a6a4a), x, y, dx, dy, 0, 1.6);
+      else if (v < .75) wallPlace(lv, r() < .6 ? funnyArt(Math.floor(r() * 99)) : framed(paintingTex(), .7, .5, 0x8a6a4a), x, y, dx, dy, 0, 1.6);
       else if (v < .85) { const c = visitorChair(); wallPlace(lv, c, x, y, dx, dy, .6, 0); c.rotation.y += (r() - .5) * .6; }
       else if (v < .92) wallPlace(lv, ivPole(), x, y, dx, dy, -.8, 0);
       else wallPlace(lv, sanitizer(), x, y, dx, dy, 0, 1.3);
@@ -212,7 +218,8 @@ function decorateRoom(lv, reg, theme, r) {
       if (v < .25) wallPlace(lv, binderShelf(1.4, 2), x, y, dx, dy, 0, 0, [1.4, .45]);
       else if (v < .45) wallPlace(lv, workstation([pick([kisTex(), mailTex(), rosterTex(), solitaireTex()])]), x, y, dx, dy, 0, 0, [1.6, .75]);
       else if (v < .55) wallPlace(lv, filingCabinet(), x, y, dx, dy, .6, 0, [.5, .6]);
-      else if (v < .7) wallPlace(lv, corkBoard(), x, y, dx, dy, 0, 1.6);
+      else if (v < .63) wallPlace(lv, corkBoard(), x, y, dx, dy, 0, 1.6);
+      else if (v < .7) wallPlace(lv, funnyArt(Math.floor(r() * 99)), x, y, dx, dy, 0, 1.65);
       else if (v < .8) wallPlace(lv, livePlant(), x, y, dx, dy, -.8, 0);
       else if (v < .9) wallPlace(lv, chairRow(3, 0x8a6a4a), x, y, dx, dy, 0, 0, [1.5, .45]);
     } else if (kind === "radio") {
@@ -291,8 +298,71 @@ function decorateDoctorsRoom(lv, reg) {
   const c = dyn(new THREE.Group()); const face = mesh(GEO.disc, lambert(0xffffff, clockTex()), .3, 1, .3); face.rotation.x = Math.PI / 2; c.add(face);
   const hp = new THREE.Group(), mp = new THREE.Group(); hp.add(at(mesh(GEO.box, basic(0x111111), .02, .12, .01), 0, .06, 0)); mp.add(at(mesh(GEO.box, basic(0x111111), .014, .19, .01), 0, .095, 0)); hp.position.z = mp.position.z = .03; c.add(hp, mp);
   wallPlace(lv, c, 3, 3, 0, 1, 0, 2.72); lv.clocks.push({ h: hp, m: mp });
+  // more life: fridge with a threat, art, family photo, fan, pizza tower
+  const fridge = grp(at(boxMesh(.6, .85, .6, 0xf2f2ee), 0, .43, .3), at(boxMesh(.04, .3, .03, 0x9aa3a0), .24, .55, .61));
+  fridge.add(at(plate(stickyTex("MEIN|JOGHURT!|Finger weg", "#ff9fd0"), .16, .16), -.05, .62, .605));
+  wallPlace(lv, fridge, 4, 3, 0, 1, -.95, 0, [.62, .62]);
+  wallPlace(lv, funnyArt(0), 4, 1, 1, 0, .2, 1.7);
+  wallPlace(lv, plate(textTex(["WICHTIGE NUMMERN", "Chef: nie anrufen", "IT: hat Urlaub", "Mama: 0171-…"], "#fffbe6", "#1d2622", 256, 200, 22), .45, .36), 1, 2, -1, 0, -1.05, 1.6);
+  d1.add(at(grp(at(boxMesh(.16, .2, .02, 0x3a2a1a), 0, .1, 0), at(plate(paintingTex(), .13, .16), 0, .1, .012)), -.3, .78, .1));
+  d1.children[d1.children.length - 1].rotation.x = -.2;
+  const fan = grp(at(mesh(GEO.cyl, lambert(0xe8e8e4), .07, .02, .07), 0, .01, 0), at(mesh(GEO.cyl, lambert(0xe8e8e4), .012, .25, .012), 0, .14, 0), at(mesh(GEO.torus, lambert(0xd8d8d4), .12, .12, .2), 0, .32, .02));
+  d2.add(at(fan, .05, .78, .15));
+  for (let i = 0; i < 4; i++) { const pz = new THREE.Mesh(GEO.box, [lambert(0xd8c29a), lambert(0xd8c29a), lambert(0xffffff, pizzaTex()), lambert(0xd8c29a), lambert(0xd8c29a), lambert(0xd8c29a)]); pz.scale.set(.42, .05, .42); pz.position.set(X(1.18), .03 + i * .05, X(1.15)); pz.rotation.y = i * .25; lv.group.add(pz); }
   // floor clutter
   for (const [px, pz, rot] of [[2.1, 3.1, .4], [2.6, 2.8, 1.2], [3.6, 3.2, 2.2], [2.9, 1.9, .2]]) { const p = mesh(GEO.plane, lambert(0xffffff, paperTex()), .3, .42, 1); p.rotation.set(-Math.PI / 2, 0, rot); p.position.set(X(px), .012, X(pz)); lv.group.add(p); }
   const st = stethoscopeFlat(); st.position.set(X(3.7), .015, X(2.6)); lv.group.add(st);
   lv.group.add(at(mesh(GEO.ball, lambert(0xfbfaf4), .07), X(2.4), .07, X(3.3)));
+}
+
+// ---------- career routes: props on the way and the ride home ----------
+function routeModel(obj) {
+  const g = new THREE.Group();
+  if (obj === "fax") {
+    g.add(at(boxMesh(.8, .05, .5, 0x8a6a4a), 0, .78, .3)); for (const [x, z] of [[-.35, .1], [.35, .1], [-.35, .5], [.35, .5]]) g.add(at(boxMesh(.04, .78, .04, 0x5a4a3a), x, .39, z));
+    g.add(at(boxMesh(.42, .14, .34, 0xd8d4c8), 0, .88, .3)); g.add(at(boxMesh(.3, .01, .2, 0xffffff), 0, .96, .22)); g.add(at(phoneModel(), .25, .8, .38));
+    g.add(at(plate(textTex(["FAX", "Befunde bitte faxen", "(Bj. 1994)"], "#f6f6ef", "#1d2622", 256, 140, 30), .5, .27), 0, 1.45, .02));
+  } else if (obj === "board" || obj === "ticketboard") {
+    const lines = obj === "board" ? ["WARTEZEIT", "14 Std. 20 Min."] : ["AUFGERUFEN: 12", "IHRE NR.: 999"];
+    const d = monitorMesh(textTex(lines, "#0b0c0c", "#ff3a2a", 512, 200, 60)); d.scale.set(1.5, .55, .08); d.position.set(0, 2.25, .06); g.add(d);
+  } else if (obj === "stamp") {
+    g.add(at(boxMesh(.7, .05, .45, 0x6a6f6a), 0, .8, .25)); g.add(at(boxMesh(.6, .76, .4, 0x8a948f), 0, .39, .25));
+    g.add(at(mesh(GEO.cyl, lambert(0x2a2a2a), .05, .07, .05), -.1, .86, .25)); g.add(at(mesh(GEO.ball, lambert(0xc0322a), .045), -.1, .95, .25)); g.add(at(boxMesh(.18, .02, .12, 0x2d3f8f), .15, .83, .25));
+    g.add(at(plate(textTex(["STEMPEL", "nur mit Formular"], "#2d3f8f", "#fff", 256, 110, 30), .5, .21), 0, 1.4, .02));
+  } else if (obj === "meds") {
+    g.add(at(boxMesh(.8, .7, .3, 0xf4f4f0), 0, 1.4, .15)); g.add(at(plate(textTex(["MEDIKAMENTE", "abgeschlossen (offen)"], "#1f9d55", "#fff", 256, 110, 28), .7, .3), 0, 1.4, .31));
+  }
+  const tag = sprite(labelTex(obj === "stamp" ? "🖃 STEMPEL" : obj === "meds" ? "💊 REISETABLETTEN" : "📸 BEWEISFOTO", "#f2b33d", "#2a1c00"), 1.3, .24); tag.position.set(0, 2.8, .4); g.add(tag);
+  return g;
+}
+function buildRouteProps(lv, idx) {
+  if (!run || !run.route) return;
+  for (const g of ROUTES[run.route].goals) {
+    if (g.lvl !== idx || !g.spot || lv.props.some(p => p.goal === g.id)) continue;
+    const [x, y] = g.spot, dir = DIRS.find(([dx, dy]) => cell(x + dx, y + dy) === "#"); if (!dir) continue;
+    wallPlace(lv, routeModel(g.obj), x, y, dir[0], dir[1]);
+    lv.props.push({ kind: g.kind, goal: g.id, x: x + .5 + dir[0] * .2, y: y + .5 + dir[1] * .2 });
+  }
+}
+function vehicleModel(route) {
+  const v = ROUTES[route] ? ROUTES[route].vehicle : "car", g = new THREE.Group();
+  if (v === "car") g.add(makeCar(0x1f9d55));
+  else if (v === "limo") { const c = makeCar(0x111111, true); c.scale.set(1.05, 1, 1.45); g.add(c); const p = makePerson({ skin: SKIN[0], hair: 0xd9b26c, hairStyle: "long", shirt: 0x111111, pants: 0x111111, jacket: 0x111111, acc: "phone", glasses: "sun", mood: "smile" }); p.group.position.set(1.4, 0, .5); p.group.rotation.y = -.6; g.add(p.group); }
+  else if (v === "cabrio") { const c = makeCar(0xff7ab8, true); c.children[1].visible = false; g.add(c); g.add(at(boxMesh(1.3, .06, .3, 0xffffff, textTex(["DR. GLATT"], "#ff7ab8", "#fff", 256, 60, 40)), 0, .85, -1.3)); }
+  else if (v === "taxi") { g.add(makeCar(0xf2c300, true)); g.add(at(boxMesh(.5, .18, .2, 0xffffff, textTex(["TAXI"], "#111", "#f2c300", 128, 50, 36)), 0, 1.42, -.15)); }
+  else if (v === "scooter") {
+    g.add(at(boxMesh(.18, .06, .9, 0x111111), 0, .14, 0)); g.add(at(mesh(GEO.cyl, lambert(0x333333), .02, 1, .02), 0, .62, .42)); g.add(at(boxMesh(.5, .03, .03, 0x333333), 0, 1.1, .42));
+    for (const z of [-.42, .45]) { const w = mesh(GEO.wheel, lambert(0x1a1a1a), .35, .2, .35); w.rotation.z = Math.PI / 2; w.position.set(0, .1, z); g.add(w); }
+    g.add(at(plate(textTex(["DocFlix"], "#ff3fa4", "#fff", 256, 60, 40), .3, .07), .1, .2, 0));
+  } else if (v === "bike") {
+    for (const z of [-.5, .5]) { const w = mesh(GEO.torus, lambert(0x1a1a1a), .3, .3, .2); w.rotation.y = Math.PI / 2; w.position.set(0, .32, z); g.add(w); }
+    const f1 = mesh(GEO.cyl, lambert(0x2d3f8f), .02, 1, .02); f1.rotation.x = Math.PI / 2; f1.position.set(0, .55, 0); g.add(f1);
+    g.add(at(mesh(GEO.cyl, lambert(0x2d3f8f), .02, .5, .02), 0, .6, -.2)); g.add(at(boxMesh(.12, .04, .22, 0x111111), 0, .88, -.2)); g.add(at(boxMesh(.45, .03, .03, 0x333333), 0, .98, .45));
+    g.add(at(boxMesh(.3, .22, .25, 0x8a6a4a), 0, .85, .62)); g.add(at(plate(textTex(["AMT"], "#2d3f8f", "#fff", 128, 60, 40), .2, .1), 0, .85, .75));
+  } else if (v === "bus") {
+    const b = new THREE.Mesh(GEO.box, [lambert(0xffffff, textTex(["HAFEN-SHUTTLE · MS SORGENFREI"], "#1f7a8c", "#fff", 512, 100, 34)), lambert(0xffffff, textTex(["HAFEN-SHUTTLE · MS SORGENFREI"], "#1f7a8c", "#fff", 512, 100, 34)), phong(0x1f7a8c), phong(0x1f7a8c), phong(0x1f7a8c), phong(0x1f7a8c)]);
+    b.scale.set(2.2, 2.3, 5.4); b.position.y = 1.45; g.add(b);
+    for (const [x, z] of [[-1, -1.8], [1, -1.8], [-1, 1.8], [1, 1.8]]) { const w = mesh(GEO.wheel, lambert(0x1a1a1a), 1.2, 1, 1.2); w.rotation.z = Math.PI / 2; w.position.set(x, .35, z); g.add(w); }
+  }
+  return g;
 }

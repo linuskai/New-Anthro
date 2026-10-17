@@ -9,7 +9,7 @@ let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 
 
 function newRun() {
   run = { idx: 0, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: {}, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
+    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
 }
 const playerSafe = () => cell(Math.floor(player.x), Math.floor(player.y)) === "_";
 
@@ -23,6 +23,7 @@ function loadFloor(idx) {
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
   lure = null; nerdLure = null; blackout = 0; scare = null; endCall();
   run.headhunterT = L.headhunter && !run.offers.has("pharma") ? 10 : null;
+  run.pageT = run.callbacks.length >= 2 ? 8 : null;
   run.reaRandomT = L.reaRandom ? 45 + Math.random() * 30 : null;
   run.reaScriptT = L.reaScript || null;
   run.nextBlackout = 16 + Math.random() * 8;
@@ -58,10 +59,21 @@ const lampVisible = () => inDarkness() && player.lampOn && player.lamp > 0;
 const bouncersTotal = () => level ? level.enemies.filter(e => e.type === "U").length : 0;
 const bouncersCleared = () => level ? level.enemies.filter(e => e.type === "U" && e.cleared).length : 0;
 function objectives() {
-  const L = LEVELS[run.idx];
-  const list = L.objectives.map(o => ({ ...o, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }));
+  const L = LEVELS[run.idx], R = run.route ? ROUTES[run.route] : null;
+  const list = L.objectives.map(o => { const promoted = !o.main && R && R.promote.includes(o.id); return { ...o, main: o.main || promoted, route: promoted ? R.name : null, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }; });
+  if (R) for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: true, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: g.done ? g.done() : run.flags.has(g.id) });
   if (!L.final) list.push({ id: "exit", title: "Abgang", text: L.exitText, brief: "Die Brandschutztür ist offen. Treppe runter. Oder Aufzug, wenn du Nerven hast.", main: true, at: "exit", done: false, isExit: true });
   return list;
+}
+function routeReady(k) {
+  const R = ROUTES[k]; if (!R) return false;
+  return R.promote.every(id => run.flags.has(id) || (id === "cream" && run.picked.has("+"))) && R.goals.every(g => g.done ? g.done() : run.flags.has(g.id));
+}
+function routeMissing(k) {
+  const R = ROUTES[k]; const miss = [];
+  for (const id of R.promote) if (!(run.flags.has(id) || (id === "cream" && run.picked.has("+")))) miss.push(BAG_NAMES[id] || id);
+  for (const g of R.goals) if (!(g.done ? g.done() : run.flags.has(g.id))) miss.push(g.title);
+  return miss;
 }
 const exitOpen = () => objectives().every(o => !o.main || o.done || o.isExit);
 function currentObjective() {
@@ -76,7 +88,8 @@ function targetOf(o) {
   const [kind, key] = o.at.split(":");
   if (kind === "friend") { const f = level.friends.find(f => f.kind === key); return f ? [f.x, f.y] : null; }
   if (kind === "item") { const it = level.items.find(i => i.kind === key && !i.taken); return it ? [it.wx, it.wy] : null; }
-  if (kind === "prop") { const p = level.props.find(p => p.kind === key); return p ? [p.x, p.y] : null; }
+  if (kind === "prop") { const p = level.props.find(p => p.kind === key && (!p.goal || p.goal === o.id)); return p ? [p.x, p.y] : null; }
+  if (kind === "enemy") { const e = level.enemies.filter(e => e.type === key && !e.done && !e.gone).sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y))[0]; return e ? [e.x, e.y] : null; }
   return null;
 }
 let naviT = 0, naviTarget = null;
@@ -86,15 +99,22 @@ function updateNavi(dt) {
   naviTarget = targetOf(o);
   const nv = level.navi;
   const offline = LEVELS[run.idx].fogOfWar && !run.flags.has("power");
-  if (!naviTarget || !settings.navi || offline) { nv.count = 0; return; }
+  if (!naviTarget || !settings.navi || offline) { nv.count = 0; if (level.chev) level.chev.count = 0; return; }
   const path = bfs(Math.floor(player.x), Math.floor(player.y), Math.floor(naviTarget[0]), Math.floor(naviTarget[1]), true, playerPass);
-  if (!path) { nv.count = 0; return; }
-  const m = new THREE.Matrix4(); let n = 0;
-  for (let i = 0; i < path.length - 1 && n < 90; i++) {
-    const [ax, ay] = path[i], [bx, by] = path[i + 1];
-    for (const t of [.25, .75]) { if (n >= 90) break; const x = ax + (bx - ax) * t + .5, y = ay + (by - ay) * t + .5; if (Math.hypot(x - player.x, y - player.y) < 1.1) continue; m.makeTranslation(x * S, .03, y * S); nv.setMatrixAt(n++, m); }
+  if (!path) { nv.count = 0; if (level.chev) level.chev.count = 0; return; }
+  // the "Leitlinie": a painted green line with arrows, like the coloured guide lines in real hospitals
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const pts = [[player.x, player.y]].concat(path.slice(1).map(([x, y]) => [x + .5, y + .5]));
+  let n = 0, c = 0; const ch = level.chev;
+  for (let i = 0; i < pts.length - 1 && n < 90; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[i + 1], len = Math.hypot(bx - ax, by - ay); if (len < .01) continue;
+    const yaw = Math.atan2(bx - ax, by - ay); q.setFromAxisAngle(up, yaw);
+    const from = i === 0 ? .9 / len : 0; if (from >= 1) continue;
+    const sx = ax + (bx - ax) * from, sy = ay + (by - ay) * from, l2 = len * (1 - from);
+    pos.set((sx + bx) / 2 * S, .025, (sy + by) / 2 * S); sc.set(1, 1, l2 * S + .2); m.compose(pos, q, sc); level.navi.setMatrixAt(n++, m);
+    if (ch && c < 60 && i > 0) { pos.set((ax + bx) / 2 * S, .03, (ay + by) / 2 * S); sc.set(1, 1, 1); q.setFromAxisAngle(up, yaw + Math.PI); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); }
   }
-  nv.count = n; nv.instanceMatrix.needsUpdate = true;
+  nv.count = n; nv.instanceMatrix.needsUpdate = true; if (ch) { ch.count = c; ch.instanceMatrix.needsUpdate = true; }
 }
 
 // ---------- HUD ----------
@@ -109,8 +129,11 @@ function updateHud() {
   $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
   $("missionText").textContent = cur ? cur.text : "Zum Auto!";
   $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${o.title ? `<span class="obj-title">${esc(o.title)}</span>` : ""}${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">Nebenjob</span>'}</li>`).join("");
-  $("fzNow").innerHTML = cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>";
+  const RR = run.route && ROUTES[run.route];
+  $("fzNow").innerHTML = (RR ? `<span class="route-tag">Route: ${esc(RR.name)}</span> ` : "") + (cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>");
   $("sideList").innerHTML = run.sides.size ? SIDE.filter(s => run.sides.has(s.id)).map(s => `<li>${esc(s.name)} <span class="opt-tag">${esc(s.desc)}</span></li>`).join("") : "<li>Keine gewählt.</li>";
+  $("cbList").innerHTML = run.callbacks.length ? run.callbacks.map(c => `<li>${esc(c)}</li>`).join("") + (run.callbacks.length >= 2 ? '<li class="opt-tag">Ab 2 offenen Rückrufen wirst du ausgerufen.</li>' : "") : "<li>Keine. Erstaunlich.</li>";
+  $("btnCallbacks").hidden = !run.callbacks.length;
   $("taskList").innerHTML = run.tasks.length ? run.tasks.map(t => `<li>${esc(t)}</li>`).join("") : "<li>Nichts. Verdächtig.</li>";
   const bag = Object.keys(BAG_NAMES).filter(k => run.flags.has(k)).map(k => `<li>${esc(BAG_NAMES[k])}</li>`);
   $("bagList").innerHTML = bag.length ? bag.join("") : "<li>Leer. Wie das Budget.</li>";
@@ -128,6 +151,7 @@ function updateEnergy() {
 function buffText() {
   const b = [];
   if (player.hidden) b.push("VERSTECKT");
+  if (player.civil) b.push("🥼ZIVIL");
   if (player.busy > 0) b.push("📋" + Math.ceil(player.busy));
   if (player.coffee > 0) b.push("☕" + Math.ceil(player.coffee));
   if (player.airplane > 0) b.push("✈️" + Math.ceil(player.airplane));
@@ -205,6 +229,8 @@ function useItem(k) {
     }
     case "6": takeItem(k); st = gain({ energy: 25 }); line = "Schmeckt nach Vanille und Kreidestaub. Eigentlich für die Türsteher gedacht."; break;
     case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für PD-Phil auf."; break;
+    case "p": takeItem(k); { const n = throwPen(); st = [good(n ? n + " abgelenkt" : "Klack")]; line = n ? "Klack! Der Kuli landet irgendwo da hinten. Alle drehen sich um und gehen nachsehen. Kugelschreiber: das Schweizer Taschenmesser der Medizin." : "Klack. Niemand in der Nähe, der sich dafür interessiert. Der Kuli ist trotzdem weg."; } break;
+    case "c": toggleCoat(); line = player.civil ? "Kittel aus. Ohne Kittel erkennt dich das Personal nicht mehr: nur ein weiterer müder Besucher. Patienten und Angehörige fragen dich dafür nach der Toilette." : "Kittel wieder an. Du bist wieder Ärztin oder Arzt. Leider."; st = [good(player.civil ? "Zivil" : "Kittel an")]; break;
     case "9": takeItem(k); player.lamp = 100; player.lampOn = true; st = [good("Lampe 100 %")]; line = "Frische Batterie. Die letzte im Haus. Das Controlling weiß davon nichts."; break;
   }
   showToast(def.emoji, "#f3f8f1", def.name, line, st); updateHud();

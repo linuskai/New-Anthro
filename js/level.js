@@ -205,7 +205,8 @@ function buildLevel(idx) {
       else if (v < .32) planeM(graffitiTex(pick(["Wer liest das? Geh heim.", "Budget: 0 €", "NUR KURZ"])), 2.2, .55, 1.3, .01, true);
       continue;
     }
-    if (v < .1) { const p = theme === "derma" ? { bg: "#e26fa0", t: "SELF CARE", b: ["Creme ist", "Medizin.", "— Dr. Glatt"], i: "🧖" } : theme === "radio" && r() < .5 ? POSTERS[6] : pick(POSTERS); place(framed(posterTex(p), .72, 1.0, 0x2a2a2a), 1.65); }
+    if (v < .07 && theme !== "radio") place(funnyArt(Math.floor(r() * 99)), 1.65);
+    else if (v < .1) { const p = theme === "derma" ? { bg: "#e26fa0", t: "SELF CARE", b: ["Creme ist", "Medizin.", "— Dr. Glatt"], i: "🧖" } : theme === "radio" && r() < .5 ? POSTERS[6] : pick(POSTERS); place(framed(posterTex(p), .72, 1.0, 0x2a2a2a), 1.65); }
     else if (v < .17 && theme !== "radio" && theme !== "derma") place(chairRow(3, theme === "er" ? 0xc0322a : 0x2b7bb9), 0, 0, (r() - .5) * .6);
     else if (v < .2) { const ext = mesh(GEO.cyl, lambert(0xd42b2b), .11, .55, .11); place(ext, .45, .18); place(mesh(GEO.box, lambert(0x222222), .2, .05, .05), .76, .18); }
     else if (v < .24) { place(sanitizer(), 1.25); planeM(textTex(["20 ct"], "#f2c300", "#222", 128, 64, 34), .16, .08, 1.45, .01); }
@@ -225,6 +226,44 @@ function buildLevel(idx) {
     else if (v < .52 && theme === "radio") { const lb = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: xrayTex() })); lv.perMat.push(lb.material); lb.scale.set(.7, .88, 1); place(lb, 1.6); }
     else if (v < .56 && theme === "derma") place(livePlant(true), 0, .35);
     else if (v < .58 && theme !== "radio") place(livePlant(), 0, .3);
+  }
+  // one fire alarm per floor: a trick with consequences
+  if (!L.safe && !L.final) {
+    const cands = faces.filter(([x, y]) => lv.zone[y * GW + x] === 1 && grid[y][x] === "." && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) > 5 && !DIRS.some(([dx, dy]) => "d,".includes(cell(x + dx, y + dy))));
+    if (cands.length) {
+      const [x, y, dx, dy] = cands[Math.floor(r() * cands.length)];
+      const fa = new THREE.Group(); fa.add(at(boxMesh(.32, .32, .1, 0xd42b2b), 0, 1.45, .05)); fa.add(at(boxMesh(.2, .2, .02, 0xf6f6ef), 0, 1.45, .11)); fa.add(at(mesh(GEO.ball, basic(0xff3a2a), .03), 0, 1.45, .13));
+      fa.add(at(plate(textTex(["FEUERMELDER", "nur im Notfall", "(oder bei Feierabend)"], "#d42b2b", "#fff", 256, 130, 26), .44, .22), 0, 1.84, .02));
+      wallPlace(lv, fa, x, y, dx, dy, (r() - .5) * .8);
+      lv.props.push({ kind: "fire", x: x + .5 + dx * .3, y: y + .5 + dy * .3 });
+    }
+  }
+  // nurse station on wards: counter, monitors, files, the phone that never stops
+  if (["ward", "ortho", "er"].includes(theme)) {
+    const cands = faces.filter(([x, y, dx, dy]) => lv.zone[y * GW + x] === 1 && grid[y][x] === "." && !DIRS.some(([a, b]) => "d,E".includes(cell(x + a, y + b))) && !lv.props.some(p => Math.hypot(p.x - x - .5, p.y - y - .5) < 1.2) && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) > 3);
+    if (cands.length) {
+      const [x, y, dx, dy] = cands[Math.floor(r() * cands.length)], st = new THREE.Group();
+      st.add(at(boxMesh(2.5, 1.05, .6, 0xe8e2d8), 0, .52, .3)); st.add(at(boxMesh(2.6, .05, .7, 0x6f8f9a), 0, 1.07, .33));
+      for (const xx of [-.7, .5]) { const m = monitorModel(xx < 0 ? kisTex() : rosterTex(), .45); m.position.set(xx, 1.1, .2); st.add(m); }
+      st.add(at(phoneModel(), .05, 1.1, .45)); st.add(at(paperStack(10), -1.05, 1.1, .4)); st.add(at(mugModel("PFLEGE|IST LIEBE", true), 1.05, 1.1, .45));
+      st.add(at(plate(textTex(["STATIONSSTÜTZPUNKT", "Bitte klingeln (bringt nichts)"], "#2b7bb9", "#fff", 512, 130, 40), 1.4, .36), 0, 2.2, .02));
+      wallPlace(lv, st, x, y, dx, dy, 0, 0, [2.6, .7]);
+    }
+  }
+  // escape route signs from the start to the stairwell, like real hospitals
+  if (lv.exit) {
+    const path = bfs(lv.start[0], lv.start[1], lv.exit[0], lv.exit[1], true, playerPass);
+    if (path) for (let i = 2; i < path.length - 1; i++) {
+      const dp = [path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]], dn = [path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1]];
+      const turn = dp[0] !== dn[0] || dp[1] !== dn[1];
+      if (!(turn || i % 5 === 0) || lv.zone[path[i][1] * GW + path[i][0]] !== 1) continue;
+      const cross = dp[0] * dn[1] - dp[1] * dn[0], arrow = !turn ? "⬆" : cross > 0 ? "➡" : "⬅";
+      const [px, py] = path[i], th = Math.atan2(-dp[0], -dp[1]);
+      const front = plate(textTex(["🏃 " + arrow, "TREPPENHAUS"], "#14a052", "#fff", 384, 128, 40), .95, .32), back = plate(textTex(["↩", "TREPPENHAUS"], "#14a052", "#fff", 384, 128, 40), .95, .32);
+      front.position.set((px + .5) * S, 2.78, (py + .5) * S); front.rotation.y = th; group.add(front);
+      back.position.copy(front.position); back.rotation.y = th + Math.PI; group.add(back);
+      group.add(at(mesh(GEO.box, lambert(0x8a8f8a), .02, .3, .02), (px + .5) * S, 3.05, (py + .5) * S));
+    }
   }
   // waiting room chairs in the emergency department
   if (theme === "er") for (const [x, y] of [[2, 3], [5, 3], [8, 3], [2, 5], [6, 6]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); addCollider(lv, (x + .5) * S - 1, (y + .5) * S - .3, (x + .5) * S + 1, (y + .5) * S + .3); }
@@ -288,9 +327,9 @@ function buildLevel(idx) {
       g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
       lv.props.push({ kind: "W", x: x + .5, y: y + .5, used: false });
     } else if (ch === "a" || ch === "j") {
-      const g = makeCar(ch === "j" ? 0x1f9d55 : pick([0xc0322a, 0x2d3f8f, 0xd8d8d8, 0x333333, 0xe8a33a, 0x5a7a8a]));
-      g.position.set(wx, 0, wz); g.rotation.y = r() < .5 ? 0 : Math.PI; group.add(g);
-      if (ch === "j") { group.add(at(sprite(labelTex("DEIN AUTO", "#1f9d55", "#fff"), 1.4, .26), wx, 2.2, wz)); lv.props.push({ kind: "j", x: x + .5, y: y + .5 }); }
+      const g = ch === "j" ? vehicleModel(run && run.route) : makeCar(pick([0xc0322a, 0x2d3f8f, 0xd8d8d8, 0x333333, 0xe8a33a, 0x5a7a8a]));
+      g.position.set(wx, 0, wz); g.rotation.y = ch === "j" ? Math.PI / 2 : r() < .5 ? 0 : Math.PI; group.add(g);
+      if (ch === "j") { const R = run && run.route && ROUTES[run.route]; group.add(at(sprite(labelTex(R && run.route !== "stay" ? "DEINE FLUCHT · " + R.name.toUpperCase() : "DEIN AUTO", "#1f9d55", "#fff"), 1.8, .3), wx, 3.1, wz)); lv.props.push({ kind: "j", x: x + .5, y: y + .5 }); }
     } else if (ch === "=") {
       group.add(at(boxMesh(.35, 1.1, .35, 0xf2c300), wx - 1.2, .55, wz));
       const arm = new THREE.Group(); arm.position.set(wx - 1.2, 1.0, wz);
@@ -398,11 +437,16 @@ function buildLevel(idx) {
 
   // navigation dots
   lv.naviMat = new THREE.MeshBasicMaterial({ color: 0x3cff8a, transparent: true, opacity: .8, depthWrite: false }); lv.perMat.push(lv.naviMat);
-  const dotGeo = GEO.dot.clone(); dotGeo.rotateX(-Math.PI / 2); lv.perGeo.push(dotGeo);
-  lv.navi = new THREE.InstancedMesh(dotGeo, lv.naviMat, 90); lv.navi.count = 0; lv.navi.frustumCulled = false; group.add(lv.navi);
+  const lineGeo = new THREE.PlaneGeometry(.2, 1); lineGeo.rotateX(-Math.PI / 2); lv.perGeo.push(lineGeo);
+  lv.navi = new THREE.InstancedMesh(lineGeo, lv.naviMat, 90); lv.navi.count = 0; lv.navi.frustumCulled = false; group.add(lv.navi);
+  const chev = new THREE.Shape(); chev.moveTo(-.22, -.12); chev.lineTo(0, .12); chev.lineTo(.22, -.12); chev.lineTo(.12, -.12); chev.lineTo(0, .02); chev.lineTo(-.12, -.12); chev.closePath();
+  const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2); lv.perGeo.push(chevGeo);
+  lv.chevMat = new THREE.MeshBasicMaterial({ color: 0xeaffef, transparent: true, opacity: .95, depthWrite: false }); lv.perMat.push(lv.chevMat);
+  lv.chev = new THREE.InstancedMesh(chevGeo, lv.chevMat, 60); lv.chev.count = 0; lv.chev.frustumCulled = false; group.add(lv.chev);
 
   lv.startYaw = 0;
   for (const [dx, dy] of DIRS) if (openTile(lv.start[0] + dx, lv.start[1] + dy)) { lv.startYaw = Math.atan2(-dx, -dy); break; }
+  buildRouteProps(lv, idx);
   // everything that moves or changes stays separate; the rest is merged into a few big meshes
   for (const e of lv.enemies) { dyn(e.mesh); if (e.cone) dyn(e.cone); }
   for (const o of [...lv.friends, ...lv.items, ...lv.papers, ...lv.transports, ...lv.secrets]) dyn(o.mesh);

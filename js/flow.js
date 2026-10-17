@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovBrief", "ovIntro", "ovPause", "ovEnd"];
+const OVERLAYS = ["ovTitle", "ovMail", "ovBrief", "ovIntro", "ovPause", "ovEnd"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
@@ -30,7 +30,7 @@ function endStory() {
   if (!story) return;
   story = null; $("story").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
-  showBrief(false);
+  showMail();
 }
 $("btnStoryNext").addEventListener("click", storyNext);
 $("btnSkip").addEventListener("click", endStory);
@@ -55,7 +55,7 @@ function missionCard(eyebrow, title, sub, done) {
 }
 function announceObjective() {
   const c = currentObjective(); if (!c) return;
-  missionCard(c.isExit ? "Weiter" : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
+  missionCard(c.isExit ? "Weiter" : c.route ? "Route · " + c.route : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
   setTimeout(() => { if (mode === "play" && c.brief) showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800);
 }
 function trackObjectives() {
@@ -71,6 +71,33 @@ function trackObjectives() {
   }
   if (changed) { updateHud(); setTimeout(() => { if (mode === "play") announceObjective(); }, 3900); }
 }
+
+// ---------- inbox: choose your way out ----------
+let mailPick = null;
+const routeNeeds = k => { const R = ROUTES[k], out = R.promote.map(id => (BAG_NAMES[id] || id) + " (" + (id === "approbation" ? "Innere, Spind" : id === "zeugnis" ? "Radiologie" : id === "cream" ? "Dermatologie" : "") + ")"); for (const g of R.goals) out.push(g.title + ": " + (typeof g.text === "function" ? g.text().replace(/ \(.*\)$/, "") : g.text) + " (" + LEVELS[g.lvl].short.split(" · ")[1] + ")"); return out.length ? out : ["Nichts. Einfach raus."]; };
+function showMail() {
+  mode = "brief"; mailPick = null; $("mailView").hidden = true; $("mailListWrap").hidden = false;
+  $("mailList").innerHTML = ROUTE_ORDER.map(k => { const R = ROUTES[k]; return `<button type="button" class="mailrow" data-k="${k}"><span class="mail-av">${R.av}</span><span><b>${esc(R.from)}</b><span class="subj">${esc(R.subject)}</span><span class="snip">${esc(R.mail.slice(0, 90))}…</span></span></button>`; }).join("");
+  show("ovMail"); sfx.beep();
+  setTimeout(() => { const f = document.querySelector(".mailrow"); if (f) f.focus({ preventScroll: true }); }, 50);
+}
+$("mailList").addEventListener("click", e => {
+  const b = e.target.closest(".mailrow"); if (!b) return;
+  const k = b.dataset.k, R = ROUTES[k]; mailPick = k; sfx.tick();
+  $("mailAv").textContent = R.av; $("mailFrom").textContent = R.from; $("mailSubj").textContent = R.subject; $("mailBody").textContent = R.mail;
+  $("mailPerks").innerHTML = R.perks.map(p => `<span>${esc(p)}</span>`).join("");
+  $("mailNeeds").innerHTML = routeNeeds(k).map(n => `<li>${esc(n)}</li>`).join("");
+  $("btnMailTake").firstElementChild.textContent = k === "stay" ? "Einfach heim · los geht's" : "Zusagen · los geht's";
+  $("mailListWrap").hidden = true; $("mailView").hidden = false; $("ovMail").scrollTop = 0;
+  setTimeout(() => $("btnMailTake").focus({ preventScroll: true }), 30);
+});
+$("btnMailBack").addEventListener("click", () => { $("mailView").hidden = true; $("mailListWrap").hidden = false; });
+$("btnMailTake").addEventListener("click", () => {
+  if (!mailPick) return;
+  run.route = mailPick; if (mailPick !== "stay") run.offers.add(mailPick);
+  buildRouteProps(level, run.idx); sfx.ding(); updateHud();
+  showBrief(false);
+});
 
 // ---------- briefing ----------
 let briefReturn = null;
@@ -89,6 +116,8 @@ $("sideBox").addEventListener("click", e => {
 });
 function showBrief(fromGame) {
   $("planList").innerHTML = PLAN.map((n, i) => { const [h, ...rest] = n.split(": "); return `<li class="${i < run.idx ? "done" : i === run.idx ? "now" : ""}"><span><b>${esc(h)}</b> · ${esc(rest.join(": "))}</span></li>`; }).join("");
+  const R = ROUTES[run.route || "stay"];
+  $("briefRoute").innerHTML = `Deine Route: <span class="route-tag">${esc(R.name)}</span> · ${esc(R.perks[0])}. Zu tun: ${esc(routeNeeds(run.route || "stay").join(" · "))}`;
   briefReturn = fromGame ? mode : null;
   if (fromGame) clearInputs();
   sideButtons(!!fromGame);
@@ -107,7 +136,7 @@ function showIntro(bonus) {
   const L = LEVELS[run.idx];
   $("introEyebrow").textContent = `${L.floor} · Abschnitt ${run.idx + 1} von ${LEVELS.length}`;
   $("introName").textContent = L.name; $("introTip").textContent = L.tip;
-  $("introObj").innerHTML = L.objectives.map(o => `<li><span class="ico" style="background:${o.main ? "#f2b33d" : "#f3f8f1"}">${o.main ? "!" : "?"}</span><span><b>${o.main ? "Mission" : "Optional"}</b> · ${esc(typeof o.text === "function" ? o.text() : o.text)}</span></li>`).join("");
+  $("introObj").innerHTML = objectives().filter(o => !o.isExit).map(o => `<li><span class="ico" style="background:${o.main ? "#f2b33d" : "#f3f8f1"}">${o.main ? "!" : "?"}</span><span><b>${o.route ? "Route " + esc(o.route) : o.main ? "Mission" : "Nebenjob"}</b> · ${esc(o.title ? o.title + ": " : "")}${esc(o.text)}</span></li>`).join("");
   $("introBonus").hidden = !bonus; $("introBonus").textContent = bonus || "";
   $("btnGo").firstElementChild.textContent = L.env === "radio" || L.env === "cellar" ? "Taschenlampe an" : L.safe ? "Durchatmen" : L.final ? "Zum Auto" : "Weiter";
   mode = "intro"; show("ovIntro");
@@ -129,15 +158,18 @@ function nextFloor() {
 
 // ---------- endings ----------
 function finale() {
-  const n = run.tasks.length;
-  const options = [{ label: "Heimfahren. Montag wiederkommen.", act: () => { showEnd("stay", n); return { end: true }; } }];
+  const n = run.tasks.length, R = ROUTES[run.route || "stay"], mine = run.route && run.route !== "stay" ? run.route : null;
+  const options = [];
+  if (mine) { const miss = routeMissing(mine); options.push({ label: `Einsteigen: ${R.name}`, hint: miss.length ? "fehlt: " + miss.join(", ") : "Route erfüllt", disabled: !!miss.length, act: () => { showEnd(mine, n); return { end: true }; } }); }
   for (const k of ["pharma", "botox", "consult", "tele", "amt", "ship"]) {
-    if (!run.offers.has(k)) continue;
-    const o = OFFERS[k], miss = o.need.filter(x => !run.flags.has(x)).map(x => BAG_NAMES[x]);
-    options.push({ label: `Zusagen: ${o.name}`, hint: miss.length ? "fehlt: " + miss.join(", ") : "", disabled: !!miss.length, act: () => { showEnd(k, n); return { end: true }; } });
+    if (k === mine || !run.offers.has(k)) continue;
+    const ready = ROUTES[k] && routeReady(k), o = OFFERS[k], miss = ROUTES[k] ? routeMissing(k) : o.need.filter(x => !run.flags.has(x)).map(x => BAG_NAMES[x]);
+    options.push({ label: `Umsatteln: ${o.name}`, hint: ready ? "möglich" : "fehlt: " + miss.slice(0, 2).join(", "), disabled: !ready, act: () => { showEnd(k, n); return { end: true }; } });
   }
-  openDialog({ av: "🚗", color: "#1f9d55", name: "Dein Auto", role: fmtTime(run.minutes) + " · es riecht nach Freiheit und Diesel",
-    text: run.offers.size ? "Du sitzt im Auto. Motor an. Das Handy vibriert: Die Angebote wollen eine Antwort. Was jetzt?" : "Du sitzt im Auto. Keine Angebote, nur der Montag. Vielleicht hättest du öfter ans Telefon gehen sollen.",
+  options.push({ label: mine ? "Doch nur heimfahren. Montag wiederkommen." : "Heimfahren. Montag wiederkommen.", act: () => { showEnd("stay", n); return { end: true }; } });
+  const lines = { pharma: "Fr. Goldmann lehnt an der Limousine und tippt auf ihre Uhr. „Approbation? Zeugnis?“", botox: "Dr. Glatt hupt aus dem pinken Cabrio. Das Verdeck ist offen. Es regnet. Sie lächelt trotzdem.", consult: "Das Business-Taxi wartet. Auf dem Rücksitz liegt ein Laptop mit 140 Folien. Folie 1: dein Foto vom Faxgerät.", tele: "Dein E-Scooter blinkt. Auf dem Lenker klebt ein Sticker: „Move fast and heal things“.", amt: "Das Dienstfahrrad lehnt an der Säule. Am Lenker hängt ein Klemmbrett mit Formular A39. Für morgen.", ship: "Der Hafen-Shuttle hupt dreimal. Der Fahrer trägt Hawaiihemd. „Leinen los, Doc!“" };
+  openDialog({ av: R.av, color: "#1f9d55", name: mine ? R.from.split(" · ")[0] : "Dein Auto", role: fmtTime(run.minutes) + " · Parkhaus P2 · der letzte Schritt",
+    text: mine ? lines[mine] + (routeReady(mine) ? " Alles dabei. Du musst nur noch einsteigen." : " Dir fehlt noch etwas. Du kannst zurückgehen oder es lassen.") : "Du sitzt im Auto. Motor an. Das Radio spielt „Highway to Hell“. Du schaltest um. „Stayin' Alive“. Wie passend.",
     options: options.slice(0, 7) });
 }
 const rankFor = over => over < 60 ? "Legende der Pünktlichkeit" : over < 120 ? "Fast pünktlich" : over < 200 ? "Typische Assistenzärztin, typischer Assistenzarzt" : over < 300 ? "Wohnt im Bereitschaftsraum" : "Gehört zum Inventar";
@@ -212,7 +244,7 @@ $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener(
 $("btnPlan").addEventListener("click", () => showBrief(true));
 $("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); });
 $("mission").addEventListener("click", () => { $("tasks").hidden = !$("tasks").hidden; });
-document.querySelector(".pager").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
+$("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
 if (settings.hudmin) document.body.classList.add("hudmin");
 function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); $("mapView").hidden = false; drawBigMap(); }
 function closeMap() { if (mode !== "map") return; $("mapView").hidden = true; mode = "play"; }
@@ -224,6 +256,7 @@ function applyShadows() {
   scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); });
 }
 $("btnTasksClose").addEventListener("click", () => { $("tasks").hidden = true; });
+$("btnCallbacks").addEventListener("click", () => { if (mode === "play") workCallbacks(); });
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
 bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
@@ -443,7 +476,8 @@ function render(time, dt) {
   for (const c of level.clocks) { c.m.rotation.z = -((tm % 60) / 60) * Math.PI * 2; c.h.rotation.z = -(((tm / 60) % 12) / 12) * Math.PI * 2; }
   if (run.rea && run.rea.beam) { const p = .5 + .5 * Math.sin(time * 8); run.rea.beam.material.opacity = .12 + .25 * p; reaLight.intensity = 1.2 * p; }
   if (level.exitGlow) level.exitGlow.intensity = exitOpen() ? .38 + Math.sin(time * 2) * .1 : .05;
-  if (level.navi) { level.naviMat.opacity = .55 + .3 * Math.sin(time * 5); level.navi.visible = mode === "play"; }
+  if (level.navi) { level.naviMat.opacity = .6 + .25 * Math.sin(time * 4); level.navi.visible = mode === "play"; if (level.chev) level.chev.visible = mode === "play"; }
+  if (level.callMat) level.callMat.color.setHex(Math.sin(time * 5) > 0 ? 0xff3020 : 0x5a1410);
   renderer.render(scene, camera);
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }
   drawWaypoint();

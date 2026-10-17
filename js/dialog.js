@@ -1,20 +1,68 @@
 /* Hospital Escape 3D · dialogue engine and all conversations. */
 let dlgState = null;
+
+// ---------- 3D portraits for the ID badge ----------
+let pR = null, pScene = null, pCam = null;
+const portraitCache = new WeakMap();
+function portraitFor(sp) {
+  if (!sp || typeof sp !== "object") return null;
+  if (portraitCache.has(sp)) return portraitCache.get(sp);
+  try {
+    if (!pR) {
+      const c = document.createElement("canvas"); c.width = 160; c.height = 172;
+      pR = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true, alpha: true }); pR.setPixelRatio(1);
+      pScene = new THREE.Scene(); pScene.add(new THREE.HemisphereLight(0xffffff, 0x8a9a94, .85));
+      const dl = new THREE.DirectionalLight(0xfff4e8, .75); dl.position.set(1.5, 2, 3); pScene.add(dl);
+      pCam = new THREE.PerspectiveCamera(26, 160 / 172, .05, 10);
+    }
+    const p = makePerson({ ...sp, noShadow: true, acc: null, trolley: false });
+    pScene.add(p.group); p.group.updateMatrixWorld(true);
+    const hp = new THREE.Vector3(); p.head.getWorldPosition(hp);
+    pCam.position.set(hp.x + .1, hp.y - .01, hp.z + .7); pCam.lookAt(hp.x, hp.y - .045, hp.z);
+    pR.setClearColor(0x000000, 0); pR.render(pScene, pCam);
+    const url = pR.domElement.toDataURL("image/png"); pScene.remove(p.group);
+    portraitCache.set(sp, url); return url;
+  } catch (e) { return null; }
+}
+
+// ---------- typewriter ----------
+let typeTimer = null;
+function typeText(text) {
+  const el = $("dlgText"); clearInterval(typeTimer); el.textContent = ""; let i = 0;
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) { el.textContent = text; return; }
+  typeTimer = setInterval(() => { i = Math.min(text.length, i + 3); el.textContent = text.slice(0, i); if (i >= text.length) clearInterval(typeTimer); }, 16);
+  el.dataset.full = text;
+}
+$("dlgBubble").addEventListener("click", () => { clearInterval(typeTimer); const el = $("dlgText"); if (el.dataset.full) el.textContent = el.dataset.full; });
+
+function optIcon(o, i) {
+  const h = o.hint || "", l = o.label || "";
+  if (/^(„)?Ja[.!]/.test(l) || l === "Ja.") return ["yes", "✓"];
+  if (/^(„)?Nein[.!]/.test(l)) return ["no", "✗"];
+  if (/%/.test(h)) return ["dice", "🎲"];
+  if (/abgeben|verbrauchen|braucht/.test(h)) return ["item", [...h][0]];
+  if (/^Losreißen|weg$/.test(l)) return ["run", "🏃"];
+  return ["", String(i + 1)];
+}
 function openDialog(d) {
   const val = v => typeof v === "function" ? v() : v;
   d = { ...d, options: d.options.map(o => ({ ...o, hint: val(o.hint), disabled: !!val(o.disabled) })) };
   dlgState = { ...d };
   mode = "dialog";
-  $("dlgAvatar").textContent = d.av; $("dlgAvatar").style.background = d.color || "#ddd";
+  $("dlgCard").style.setProperty("--role", d.color || "#9aa3a0");
+  const url = portraitFor(d.sp), ph = $("dlgPhoto");
+  ph.innerHTML = url ? `<img src="${url}" alt="">` : `<span id="dlgAvatar">${esc(d.av || "?")}</span>`;
   $("dlgName").textContent = d.name; $("dlgRole").textContent = d.role || "";
-  $("dlgText").textContent = d.text; $("dlgStamps").innerHTML = "";
+  typeText(d.text); $("dlgStamps").innerHTML = "";
   const box = $("dlgOpts"); box.innerHTML = "";
   d.options.forEach((o, i) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "opt"; b.disabled = !!o.disabled;
-    b.innerHTML = `<span>${i + 1}. ${esc(o.label)}</span>${o.hint ? `<small>${esc(o.hint)}</small>` : ""}`;
+    const [cls, ico] = optIcon(o, i);
+    const b = document.createElement("button"); b.type = "button"; b.className = "opt " + cls; b.disabled = !!o.disabled;
+    b.innerHTML = `<span class="ico">${esc(ico)}</span><span>${esc(o.label)}</span>${o.hint ? `<small>${esc(o.hint)}</small>` : "<small></small>"}`;
     b.addEventListener("click", () => chooseOption(i)); box.appendChild(b);
   });
-  $("dlg").hidden = false; $("prompt").hidden = true; clearInputs();
+  $("dlg").hidden = false; $("prompt").hidden = true; $("toast").hidden = true; toastT = 0; clearInputs();
   setTimeout(() => { const f = box.querySelector(".opt:not(:disabled)"); if (f) f.focus({ preventScroll: true }); }, 30);
 }
 function chooseOption(i) {
@@ -24,7 +72,7 @@ function chooseOption(i) {
   const res = o.act() || {};
   if (res.end) { $("dlg").hidden = true; dlgState = null; return; }
   if (res.next) { dlgState = null; res.next(); return; }
-  $("dlgText").textContent = res.text || "…";
+  typeText(res.text || "…");
   $("dlgStamps").innerHTML = stampsHtml(res.stamps || []);
   const box = $("dlgOpts"); box.innerHTML = "";
   const b = document.createElement("button"); b.type = "button"; b.className = "opt go"; b.textContent = "Weiter";
@@ -34,7 +82,7 @@ function chooseOption(i) {
 }
 function closeDialog() {
   if (!dlgState) return;
-  const d = dlgState; dlgState = null;
+  const d = dlgState; dlgState = null; clearInterval(typeTimer);
   $("dlg").hidden = true;
   if (mode === "dialog") mode = "play";
   if (d.onClose) d.onClose();
@@ -47,7 +95,7 @@ function runChain(e, intro, steps, finish) {
   let i = 0, score = 0;
   const ask = () => {
     const st = steps[i];
-    openDialog({ av: t.av, color: t.color, name: e.name, role: t.role + (steps.length > 1 ? ` · Frage ${i + 1} von ${steps.length}` : ""),
+    openDialog({ sp: e.person.sp, av: t.av, color: t.color, name: e.name, role: t.role + (steps.length > 1 ? ` · Frage ${i + 1} von ${steps.length}` : ""),
       text: (i === 0 && intro ? intro + " " : "") + st.q,
       options: st.options.map(o => ({ ...o, act: () => { const res = o.act() || {}; score += res.score || 0; if (res.stop) i = steps.length; return res; } })),
       onClose: () => {
@@ -66,6 +114,7 @@ const breakFree = (cost, text) => ({ label: "Losreißen und weg", hint: "−" + 
 function finishEncounter(e) {
   if (e.done) return;
   e.done = true; e.state = "leaving"; e.leaving = 3; e.aw = 0; player.inv = 2.5; run.talks++;
+  if ("PZF".includes(e.type)) { run.testi = (run.testi || 0) + 1; if (run.route === "tele" && run.testi <= 3) setTimeout(() => showToast("🎥", "#ff3fa4", "DocFlix", `Testimonial ${run.testi}/3 im Kasten. „Authentisch! Roh! Echt!“ – das Team`, []), 1200); }
   e.tri.visible = false;
   e.label.material.map = labelFor(TYPES[e.type], e.type === "Z" ? "✓ TRIAGIERT" : "✓ ERLEDIGT"); e.label.material.needsUpdate = true;
   const dm = distMap(e.tx, e.ty); let best = -1, bi = 0;
@@ -96,11 +145,11 @@ function bouncerDialog(e) {
     e.x = e.tx + .5 + side[0] * .62; e.tri.visible = false; e.label.material.map = labelFor(t, "✓ DURCHGELASSEN"); e.label.material.needsUpdate = true; sfx.ding();
     return { text, stamps: [good("Tür frei")] };
   };
-  openDialog({ av: t.av, color: "#f2c300", name: e.name, role: "Orthopädie · Security · Tür " + (bouncersCleared() + 1) + " von " + bouncersTotal(),
+  openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Orthopädie · Security · Tür " + (bouncersCleared() + 1) + " von " + bouncersTotal(),
     text: "„" + pick(["Name steht nicht auf der Liste.", "Hier kommt nur rein, wer mindestens 120 kg drückt.", "Orthopädie. Members only.", "Du kommst hier nicht rein. Zu wenig Muskeln."]) + "“",
     options: [
       { label: "Proteinshake anbieten", hint: hasItem("6") ? "🥤 verbrauchen" : "braucht 🥤", disabled: !hasItem("6"), act: () => { takeItem("6"); return clear("Er trinkt ihn in einem Zug. „Vanille. Respekt.“ Er tritt zur Seite."); } },
-      { label: "„Ich bin auch Orthopäde.“", act: () => ({ next: () => openDialog({ av: t.av, color: "#f2c300", name: e.name, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette.“",
+      { label: "„Ich bin auch Orthopäde.“", act: () => ({ next: () => openDialog({ sp: e.person.sp, av: t.av, color: "#f2c300", name: e.name, role: "Prüfung", text: "„Ach ja? Dann nenn mir die vier Muskeln der Rotatorenmanschette.“",
         options: [
           { label: "Bizeps, Trizeps, Quadrizeps, Wadl", act: () => ({ text: "„Wadl ist kein Muskel. Wadl ist ein Lebensgefühl.“ Er bleibt stehen.", stamps: pen({ nerves: 1 }) }) },
           { label: "Supraspinatus, Infraspinatus, Teres minor, Subscapularis", act: () => clear("Er nickt anerkennend. „SITS. Bruder.“ Ihr macht einen Faustcheck.") },
@@ -112,7 +161,7 @@ function bouncerDialog(e) {
 }
 
 function friendDialog(f) {
-  const def = FRIENDS[f.kind], base = { av: def.av, color: def.color, name: def.name, role: def.role };
+  const def = FRIENDS[f.kind], base = { sp: f.person ? f.person.sp : def.spec, av: def.av, color: def.color, name: def.name, role: def.role };
   f.talked++;
   if (f.kind === "b") return openDialog({ ...base, text: run.flags.has("secret1") ? "„Die Tür mit dem Verbotsschild ist offen. Wenn wer fragt: Ich war's nicht.“" : "„Na, Herr Doktor, wieder auf der Flucht? Ich kenn jeden Gang hier. Auch die, die es offiziell nicht gibt. Seit sie zwei von uns eingespart haben, putze ich das ganze Haus.“",
     options: [
@@ -144,15 +193,19 @@ function friendDialog(f) {
       { label: "„Hier, nimm drei.“", disabled: !run.tasks.length, hint: run.tasks.length ? "" : "keine Aufgaben", act: () => { const n = Math.min(3, run.tasks.length); run.tasks.splice(0, n); return { text: `Jonas strahlt. Er übernimmt ${n} Aufgabe${n > 1 ? "n" : ""}. Noch ist er glücklich.`, stamps: [good("−" + n + " Aufgaben")] }; } },
       { label: "„Lern nicht zu viel. Geh heim.“", disabled: !!f.home, act: () => { f.home = true; return { text: "Er schaut dich an, als hättest du ihm das Leben gerettet. Vielleicht hast du das.", stamps: gain({ nerves: 1 }) }; } },
     ] });
+  if (f.kind === "e") { run.flags.add("spa"); updateHud(); }
+  if (f.kind === "e" && (run.route === "botox" || run.offers.has("botox")) && !run.flags.has("probe") && !run.flags.has("probeLater")) return openDialog({ ...base, text: "„Ah, die Kollegin oder der Kollege mit den Augenringen! Probetag. Zwei Fragen. Keine Angst, es ist nur Dermatologie.“",
+    options: [opt("Probetag starten", () => ({ next: () => dermaProbe(base) })), opt("Erst Wellness, bitte", () => ({ next: () => { run.flags.add("probeLater"); friendDialog(f); } }))] });
   if (f.kind === "e") return openDialog({ ...base, text: "„Willkommen in der Rettungsstation. Keine Dienste, keine Notfälle, nur Feuchtigkeit. Gurkenscheibe? Creme? Oder einen Job mit Feierabend um 15 Uhr?“",
     options: [
-      { label: "„Einmal alles, bitte.“ (Wellness)", disabled: run.flags.has("spa"), act: () => { run.flags.add("spa"); sfx.spa(); run.energy = 100; run.nerves = MAX_NERVES(); return { text: "Gurkenmaske, Fußbad, Handcreme. Du hörst zum ersten Mal seit 2019 deinen eigenen Puls. Er ist normal.", stamps: [good("Energie 100"), good("Nerven voll")] }; } },
+      { label: "„Einmal alles, bitte.“ (Wellness)", disabled: run.flags.has("spaFull"), act: () => { run.flags.add("spaFull"); sfx.spa(); run.energy = 100; run.nerves = MAX_NERVES(); return { text: "Gurkenmaske, Fußbad, Handcreme. Du hörst zum ersten Mal seit 2019 deinen eigenen Puls. Er ist normal.", stamps: [good("Energie 100"), good("Nerven voll")] }; } },
       { label: "„Erzählen Sie mehr über den Job.“", disabled: run.offers.has("botox"), act: () => { run.offers.add("botox"); return { text: "„Ästhetische Dermatologie. Montag bis Donnerstag. Keine Nachtdienste. Bringen Sie nur Ihre Approbation mit.“", stamps: [good("Jobangebot")] }; } },
+      { label: "„Ich will den Probetag machen.“", hint: "Route Dermatologie", disabled: run.flags.has("probe") || !(run.route === "botox" || run.offers.has("botox")), act: () => ({ next: () => dermaProbe(base) }) },
       { label: "„Haben Sie was gegen Augenringe?“", disabled: !!f.cream, act: () => { f.cream = true; addItem("+"); return { text: "„Gegen deine? Nein. Aber nimm die hier. Für unterwegs.“", stamps: [good("🫙 eingepackt")] }; } },
     ] });
   if (f.kind === "i") return openDialog({ ...base, text: "„OMG, ein echter Arzt! Kann ich ein Selfie machen? Für meine 400.000 Follower? #DoctorLife #Burnout #Aesthetic“",
     options: [
-      { label: "Lächeln (Selfie)", disabled: !!f.selfie, act: () => { f.selfie = true; return { text: "Das Foto geht viral: „Müder Arzt, ehrliche Augen“. Du fühlst dich kurz gesehen.", stamps: gain({ nerves: 1 }) }; } },
+      { label: "Lächeln (Selfie)", disabled: !!f.selfie, act: () => { f.selfie = true; run.flags.add("collab"); return { text: "Das Foto geht viral: „Müder Arzt, ehrliche Augen“. Du fühlst dich kurz gesehen.", stamps: gain({ nerves: 1 }) }; } },
       { label: "„Bitte keine Fotos, ich bin auf der Flucht.“", act: () => ({ text: "„Das ist SO relatable.“ Sie postet es trotzdem." }) },
     ] });
 }
@@ -165,3 +218,25 @@ function ticketDialog() {
     ], onClose: () => sfx.pick() });
 }
 function openSecrets() { for (const s of level.secrets) { grid[s.y][s.x] = "."; s.mesh.visible = false; } sfx.knock(); }
+
+function dermaProbe(base) {
+  let ok = 0;
+  const q2 = () => openDialog({ ...base, role: "Probetag · Frage 2 von 2", text: "„Letzte Frage: Ein Patient hat 47 Muttermale. Was machst du zuerst?“",
+    options: [
+      opt("„Auflichtmikroskopie, Ganzkörper-Status, dokumentieren.“", () => { ok++; return finish(); }),
+      opt("„Ich zähle nach. Vielleicht sind's 46.“", () => finish()),
+      opt("„Ich biete ihm ein Peeling an. 89 Euro.“", () => { ok++; return finish("„Sie DENKEN schon wie eine Praxis!“"); })] });
+  const finish = extra => { run.flags.add("probe"); run.offers.add("botox"); return { text: (extra ? extra + " " : "") + (ok >= 1 ? "Dr. Glatt klatscht. „Bestanden! Montag 9 Uhr. Nicht früher, um Gottes willen.“" : "„Naja. Aber Ihre Augenringe brauchen uns. Bestanden aus medizinischen Gründen.“"), stamps: [good("Probetag bestanden"), good("Jobangebot")] }; };
+  openDialog({ ...base, role: "Probetag · Frage 1 von 2", text: "„Eine Patientin will ‚so aussehen wie vor zehn Jahren‘. Was sagst du?“",
+    options: [
+      opt("„Das kostet zehn Jahre Urlaub.“", () => ({ next: () => { ok++; q2(); } })),
+      opt("„Hyaluron, Botox, Licht aus.“", () => ({ next: () => { ok++; q2(); } })),
+      opt("„Ich verschreibe Ibuprofen.“", () => ({ next: () => q2() }))] });
+}
+function stampDialog(e) {
+  openDialog({ sp: e.person.sp, av: "🤓", color: "#9aa3a0", name: e.name, role: "Controlling · Stempelhoheit", text: "„Ein Stempel? Für das GESUNDHEITSAMT? Haben Sie Formular A38?“",
+    options: [
+      opt("Formular A38 vorlegen", () => { run.flags.add("stamp1"); finishEncounter(e); return { text: "Er prüft das Formular 4 Minuten. Er riecht daran. Dann stempelt er. Zweimal. „Der zweite ist gratis. Ausnahmsweise.“", stamps: [good("Stempel Controlling")] }; }, () => run.flags.has("a38") ? "📄" : "braucht A38", () => !run.flags.has("a38")),
+      opt("„Ich kodiere Ihnen eine Nebendiagnose.“", () => { if (!chance(.5)) { e.stun = 5; player.inv = 3; return { text: "„Netter Versuch. Erst Formular 17b, dann reden wir.“ Er blättert beleidigt in seinem Ordner.", stamps: pen({ tasks: ["Formular 17b"] }) }; } run.flags.add("stamp1"); finishEncounter(e); return { text: "Seine Augen leuchten. „R45.4?“ – „R45.4.“ Ratsch. Stempel.", stamps: [good("Stempel Controlling")] }; }, "50 %"),
+      opt("Später", () => { e.stun = 5; player.inv = 3; e.aw = 0; return { text: "„Später kostet extra.“ Er vertieft sich wieder in eine Tabelle." }; })] });
+}

@@ -67,12 +67,12 @@ const LEVELS = [
     safeNames: [],
     tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Und vielleicht gibt es einen Job mit Feierabend um 15 Uhr.",
     objectives: [
-      { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Wellness bei Dr. Glatt", main: true, at: "friend:e",
+      { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Bei Dr. Glatt melden (oder auf eine Wellness-Liege)", main: true, at: "friend:e",
         brief: "Die Dermatologie ist die einzige Abteilung mit Feierabend. Dr. Glatt besteht auf einer Behandlung, bevor du weiterdarfst. Medizinisch notwendig, sagt sie." },
       { id: "cream", title: "Glanz für unterwegs", text: "Wundercreme einpacken", at: "item:+", done: () => run.picked.has("+"),
         brief: "Die Wundercreme von Dr. Glatt: +1 Nerv, +60 Energie. Nebenwirkung: Du glänzt." }],
     exitText: "Treppenhaus → Keller", lock: "Dr. Glatt besteht auf Wellness. Ohne Gurkenscheibe kein Weiterkommen.",
-    map: ["#########################", "#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:::+:#", "#:::::::#:::::::#:::::::#", "####d#######d#######d####", "#S.......$...........i..^", "######d#########d######.#", "#:::::::::::#:::::::###E#", "#:+:::e:::::#:::W:::#####", "#:::::::::::#:::::::#####", "#########################"] },
+    map: ["#########################", "#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:R:+:#", "#:::::::#:::::::#:::::::#", "####d#######d#######d####", "#S.......$...R.......i..^", "######d#########d######.#", "#:::::::::::#:::::::###E#", "#:+:::e::R::#:::W:::#####", "#:::::::::::#:::::::#####", "#########################"] },
   { key: "cellar", short: "UG · KELLER", name: "Keller · Pathologie & Archiv", floor: "UG", room: 0, env: "cellar", envOn: "cellarOn",
     safeNames: [["WERKSTATT", "Hausmeister Schraube · Zutritt nur mit Bier"]],
     tip: "Das Treppenhaus ins EG ist gesperrt (Brandschutzbegehung seit 2021). Der Weg führt durch den Keller. Strom: weg. Wartung: gestrichen. Und Dr. Ewig ist noch da.",
@@ -151,6 +151,9 @@ const TYPES = {
        spec: () => ({ skin: SKIN[1], hair: 0xd9b26c, hairStyle: "spiky", coat: true, shirt: 0x4a7fd0, pants: 0x1f2a44, glasses: "sunTop", acc: "laptop", shoes: 0xb08850 }),
        walk: .9, approach: 1.5, range: 6, fov: .4, detect: .8, barks: ["Buddy! Kurze Statistikfrage!", "Impact Factor, Baby!", "Du wärst perfekter Co-Autor!"],
        lines: ["Hey Buddy! Kurze Frage für mein Paper. Ich habilitier halt nebenbei.", "Ich hab da eine Studie. Drei Fragen, dann darfst du gehen. Vielleicht.", "Impact Factor, Baby! Hilf mir mal kurz mit der Statistik."] },
+  R: { label: "DERMATOLOGIN", role: "Dermatologie · neugierig", who: () => rnd(["Dr. Seidig", "Dr. Porenrein", "Dr. Glow", "Dr. Hyaluron"]), av: "💅", color: "#f6c1d4",
+       spec: () => ({ skin: rnd([0xf6dcc8, 0xf1c9a5, 0xe0ac7e]), hair: rnd([0xd9b26c, 0x2b1d14, 0x9a6b3f]), hairStyle: rnd(["long", "bun"]), coat: true, shirt: 0xf6c1d4, pants: 0xf2f2f2, shoes: 0xf2f2f2, glasses: "sunTop", acc: "mug", mood: "smile" }),
+       walk: .45, approach: 1.0, range: 5, fov: .45, detect: .7, barks: ["Oh! Ein ECHTER Arzt!", "Darf ich was fragen?", "Wie aufregend, Blut!"] },
   g: { label: "DR. EWIG", role: "Assistenzarzt seit 2009", who: () => "Dr. Ewig", av: "👻", color: "#d9e4ff",
        spec: () => ({ skin: 0xe8eeff, hair: 0xe8eeff, hairStyle: "messy", coat: true, shirt: 0xe8eeff, pants: 0xe8eeff, ghost: true, pose: "zombie" }),
        walk: .3, approach: .55, range: 7, fov: -1, detect: .6, ghost: true, barks: ["Bleib doch…", "Nur kurz…", "Für immer…"] },
@@ -184,9 +187,11 @@ const ITEMS = {
   "0": { emoji: "🥫", name: "Energydrink", desc: "+55 Energie" },
   "$": { emoji: "🍩", name: "Donut", desc: "+1 Nerv, +15 Energie" },
   "+": { emoji: "🫙", name: "Wundercreme", desc: "+60 Energie, +1 Nerv" },
+  p: { emoji: "✏️", name: "Kugelschreiber", desc: "Werfen: macht Lärm, lenkt ab" },
+  c: { emoji: "🥼", name: "Kittel", desc: "Ausziehen: Personal erkennt dich nicht mehr" },
   "&": { emoji: "📜", name: "Arbeitszeugnis", desc: "„…war stets bemüht…“", mission: "zeugnis" },
 };
-const INV_ORDER = ["1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
+const INV_ORDER = ["c", "p", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
 
 const OFFERS = {
   pharma: { name: "Pharmazeutika AG (Pharma)", need: ["approbation", "zeugnis"] },
@@ -196,15 +201,15 @@ const OFFERS = {
   amt: { name: "Gesundheitsamt (Behörde)", need: ["approbation"] },
   ship: { name: "MS Sorgenfrei (Kreuzfahrt)", need: ["approbation"] },
 };
-const BAG_NAMES = { key: "Autoschlüssel", approbation: "Approbationsurkunde", zeugnis: "Arbeitszeugnis", ticket: "Parkticket", fuse: "Ersatzsicherung" };
+const BAG_NAMES = { key: "Autoschlüssel", approbation: "Approbationsurkunde", zeugnis: "Arbeitszeugnis", ticket: "Parkticket", fuse: "Ersatzsicherung", cream: "Sonnencreme", a38: "Formular A38", stamp1: "Stempel Controlling", stamp2: "Stempel Archiv", stamp3: "Stempel Notaufnahme", meds: "Reisetabletten", photo0: "Foto: Faxgerät", photo1: "Foto: Wartezeit", photo5: "Foto: Nummer 999" };
 
 const CALLS = [
-  { from: "Station 3B", sub: "Pflege", av: "🏥", text: "Hr. Lehmann hat Fieber. 37,6 °C! Kommen Sie mal?", acc: { mins: 10, task: "Hr. Lehmann: „Fieber“ 37,6 °C anschauen" }, dec: { task: "Rückruf Station 3B" } },
-  { from: "Bettendisposition", sub: "Verwaltung", av: "🛏️", text: "Wir haben 0 freie Betten und 14 Aufnahmen. Haben Sie eine Idee? Flur? Keller? Dach?", acc: { mins: 10, task: "Flurbett 24 organisieren" }, dec: { task: "Rückruf Bettendisposition" } },
-  { from: "IT-Abteilung", sub: "Helpdesk", av: "💻", text: "Ihr Passwort läuft in 5 Minuten ab. Das neue braucht 24 Zeichen, ein Emoji und eine Hieroglyphe.", acc: { mins: 8, note: "Neues Passwort: Feierabend2026!🙃𓀀" }, dec: { task: "Passwort zurücksetzen (Ticket #48211)" } },
+  { from: "Station 3B", dept: "N", sub: "Pflege", av: "🏥", text: "Hr. Lehmann hat Fieber. 37,6 °C! Kommen Sie mal?", acc: { mins: 10, task: "Hr. Lehmann: „Fieber“ 37,6 °C anschauen" }, dec: { task: "Rückruf Station 3B" } },
+  { from: "Bettendisposition", dept: "V", sub: "Verwaltung", av: "🛏️", text: "Wir haben 0 freie Betten und 14 Aufnahmen. Haben Sie eine Idee? Flur? Keller? Dach?", acc: { mins: 10, task: "Flurbett 24 organisieren" }, dec: { task: "Rückruf Bettendisposition" } },
+  { from: "IT-Abteilung", dept: "I", sub: "Helpdesk", av: "💻", text: "Ihr Passwort läuft in 5 Minuten ab. Das neue braucht 24 Zeichen, ein Emoji und eine Hieroglyphe.", acc: { mins: 8, note: "Neues Passwort: Feierabend2026!🙃𓀀" }, dec: { task: "Passwort zurücksetzen (Ticket #48211)" } },
   { from: "Kantine", sub: "Küche", av: "🍲", text: "Das Mittagessen von heute Mittag ist jetzt fertig. Möchten Sie?", acc: { mins: 5, energy: 25, note: "Lauwarme Kartoffeln. Beste Mahlzeit des Tages." }, dec: { note: "Die Kartoffeln warten. Bis morgen." } },
-  { from: "Chefsekretariat", sub: "Fr. Vorzimmer", av: "🗂️", text: "Der Chef möchte Sie sprechen. Es geht um den Dienstplan.", acc: { mins: 10, duties: 1 }, dec: { task: "Chefsekretariat zurückrufen (!!!)" } },
-  { from: "Mama", sub: "Mobil", av: "👩", text: "Isst du auch genug? Komm doch Sonntag zum Kuchen!", acc: { mins: 3, nerves: 1, energy: 10, note: "Mama ist glücklich. Du auch, kurz." }, dec: { task: "Mama zurückrufen (sie zählt mit)" } },
+  { from: "Chefsekretariat", dept: "C", sub: "Fr. Vorzimmer", av: "🗂️", text: "Der Chef möchte Sie sprechen. Es geht um den Dienstplan.", acc: { mins: 10, duties: 1 }, dec: { task: "Chefsekretariat zurückrufen (!!!)" } },
+  { from: "Mama", dept: "N", sub: "Mobil", av: "👩", text: "Isst du auch genug? Komm doch Sonntag zum Kuchen!", acc: { mins: 3, nerves: 1, energy: 10, note: "Mama ist glücklich. Du auch, kurz." }, dec: { task: "Mama zurückrufen (sie zählt mit)" } },
   { from: "Personalabteilung", sub: "Zeiterfassung", av: "⏱️", text: "Ihre Überstunden aus 2024 verfallen heute um Mitternacht.", acc: { nerves: -1, note: "Das tat weh." }, dec: { task: "Personalabteilung zurückrufen" } },
   { from: "Einkauf", sub: "Kostenstelle 4711", av: "🧻", text: "Ab morgen gibt es Toilettenpapier nur noch auf Antrag. Formular 88a. Möchten Sie vorbestellen?", acc: { mins: 5, task: "Formular 88a (Toilettenpapier)" }, dec: { note: "Viel Glück morgen." } },
   { from: "Consultwerk GmbH", sub: "Recruiting", av: "📈", offer: "consult", text: "Wir suchen Ärztinnen und Ärzte, die Krankenhäuser „effizienter“ machen. Sechsstellig. Interesse?", acc: { offer: "consult", note: "Angebot gespeichert. Deine Seele auch." }, dec: { note: "Sie melden sich „bei Gelegenheit“ wieder." } },
@@ -288,3 +293,43 @@ const POSTERS = [
 ];
 const GRAFFITI = ["ER GEHT NIE HEIM", "Dr. Ewig war hier · 2009", "NUR KURZ", "FEIERABEND IST EINE LÜGE", "Hilfe. Bin noch im Dienst.", "Budget: 0 €", "Dreh dich nicht um."];
 const SAFE_NAMES = [["BEREITSCHAFTSRAUM", "Hier findet dich keiner"], ["STATIONSKÜCHE", "Kaffee: eingespart. Sofa: noch da."], ["ABSTELLKAMMER", "Perfekt zum Verstecken"], ["WÄSCHEKAMMER", "Riecht nach Station 4"]];
+
+/* Career routes: chosen at the start in the inbox. Each adds its own goals per floor and ends with its own ride in the car park. */
+const ROUTES = {
+  pharma: { name: "Pharma", vehicle: "limo", av: "💼", from: "Fr. Goldmann · Pharmazeutika AG", subject: "Medical Advisor (m/w/d) · Firmenwagen · Feierabend 16:00",
+    mail: "Sehr geehrte Ärztin, sehr geehrter Arzt, wir haben Ihr Profil gesehen (Sie waren 31 Stunden online). Wir bieten: Firmenwagen, Homeoffice, Kongresse mit Buffet. Bringen Sie nur Approbation und Arbeitszeugnis mit. Ich warte heute Abend mit der Limousine im Parkhaus P2. Mit freundlichen Grüßen, Fr. Goldmann",
+    perks: ["Limousine wartet in P2", "Feierabend 16:00", "PowerPoint statt Pieper"], promote: ["approbation", "zeugnis"], goals: [] },
+  botox: { name: "Dermatologie", vehicle: "cabrio", av: "🧴", from: "Dr. Glatt · Praxis für ästhetische Dermatologie", subject: "Re: Ihre Augenringe · Stellenangebot (Mo–Do, 9–15 Uhr)",
+    mail: "Liebe Kollegin, lieber Kollege, ich habe Sie gestern im Aufzug gesehen und war erschüttert. Ihre Augenringe sind ein medizinischer Notfall. Kommen Sie zum Probetag in die Dermatologie (2. OG), Approbation mitbringen. Danach fahren wir mit meinem Cabrio in die Praxis. Gurkenwasser steht bereit. Herzlich, Dr. Glatt",
+    perks: ["Pinkes Cabrio", "Keine Nachtdienste", "Patienten bezahlen vorher"], promote: ["approbation"],
+    goals: [{ lvl: 3, id: "probe", title: "Probetag", text: "Probetag bei Dr. Glatt bestehen", at: "friend:e", brief: "Dr. Glatt will sehen, ob du „Dermatologie kannst“. Kleiner Test. Es geht vor allem um Gurken." }] },
+  consult: { name: "Beratung", vehicle: "taxi", av: "📈", from: "Consultwerk GmbH · Healthcare Excellence", subject: "Wir suchen Sie: Senior Consultant Krankenhaus-Effizienz",
+    mail: "Hi! Wir optimieren Krankenhäuser (hauptsächlich ihre Lichtschalter). Für Ihr Bewerbungsdeck brauchen wir drei Beweisfotos von Ineffizienz aus Ihrer eigenen Klinik. Sollte nicht schwer sein. Ein Business-Taxi holt Sie im Parkhaus ab. Best, Kevin (Partner, 27)",
+    perks: ["Business-Taxi", "Sechsstellig", "Folien statt Patienten"], promote: [],
+    goals: [
+      { lvl: 0, id: "photo0", title: "Beweisfoto 1/3", text: "Das Faxgerät fotografieren (in Betrieb!)", at: "prop:photo", kind: "photo", spot: [6, 5], obj: "fax", brief: "Ein Faxgerät. 2026. Es faxt gerade Befunde. Kevin wird weinen vor Glück." },
+      { lvl: 1, id: "photo1", title: "Beweisfoto 2/3", text: "Die Wartezeit-Anzeige fotografieren", at: "prop:photo", kind: "photo", spot: [5, 1], obj: "board", brief: "Die Anzeige im Gang zeigt „Wartezeit: 14 Std.“ Perfekt für Folie 12." },
+      { lvl: 5, id: "photo5", title: "Beweisfoto 3/3", text: "Die Wartenummer 999 fotografieren", at: "prop:photo", kind: "photo", spot: [3, 1], obj: "ticketboard", brief: "Wartenummer 999, aufgerufen: 12. Das Deck schreibt sich von selbst." }] },
+  tele: { name: "Startup", vehicle: "scooter", av: "📱", from: "DocFlix · Telemedizin, aber cool", subject: "yo 👋 Chief Wellbeing Officer?",
+    mail: "Hey du! Wir sind DocFlix: Krankschreibung per Video, aus dem Bett. Für unseren Pitch brauchen wir 3 echte Patienten-Testimonials (einfach mit Leuten reden!) und eine Kooperation mit einer Influencerin. Dein E-Scooter steht im Parkhaus. Obstkorb ist da. Equity auch (wert: 0 €). LG das Team (alle 24)",
+    perks: ["E-Scooter", "Kicker, Obstkorb", "Hoodie statt Kittel"], promote: [],
+    goals: [
+      { lvl: 3, id: "collab", title: "Kooperation", text: "Selfie mit @doc.wellness", at: "friend:i", brief: "Die Influencerin in der Dermatologie hat 400.000 Follower. Ein Selfie, und der Pitch läuft." },
+      { lvl: 5, id: "testi", title: "Content Creation", text: () => `3 Testimonials von Patienten (${Math.min(3, run.testi || 0)}/3)`, done: () => (run.testi || 0) >= 3, at: "enemy:Z", brief: "Lass dich von Patienten oder Pseudo-Notfällen ansprechen. Jedes Gespräch ist ein Testimonial. Ja, wirklich: Diesmal SOLLST du reden." }] },
+  amt: { name: "Behörde", vehicle: "bike", av: "🏛️", from: "Gesundheitsamt · Amtsärztlicher Dienst", subject: "Az. 4.117/26-B: Einstellung zum 01. (Formular A38 erforderlich)",
+    mail: "Sehr geehrte/r Bewerber/in, Ihre Einstellung ist beschlossen. Es fehlt lediglich Formular A38 (im KIS druckbar) mit drei Stempeln: Controlling, Archiv, Anmeldung der Notaufnahme. Ein Dienstfahrrad steht im Parkhaus bereit. Gleitzeit 7:30 bis 15:30. Hochachtungsvoll, i. A. Behrens",
+    perks: ["Dienstfahrrad", "Gleitzeit", "Beamtenstatus"], promote: [],
+    goals: [
+      { lvl: 0, id: "a38", title: "Formular A38", text: "Formular A38 am Computer im Arztzimmer drucken", at: "prop:pc", brief: "Das KIS kann drucken. Theoretisch. Der Drucker hat Papierstau seit Montag. Versuch's trotzdem." },
+      { lvl: 1, id: "stamp1", title: "Stempel 1/3", text: "Stempel von Hr. Paragraf (Controlling)", at: "enemy:V", brief: "Hr. Paragraf vom Controlling hat einen Stempel. Er gibt ihn nicht gern her. Sprich ihn an (ja, freiwillig)." },
+      { lvl: 4, id: "stamp2", title: "Stempel 2/3", text: "Archiv-Stempel im Keller", at: "prop:stamp", kind: "stamp", spot: [19, 3], obj: "stamp", brief: "Der Archiv-Stempel liegt im Keller. Neben Akten von 1987. Und Dr. Ewig." },
+      { lvl: 5, id: "stamp3", title: "Stempel 3/3", text: "Stempel der Notaufnahme-Anmeldung", at: "prop:stamp", kind: "stamp", spot: [13, 1], obj: "stamp", brief: "Die Anmeldung der Notaufnahme stempelt alles. Wirklich alles." }] },
+  ship: { name: "Kreuzfahrt", vehicle: "bus", av: "🛳️", from: "MS Sorgenfrei · Reederei Wellengang", subject: "Schiffsarzt gesucht · Karibik · Abfahrt heute 22:00",
+    mail: "Ahoi! Unser Schiffsarzt ist leider an Bord geblieben (Liebe). Wir legen heute um 22 Uhr ab. Bitte mitbringen: Approbation, Sonnencreme, Reisetabletten. Der Hafen-Shuttle wartet im Parkhaus. Häufigste Diagnose an Bord: Sonnenbrand. Kapitän Hansen",
+    perks: ["Hafen-Shuttle", "Karibik", "Diagnose: Sonnenbrand"], promote: ["approbation", "cream"],
+    goals: [{ lvl: 5, id: "meds", title: "Seefest", text: "Reisetabletten aus dem Schockraum", at: "prop:meds", kind: "meds", spot: [13, 6], obj: "meds", brief: "Reisetabletten liegen im Schockraum. Zwischen Defibrillator und einem sehr alten Butterbrot." }] },
+  stay: { name: "Einfach heim", vehicle: "car", av: "🛋️", from: "Dein Sofa", subject: "Wo bleibst du?",
+    mail: "Hey. Ich bin's, dein Sofa. Die Decke liegt bereit, der Fernseher ist warm. Kein Jobwechsel, keine Formulare. Nur heim. Montag ist ein anderes Problem. Gruß, Sofa",
+    perks: ["Dein eigenes Auto", "Montag: wieder hier", "Kein Papierkram"], promote: [], goals: [] },
+};
+const ROUTE_ORDER = ["pharma", "botox", "consult", "tele", "amt", "ship", "stay"];

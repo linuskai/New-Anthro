@@ -143,6 +143,47 @@ Zwei Schreibtische mit Computern (KIS 2003, Mails, Solitaire, Dienstplan), Tasta
 - Querformat: kompaktes HUD. Pager antippen klappt das HUD ein.
 - Schatten (abschaltbar), zusammengefasste statische Geometrie für flüssige Bildrate.
 
+## Version 6: Das große Bild
+
+### Was gut ist
+- Der Kern trägt: Schleichen statt Kämpfen, Dreiecke als klare Signale, ein Gespräch pro Person, satirische Texte.
+- Die Welt wirkt wie ein Krankenhaus: Flure, Zimmer, Türen, Treppenhaus, Aufzug, Arztzimmer.
+- Viele Gespräche mit echten Pointen.
+
+### Was schwach war (und was jetzt anders ist)
+| Problem | Lösung in v6 |
+| --- | --- |
+| Das Ziel war nur „raus“. Warum eigentlich? | **Karriere-Route am Start:** Posteingang mit sieben Mails (Pharma, Dermatologie, Beratung, Startup, Behörde, Kreuzfahrt, einfach heim). Die Route bringt eigene Missionen über die Stockwerke und ein eigenes Fluchtfahrzeug. |
+| Anrufe waren lustig, aber folgenlos | **Goodwill und Rückrufstau:** Rangehen kostet Zeit, aber die nächste Person der Abteilung lässt dich gehen. Ab zwei offenen Rückrufen wirst du ausgerufen, und ein Oberarzt sucht dich aktiv. Rückrufe kann man abarbeiten. |
+| Navigation schwierig | Grüne **Leitlinie** am Boden mit Pfeilen (wie in echten Kliniken), hängende Fluchtweg-Schilder zum Treppenhaus, Radar und Lageplan. |
+| Umsehen auf dem iPhone | Direktes Wischen ist Standard, überall außer unten links. Der Pager fängt keine Taps mehr ab. |
+| Dialogboxen schlicht | Dienstausweis mit 3D-Porträt der Person, Sprechblase mit Schreibmaschinen-Text, Antwortkarten mit Symbolen (✓ ✗ 🎲 🏃). |
+| Querformat abgeschnitten | Anrufe unten, Dialog in drei Spalten, Meldungen klein oben. |
+| Dermatologie: man kam nicht weiter | Reden mit Dr. Glatt oder eine Wellness-Liege reicht. Neu: neugierige Dermatologinnen mit Fragen wie „Darf man Botox i.v. geben, wenn der Patient beim Reanimieren so viele Falten hat?“ |
+
+### Routen
+| Route | Missionen unterwegs | Abholung |
+| --- | --- | --- |
+| Pharma | Approbation (Innere), Arbeitszeugnis (Radiologie) | Limousine mit Fr. Goldmann |
+| Dermatologie | Approbation, Probetag bei Dr. Glatt | pinkes Cabrio |
+| Beratung | drei Beweisfotos: Faxgerät, Wartezeit-Anzeige, Wartenummer 999 | Business-Taxi |
+| Startup | Selfie-Kooperation mit der Influencerin, 3 Patienten-Testimonials (diesmal SOLLST du reden) | E-Scooter |
+| Behörde | Formular A38 drucken, drei Stempel (Controlling, Archiv, Notaufnahme) | Dienstfahrrad |
+| Kreuzfahrt | Approbation, Sonnencreme, Reisetabletten | Hafen-Shuttle |
+| Einfach heim | nichts | eigenes Auto |
+
+### Tricks
+Kuli werfen (Ablenkung durch Geräusch), Kittel ausziehen (Personal erkennt dich nicht, Patienten fragen nach der Toilette), Feuermelder (20 s freie Bahn, danach Brandschutzbericht), dazu Klemmbrett, Spray, Durchsage, Flugmodus, Fallbericht, Wäschewagen, Türen schließen, Ruheräume, Rückrufe abarbeiten.
+
+### Krankenhaus-Details
+Rufleuchten über den Zimmertüren (blinken, natürlich), Stationsstützpunkt, Fluchtweg-Schilder, gerahmte Bilder mit Titeln („Mitarbeiter des Monats: Die Kaffeemaschine (†)“, „Unser Team 2009 (alle gekündigt)“, „Kunst am Bau: Wasserfleck, 2014–heute“), Feuermelder, im Arztzimmer Kühlschrank („MEIN JOGHURT!“), Pizzakarton-Turm, Familienfoto, Ventilator, Telefonliste („Chef: nie anrufen“).
+
+### Ideen für danach
+- Route mitten im Spiel wechseln (per Anruf), mit Konsequenzen
+- Echte Abteilungs-Grundrisse (Zentrallager, Apotheke, Kantine als Ebene)
+- Tag-/Nachtwechsel und ein Horror-Nachtdienst-Modus
+- Kleine Zwischensequenz pro Ende (Fahrt im Fluchtfahrzeug)
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten

@@ -60,8 +60,8 @@ function distMap(sx, sy, pass = enemyPass) {
 const bfsNextEnemy = (sx, sy, gx, gy) => { if (sx === gx && sy === gy) return null; const p = bfs(sx, sy, gx, gy, false, enemyPass); return p && p.length > 1 ? p[1] : null; };
 
 // ---------- settings ----------
-const SET_KEY = "hospital-escape-3d-settings-v4";
-const settings = { sens: 1, invert: false, sound: true, bob: true, look: "stick", navi: true, diff: "easy", shadows: true };
+const SET_KEY = "hospital-escape-3d-settings-v6";
+const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe", navi: true, diff: "easy", shadows: true };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || "{}")); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
 
@@ -327,22 +327,39 @@ function makePerson(sp) {
   if (sp.print) { const pm = new THREE.Mesh(GEO.plane, lambert(0xffffff, shirtPrintTex(sp.print))); pm.scale.set(tw * .8, tw * .3, 1); pm.position.set(0, 1.32, td / 2 + .02); body.add(pm); }
   add(GEO.taper, skin, .05, .1, .05, 0, 1.56, 0);
   const head = new THREE.Group(); head.position.set(0, 1.67, 0); body.add(head);
-  add(GEO.ball, skin, .112, .135, .118, 0, 0, 0, head);
+  const shade = (c, k) => new THREE.Color(c).multiplyScalar(k).getHex(), warm = c => new THREE.Color(c).lerp(new THREE.Color(0xe07a6a), .25).getHex();
+  add(GEO.ball, skin, .112, .132, .118, 0, .005, 0, head);
+  add(GEO.ball, skin, .083, .07, .085, 0, -.072, .028, head);
+  if (!sp.ghost && !sp.shadowFig) for (const sx of [-1, 1]) add(GEO.ball, warm(skin), .038, .032, .03, sx * .062, -.03, .082, head);
+  const mood = sp.mood || pick(["neutral", "neutral", "tired", "smile", "angry", "worried"]), eyeC = sp.eye || pick([0x4a6fa5, 0x5a3a22, 0x3a6a4a, 0x2a2420, 0x6a8aa0]);
+  sp.mood = mood; sp.eye = eyeC;
   for (const sx of [-1, 1]) {
     add(GEO.ball, skin, .022, .034, .018, sx * .112, -.005, 0, head);
+    add(GEO.ball, shade(skin, .7), .011, .018, .008, sx * .118, -.005, .006, head);
     if (sp.glowEyes) add(GEO.ball, 0xff2010, .018, .012, .01, sx * .042, .015, .105, head).material = basic(0xff2010);
     else if (!sp.ghost) {
-      add(GEO.ball, 0xf8f8f4, .021, .016, .01, sx * .042, .015, .104, head);
-      add(GEO.ball, sp.pose === "zombie" ? 0x6a1010 : 0x1d2430, .01, .01, .006, sx * .042, .014, .113, head);
-      add(GEO.box, sp.hair || 0x333333, .045, .01, .012, sx * .044, .052, .108, head);
+      add(GEO.ball, 0xf8f8f4, .023, .017, .012, sx * .041, .016, .1, head);
+      add(GEO.ball, sp.pose === "zombie" ? 0x8a1a1a : eyeC, .0115, .0115, .006, sx * .041, .015, .11, head);
+      add(GEO.ball, 0x0a0c10, .0058, .0058, .004, sx * .041, .015, .1145, head);
+      add(GEO.ball, 0xffffff, .0022, .0022, .002, sx * .041 + .004, .019, .1175, head).material = basic(0xffffff);
+      const lidDrop = mood === "tired" || sp.coat ? .006 : 0;
+      const lid = add(GEO.ball, skin, .025, .011, .013, sx * .041, .029 - lidDrop, .101, head); lid.rotation.z = sx * (mood === "tired" ? -.12 : .05);
+      if (sp.coat || sp.chart || mood === "tired") add(GEO.ball, shade(skin, .78), .021, .007, .006, sx * .041, -.004, .1, head);
+      const brow = add(GEO.box, sp.hair || 0x333333, .048, .011, .012, sx * .044, .054, .108, head);
+      brow.rotation.z = sx * (mood === "angry" ? -.28 : mood === "worried" ? .3 : mood === "tired" ? .15 : -.05);
     } else add(GEO.ball, 0x222233, .02, .025, .01, sx * .042, .015, .108, head);
   }
   if (!sp.ghost && !sp.shadowFig) {
-    const nose = add(GEO.taper, skin, .018, .045, .022, 0, .012, .118, head); nose.rotation.x = .25;
-    add(GEO.box, sp.pose === "zombie" ? 0x4a2020 : 0x9a4a4a, .05, .009, .008, 0, -.058, .108, head);
+    add(GEO.ball, skin, .011, .03, .014, 0, .03, .112, head);
+    const nose = add(GEO.taper, skin, .019, .045, .023, 0, .012, .118, head); nose.rotation.x = .25;
+    add(GEO.ball, shade(skin, .9), .02, .011, .012, 0, -.022, .121, head);
+    const lipC = sp.pose === "zombie" ? 0x5a2a2a : warm(shade(skin, .82));
+    const up = add(GEO.ball, lipC, .026, .007, .008, 0, -.052, .109, head), lo = add(GEO.ball, warm(shade(skin, .9)), .022, .008, .008, 0, -.063, .106, head);
+    if (mood === "smile") { up.scale.x = .03; lo.position.y = -.06; for (const sx of [-1, 1]) { const c = add(GEO.ball, lipC, .007, .006, .006, sx * .027, -.047, .104, head); c.rotation.z = sx * .5; } }
+    if (mood === "angry" || mood === "worried") { for (const sx of [-1, 1]) add(GEO.ball, lipC, .007, .006, .006, sx * .026, -.06, .104, head); }
   }
   const hs = sp.hairStyle || "short", hc = sp.hair || 0x333333;
-  if (["short", "messy", "long", "bun", "spiky"].includes(hs)) add(GEO.cap, hc, .122, hs === "messy" ? .15 : .13, .127, 0, .01, -.008, head);
+  if (["short", "messy", "long", "bun", "spiky"].includes(hs)) { add(GEO.cap, hc, .122, hs === "messy" ? .15 : .13, .127, 0, .01, -.008, head); const fr = add(GEO.ball, hc, .1, .035, .05, hs === "long" ? -.02 : .015, .088, .07, head); fr.rotation.z = hs === "long" ? .3 : -.2; for (const sx of [-1, 1]) add(GEO.box, hc, .02, .06, .05, sx * .112, .04, -.01, head); }
   if (hs === "messy") for (let i = 0; i < 5; i++) add(GEO.ball, hc, .045, .04, .045, -.08 + i * .04, .11 + (i % 2) * .02, -.02 + (i % 3) * .03, head);
   if (hs === "long") add(GEO.box, hc, .24, .3, .07, 0, -.11, -.085, head);
   if (hs === "bun") add(GEO.ball, hc, .06, .06, .06, 0, .09, -.11, head);

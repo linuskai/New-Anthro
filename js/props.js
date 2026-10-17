@@ -276,3 +276,29 @@ function mergeStatic(root, perGeo) {
   }
   return merged;
 }
+
+// ---------- framed art with titles ----------
+const ART = [
+  ["Mitarbeiter des Monats", "Die Kaffeemaschine (†)", "machine"], ["Unser Team 2009", "(alle gekündigt)", "team"], ["Burnout in Blau", "Öl auf Leinwand, 2019", "swirl"],
+  ["Sonnenuntergang", "Symbolbild · Fenster eingespart", "sunset"], ["Leitbild", "Der Patient steht im Mittelpunkt. Des Flurs.", "text"], ["Qualitätszertifikat", "2011 · abgelaufen", "cert"],
+  ["Spender des Jahres 1997", "Pharmazeutika AG", "cert"], ["Chefarzt mit Golfpokal", "Öl auf Leinwand, privat finanziert", "portrait"], ["Stillleben", "mit Klemmbrett und Tränen", "still"],
+  ["Ehrenmitglied", "Dr. Ewig (seit 2009)", "portrait"], ["Work-Life-Balance", "Kunstwerk, rein fiktiv", "swirl"], ["Tag der offenen Tür 2015", "Die Tür war zu.", "team"],
+  ["Die Station vor dem Sparprogramm", "(Archivfoto, nachkoloriert)", "sunset"], ["Kunst am Bau", "Wasserfleck, 2014–heute", "stain"],
+];
+const artTex = a => canvasTex(256, 320, (g, w, h) => {
+  const [title, sub, kind] = a, r = rng(title.length * 31);
+  g.fillStyle = "#f4efe2"; g.fillRect(0, 0, w, h);
+  const ix = 18, iy = 16, iw = w - 36, ih = 200;
+  if (kind === "sunset") { const gr = g.createLinearGradient(0, iy, 0, iy + ih); gr.addColorStop(0, "#f2a65a"); gr.addColorStop(.6, "#e05a47"); gr.addColorStop(.61, "#2d3f5f"); gr.addColorStop(1, "#1d2a3f"); g.fillStyle = gr; g.fillRect(ix, iy, iw, ih); g.fillStyle = "#ffd27a"; g.beginPath(); g.arc(w / 2, iy + ih * .6, 30, Math.PI, 0); g.fill(); }
+  else if (kind === "swirl") { g.fillStyle = "#1f3f8a"; g.fillRect(ix, iy, iw, ih); for (let i = 0; i < 14; i++) { g.strokeStyle = `hsla(${200 + r() * 40},70%,${40 + r() * 30}%,.8)`; g.lineWidth = 3 + r() * 6; g.beginPath(); g.arc(ix + r() * iw, iy + r() * ih, 10 + r() * 50, r() * 6, r() * 6 + 3); g.stroke(); } }
+  else if (kind === "team") { g.fillStyle = "#cfd8d4"; g.fillRect(ix, iy, iw, ih); for (let i = 0; i < 6; i++) { const x = ix + 22 + i * 34, y = iy + 90 + (i % 2) * 18; g.fillStyle = "#6a7a74"; g.beginPath(); g.arc(x, y, 13, 0, 7); g.fill(); g.fillRect(x - 15, y + 13, 30, 50); g.strokeStyle = "#c0322a"; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 14, y - 12); g.lineTo(x + 14, y + 14); g.moveTo(x + 14, y - 12); g.lineTo(x - 14, y + 14); g.stroke(); } }
+  else if (kind === "cert") { g.fillStyle = "#fffaf0"; g.fillRect(ix, iy, iw, ih); g.strokeStyle = "#b8955a"; g.lineWidth = 6; g.strokeRect(ix + 8, iy + 8, iw - 16, ih - 16); g.fillStyle = "#1d2622"; g.font = `800 20px ${SF}`; g.textAlign = "center"; g.fillText("URKUNDE", w / 2, iy + 50); g.fillStyle = "#c0322a"; g.beginPath(); g.arc(w / 2, iy + 130, 28, 0, 7); g.fill(); g.fillStyle = "#f2c300"; g.font = `800 12px ${SF}`; g.fillText("ISO", w / 2, iy + 134); }
+  else if (kind === "portrait") { g.fillStyle = "#3a2a1a"; g.fillRect(ix, iy, iw, ih); g.fillStyle = "#f1c9a5"; g.beginPath(); g.ellipse(w / 2, iy + 80, 38, 46, 0, 0, 7); g.fill(); g.fillStyle = "#ddd"; g.fillRect(w / 2 - 55, iy + 128, 110, 72); g.fillStyle = "#d4af37"; g.fillRect(w / 2 + 40, iy + 120, 14, 50); g.fillStyle = "#222"; g.fillRect(w / 2 - 22, iy + 72, 12, 6); g.fillRect(w / 2 + 10, iy + 72, 12, 6); }
+  else if (kind === "still") { g.fillStyle = "#e8dcc0"; g.fillRect(ix, iy, iw, ih); g.fillStyle = "#8a6a4a"; g.fillRect(ix, iy + 150, iw, 50); g.fillStyle = "#9aa3a0"; g.fillRect(70, iy + 60, 70, 95); g.fillStyle = "#fff"; g.fillRect(78, iy + 75, 54, 70); g.fillStyle = "#c0322a"; g.beginPath(); g.arc(170, iy + 140, 16, 0, 7); g.fill(); g.fillStyle = "#6fb3e0"; g.beginPath(); g.ellipse(190, iy + 160, 6, 9, 0, 0, 7); g.fill(); }
+  else if (kind === "machine") { g.fillStyle = "#e6e0d0"; g.fillRect(ix, iy, iw, ih); g.fillStyle = "#222"; g.fillRect(85, iy + 40, 90, 120); g.fillStyle = "#c0322a"; g.fillRect(100, iy + 60, 60, 18); g.fillStyle = "#1d2622"; g.font = `800 40px ${SF}`; g.textAlign = "center"; g.fillText("†", 200, iy + 60); }
+  else if (kind === "stain") { g.fillStyle = "#f2efe6"; g.fillRect(ix, iy, iw, ih); g.fillStyle = "rgba(150,120,70,.45)"; g.beginPath(); for (let i = 0; i < 12; i++) { const a = i / 12 * 6.28, rr = 50 + r() * 40; g.lineTo(w / 2 + Math.cos(a) * rr, iy + ih / 2 + Math.sin(a) * rr * .8); } g.fill(); }
+  else { g.fillStyle = "#2d3f8f"; g.fillRect(ix, iy, iw, ih); g.fillStyle = "#fff"; g.font = `800 22px ${SF}`; g.textAlign = "center"; g.fillText("LEITBILD", w / 2, iy + 60); g.font = `600 15px ${SF}`; g.fillText("Menschlich. Kompetent.", w / 2, iy + 100); g.fillText("Kostenoptimiert.", w / 2, iy + 124); }
+  g.fillStyle = "#c9a14a"; g.fillRect(60, 232, w - 120, 70); g.fillStyle = "#2a1c00"; g.textAlign = "center";
+  g.font = `800 15px ${SF}`; g.fillText(title, w / 2, 258, w - 130); g.font = `600 11px ${SF}`; g.fillText(sub, w / 2, 280, w - 130);
+}, "art" + a[0]);
+const funnyArt = (i, frame = 0x6a4a2a) => framed(artTex(ART[i % ART.length]), .62, .78, frame);
