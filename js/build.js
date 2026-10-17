@@ -385,7 +385,16 @@ const SHABBY_TEX = {
   damp: () => canvasTex(128, 128, (g, w, h) => { for (let i = 0; i < 4; i++) { const gr = g.createRadialGradient(64, 40 + i * 10, 4, 64, 50 + i * 8, 50 - i * 6); gr.addColorStop(0, "rgba(140,110,60,.0)"); gr.addColorStop(.75, "rgba(140,110,60,.22)"); gr.addColorStop(.85, "rgba(110,80,40,.35)"); gr.addColorStop(1, "rgba(110,80,40,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } g.fillStyle = "rgba(110,80,40,.25)"; g.fillRect(60, 60, 5, 68); }, "shabby:damp"),
   crack: () => canvasTex(128, 128, (g, w, h) => { const r = rng(7); g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); let x = 64, y = 64; g.moveTo(x, y); for (let i = 0; i < 9; i++) { x += (r() - .5) * 30; y += (r() - .5) * 30; g.lineTo(x, y); } g.stroke(); } }, "shabby:crack"),
   tape: () => canvasTex(128, 64, (g, w, h) => { g.fillStyle = "rgba(170,172,170,.95)"; g.save(); g.translate(64, 32); g.rotate(.25); g.fillRect(-60, -9, 120, 18); g.rotate(-.5); g.fillRect(-60, -9, 120, 18); g.restore(); g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(0, 30, w, 2); }, "shabby:tape"),
-  mold: () => canvasTex(128, 128, (g, w, h) => { const r = rng(17); for (let i = 0; i < 260; i++) { const x = r() * w, y = h - Math.pow(r(), 1.8) * h, rad = 1 + r() * 4 * (1 - (h - y) / h); g.fillStyle = r() < .6 ? `rgba(40,60,30,${.25 + r() * .4})` : `rgba(20,25,20,${.2 + r() * .4})`; g.beginPath(); g.arc(x, y, rad, 0, 7); g.fill(); } }, "shabby:mold"),
+  mold: () => canvasTex(256, 256, (g, w, h) => {
+    // organic damp patch: soft-edged blobs (no rectangle), darker towards the floor, fuzzy mould colonies on top
+    const r = rng(17);
+    for (let i = 0; i < 26; i++) { const x = w * (.15 + r() * .7), y = h * (.45 + r() * .55), rad = 18 + r() * 46, gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, `rgba(${70 + r() * 20},${80 + r() * 20},${55 + r() * 10},.22)`); gr.addColorStop(1, "rgba(70,80,55,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+    for (let i = 0; i < 900; i++) { const a = r() * Math.PI * 2, rr = Math.pow(r(), .7), x = w / 2 + Math.cos(a) * rr * w * .42, y = h * .78 + Math.sin(a) * rr * h * .3; if (y > h) continue;
+      const k = 1 - rr; g.fillStyle = r() < .55 ? `rgba(38,56,30,${.12 + k * .45})` : r() < .5 ? `rgba(20,24,20,${.1 + k * .45})` : `rgba(90,96,70,${.1 + k * .3})`;
+      g.beginPath(); g.arc(x, y, .6 + r() * 2.2 * k, 0, 7); g.fill(); }
+    const gr = g.createRadialGradient(w / 2, h, 4, w / 2, h, w * .45); gr.addColorStop(0, "rgba(30,36,26,.4)"); gr.addColorStop(1, "rgba(30,36,26,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  }, "shabby:mold2"),
   grime: () => canvasTex(128, 256, (g, w, h) => { const r = rng(23); for (let i = 0; i < 14; i++) { const x = r() * w, len = h * (.3 + r() * .7), gr = g.createLinearGradient(0, 0, 0, len); gr.addColorStop(0, "rgba(80,60,35,.45)"); gr.addColorStop(1, "rgba(80,60,35,0)"); g.fillStyle = gr; g.fillRect(x, 0, 2 + r() * 6, len); } }, "shabby:grime"),
   tiles: () => canvasTex(128, 128, (g, w, h) => { const r = rng(9); for (let i = 0; i < 5; i++) { g.fillStyle = `rgba(${60 + r() * 30},${60 + r() * 30},55,.55)`; g.fillRect(r() * 96, r() * 96, 24 + r() * 16, 24 + r() * 16); } }, "shabby:tiles"),
 };
@@ -409,7 +418,7 @@ function decorateShabby(lv, theme, r) {
         if (v < .35) wallPlace(lv, decal(SHABBY_TEX.peel(), .5 + r() * .5, .5 + r() * .5), x, y, dx, dy, along, .4 + r() * 1.8).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
         else if (v < .65) wallPlace(lv, decal(SHABBY_TEX.damp(), 1 + r() * .6, 1.1), x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
         else if (v < .78) wallPlace(lv, decal(scribbleTex(SCRIBBLES[Math.floor(r() * SCRIBBLES.length)]), .9, .34), x, y, dx, dy, along, 1.15 + r() * .5).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
-        else if (v < .84) wallPlace(lv, decal(SHABBY_TEX.mold(), 1.1 + r() * .8, .9), x, y, dx, dy, along, .45).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
+        else if (v < .84) wallPlace(lv, decal(SHABBY_TEX.mold(), 1.3 + r() * .7, 1.3), x, y, dx, dy, along, .6).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
         else if (v < .9) wallPlace(lv, decal(SHABBY_TEX.grime(), .9, 1.6), x, y, dx, dy, along, WALL_H - .8).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
         else if (v < .95) { const c = new THREE.Mesh(GEO.cable, lambert(0x1a1a1a)); wallPlace(lv, c, x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .06, 0, -dy * .06)); c.rotation.z = .15; }
       }

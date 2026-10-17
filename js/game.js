@@ -56,6 +56,7 @@ function applyEnv(force) {
   const need = inDarkness() || bo;
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
+  if (fpHand.userData.beam) { const on = flashlight.intensity > .3; fpHand.userData.beam.visible = on; fpHand.userData.beam.material.opacity = .05 + flashlight.intensity * .02; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
   if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); }
   if (level && level.windowMat) level.windowMat.color.setHex(boltT > 0 ? 0xffffff : 0x8a9ab0);
   if (level && level.outsideMat) level.outsideMat.color.setHex(boltT > 0 ? 0xffffff : 0xb0b0b8);

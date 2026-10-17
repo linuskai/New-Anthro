@@ -554,20 +554,31 @@ function wetSign() {
 
 // first-person hand with flashlight
 const fpHand = new THREE.Group();
-/* first-person hand holding a doctor's penlight between thumb and fingers, tilted like you'd check pupils */
-{ const sleeve = mesh(GEO.cyl, lambert(0xf4f4f0), .055, .3, .05); sleeve.rotation.x = Math.PI / 2 - .25; sleeve.position.set(.03, -.05, .12); fpHand.add(sleeve);
-  const cuff = mesh(GEO.cyl, lambert(0xdfe3e0), .057, .02, .052); cuff.rotation.x = Math.PI / 2 - .25; cuff.position.set(.03, -.04, -.02); fpHand.add(cuff);
+/* first-person hand holding a real flashlight, beam visible in the dusty air */
+{ const sleeve = mesh(GEO.cyl, lambert(0xf4f4f0), .06, .3, .055); sleeve.rotation.x = Math.PI / 2; sleeve.position.set(.0, -.04, .16); fpHand.add(sleeve);
+  const cuff = mesh(GEO.cyl, lambert(0xdfe3e0), .062, .02, .057); cuff.rotation.x = Math.PI / 2; cuff.position.set(0, -.04, .01); fpHand.add(cuff);
+  const fl = new THREE.Group(); fl.position.set(0, 0, -.06); fpHand.add(fl);
+  const alu = phong(0x26282b, 70), rub = lambert(0x111213);
+  const body = mesh(GEO.cyl, alu, .021, .2, .021); body.rotation.x = Math.PI / 2; fl.add(body);
+  for (let i = 0; i < 6; i++) { const k = mesh(GEO.cyl, rub, .0225, .008, .0225); k.rotation.x = Math.PI / 2; k.position.z = .02 + i * .014; fl.add(k); } // knurled grip
+  const neck = mesh(GEO.cyl, alu, .03, .04, .022); neck.rotation.x = Math.PI / 2; neck.position.z = -.115; fl.add(neck);
+  const head = mesh(GEO.cyl, phong(0x34373b, 80), .034, .045, .034); head.rotation.x = Math.PI / 2; head.position.z = -.155; fl.add(head);
+  const bezel = mesh(GEO.cyl, phong(0xb8bec4, 90), .036, .008, .036); bezel.rotation.x = Math.PI / 2; bezel.position.z = -.18; fl.add(bezel);
+  const lens = mesh(GEO.cyl, basic(0xfff6dd), .029, .004, .029); lens.rotation.x = Math.PI / 2; lens.position.z = -.183; fl.add(lens); fpHand.userData.lens = lens;
+  const tail = mesh(GEO.cyl, rub, .022, .02, .022); tail.rotation.x = Math.PI / 2; tail.position.z = .11; fl.add(tail);
+  fl.add(at(boxMesh(.012, .008, .02, 0x8a1a1a), 0, .021, -.06)); // switch
+  // hand wrapped around the grip
   const skin = lambert(SKIN[0]);
-  const palm = mesh(GEO.ball, skin, .045, .03, .055); palm.position.set(.02, -.03, -.07); palm.rotation.z = .5; fpHand.add(palm);
-  for (let i = 0; i < 3; i++) { const f = mesh(GEO.cyl, skin, .012, .05, .012); f.position.set(-.012 + i * .016, -.035 - i * .004, -.115); f.rotation.x = Math.PI / 2 + .9; f.rotation.z = -.2; fpHand.add(f); }
-  const thumb = mesh(GEO.cyl, skin, .013, .05, .013); thumb.position.set(-.03, -.005, -.1); thumb.rotation.set(1.2, 0, .9); fpHand.add(thumb);
-  const pen = new THREE.Group();
-  const body = mesh(GEO.cyl, phong(0xc9ced4, 90), .0085, .15, .0085); pen.add(body);
-  pen.add(at(mesh(GEO.cyl, phong(0x2b5fae, 50), .009, .035, .009), 0, -.045, 0));
-  const clip = boxMesh(.003, .07, .004, 0xdfe3e8); clip.position.set(0, .03, .01); pen.add(clip);
-  pen.add(at(mesh(GEO.ball, basic(0xfff6d8), .0075), 0, .077, 0));
-  pen.position.set(-.02, -.01, -.13); pen.rotation.set(-1.15, 0, .55); fpHand.add(pen); fpHand.userData.pen = pen; }
-fpHand.position.set(.2, -.2, -.34); fpHand.visible = false; camera.add(fpHand);
+  const palm = mesh(GEO.ball, skin, .042, .04, .06); palm.position.set(.018, -.012, .045); fpHand.add(palm);
+  for (let i = 0; i < 4; i++) { const f = mesh(GEO.taper, skin, .011, .05, .011); f.position.set(-.02, -.016 + .002 * i, .015 + i * .019); f.rotation.set(0, 0, -1.9); fpHand.add(f); }
+  const thumb = mesh(GEO.taper, skin, .012, .05, .012); thumb.position.set(-.012, .022, .02); thumb.rotation.set(-1.4, 0, .4); fpHand.add(thumb);
+  // the beam: an open cone, additive, fading with distance
+  const beamTex = canvasTex(8, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(255,240,210,0)"); gr.addColorStop(.06, "rgba(255,240,210,.55)"); gr.addColorStop(.35, "rgba(255,240,210,.22)"); gr.addColorStop(1, "rgba(255,240,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, "beam");
+  const cg = new THREE.CylinderGeometry(.03, 1.25, 6, 24, 1, true); cg.translate(0, -3, 0); cg.rotateX(Math.PI / 2);
+  const beam = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .16, side: THREE.DoubleSide, toneMapped: false, fog: false }));
+  beam.position.set(.1, -.15, -.62); beam.rotation.set(.04, .05, 0); camera.add(beam); fpHand.userData.beam = beam; beam.visible = false;
+  }
+fpHand.position.set(.12, -.25, -.5); fpHand.rotation.set(.45, -.2, .1); fpHand.visible = false; camera.add(fpHand);
 
 // floating dust motes around the player, catching the light
 let dust = null;

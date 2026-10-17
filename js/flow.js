@@ -469,7 +469,7 @@ function render(time, dt) {
   camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
   if (mode === "story" && story && story.cam) { camera.position.copy(story.cam.p); camera.lookAt(story.cam.l); if (Math.abs(camera.fov - story.cam.fov) > .01) { camera.fov = story.cam.fov; camera.updateProjectionMatrix(); } }
   else if (camera.fov !== 72) { camera.fov = 72; camera.updateProjectionMatrix(); }
-  fpHand.position.y = -.2 + Math.sin(player.bob * 2) * .008;
+  fpHand.position.y = -.25 + Math.sin(player.bob * 2) * .008; fpHand.position.x = .12 + Math.cos(player.bob) * .004;
 
   let near = null, nd = 3.4;
   const cd = cellarDark();
