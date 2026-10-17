@@ -304,6 +304,16 @@ Alle ein bis zwei Minuten eine Situation mit Entscheidung: führerloser Rollstuh
 ### Gespräche
 125 Gespräche (26 neue), z. B. TikTok-Patient, der rote Knopf, Zwillinge, Excel-Tabelle seit 1998, wer erbt das Pflegebett, Dienstplan-Farben, Paper ohne Daten, Golf, Chef-Podcast, Kuli-Inventur, Zebras, Fingernagel-MRT, Mathe-Attest, Kapsel-Livestream, Lieblings-Darmabschnitt, h-Index, schlafwandelnder Koch.
 
+## Version 11: Querformat, faire Verfolgung, Taschenlampe, Details
+
+- **Querformat**: Alle Menüs (Posteingang, Dossier, Briefing, Pause, Endbildschirm) beginnen oben und lassen sich scrollen, statt oben abgeschnitten zu sein. Die Flucht-Zentrale nutzt die volle Höhe.
+- **Keine Wände mehr**: Geister folgen jetzt Fluren und Türen wie alle anderen und brauchen Sichtkontakt (außer bei Stromausfall).
+- **Außer Sicht ist außer Sicht**: Verfolger laufen nur zu der Stelle, an der sie dich zuletzt gesehen haben, schauen sich dort kurz um und geben auf (🤷). Ausnahmen: der Chefarzt und der per Durchsage alarmierte Oberarzt („haben die Sprechanlage“), und Schwester Hildegard im Nachtdienst.
+- **Moos/Schimmel** neu: weiche, organische Flecken am Wandsockel statt grüner Platten.
+- **Taschenlampe**: richtiges Modell (Kopf mit Reflektor-Ring, Linse, geriffelter Griff, roter Schalter) in der Hand, mit sichtbarem Lichtkegel im Staub.
+- **Mehr Details**: Stoffstruktur mit Falten und Nähten auf Kleidung, Hautstruktur, Haarsträhnen, Relief auf Böden (Fugen) und Wänden (Putz), Lichtschalter und Steckdosen neben Türen, Rauchmelder mit grüner LED, Sprinkler.
+- **Auflösung**: bis zu 2× Pixeldichte und schärfere Texturen (Einstellung „Hohe Auflösung“, abschaltbar, falls es ruckelt).
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten
