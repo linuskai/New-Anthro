@@ -12,6 +12,7 @@ addEventListener("keydown", e => {
     return;
   }
   if (mode === "story" && (k === "enter" || k === " ")) { e.preventDefault(); storyNext(); return; }
+  if (mode === "outro" && (k === "enter" || k === " ")) { e.preventDefault(); $("btnStoryNext").click(); return; }
   if (mode === "cpr" && (k === " " || k === "enter")) { cprPress(); e.preventDefault(); return; }
   if ((k === "enter" || k === " ") && ["title", "brief", "intro", "over", "win"].includes(mode)) {
     const id = { title: "btnStart", brief: "btnBrief", intro: "btnGo" }[mode] || "btnAgain";
@@ -122,7 +123,7 @@ function findFocus() {
     if (p.kind === "w") consider(p.x, p.y, .95, { type: "cart", ref: p, label: player.hidden ? "Raus" : "Verstecken", name: "Wäschewagen" });
     if (p.kind === "v") consider(p.x, p.y, 1.5, { type: "board", ref: p, label: "Öffnen", name: "Flucht-Zentrale" });
     if (p.kind === "W" && !p.used) consider(p.x, p.y, 1.4, { type: "spa", ref: p, label: "Liegen", name: "Wellness-Liege" });
-    if (p.kind === "sofa" && !p.room.rested) consider(p.x, p.y, 1.3, { type: "sofa", ref: p, label: p.bed ? "Hinlegen" : "Ausruhen", name: p.bed ? "Bereitschaftsliege" : "Sofa" });
+    if (p.kind === "sofa" && (run.mode === "night" ? !(p.room.restT > run.minutes) : !p.room.rested)) consider(p.x, p.y, 1.3, { type: "sofa", ref: p, label: p.bed ? "Hinlegen" : "Ausruhen", name: p.bed ? "Bereitschaftsliege" : "Sofa" });
     if (p.kind === "t" && !run.flags.has("ticket")) consider(p.x, p.y, 1.35, { type: "ticket", ref: p, label: "Bezahlen", name: "Parkticket-Automat" });
     if (p.kind === "=" && !run.flags.has("barrier")) consider(p.x, p.y, 1.5, { type: "barrier", ref: p, label: "Ticket rein", name: "Schranke" });
     if (p.kind === "j") consider(p.x, p.y, 1.7, { type: "car", ref: p, label: "Einsteigen", name: "Dein Auto" });
@@ -140,6 +141,7 @@ function findFocus() {
     if (p.kind === "brew") consider(p.x, p.y, 1.3, { type: "brew", ref: p, label: "Kaffee", name: "Kaffeemaschine" });
     if ((p.kind === "photo" || p.kind === "stamp" || p.kind === "meds") && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.kind === "stamp" ? "Stempeln" : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
   }
+  if (run.task && run.mode === "night") consider(run.task.x + .5, run.task.y + .5, 1.5, { type: "nighttask", label: "Versorgen", name: "Zi. " + run.task.room });
   if (run.rea && !run.rea.done) consider(run.rea.x + .5, run.rea.y + .5, 1.3, { type: "rea", label: "Reanimieren", name: "Patient ohne Puls" });
   return best;
 }
@@ -162,6 +164,8 @@ function act() {
   } else if (f.type === "cart") { player.hidden = !player.hidden; if (player.hidden) setMsg("Im Wäschewagen. Riecht nach Station 4. Nicht bewegen.", 2.5); }
   else if (f.type === "board") showBrief(true);
   else if (f.type === "spa") player.channel = { t: 0, total: 2.2, label: "Entspannen…", done: () => { f.ref.used = true; run.spa++; run.flags.add("spa"); sfx.spa(); showToast("🧖", "#f6c1d4", "Wellness-Liege", "Gurkenscheiben auf den Augen. Du vergisst kurz, dass du Ärztin oder Arzt bist.", gain({ energy: 40, nerves: 1 })); updateHud(); } };
+  else if (f.type === "sofa" && run.mode === "night") player.channel = { t: 0, total: 3, label: "Schlafen…", done: () => { f.ref.room.restT = run.minutes + 85; run.minutes += 25; sfx.spa(); showToast("😴", "#2d3f8f", "Powernap", pick(["Du schläfst 25 Minuten. Der Pager schläft nicht. Er wartet nur.", "Du träumst vom Feierabend. Im Traum klingelt das Telefon. Auch in echt.", "Augen zu. Irgendwo flüstert jemand „Kurven…“. Augen wieder auf."]), gain({ energy: 45, nerves: 1 }).concat([{ text: "+25 Min" }])); updateHud(); } };
+  else if (f.type === "nighttask") player.channel = { t: 0, total: 2.2, label: "Versorgen…", done: () => completeTask() };
   else if (f.type === "sofa") player.channel = { t: 0, total: 3, label: "Ausruhen…", done: () => { f.ref.room.rested = true; sfx.spa(); showToast("🛋️", "#c9a77a", "Durchatmen", pick(["Fünf Minuten Augen zu. Niemand kommt rein. Hier ist ja Arbeit.", "Du starrst an die Decke. Sie starrt zurück. Es ist schön.", "Im Radio läuft „Stayin' Alive“. Du lachst. Dann weinst du kurz. Dann geht's wieder."]), gain({ energy: 35, nerves: 1 })); updateHud(); } };
   else if (f.type === "ticket") ticketDialog();
   else if (f.type === "barrier") {
@@ -244,7 +248,7 @@ function updatePlayer(dt) {
   if (sprinting) { player.noiseT -= dt; if (player.noiseT <= 0) { player.noiseT = .5; makeNoise(4.5, .35); } }
   if (moving || player.slip > 0) { const prev = player.bob; player.bob += dt * 9 * mult; if (!sneaking && Math.floor(prev / Math.PI) !== Math.floor(player.bob / Math.PI)) sfx.step(); }
   level.visited[Math.floor(player.y) * GW + Math.floor(player.x)] = 1;
-  if (inDarkness() && player.lampOn) player.lamp = Math.max(0, player.lamp - dt * (LEVELS[run.idx].env === "radio" ? .9 : .6));
+  if (inDarkness() && player.lampOn) player.lamp = Math.max(0, player.lamp - dt * (LEVELS[run.idx].env === "radio" ? .9 : run.mode === "night" ? .22 : .6));
 }
 function makeNoise(radius, amount) {
   for (const e of level.enemies) if (!e.done && !e.static && !TYPES[e.type].ghost && Math.hypot(e.x - player.x, e.y - player.y) < radius) {
@@ -321,6 +325,7 @@ function updateEnemy(e, dt) {
     if (e.leaving <= 0 || !e.moving) { e.gone = true; e.mesh.visible = false; if (e.cone) e.cone.visible = false; }
     return;
   }
+  if (e.type === "J") { updateHildegard(e, t, dt); return; }
   if (e.stun > 0) { e.stun -= dt; e.aw = Math.max(0, e.aw - dt); return; }
   const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy) || .001;
   const rate = perceive(e, t, dx, dy, d);
@@ -461,7 +466,7 @@ function missCall(c, verb) {
 function declineCall() { if (!call) return; missCall(call.def, "abgelehnt"); }
 $("btnAccept").addEventListener("click", acceptCall); $("btnDecline").addEventListener("click", declineCall);
 function updateCalls(dt) {
-  if (LEVELS[run.idx].safe) return;
+  if (LEVELS[run.idx].safe || run.mode === "night") return;
   if (run.headhunterT != null && !call) { run.headhunterT -= dt; if (run.headhunterT <= 0) { run.headhunterT = null; if (!run.offers.has("pharma")) startCall(HEADHUNTER); } }
   if (call) {
     call.t += dt;
@@ -556,7 +561,7 @@ function updateStorm(dt) {
 
 // ---------- main update ----------
 function update(dt) {
-  level.t += dt; run.minutes += dt;
+  level.t += dt; run.minutes += dt * (run.mode === "night" ? 1.25 : 1);
   player.inv = Math.max(0, player.inv - dt); player.coffee = Math.max(0, player.coffee - dt);
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
@@ -567,6 +572,7 @@ function update(dt) {
   for (const p of level.papers) if (!p.taken && Math.hypot(player.x - p.x, player.y - p.y) < .24) pickupPaper(p);
   updateHazards(dt); updateTransports(dt);
   if (mode !== "play") return;
+  if (run.mode === "night") { updateNight(dt); if (mode !== "play") return; }
   updateHorde(dt);
   for (const e of level.enemies) { updateEnemy(e, dt); if (mode !== "play") return; }
   updateCalls(dt);
@@ -574,7 +580,7 @@ function update(dt) {
   if (run.reaScriptT != null) { run.reaScriptT -= dt; if (run.reaScriptT <= 0) { run.reaScriptT = null; startRea(level.reaSpot[0], level.reaSpot[1], 999, true); } }
   if (run.reaRandomT != null) { run.reaRandomT -= dt; if (run.reaRandomT <= 0) { run.reaRandomT = null; const t = randomReaTile(); if (t) startRea(t[0], t[1], 50, false); } }
   if (run.rea && !run.rea.mandatory) { run.rea.t -= dt; if (run.rea.t <= 0) { clearRea(); run.reaFail = true; showToast("🫀", "#7b8a85", "Zu spät", "Jemand anderes war schneller. Trotzdem: schlechtes Gewissen.", pen({ nerves: 1 })); updateHud(); checkDeath(); } }
-  if (L.blackouts && !run.flags.has("power")) {
+  if ((L.blackouts || run.nightBlackouts) && !run.flags.has("power")) {
     if (blackout > 0) { blackout -= dt; if (blackout <= 0) setMsg("Licht ist wieder da. Sowas wie Licht.", 2); }
     else { run.nextBlackout -= dt; if (run.nextBlackout <= 0) { blackout = 5; run.nextBlackout = 22 + Math.random() * 12; sfx.powerDown(); setMsg("Stromausfall.", 3, true); } }
     if (Math.random() < dt * .07) (Math.random() < .5 ? sfx.creak : sfx.slam)();
@@ -602,7 +608,7 @@ function update(dt) {
   const bt = buffText(), chip = $("chipBuff"); if (chip.textContent !== bt) chip.textContent = bt; chip.hidden = !bt;
   $("hideVeil").hidden = !player.hidden; $("tired").hidden = run.energy > 0;
   // stealth indicator
-  let maxAw = 0; for (const e of level.enemies) if (!e.done && !e.static) maxAw = Math.max(maxAw, e.state === "spot" ? 1 : e.aw);
+  let maxAw = 0; for (const e of level.enemies) if (!e.done && !e.static && !(e.type === "J" && Math.hypot(e.x - player.x, e.y - player.y) > 6)) maxAw = Math.max(maxAw, e.type === "J" ? .5 : e.state === "spot" ? 1 : e.aw);
   const sc = $("chipStealth"), safe = playerSafe() || player.hidden;
   sc.textContent = safe ? "SICHER" : maxAw >= 1 ? "ENTDECKT" : maxAw >= .35 ? "VERDACHT" : (player.moveMag === .5 ? "SCHLEICHT" : "UNBEMERKT");
   sc.className = "chip " + (safe ? "good" : maxAw >= 1 ? "bad" : maxAw >= .35 ? "warn" : "good");
@@ -666,4 +672,77 @@ function fireAlarmDialog(p) {
     options: [
       opt("Ziehen", () => { p.used = true; const [x, y] = farthestTile(); lure = { x, y, t: 20 }; level.fireT = 20; sfx.alarm(); setTimeout(() => sfx.alarm(), 2100); flash("zap"); return say("RRRRING! Alle rennen zur Sammelstelle. Durch die Lautsprecher: „Bitte bewahren Sie Ruhe und vergessen Sie nicht, Ihre Überstunden einzutragen.“", pen({ mins: 15, tasks: ["Brandschutzbericht (3-fach)", "Gespräch mit der Feuerwehr"] }).concat([good("20 s freie Bahn")])); }, "+15 Min · 2 Aufgaben"),
       opt("Lieber nicht", () => say("Vernünftig. Langweilig, aber vernünftig."))] });
+}
+
+// ---------- night shift (survival) ----------
+function spawnFar(type) {
+  const dm = distMap(Math.floor(player.x), Math.floor(player.y), playerPass); let best = -1, bi = -1;
+  for (let i = 0; i < dm.length; i++) { const x = i % GW, y = (i / GW) | 0; if (dm[i] > best && grid[y][x] === "." && level.zone[i] === 1) { best = dm[i]; bi = i; } }
+  if (bi < 0) return null;
+  const e = spawnEnemy(level, type, bi % GW + .5, ((bi / GW) | 0) + .5); return e;
+}
+function nightHour(h) {
+  const [time, title, text] = NIGHT_HOURS[h];
+  missionCard(time, title, text); if (h >= 2) sfx.stinger();
+  if (h === 1) { spawnFar("Q"); spawnFar("Q"); }
+  if (h === 2) spawnFar("g");
+  if (h === 3) { const e = spawnFar("J"); if (e) { e.tri.material = TRI_MAT.spot; level.hilde = e; } }
+  if (h === 4) { run.nightBlackouts = true; run.nextBlackout = 8; }
+  if (h === 5) spawnFar("F");
+  if (h === 6) run.zT = 4;
+  if (h === 7) spawnFar("C");
+  if (h === 8) { level.hildeFast = true; spawnFar("Q"); }
+}
+function newTask() {
+  const doors = level.doors.filter(d => !d.safe && d.num); if (!doors.length) return;
+  const d = pick(doors), inner = DIRS.map(([dx, dy]) => [d.x + dx, d.y + dy]).find(([x, y]) => level.zone[y * GW + x] === 2 && !solidMove(cell(x, y)));
+  if (!inner) { run.taskT = 3; return; }
+  if (run.hour >= 1 && !run.rea && Math.random() < .15) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
+  run.task = { x: inner[0], y: inner[1], room: d.num, text: pick(NIGHT_TASKS), deadline: run.minutes + 72 };
+  sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440); naviT = 0;
+  showToast("📟", "#a6e38f", "Pager · Zi. " + run.task.room, run.task.text + ". Du hast 72 Minuten.", []); updateHud();
+}
+function completeTask() {
+  run.nightDone++; run.task = null; run.taskT = 8 + Math.random() * 16; sfx.ding();
+  showToast("✅", "#1f9d55", "Erledigt", pick(["Es war nichts. Es ist nie etwas. Außer wenn doch.", "„Danke, Herr Doktor.“ Es ist 3 Uhr. Du bist gerührt.", "Problem gelöst. Ein neues ist schon unterwegs.", "Der Patient schläft wieder. Du nicht.", "Du schreibst es auf. Niemand wird es je lesen."]), gain({ energy: 5, text: "Aufgabe " + run.nightDone }));
+  updateHud();
+}
+function failTask() {
+  const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 8 + Math.random() * 12;
+  showToast("⏰", "#c0322a", "Zu spät · Zi. " + room, pick(["Zi. " + room + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
+  updateHud(); checkDeath();
+}
+function nightHorror() {
+  const opts = ["phone", "steps", "whisper"]; const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
+  if (far.length) opts.push("slam", "slam");
+  const k = pick(opts);
+  if (k === "phone") { sfx.ring(); setMsg("Irgendwo klingelt ein Telefon. In einem leeren Zimmer.", 3.5, true); }
+  else if (k === "steps") { for (let i = 0; i < 4; i++) setTimeout(() => sfx.step(), i * 420); setMsg("Schritte. Hinter dir. Du drehst dich um. Nichts.", 3.5, true); }
+  else if (k === "whisper") { sfx.whisper(); blackout = Math.max(blackout, 1.2); setMsg("… hat da jemand deinen Namen geflüstert?", 3.5, true); }
+  else { const d = pick(far); setDoor(d, false, true); sfx.slam(); setMsg("Eine Tür knallt zu. Niemand ist da.", 3.5, true); }
+}
+function updateNight(dt) {
+  const h = Math.floor((run.minutes - NIGHT_START) / 60);
+  if (run.minutes >= NIGHT_END) { nightWin(); return; }
+  if (h !== run.hour && h < NIGHT_HOURS.length) { run.hour = h; nightHour(h); }
+  if (run.task) { if (run.minutes > run.task.deadline) failTask(); }
+  else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }
+  run.horrorT -= dt; if (run.horrorT <= 0) { run.horrorT = 16 + Math.random() * 20; nightHorror(); }
+  if (run.zT != null) { run.zT -= dt; if (run.zT <= 0) { run.zT = 28; if (level.enemies.filter(e => e.type === "Z" && !e.done).length < 4) spawnFar("Z"); } }
+}
+/* Schwester Hildegard only moves while you are not looking at her (or the lights are out) */
+function updateHildegard(e, t, dt) {
+  if (e.stun > 0) { e.stun -= dt; return; }
+  const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy) || .001;
+  const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw), dot = (-dx * fx - dy * fy) / d;
+  const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect) + .1;
+  const seen = dot > Math.cos(half) && d < 16 && los(player.x, player.y, e.x, e.y) && blackout <= 0 && mode === "play";
+  e.state = "spot"; e.aw = 1; e.frozen = seen;
+  if (seen) { e.moving = false; if (!e.wasSeen) { e.wasSeen = true; if (d < 6) sfx.stinger(); } return; }
+  e.wasSeen = false;
+  if (playerSafe() || player.hidden) return;
+  walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (level.hildeFast ? 1.35 : 1) * (settings.diff === "easy" ? .8 : 1), dt);
+  e.moving = false; e.tyaw = Math.atan2(dx, dy);
+  if (d < 8 && Math.random() < dt * 1.2) tone(160 + Math.random() * 40, 0, .06, "sine", .03);
+  if (d < .75 && player.inv <= 0) hildegardCatch(e);
 }

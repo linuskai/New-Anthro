@@ -6,6 +6,8 @@ A browser game for iPhone (and any other browser). Your shift ended at 17:00. Ge
 
 A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). German UI. A thoroughly cost-cut hospital in seven sections: Innere (5B), Orthopädie, Radiologie, Dermatologie, Keller, Notaufnahme, Parkhaus P2. The full design is in [`GAME_DESIGN.md`](GAME_DESIGN.md).
 
+- **Two modes:** *Feierabend* (the mission below) and *Nachtdienst*, a survival horror night shift from 22:00 to 07:00: pager tasks in the patient rooms, an escalating schedule (sleepwalkers, Dr. Ewig, blackouts, slamming doors, relatives at 3 am, the chief at 5), and Schwester Hildegard, who only moves while you are not looking at her. Win at dawn.
+- **Closing scene:** after the mission your escape vehicle drives away from the hospital into the sunset, with a punchline per route.
 - **Start:** a short story scene in the doctors' room (typewriter text, camera pan, pager beeps), then the whiteboard briefing ("Flucht-Zentrale") where you pick up to three side missions, then "Mission verstanden" and you play.
 - **Career routes:** after the story you pick your way out in the inbox: Pharma, Dermatology, Consulting, Startup, Public health office, Cruise ship or just going home. Each route adds its own goals across the floors (stamps, evidence photos, testimonials, a trial day…) and its own ride in the car park.
 - **Calls with consequences:** answering costs time but earns goodwill with that department; missed calls pile up, and with two open callbacks you get paged across the building and an attending starts hunting you.
@@ -28,7 +30,7 @@ A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). Ger
 - **Difficulty:** "Entspannt" (default) or "Dienstalltag".
 - **Controls:** phone: bottom-left stick walk (light = sneak), drag anywhere else to look, SCHLEICHEN / RENNEN, yellow button to use, tap LAMPE to switch the flashlight. Keyboard: WASD, mouse (click to capture) or arrows/Q, C sneak, Shift sprint, E action (also doors), F flashlight, 1–6 inventory, J/N calls, Tab mission panel, M map, B whiteboard, P pause.
 
-Code layout (plain `<script>` files sharing one global scope, no build step): `js/data.js` (levels, story, data), `js/world.js` (renderer, textures, 3D people), `js/props.js` (furniture models, geometry merging), `js/build.js` (doors, stairwell, elevator, rooms, doctors' room), `js/level.js` (level construction), `js/game.js` (run state, HUD, items, audio), `js/dialog.js` (dialogue engine), `js/talks.js` + `js/talks2.js` (conversation pools incl. dermatologists, gadgets, elevator), `js/play.js` (input, stealth AI, hazards, events), `js/flow.js` (story, missions, endings, radar, rendering, boot).
+Code layout (plain `<script>` files sharing one global scope, no build step): `js/data.js` (levels, story, data), `js/world.js` (renderer, textures, 3D people), `js/props.js` (furniture models, geometry merging), `js/build.js` (doors, stairwell, elevator, rooms, doctors' room), `js/level.js` (level construction), `js/game.js` (run state, HUD, items, audio), `js/dialog.js` (dialogue engine), `js/talks.js` + `js/talks2.js` (conversation pools incl. dermatologists, gadgets, elevator), `js/play.js` (input, stealth AI, hazards, events), `js/outro.js` (closing scene), `js/flow.js` (modes, story, missions, endings, radar, rendering, boot).
 
 ## Classic 2D (`classic.html`)
 

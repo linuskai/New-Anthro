@@ -7,9 +7,11 @@ const player = { x: 0, y: 0, yaw: 0, pitch: 0, coffee: 0, busy: 0, airplane: 0, 
 let msg = { text: "", t: 0 };
 let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 0, lightMul = 1, zoneMsgT = 0, boltT = 0, nextBolt = 25, scare = null, scareCd = 20;
 
-function newRun() {
+function newRun(m = "mission") {
   run = { idx: 0, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
     flags: new Set(), offers: new Set(), inv: { c: 1, p: 5 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), sides: new Set(), nextCall: 40 + Math.random() * 15, headhunterT: null, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false };
+  run.mode = m;
+  if (m === "night") Object.assign(run, { idx: LEVELS.length - 1, minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
 const playerSafe = () => cell(Math.floor(player.x), Math.floor(player.y)) === "_";
 
@@ -28,7 +30,8 @@ function loadFloor(idx) {
   run.reaScriptT = L.reaScript || null;
   run.nextBlackout = 16 + Math.random() * 8;
   $("hudFloor").textContent = L.short;
-  setMsg("Feierabend war um 17:00. Leise raus.", 0);
+  setMsg(run.mode === "night" ? "Nachtdienst. Überlebe bis 07:00." : "Feierabend war um 17:00. Leise raus.", 0);
+  if (run.mode === "night") player.lamp = 100;
   naviT = 0; applyEnv(true); updateHud(); renderInv();
 }
 
@@ -42,11 +45,12 @@ function applyEnv(force) {
   const target = bo ? .06 : (tile && !env.dark ? .32 : 1);
   lightMul += (target - lightMul) * (force ? 1 : .06);
   const bolt = boltT > 0 ? .9 : 0;
-  hemi.intensity = env.hemi * .9 * lightMul + bolt * .6; amb.intensity = env.amb * .85 * lightMul; sun.intensity = env.dir * 1.7 * lightMul;
-  const fogC = new THREE.Color(bo ? 0x030504 : env.fog);
+  const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - 780) / 60)) : 0;
+  hemi.intensity = (env.hemi * .9 + dawn * .45) * lightMul + bolt * .6; amb.intensity = (env.amb * .85 + dawn * .15) * lightMul; sun.intensity = (env.dir * 1.7 + dawn * .5) * lightMul;
+  const fogC = new THREE.Color(bo ? 0x030504 : env.fog); if (dawn) fogC.lerp(new THREE.Color(0x6a5a6a), dawn * .8);
   if (!env.dark) fogC.lerp(new THREE.Color(0x0a0d0c), 1 - lightMul);
   scene.fog.color.copy(fogC); scene.background.copy(fogC);
-  scene.fog.near = bo ? 1 : env.near * (.4 + .6 * lightMul); scene.fog.far = bo ? 10 : env.far * (.45 + .55 * lightMul);
+  scene.fog.near = bo ? 1 : env.near * (.4 + .6 * lightMul); scene.fog.far = bo ? 10 : (env.far + dawn * 12) * (.45 + .55 * lightMul);
   const need = inDarkness() || bo;
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
@@ -59,6 +63,12 @@ const lampVisible = () => inDarkness() && player.lampOn && player.lamp > 0;
 const bouncersTotal = () => level ? level.enemies.filter(e => e.type === "U").length : 0;
 const bouncersCleared = () => level ? level.enemies.filter(e => e.type === "U" && e.cleared).length : 0;
 function objectives() {
+  if (run.mode === "night") {
+    const left = Math.max(0, NIGHT_END - run.minutes), list = [];
+    if (run.task) list.push({ id: "task", title: "Pager · Zi. " + run.task.room, text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
+    list.push({ id: "survive", title: "Überleben bis 07:00", text: `Überlebe bis 07:00 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
+    return list;
+  }
   const L = LEVELS[run.idx], R = run.route ? ROUTES[run.route] : null;
   const list = L.objectives.map(o => { const promoted = !o.main && R && R.promote.includes(o.id); return { ...o, main: o.main || promoted, route: promoted ? R.name : null, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }; });
   if (R) for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: true, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: g.done ? g.done() : run.flags.has(g.id) });
@@ -82,6 +92,7 @@ function currentObjective() {
 }
 function targetOf(o) {
   if (!o || !o.at) return null;
+  if (o.at === "task") return run.task ? [run.task.x + .5, run.task.y + .5] : null;
   if (o.at === "exit") return level.exit ? [level.exit[0] + .5, level.exit[1] + .5] : null;
   if (o.at === "rea") return run.rea && !run.rea.done ? [run.rea.x + .5, run.rea.y + .5] : (level.reaSpot ? [level.reaSpot[0] + .5, level.reaSpot[1] + .5] : null);
   if (o.at === "bouncer") { const e = level.enemies.find(e => e.type === "U" && !e.cleared); return e ? [e.x, e.y] : null; }

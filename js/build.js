@@ -122,7 +122,7 @@ function buildDoor(lv, x, y, theme, num, plateText) {
   const sign = plate(signT, safe ? 1.8 : 1.3, safe ? .52 : .38);
   if (axis === "x") { sign.position.set(cx + cs * (S / 2 + .015), 2.78, cz); sign.rotation.y = cs * Math.PI / 2; } else { sign.position.set(cx, 2.78, cz + cs * (S / 2 + .015)); sign.rotation.y = cs > 0 ? 0 : Math.PI; }
   g.add(sign);
-  const d = { x, y, axis, cs, safe, pivot, open: false, ang: 0, target: 0, openAng: axis === "x" ? -cs * Math.PI / 2 * .94 : cs * Math.PI / 2 * .94 };
+  const d = { x, y, num, axis, cs, safe, pivot, open: false, ang: 0, target: 0, openAng: axis === "x" ? -cs * Math.PI / 2 * .94 : cs * Math.PI / 2 * .94 };
   lv.doors.push(d); doorMap.set(x + "," + y, d);
   return d;
 }

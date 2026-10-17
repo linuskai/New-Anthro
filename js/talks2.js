@@ -147,7 +147,8 @@ function hostileDialog(e) {
     const line = { N: "„Du bist doch vorhin rangegangen! Danke. Geh, ich mach das hier.“", V: "„Sie haben mit der Bettendisposition telefoniert? Vorbildlich. Ich halte Sie nicht auf.“", C: "„Ah, Sie haben mein Sekretariat zurückgerufen. Gehen Sie, gehen Sie.“", I: "„Du hast dein Passwort geändert? Respekt. Lauf, bevor es wieder abläuft.“" }[e.type];
     return runChain(e, "", [{ q: line, options: [opt("„Danke!“", () => free("Telefon-Karma eingelöst. Manchmal lohnt es sich, ranzugehen.", [good("Goodwill")]))] }]);
   }
-  const pool = TALKS[e.type] || TALKS.P;
+  if (e.type === "J") return hildegardCatch(e);
+  const pool = (run.mode === "night" && TALKS[e.type + "n"]) || TALKS[e.type] || TALKS.P;
   if (!run.usedTalks) run.usedTalks = new Set();
   let fresh = pool.filter(t => !run.usedTalks.has(e.type + t.id));
   if (!fresh.length) { for (const t of pool) run.usedTalks.delete(e.type + t.id); fresh = pool; }
@@ -158,6 +159,7 @@ function hostileDialog(e) {
 // ---------- gadgets: elevator, computer, phone, coffee machine ----------
 function liftDialog(p) {
   sfx.lift(); p.open = 1.6;
+  if (run.mode === "night") { sfx.stinger(); showToast("🛗", "#12161f", "Aufzug B · 03:00", pick(["Die Tür geht auf. Der Aufzug ist leer. Das Licht flackert. Auf dem Boden liegt eine Schwesternhaube. Die Tür geht zu. Du gehst nicht rein.", "Ding. Niemand drin. Aus dem Lautsprecher: „Kurven …“. Ding. Weg."]), []); return; }
   if (!level.exit || !exitOpen()) { showToast("🛗", "#9aa3a8", "Aufzug B", pick(["Er kommt. Die Tür geht auf. Drinnen ein Schild: „Fährt nur nach erledigter Mission (Dienstanweisung 12/2019).“ Die Tür geht wieder zu.", "Ding! Drinnen steht ein leeres Bett. Und ein Schild: „Erst die Mission.“ Die Tür schließt sich langsam. Sehr langsam.", "Er kommt, öffnet sich, spielt drei Töne Panflöte und fährt ohne dich weiter."]), []); return; }
   const next = LEVELS[run.idx + 1];
   openDialog({ av: "🛗", color: "#9aa3a8", name: "Aufzug B", role: "Fährt (heute) · nächster Halt: " + (next ? next.short : "?"), text: "Er ist tatsächlich gekommen. Drinnen riecht es nach Desinfektionsmittel und Panik. Aus dem Lautsprecher: „Stayin' Alive“ auf Panflöte.",
@@ -251,3 +253,53 @@ TALKS.R = [
     opt("„Essen? Ich hatte heute ein Gummibärchen.“", () => free("Sie drückt dir einen Proteinriegel in die Hand. „Vegan, glutenfrei, schmeckt nach nichts.“", gain({ energy: 20 }))),
     opt("„Wir essen nicht. Wir verstoffwechseln Stress.“", () => free("Sie macht ein Foto von dir. „Für die Vorher-Bilder.“"))] }]) },
 ];
+
+/* Night shift */
+TALKS.Q = [
+  { id: "mama", go: T("Er schläft. Mit offenen Augen.", [{ q: "„Mama? Ist schon Frühstück? Ich will Kakao.“", options: [
+    opt("„Ja, Schatz. Kakao gibt's im Bett.“", () => free("Er nickt zufrieden und schlafwandelt zurück ins Zimmer. Du hast gerade jemanden ins Bett gebracht. Als Mama.")),
+    opt("„Ich bin nicht deine Mama.“", () => say("Er fängt an zu weinen. Im Schlaf. Laut. Zi. 5.03 klingelt deswegen.", pen({ energy: 8 }))),
+    opt("Ihn sanft umdrehen", () => free("Du drehst ihn um 180 Grad. Er läuft geradeaus weiter. Zurück ins Bett. Physik."))] }]) },
+  { id: "pruefung", go: T("Sie murmelt im Schlaf.", [{ q: "„Ich hab die Prüfung … nicht gelernt … ist heute Physikum?“", options: [
+    opt("„Nein. Physikum war 1987. Du hast bestanden.“", () => free("Sie lächelt im Schlaf. Ein Leben lang Angst, und jetzt: Erleichterung. Sie schlafwandelt zufrieden ins Bad.")),
+    opt("„Ja. Und du bist zu spät.“", () => say("Sie rennt los. Im Nachthemd. Den Flur runter. Du musst hinterher.", pen({ energy: 12 }))),
+    opt("Ihr eine Kurve zum Unterschreiben geben", () => free("Sie unterschreibt. Mit „Mama“. Rechtlich unklar, praktisch erledigt."))] }]) },
+  { id: "kuehlschrank", go: T("Er steht vor der Stationsküche und starrt ins Leere.", [{ q: "„Wo … ist … der … Pudding?“", options: [
+    opt("„Im Kühlschrank. Zweites Fach.“", () => free("Er findet den Pudding. Er isst ihn. Es ist der Pudding von Schwester Gertrud. Morgen gibt es Ärger. Nicht für dich.")),
+    opt("„Der Pudding wurde eingespart.“", () => free("Er nickt. Er versteht. Er schläft im Stehen weiter. Selbst im Traum kennt er das Controlling.")),
+    opt("Ihm deinen Donut geben", () => { takeItem("$"); return free("Er nimmt den Donut, sagt „Danke, Papa“ und geht. Du hast einen Sohn. Für eine Nacht.", gain({ nerves: 1 })); }, () => hasItem("$") ? "🍩 abgeben" : "braucht 🍩", () => !hasItem("$"))] }]) },
+  { id: "vollmond", go: T("", [{ q: "„Doktor … ist heute Vollmond? Alle sind so komisch.“", options: [
+    opt("„Ja. Und Hildegard ist unterwegs.“", () => say("Er erstarrt. „Hildegard?“ Er kriecht unters Bett. Du auch fast.", pen({ nerves: 1 }))),
+    opt("„Nein, das ist nur die Notbeleuchtung.“", () => free("„Ach so.“ Er schläft beruhigt weiter. Im Stehen. Gegen die Wand gelehnt.")),
+    opt("„Schlafen Sie weiter, das ist ein Traum.“", () => free("„Schöner Traum“, sagt er. Er sieht dich an. „Sie sehen müde aus.“ Er hat recht."))] }]) },
+];
+TALKS.Fn = [
+  { id: "gegend", go: T("„Wir waren gerade in der Gegend!“ Es ist 3:12 Uhr.", [{ q: "„Wir wollten nur kurz schauen, ob Opa schläft.“", options: [
+    opt("„Er schlief. Bis eben.“", () => free("Opa ruft aus dem Zimmer: „JETZT nicht mehr!“ Die Familie geht beschämt. Dirk filmt.")),
+    opt("„Besuchszeit ist 15 bis 18 Uhr.“", () => say("„Wir haben Schichtdienst! Wie Sie!“ Sie setzen sich. Sie haben Thermoskannen dabei.", pen({ mins: 15 }))),
+    opt("Ihnen Hildegard zeigen", () => free("Du zeigst ans Ende des Flurs. Da steht eine Haube. Die Familie ist in elf Sekunden im Aufzug. Rekord."))] }]) },
+  { id: "kuchen", go: T("„Wir haben Kuchen mitgebracht! Für die Nachtschicht!“", [{ q: "Ein ganzes Blech Bienenstich. Um drei Uhr nachts.", options: [
+    opt("„Danke!“ Ein Stück nehmen", () => free("Er ist noch warm. Oma hat um eins gebacken, weil sie nicht schlafen konnte. Du liebst Oma.", gain({ energy: 35, nerves: 1 }))),
+    opt("„Zucker ist schlecht für Opa.“", () => say("„Der ist doch für SIE!“ Sie sind beleidigt. Sie essen den Kuchen selbst. Vor dir.", pen({ nerves: 1 }))),
+    opt("„Stellen Sie ihn ins Stationszimmer.“", () => free("Sie stellen ihn ab und gehen. Um 6 Uhr ist er weg. Hildegard?"))] }]) },
+];
+TALKS.Cn = [
+  { id: "frueh", go: T("„Guten Morgen! Ich bin früh dran. Bettflucht. Alter.“", [{ q: "„Wie war die Nacht?“", options: [
+    opt("„Ruhig.“", () => say("Nirgends im Krankenhaus darf man „ruhig“ sagen. Sofort piept dein Pager dreimal.", pen({ nerves: 1 }))),
+    opt("„Schwester Hildegard war da.“", () => free("Er wird kreidebleich. „Hildegard … ist 1998 in Rente gegangen.“ Er geht. Schnell. Rückwärts.")),
+    opt("„Lang.“", () => free("Er klopft dir auf die Schulter. „Das ist Medizin.“ Er geht Kaffee trinken. Den letzten."))] }]) },
+  { id: "kurven", go: T("„Ich wollte nur kurz die Kurven sehen.“", [{ q: "Es ist 5:20 Uhr. Er trägt Golfschuhe.", options: [
+    opt("„Liegen im Stationszimmer.“", () => free("Er geht hin. Die Kurven sind abgezeichnet. Mit „Mama“. Er sagt nichts.")),
+    opt("„Ich zeige sie Ihnen um 7.“", () => say("„Um 7 bin ich beim Golf.“ Er nimmt dich mit zur Kurvenschau. 20 Minuten.", pen({ mins: 20 }))),
+    opt("„Die hat Hildegard.“", () => free("Er schaut den Flur entlang. Eine Haube. Er geht zum Golf. Sofort."))] }]) },
+];
+function hildegardCatch(e) {
+  flash(); sfx.stinger(); sfx.hit();
+  openDialog({ sp: e.person.sp, av: "🕯️", color: "#e8e4d0", name: "Schwester Hildegard", role: "Nachtwache · seit 1978 · steht direkt hinter dir",
+    text: pick(["„Haben Sie die Kurven abgezeichnet? … Nein? … Dann zeichne ich SIE ab.“", "„Ruhige Nacht, nicht wahr? … Ruhig ist es nur, wenn man nicht hinsieht.“", "„Sie haben die Klingel in 5.07 nicht gehört. Ich höre ALLES.“", "„Früher hatten wir drei Nachtschwestern. Ich bin alle drei.“"]),
+    options: [
+      opt("„Ja, Schwester Hildegard.“", () => say("Sie nickt langsam. Die Kerze flackert. Als du blinzelst, ist sie weg.", pen({ nerves: 1 }))),
+      opt("Wegrennen", () => say("Du rennst. Hinter dir: nichts. Vor dir: eine Haube. Du rennst anders herum.", pen({ energy: 20 }))),
+      opt("Ihr deinen Kaffee anbieten", () => { takeItem("1"); return say("Sie trinkt ihn in einem Zug. Kalt. Sie lächelt. Zum ersten Mal seit 1978. Dann ist sie weg.", [good("Verschont")]); }, () => hasItem("1") ? "☕ abgeben" : "braucht ☕", () => !hasItem("1"))],
+    onClose: () => { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; e.stun = 6; player.inv = 3; } });
+}

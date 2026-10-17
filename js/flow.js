@@ -5,10 +5,12 @@ function hidePopups() { for (const id of ["toast", "lab", "tasks", "hideVeil", "
 
 // ---------- story in the doctors' room ----------
 let story = null;
-function startStory() {
+let lastMode = "mission";
+function startStory(m) {
+  m = m === "night" ? "night" : "mission"; lastMode = m;
   initAudio(); hidePopups(); show(null); clearInputs();
-  newRun(); loadFloor(0); $("hudClock").textContent = fmtTime(-1);
-  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw };
+  newRun(m); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -1);
+  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? STORY_NIGHT : STORY };
   $("story").hidden = false; document.body.classList.add("cine");
   storyNext();
   setTimeout(() => $("btnStoryNext").focus({ preventScroll: true }), 50);
@@ -17,11 +19,12 @@ function storyNext() {
   if (!story) return;
   if (story.shown < story.full.length) { story.shown = story.full.length; $("storyText").textContent = story.full; return; }
   story.i++;
-  if (story.i >= STORY.length) { endStory(); return; }
-  const [time, text] = STORY[story.i];
+  if (story.i >= story.lines.length) { endStory(); return; }
+  const [time, text] = story.lines[story.i];
   story.full = text; story.shown = 0; story.t = 0;
   $("storyTime").textContent = time; $("storyText").textContent = "";
-  $("btnStoryNext").textContent = story.i === STORY.length - 1 ? "Zum Whiteboard" : "Weiter";
+  $("btnStoryNext").textContent = story.i === story.lines.length - 1 ? (run.mode === "night" ? "Dienst beginnen" : "Zum Posteingang") : "Weiter";
+  if (run.mode === "night") { if (story.i === 2) { sfx.stinger(); setTimeout(() => sfx.beep(), 500); } return; }
   if (story.i === 2) { sfx.tick(); setTimeout(() => sfx.beep(), 300); setTimeout(() => sfx.beep(), 650); }
   if (story.i === 4) { for (let k = 0; k < 5; k++) setTimeout(() => sfx.step(), 200 + k * 380); setTimeout(() => sfx.knock(), 2300); }
   if (story.i === 5) { sfx.stinger(); setTimeout(() => sfx.whisper(), 900); }
@@ -30,9 +33,10 @@ function endStory() {
   if (!story) return;
   story = null; $("story").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
+  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = "Pager-Aufgaben erledigen · Arztzimmer ist sicher · Hildegard nie aus den Augen lassen"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
   showMail();
 }
-$("btnStoryNext").addEventListener("click", storyNext);
+$("btnStoryNext").addEventListener("click", () => { if (mode === "outro") { if (outro && outro.shown < outro.full.length) { outro.shown = outro.full.length; $("storyText").textContent = outro.full; } else endOutro(); } else storyNext(); });
 $("btnSkip").addEventListener("click", endStory);
 function updateStory(dt) {
   story.t += dt;
@@ -54,11 +58,13 @@ function missionCard(eyebrow, title, sub, done) {
   else { tone(196, 0, .25, "sawtooth", .04); tone(294, .2, .45, "sawtooth", .04); }
 }
 function announceObjective() {
+  if (run.mode === "night") return;
   const c = currentObjective(); if (!c) return;
   missionCard(c.isExit ? "Weiter" : c.route ? "Route · " + c.route : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
   setTimeout(() => { if (mode === "play" && c.brief) showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800);
 }
 function trackObjectives() {
+  if (run.mode === "night") return;
   if (!run.objDone) run.objDone = new Set();
   let changed = false;
   for (const o of objectives()) {
@@ -134,7 +140,7 @@ $("btnBrief").addEventListener("click", () => {
 });
 function showIntro(bonus) {
   const L = LEVELS[run.idx];
-  $("introEyebrow").textContent = `${L.floor} · Abschnitt ${run.idx + 1} von ${LEVELS.length}`;
+  $("introEyebrow").textContent = `${L.floor} · Abschnitt ${run.idx + 1} von ${MISSION_LEVELS}`;
   $("introName").textContent = L.name; $("introTip").textContent = L.tip;
   $("introObj").innerHTML = objectives().filter(o => !o.isExit).map(o => `<li><span class="ico" style="background:${o.main ? "#f2b33d" : "#f3f8f1"}">${o.main ? "!" : "?"}</span><span><b>${o.route ? "Route " + esc(o.route) : o.main ? "Mission" : "Nebenjob"}</b> · ${esc(o.title ? o.title + ": " : "")}${esc(o.text)}</span></li>`).join("");
   $("introBonus").hidden = !bonus; $("introBonus").textContent = bonus || "";
@@ -217,14 +223,33 @@ function showGameOver() {
   hidePopups(); clearInputs();
   const L = LEVELS[run.idx];
   run.duties.push("N");
-  $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = "Burnout";
+  if (run.mode === "night") {
+    $("endText").textContent = `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
+    fillStats(); sideResults(false); $("endBest").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
+    mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
+  }
+  $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
   $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Nerven sind weg. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
   fillStats(); sideResults(false);
   const best = getBest(); $("endBest").hidden = best == null; if (best != null) $("endBest").textContent = "Frühester Feierabend bisher: " + fmtTime(best);
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen";
   mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
-function showEnd(key, n) {
+function showEnd(key, n) { playOutro(key, () => showEndScreen(key, n)); }
+function nightWin() { run.nightWon = true; playOutro("night", showNightEnd); }
+const NIGHT_BEST = "hospital-escape-night-best";
+function showNightEnd() {
+  mode = "win"; clearInputs(); hidePopups(); endCall();
+  let best = null; try { best = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
+  const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
+  $("endEyebrow").textContent = "Station 5B · 07:00"; $("endTitle").textContent = "Übergabe";
+  $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
+  fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
+  $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im Arztzimmer versteckt";
+  $("sideRes").innerHTML = ""; $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Nachtdienst-Rekord." : "Bester Nachtdienst: " + best + " Aufgaben";
+  $("btnAgain").firstElementChild.textContent = "Noch eine Nacht"; sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+}
+function showEndScreen(key, n) {
   const E = ENDINGS[key];
   mode = "win"; clearInputs(); hidePopups(); endCall();
   const best = getBest(), isBest = best == null || run.minutes < best; if (isBest) setBest(run.minutes);
@@ -268,8 +293,9 @@ for (const id of ["setDiff", "setDiffTitle"]) {
     if (run) { run.nerves = Math.min(run.nerves, MAX_NERVES()); updateHud(); }
   });
 }
-$("btnStart").addEventListener("click", startStory);
-$("btnAgain").addEventListener("click", startStory);
+$("btnStart").addEventListener("click", () => startStory("mission"));
+$("btnNight").addEventListener("click", () => startStory("night"));
+$("btnAgain").addEventListener("click", () => startStory(lastMode));
 
 // ---------- render ----------
 const mini = $("mini"), mctx = mini.getContext("2d");
@@ -488,6 +514,7 @@ addEventListener("resize", resize);
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (mode === "outro" && outro) { updateOutro(dt); if (outro) { renderer.render(outro.sc, outro.cam); requestAnimationFrame(frame); return; } }
   if (mode === "play" && !document.hidden) update(dt);
   else if (mode === "story" && story) { updateStory(dt); applyEnv(); }
   if (mode === "title") { player.yaw += dt * .18; player.pitch = -.05; }

@@ -184,6 +184,20 @@ Rufleuchten über den Zimmertüren (blinken, natürlich), Stationsstützpunkt, F
 - Tag-/Nachtwechsel und ein Horror-Nachtdienst-Modus
 - Kleine Zwischensequenz pro Ende (Fahrt im Fluchtfahrzeug)
 
+## Version 7: Spielmodi
+
+### Feierabend (Mission)
+Der bisherige Modus: Posteingang, Route wählen, sieben Stockwerke, Fluchtfahrzeug. Neu: **Endszene** vor dem Endbildschirm. Das Fahrzeug fährt vom „Klinikum St. Sparen“ in den Sonnenuntergang, mit einer Pointe pro Route (beim Heimweg setzt das Auto am Ende wieder zurück, Montag wartet).
+
+### Nachtdienst (Survival, Horror)
+- Station 5B bei Nacht, 22:00 bis 07:00 (etwa 7 Minuten Spielzeit). Allein.
+- **Pager-Aufgaben**: „Zi. 5.07: Infusion piept (sie piept immer)“. Hingehen, versorgen, bevor 72 Minuten um sind. Sonst kostet es Nerven. Ab und zu eine Reanimation.
+- **Jede Stunde schlimmer**: 23 Uhr Schlafwandler, 0 Uhr Dr. Ewig, 1 Uhr Schwester Hildegard, 2 Uhr Stromausfälle und zufallende Türen, 3 Uhr Familie Kowalski („gerade in der Gegend“), 4 Uhr Pseudo-Notfälle aus der ZNA, 5 Uhr der Chefarzt (Bettflucht), 6 Uhr Morgengrauen und Hildegard wird schneller.
+- **Schwester Hildegard** (Nachtwache seit 1978): bewegt sich nur, wenn du nicht hinsiehst, im Stromausfall immer. Kommt nicht in das Arztzimmer. Kaffee besänftigt sie.
+- **Spuk**: Telefone klingeln in leeren Zimmern, Schritte hinter dir, Flüstern, Türen knallen zu.
+- **Powernap** auf der Bereitschaftsliege: +45 Energie, +1 Nerv, aber 25 Minuten vergehen (und der Pager wartet nicht).
+- **Sieg** um 07:00: Sonnenaufgang, Übergabe („Ruhige Nacht?“). Wertung nach erledigten Aufgaben, Rekord wird gespeichert.
+
 ## Ideen für später
 
 - Speicherpunkte zwischen den Abschnitten

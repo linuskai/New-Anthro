@@ -362,6 +362,15 @@ body.hudmin .mission { display: none; }
 .mail-needs { background: #fff8d6; border-radius: 6px; padding: 8px 12px; font-size: 14px; } .mail-needs ul { margin: 4px 0 0; padding-left: 1.2em; }
 .mail-btns { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
 .route-tag { display: inline-block; background: #f2b33d; color: #2a1c00; border-radius: 3px; padding: 1px 6px; font: 800 11px/1.4 var(--display); text-transform: uppercase; letter-spacing: .05em; }
+.modes { display: grid; gap: 8px; }
+.mode-card { appearance: none; border: 0; text-align: left; cursor: pointer; border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center;
+  background: var(--sign-ink); color: var(--sign); font-family: var(--display); box-shadow: 0 5px 0 rgba(0,0,0,.35); touch-action: manipulation; }
+.mode-card:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.mode-card .mode-ico { font-size: 30px; text-align: center; }
+.mode-card b { display: block; font: 900 22px/1 var(--display); text-transform: uppercase; letter-spacing: .02em; }
+.mode-card small { display: block; font: 600 13px/1.25 var(--display); opacity: .85; margin-top: 4px; }
+.mode-card.night { background: #12161f; color: #e8e4d0; border: 2px solid #3a4a6a; }
+.mode-card:focus-visible { outline: 3px solid #f2b33d; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
 </style>
 </head>
@@ -492,7 +501,10 @@ body.hudmin .mission { display: none; }
       <p class="small">Tastatur: WASD, Maus oder Pfeiltasten, C schleichen, Shift rennen, E Aktion (auch Türen), F Lampe, M Lageplan, P Pause.</p>
       <p class="small" id="bestLine" hidden></p>
       <div class="err" id="loadErr" hidden>Die 3D-Engine konnte nicht geladen werden. Bitte Internetverbindung prüfen und neu laden.</div>
-      <button class="btn" id="btnStart" type="button"><span>Schicht beenden</span><span>→</span></button>
+      <div class="modes">
+        <button class="mode-card" id="btnStart" type="button"><span class="mode-ico">🚗</span><span><b>Feierabend</b><small>Mission · Wähle deinen Ausweg und schleich dich durch sieben Stockwerke bis zum Fluchtfahrzeug.</small></span></button>
+        <button class="mode-card night" id="btnNight" type="button"><span class="mode-ico">🕯️</span><span><b>Nachtdienst</b><small>Survival · Allein von 22:00 bis 07:00. Pager, Schlafwandler, Stromausfälle. Und Schwester Hildegard.</small></span></button>
+      </div>
     </div>
   </section>
 
@@ -592,6 +604,7 @@ body.hudmin .mission { display: none; }
 <script src="js/talks.js"></script>
 <script src="js/talks2.js"></script>
 <script src="js/play.js"></script>
+<script src="js/outro.js"></script>
 <script src="js/flow.js"></script>
 </body>
 </html>
