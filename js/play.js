@@ -141,7 +141,7 @@ function findFocus() {
     if (p.kind === "phone") consider(p.x, p.y, 1.3, { type: "phone", ref: p, label: "Abheben", name: "Diensttelefon" });
     if (p.kind === "fire") consider(p.x, p.y, 1.3, { type: "fire", ref: p, label: "Feuermelder", name: "Nur im Notfall" });
     if (p.kind === "brew") consider(p.x, p.y, 1.3, { type: "brew", ref: p, label: "Kaffee", name: "Kaffeemaschine" });
-    if ((p.kind === "photo" || p.kind === "stamp" || p.kind === "meds") && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.kind === "stamp" ? "Stempeln" : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
+    if ((p.kind === "photo" || p.kind === "stamp" || p.kind === "meds" || p.kind === "grab") && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.kind === "stamp" ? "Stempeln" : p.kind === "grab" ? p.grab[1] : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
   }
   if (run.task && run.mode === "night") consider(run.task.x + .5, run.task.y + .5, 1.5, { type: "nighttask", label: "Versorgen", name: "Zi. " + run.task.room });
   if (run.rea && !run.rea.done) consider(run.rea.x + .5, run.rea.y + .5, 1.3, { type: "rea", label: "Reanimieren", name: "Patient ohne Puls" });
@@ -191,6 +191,7 @@ function act() {
     const p = f.ref; run.flags.add(p.goal); sfx.pick();
     if (p.kind === "photo") { flash(); tone(1800, 0, .05, "square", .05); showToast("📸", "#f2b33d", "Beweisfoto", pick(["Klick. Kevin wird das auf Folie 12 „Quick Wins“ packen.", "Klick. Im Hintergrund winkt eine Pflegekraft. Sie ahnt nicht, dass sie gerade „Optimierungspotenzial“ ist.", "Klick. Du fühlst dich schmutzig. Und sechsstellig."]), [good(BAG_NAMES[p.goal])]); }
     else if (p.kind === "stamp") showToast("🖃", "#2d3f8f", "Stempel", pick(["Ratsch. Ein Stempel, leicht schief. Behörden lieben schief.", "Ratsch. Das Datum ist von 2019. Egal, Stempel ist Stempel."]), [good(BAG_NAMES[p.goal])]);
+    else if (p.kind === "grab") showToast(p.grab[0], "#1f9d55", BAG_NAMES[p.goal] || "Eingepackt", p.grab[2], [good(BAG_NAMES[p.goal] || "Eingepackt")]);
     else showToast("💊", "#1f9d55", "Reisetabletten", "Eingepackt. Das Butterbrot lässt du liegen. Es hat hier Rechte.", [good("Reisetabletten")]);
     updateHud();
   }
@@ -363,7 +364,7 @@ function updateEnemy(e, dt) {
   else if (e.aw >= 1 || (e.state === "spot" && e.aw > .4)) e.state = "spot";
   else if (e.aw >= .35) e.state = "sus";
   else e.state = "idle";
-  if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); emote(e, FANS.includes(e.type) ? pick(["😍", "🙋", "🤩"]) : pick(["❗", "😠", "☝️"])); }
+  if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); emote(e, FANS.includes(e.type) ? pick(["😍", "🙋", "🤩"]) : pick(["❗", "😠", "☝️"])); (run.spotted || (run.spotted = new Set())).add(run.idx); }
   if (e.state === "sus" && prev === "idle") { sfx.sus(); emote(e, pick(["❓", "🤨", "👀"])); }
   if (e.state !== prev || !e.person.expr) setExpression(e.person, exprFor(e));
   if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { hostileDialog(e); return; }
@@ -624,7 +625,7 @@ function update(dt) {
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
   updateNavi(dt);
-  level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); updateMissionHow(currentObjective()); }
+  level.objT = (level.objT || 0) - dt; if (level.objT <= 0) { level.objT = .4; trackObjectives(); updateMissionHow(currentObjective()); updateRouteClock(); updateRouteChip(); }
   focus = findFocus();
   const ab = $("btnAct");
   if (player.channel) { $("actLabel").textContent = player.channel.label; $("actProg").style.height = (player.channel.t / player.channel.total * 100) + "%"; ab.classList.add("ready"); }

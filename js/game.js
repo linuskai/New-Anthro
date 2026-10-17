@@ -73,18 +73,18 @@ function objectives() {
   }
   const L = LEVELS[run.idx], R = run.route ? ROUTES[run.route] : null;
   const list = L.objectives.map(o => { const promoted = !o.main && R && R.promote.includes(o.id); return { ...o, main: o.main || promoted, route: promoted ? R.name : null, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) }; });
-  if (R) for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: true, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: g.done ? g.done() : run.flags.has(g.id) });
+  if (R) for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: !g.bonus, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: g.done ? g.done() : run.flags.has(g.id) });
   if (!L.final) list.push({ id: "exit", title: "Abgang", text: L.exitText, brief: "Die Brandschutztür ist offen. Treppe runter. Oder Aufzug, wenn du Nerven hast.", main: true, at: "exit", done: false, isExit: true });
   return list;
 }
 function routeReady(k) {
   const R = ROUTES[k]; if (!R) return false;
-  return R.promote.every(id => run.flags.has(id) || (id === "cream" && run.picked.has("+"))) && R.goals.every(g => g.done ? g.done() : run.flags.has(g.id));
+  return R.promote.every(id => run.flags.has(id) || (id === "cream" && run.picked.has("+"))) && R.goals.every(g => g.bonus || (g.done ? g.done() : run.flags.has(g.id)));
 }
 function routeMissing(k) {
   const R = ROUTES[k]; const miss = [];
   for (const id of R.promote) if (!(run.flags.has(id) || (id === "cream" && run.picked.has("+")))) miss.push(BAG_NAMES[id] || id);
-  for (const g of R.goals) if (!(g.done ? g.done() : run.flags.has(g.id))) miss.push(g.title);
+  for (const g of R.goals) if (!g.bonus && !(g.done ? g.done() : run.flags.has(g.id))) miss.push(g.title);
   return miss;
 }
 const exitOpen = () => objectives().every(o => !o.main || o.done || o.isExit);
@@ -142,7 +142,7 @@ function howTo(o) {
   if (kind === "friend") return (FRIENDS[key] ? FRIENDS[key].name : "Person") + " ansprechen (grüner Punkt)";
   if (kind === "item") return (ITEMS[key] ? ITEMS[key].name : "Gegenstand") + " aufheben (gelber Punkt)";
   if (kind === "enemy") return (TYPES[key] ? TYPES[key].role : "Person") + " finden und reden";
-  if (kind === "prop") return { t: "Am Automaten AKTION drücken", "=": "Mit Ticket: AKTION an der Schranke", j: "AKTION: einsteigen", y: "Am Schalter AKTION gedrückt halten", pc: "Am Computer im Arztzimmer AKTION", photo: "Hingehen, AKTION: Beweisfoto", stamp: "AKTION: Stempel abholen", meds: "AKTION: einpacken", G: "Sicherungskasten: AKTION" }[key] || "Hingehen und AKTION drücken";
+  if (kind === "prop") return { t: "Am Automaten AKTION drücken", "=": "Mit Ticket: AKTION an der Schranke", j: "AKTION: einsteigen", grab: "Hingehen, AKTION: mitnehmen (★ Schild)", y: "Am Schalter AKTION gedrückt halten", pc: "Am Computer im Arztzimmer AKTION", photo: "Hingehen, AKTION: Beweisfoto", stamp: "AKTION: Stempel abholen", meds: "AKTION: einpacken", G: "Sicherungskasten: AKTION" }[key] || "Hingehen und AKTION drücken";
   return "";
 }
 const ARROWS = ["⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖"];
@@ -166,9 +166,19 @@ function updateHud() {
   $("chipTasks").textContent = "AUFG " + run.tasks.length; $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
-  $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
+  $("missionHead").textContent = cur && cur.isExit ? "Weiter" : cur && cur.route ? "Unter-Mission · " + cur.route : cur && !cur.main ? "Optional" : `Mission ${mains.filter(o => o.done).length + 1}/${Math.max(1, mains.length)}`;
   $("missionText").textContent = cur ? cur.text : "Zum Auto!";
   updateMissionHow(cur);
+  // the whole route at a glance: every sub-mission with its floor
+  const RRt = run.mode === "mission" && run.route && ROUTES[run.route];
+  $("routeHead").hidden = $("routeList").hidden = !RRt;
+  if (RRt) {
+    const left = typeof routeTimeLeft === "function" ? routeTimeLeft() : null;
+    $("routeHead").textContent = `Dein Ausweg: ${RRt.name}` + (left != null ? ` · noch ${fmtLeft(left)}` : "");
+    const items = RRt.promote.map(id => ({ t: BAG_NAMES[id] || id, where: id === "approbation" ? "Innere (Spind)" : id === "zeugnis" ? "Radiologie" : id === "cream" ? "Dermatologie" : "", ok: run.flags.has(id) || (id === "cream" && run.picked.has("+")) }))
+      .concat(RRt.goals.map(g => ({ t: g.title, where: LEVELS[g.lvl].short.split(" · ")[1], ok: g.done ? g.done() : run.flags.has(g.id), bonus: g.bonus })));
+    $("routeList").innerHTML = items.length ? items.map(i => `<li class="${i.ok ? "done" : ""}">${i.ok ? "✅" : "⬜"} ${esc(i.t)} <span class="opt-tag">${esc(i.where)}${i.bonus ? " · Bonus" : ""}</span></li>`).join("") : "<li>Nichts. Einfach raus.</li>";
+  }
   $("objList").innerHTML = obj.map(o => `<li class="${o.done ? "done" : ""}">${o.title ? `<span class="obj-title">${esc(o.title)}</span>` : ""}${esc(o.text)}${o.main ? "" : ' <span class="opt-tag">Nebenjob</span>'}</li>`).join("");
   const RR = run.route && ROUTES[run.route];
   $("fzNow").innerHTML = (RR ? `<span class="route-tag">Route: ${esc(RR.name)}</span> ` : "") + (cur ? `<b>${esc(cur.title || (cur.isExit ? "Abgang" : "Mission"))}</b><p>${esc(cur.brief || cur.text)}</p>` : "<b>Freiheit</b><p>Zum Auto.</p>");

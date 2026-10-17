@@ -434,6 +434,16 @@ body.hudmin .mission { display: none; }
 .pu-bar { height: 8px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; } .pu-bar i { display: block; height: 100%; width: 100%; background: #f2b33d; }
 .pu-btn { appearance: none; border: 0; border-radius: 12px; padding: 22px; font: 900 22px/1 var(--display); background: #f2b33d; color: #2a2610; touch-action: manipulation; cursor: pointer; }
 .pu-btn:active { transform: scale(.97); }
+.endscore { background: rgba(0,0,0,.18); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
+.sc-top { display: flex; gap: 12px; align-items: center; } .sc-top b { font: 900 34px/1 var(--display); } .sc-top small { display: block; font: 600 13px/1.2 var(--display); opacity: .85; }
+.sc-rank { width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center; font: 900 36px/1 var(--display); background: #f2b33d; color: #2a2610; }
+.sc-rank.rS { background: linear-gradient(135deg, #ffe08a, #f2b33d); box-shadow: 0 0 18px rgba(255,224,138,.7); } .sc-rank.rC, .sc-rank.rD { background: #9aa3a0; }
+.sc-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font: 600 13px/1.25 var(--display); }
+.sc-rows li { display: flex; justify-content: space-between; gap: 10px; } .sc-rows li.neg b { color: #ffb4a8; }
+.chip.route { background: #f2b33d; color: #2a2610; border-color: #f2b33d; } .chip.route.warn { background: #e2483d; color: #fff; border-color: #e2483d; animation: tsign 1.2s infinite; }
+.dossier { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
+.dossier div { background: rgba(0,0,0,.06); border-radius: 6px; padding: 6px 8px; font: 600 13px/1.2 var(--display); } .dossier div b { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; opacity: .65; }
+.mailrow .stars { color: #c08a00; font-size: 12px; margin-left: 6px; } .mailrow .rec { display: block; font: 600 11px/1.2 var(--mono); color: #1f6b3f; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -464,6 +474,7 @@ body.hudmin .mission { display: none; }
           <div class="chips">
             <span class="chip" id="hudNerves" aria-label="Nerven">♥♥♥♥♥</span>
             <span class="chip good" id="chipStealth">UNBEMERKT</span>
+            <span class="chip route" id="chipRoute" hidden></span>
             <span class="chip" id="chipTasks">AUFG 0</span>
             <span class="chip" id="chipDuty">DIENSTE 0</span>
             <button class="chip" id="chipLamp" type="button" hidden>LAMPE</button>
@@ -501,6 +512,7 @@ body.hudmin .mission { display: none; }
     <div class="fz-head"><span class="fz-av">🧹</span><div><b>FLUCHT-ZENTRALE</b><small>Leitung: Frau Bozkurt · Reinigung, seit 1994 · per Pager</small></div></div>
     <div id="fzNow"></div>
     <h3>Missionen hier</h3><ul id="objList"></ul>
+    <h3 id="routeHead" hidden>Dein Ausweg</h3><ul id="routeList" hidden></ul>
     <h3>Nebenmissionen</h3><ul id="sideList"></ul>
     <h3>Rückrufe</h3><ul id="cbList"></ul><button type="button" id="btnCallbacks">Alle zurückrufen (+3 Min je)</button>
     <h3>Aufgaben</h3><ol id="taskList"></ol>
@@ -594,7 +606,8 @@ body.hudmin .mission { display: none; }
         <div class="mail-head"><span class="mail-av" id="mailAv"></span><div><b id="mailFrom"></b><span id="mailSubj"></span></div></div>
         <p id="mailBody"></p>
         <div class="perks" id="mailPerks"></div>
-        <div class="mail-needs"><b>Was du dafür tun musst</b><ul id="mailNeeds"></ul></div>
+        <div class="dossier" id="mailDossier"></div>
+        <div class="mail-needs"><b>Unter-Missionen (in dieser Reihenfolge)</b><ul id="mailNeeds"></ul></div>
         <div class="mail-btns"><button class="btn ghost" id="btnMailBack" type="button"><span>Zurück</span><span>←</span></button><button class="btn" id="btnMailTake" type="button"><span>Zusagen · los geht's</span><span>✓</span></button></div>
       </div>
     </div>
@@ -648,6 +661,7 @@ body.hudmin .mission { display: none; }
       <div class="eyebrow" id="endEyebrow">Pager</div>
       <h2 id="endTitle">Burnout</h2>
       <span class="rank" id="endRank"></span>
+      <div class="endscore" id="endScore" hidden></div>
       <p id="endText"></p>
       <dl class="stats">
         <dt>Überstunden</dt><dd id="stOver">0</dd>
@@ -681,6 +695,7 @@ body.hudmin .mission { display: none; }
 <script src="js/talks3.js"></script>
 <script src="js/play.js"></script>
 <script src="js/outro.js"></script>
+<script src="js/score.js"></script>
 <script src="js/flow.js"></script>
 </body>
 </html>

@@ -331,10 +331,20 @@ function routeModel(obj) {
     g.add(at(boxMesh(.7, .05, .45, 0x6a6f6a), 0, .8, .25)); g.add(at(boxMesh(.6, .76, .4, 0x8a948f), 0, .39, .25));
     g.add(at(mesh(GEO.cyl, lambert(0x2a2a2a), .05, .07, .05), -.1, .86, .25)); g.add(at(mesh(GEO.ball, lambert(0xc0322a), .045), -.1, .95, .25)); g.add(at(boxMesh(.18, .02, .12, 0x2d3f8f), .15, .83, .25));
     g.add(at(plate(textTex(["STEMPEL", "nur mit Formular"], "#2d3f8f", "#fff", 256, 110, 30), .5, .21), 0, 1.4, .02));
+  } else if (obj === "poster") {
+    g.add(at(plate(textTex(["BIZEPS DES MONATS", "Dr. Kreuzband · 52 cm", "„Leg day is a myth“"], "#2a5f8a", "#fff", 256, 200, 30), .8, .62), 0, 1.6, .02));
+  } else if (["binder", "lanyard", "ringlight", "lunchbox", "helmet"].includes(obj)) {
+    // a small shelf with the thing on it
+    g.add(at(rmesh(.7, .04, .32, .015, 0x8a6a4a), 0, 1.0, .17)); for (const sx of [-1, 1]) g.add(at(boxMesh(.03, .2, .25, 0x5a4a3a), sx * .3, .9, .14));
+    if (obj === "binder") { g.add(at(rmesh(.08, .32, .26, .01, 0xc0322a), -.1, 1.18, .17)); g.add(at(rmesh(.08, .32, .26, .01, 0x2d3f8f), .02, 1.18, .17)); }
+    if (obj === "lanyard") { const t = new THREE.Mesh(GEO.torus, lambert(0x1f9d55)); t.scale.set(.18, .3, .4); t.position.set(0, 1.35, .05); g.add(t); g.add(at(boxMesh(.12, .16, .01, 0xffffff), 0, 1.08, .06)); }
+    if (obj === "ringlight") { const t = new THREE.Mesh(GEO.torus, basic(0xfff6e0)); t.scale.set(.5, .5, .5); t.position.set(0, 1.45, .17); g.add(t); g.add(at(mesh(GEO.pole, lambert(0x222222), .5, .4, .5), 0, 1.15, .17)); }
+    if (obj === "lunchbox") { g.add(at(rmesh(.3, .12, .2, .03, 0x6fcf97), 0, 1.08, .17)); g.add(at(plate(stickyTex("NICHT|ESSEN!!", "#fff59a"), .14, .14), 0, 1.1, .275)); }
+    if (obj === "helmet") { const h = mesh(GEO.cap, lambert(0xe8a33a), .18, .14, .2); h.position.set(0, 1.03, .17); g.add(h); }
   } else if (obj === "meds") {
     g.add(at(boxMesh(.8, .7, .3, 0xf4f4f0), 0, 1.4, .15)); g.add(at(plate(textTex(["MEDIKAMENTE", "abgeschlossen (offen)"], "#1f9d55", "#fff", 256, 110, 28), .7, .3), 0, 1.4, .31));
   }
-  const tag = sprite(labelTex(obj === "stamp" ? "🖃 STEMPEL" : obj === "meds" ? "💊 REISETABLETTEN" : "📸 BEWEISFOTO", "#f2b33d", "#2a1c00"), 1.3, .24); tag.position.set(0, 2.8, .4); g.add(tag);
+  const tag = sprite(labelTex(obj === "stamp" ? "🖃 STEMPEL" : obj === "meds" ? "💊 REISETABLETTEN" : obj === "poster" || obj === "fax" || obj === "board" || obj === "ticketboard" ? "📸 BEWEISFOTO" : "★ " + ({ binder: "STUDIENORDNER", lanyard: "LANYARD", ringlight: "RINGLICHT", lunchbox: "BROTDOSE", helmet: "FAHRRADHELM" }[obj] || "MITNEHMEN"), "#f2b33d", "#2a1c00"), 1.3, .24); tag.position.set(0, 2.8, .4); g.add(tag);
   return g;
 }
 function buildRouteProps(lv, idx) {
@@ -343,7 +353,7 @@ function buildRouteProps(lv, idx) {
     if (g.lvl !== idx || !g.spot || lv.props.some(p => p.goal === g.id)) continue;
     const [x, y] = g.spot, dir = DIRS.find(([dx, dy]) => cell(x + dx, y + dy) === "#"); if (!dir) continue;
     wallPlace(lv, routeModel(g.obj), x, y, dir[0], dir[1]);
-    lv.props.push({ kind: g.kind, goal: g.id, x: x + .5 + dir[0] * .2, y: y + .5 + dir[1] * .2 });
+    lv.props.push({ kind: g.kind, goal: g.id, grab: g.grab, x: x + .5 + dir[0] * .2, y: y + .5 + dir[1] * .2 });
   }
 }
 function vehicleModel(route) {

@@ -107,7 +107,7 @@ let mailPick = null;
 const routeNeeds = k => { const R = ROUTES[k], out = R.promote.map(id => (BAG_NAMES[id] || id) + " (" + (id === "approbation" ? "Innere, Spind" : id === "zeugnis" ? "Radiologie" : id === "cream" ? "Dermatologie" : "") + ")"); for (const g of R.goals) out.push(g.title + ": " + (typeof g.text === "function" ? g.text().replace(/ \(.*\)$/, "") : g.text) + " (" + LEVELS[g.lvl].short.split(" · ")[1] + ")"); return out.length ? out : ["Nichts. Einfach raus."]; };
 function showMail() {
   mode = "brief"; mailPick = null; $("mailView").hidden = true; $("mailListWrap").hidden = false;
-  $("mailList").innerHTML = ROUTE_ORDER.map(k => { const R = ROUTES[k]; return `<button type="button" class="mailrow" data-k="${k}"><span class="mail-av">${R.av}</span><span><b>${esc(R.from)}</b><span class="subj">${esc(R.subject)}</span><span class="snip">${esc(R.mail.slice(0, 90))}…</span></span></button>`; }).join("");
+  $("mailList").innerHTML = ROUTE_ORDER.map(k => { const R = ROUTES[k]; return `<button type="button" class="mailrow" data-k="${k}"><span class="mail-av">${R.av}</span><span><b>${esc(R.from)}</b><span class="subj">${esc(R.subject)}</span><span class="snip">${esc(R.mail.slice(0, 90))}…</span><span class="rec">${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)} · ${R.deadline ? "Frist " + fmtLeft(routeDeadline(k)) + " Min" : "ohne Frist"} · ${esc(recordLine(k))}</span></span></button>`; }).join("");
   show("ovMail"); sfx.beep();
   setTimeout(() => { const f = document.querySelector(".mailrow"); if (f) f.focus({ preventScroll: true }); }, 50);
 }
@@ -117,6 +117,7 @@ $("mailList").addEventListener("click", e => {
   $("mailAv").textContent = R.av; $("mailFrom").textContent = R.from; $("mailSubj").textContent = R.subject; $("mailBody").textContent = R.mail;
   $("mailPerks").innerHTML = R.perks.map(p => `<span>${esc(p)}</span>`).join("");
   $("mailNeeds").innerHTML = routeNeeds(k).map(n => `<li>${esc(n)}</li>`).join("");
+  $("mailDossier").innerHTML = `<div><b>Schwierigkeit</b>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</div><div><b>Frist</b>${R.deadline ? fmtLeft(routeDeadline(k)) + " Min Spielzeit" : "keine"}</div><div><b>Belohnung</b>${1000 + R.stars * 250} Punkte + Ende „${esc(R.name)}“</div><div><b>Scheitern</b>${R.deadline ? "Frist verpasst: −400, dann nur heim" : "geht nicht. Heim geht immer."}</div><div style="grid-column:1/-1"><b>Dein Rekord</b>${esc(recordLine(k))}</div>`;
   $("btnMailTake").firstElementChild.textContent = k === "stay" ? "Einfach heim · los geht's" : "Zusagen · los geht's";
   $("mailListWrap").hidden = true; $("mailView").hidden = false; $("ovMail").scrollTop = 0;
   setTimeout(() => $("btnMailTake").focus({ preventScroll: true }), 30);
@@ -278,9 +279,11 @@ function showEndScreen(key, n) {
   mode = "win"; clearInputs(); hidePopups(); endCall();
   const best = getBest(), isBest = best == null || run.minutes < best; if (isBest) setBest(run.minutes);
   $("endEyebrow").textContent = E.eyebrow + " · " + fmtTime(run.minutes); $("endTitle").textContent = E.title;
-  const sides = sideResults(true), chosen = run.sides.size;
+  const sides = sideResults(true), chosen = run.sides.size; run.sideDone = sides;
   $("endText").textContent = E.text + (n ? ` (${n} offene Aufgabe${n > 1 ? "n" : ""} hast du einfach liegen lassen. Mutig.)` : "") + (chosen ? ` Nebenmissionen: ${sides} von ${chosen}.` : "");
   fillStats(key);
+  { const sc = renderScore(key); $("endRank").textContent = "Rang " + sc.rank + " · " + $("endRank").textContent; }
+  if (run.routeFailed) $("endText").textContent = ROUTES[run.routeFailed].failText + " " + $("endText").textContent;
   $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Rekord für den frühesten Feierabend." : "Frühester Feierabend bisher: " + fmtTime(best);
   $("btnAgain").firstElementChild.textContent = "Nächste Schicht";
   setMsg("Pager aus.", 0); sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
