@@ -58,6 +58,7 @@ function applyEnv(force) {
   fpHand.visible = need;
   if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); }
   if (level && level.windowMat) level.windowMat.color.setHex(boltT > 0 ? 0xffffff : 0x8a9ab0);
+  if (level && level.outsideMat) level.outsideMat.color.setHex(boltT > 0 ? 0xffffff : 0xb0b0b8);
 }
 const lampVisible = () => inDarkness() && player.lampOn && player.lamp > 0;
 

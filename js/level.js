@@ -91,7 +91,7 @@ function buildLevel(idx) {
   const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex(theme)), walls.length);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Matrix4();
   walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));
-  wallMesh.receiveShadow = true; group.add(wallMesh);
+  wallMesh.receiveShadow = true; group.add(wallMesh); lv.wallMesh = wallMesh; lv.wallIdx = new Map(walls.map(([x, y], i) => [x + "," + y, i]));
 
   // wall faces → handrails + skirting (instanced)
   const faces = [];
@@ -208,7 +208,7 @@ function buildLevel(idx) {
     const planeM = (map, w, h, yy, inset = 0, transparent, along = 0) => { const mat = transparent ? new THREE.MeshStandardMaterial({ roughness: .8, map, transparent: true }) : lambert(0xffffff, map); if (transparent) lv.perMat.push(mat); const m = new THREE.Mesh(GEO.plane, mat); m.scale.set(w, h, 1); return place(m, yy, inset, along); };
     const v = r();
     if (isBorder(x + dx, y + dy) && v < .22 && env.storm !== undefined && theme !== "radio") {
-      const w = curtainWindow(windowMat); w.children.slice(3).forEach(c => w.remove(c)); place(w, 1.75, .01); lv.windows.push(w); continue;
+      const w = curtainWindow(windowMat); w.children.slice(3).forEach(c => w.remove(c)); place(w, 1.75, .01); lv.windows.push(w); openWindow(lv, x, y, dx, dy, w, theme); continue;
     }
     if (theme === "cellar") {
       if (v < .18) place(boxMesh(S * .8, 2.2, .45, 0xffffff, shelfTex()), 1.1, .25);

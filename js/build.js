@@ -205,7 +205,7 @@ function decorateRoom(lv, reg, theme, r) {
   for (const [x, y, dx, dy] of wallFaces(reg.tiles)) {
     if (solidMove(grid[y][x]) || lv.reserved.has(x + "," + y + "," + dx + "," + dy)) continue;
     const v = r();
-    if (isBorder(x + dx, y + dy) && v < .3 && kind !== "cellar" && kind !== "radio") { const w = curtainWindow(lv.windowMat); wallPlace(lv, w, x, y, dx, dy, 0, 1.75); lv.windows.push(w); continue; }
+    if (isBorder(x + dx, y + dy) && v < .3 && kind !== "cellar" && kind !== "radio") { const w = curtainWindow(lv.windowMat); wallPlace(lv, w, x, y, dx, dy, 0, 1.75); lv.windows.push(w); openWindow(lv, x, y, dx, dy, w, theme); continue; }
     n++;
     if (kind === "patient") {
       if (v < .3) wallPlace(lv, medRail(), x, y, dx, dy, 0, 1.4);
@@ -385,6 +385,8 @@ const SHABBY_TEX = {
   damp: () => canvasTex(128, 128, (g, w, h) => { for (let i = 0; i < 4; i++) { const gr = g.createRadialGradient(64, 40 + i * 10, 4, 64, 50 + i * 8, 50 - i * 6); gr.addColorStop(0, "rgba(140,110,60,.0)"); gr.addColorStop(.75, "rgba(140,110,60,.22)"); gr.addColorStop(.85, "rgba(110,80,40,.35)"); gr.addColorStop(1, "rgba(110,80,40,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } g.fillStyle = "rgba(110,80,40,.25)"; g.fillRect(60, 60, 5, 68); }, "shabby:damp"),
   crack: () => canvasTex(128, 128, (g, w, h) => { const r = rng(7); g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); let x = 64, y = 64; g.moveTo(x, y); for (let i = 0; i < 9; i++) { x += (r() - .5) * 30; y += (r() - .5) * 30; g.lineTo(x, y); } g.stroke(); } }, "shabby:crack"),
   tape: () => canvasTex(128, 64, (g, w, h) => { g.fillStyle = "rgba(170,172,170,.95)"; g.save(); g.translate(64, 32); g.rotate(.25); g.fillRect(-60, -9, 120, 18); g.rotate(-.5); g.fillRect(-60, -9, 120, 18); g.restore(); g.fillStyle = "rgba(0,0,0,.15)"; g.fillRect(0, 30, w, 2); }, "shabby:tape"),
+  mold: () => canvasTex(128, 128, (g, w, h) => { const r = rng(17); for (let i = 0; i < 260; i++) { const x = r() * w, y = h - Math.pow(r(), 1.8) * h, rad = 1 + r() * 4 * (1 - (h - y) / h); g.fillStyle = r() < .6 ? `rgba(40,60,30,${.25 + r() * .4})` : `rgba(20,25,20,${.2 + r() * .4})`; g.beginPath(); g.arc(x, y, rad, 0, 7); g.fill(); } }, "shabby:mold"),
+  grime: () => canvasTex(128, 256, (g, w, h) => { const r = rng(23); for (let i = 0; i < 14; i++) { const x = r() * w, len = h * (.3 + r() * .7), gr = g.createLinearGradient(0, 0, 0, len); gr.addColorStop(0, "rgba(80,60,35,.45)"); gr.addColorStop(1, "rgba(80,60,35,0)"); g.fillStyle = gr; g.fillRect(x, 0, 2 + r() * 6, len); } }, "shabby:grime"),
   tiles: () => canvasTex(128, 128, (g, w, h) => { const r = rng(9); for (let i = 0; i < 5; i++) { g.fillStyle = `rgba(${60 + r() * 30},${60 + r() * 30},55,.55)`; g.fillRect(r() * 96, r() * 96, 24 + r() * 16, 24 + r() * 16); } }, "shabby:tiles"),
 };
 const SCRIBBLES = ["Tage bis zur Rente: 4.311", "Dr. K. war hier (2014–?)", "IIII IIII IIII IIII II\nDienste ohne Pause", "„Nur kurz“ – seit 2019", "Hier stand mal ein Kaffeeautomat. RIP", "BITTE NICHT AN DIE WAND LEHNEN\n(sie fällt um)", "Wasserschaden gemeldet: 03/2017\nStatus: in Prüfung"];
@@ -395,7 +397,7 @@ function decal(tex, w, h) {
   const m = new THREE.Mesh(GEO.plane, decalMats.get(tex.uuid)); m.scale.set(w, h, 1); return m;
 }
 function decorateShabby(lv, theme, r) {
-  const zones = { ward: 3, ortho: 2, er: 3, gastro: 4, radio: 2 }[theme] || 0; if (!zones) return;
+  const zones = { ward: 3, ortho: 2, er: 3, gastro: 4, radio: 2, cellar: 4 }[theme] || 0; if (!zones) return;
   const cands = []; for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) if (grid[y][x] === "." && lv.zone[y * GW + x] === 1 && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) > 4) cands.push([x, y]);
   const used = new Set();
   for (let z = 0; z < zones && cands.length; z++) {
@@ -407,7 +409,9 @@ function decorateShabby(lv, theme, r) {
         if (v < .35) wallPlace(lv, decal(SHABBY_TEX.peel(), .5 + r() * .5, .5 + r() * .5), x, y, dx, dy, along, .4 + r() * 1.8).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
         else if (v < .65) wallPlace(lv, decal(SHABBY_TEX.damp(), 1 + r() * .6, 1.1), x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
         else if (v < .78) wallPlace(lv, decal(scribbleTex(SCRIBBLES[Math.floor(r() * SCRIBBLES.length)]), .9, .34), x, y, dx, dy, along, 1.15 + r() * .5).position.add(new THREE.Vector3(-dx * .012, 0, -dy * .012));
-        else if (v < .88) { const c = new THREE.Mesh(GEO.cable, lambert(0x1a1a1a)); wallPlace(lv, c, x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .06, 0, -dy * .06)); c.rotation.z = .15; }
+        else if (v < .84) wallPlace(lv, decal(SHABBY_TEX.mold(), 1.1 + r() * .8, .9), x, y, dx, dy, along, .45).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
+        else if (v < .9) wallPlace(lv, decal(SHABBY_TEX.grime(), .9, 1.6), x, y, dx, dy, along, WALL_H - .8).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
+        else if (v < .95) { const c = new THREE.Mesh(GEO.cable, lambert(0x1a1a1a)); wallPlace(lv, c, x, y, dx, dy, along, WALL_H - .6).position.add(new THREE.Vector3(-dx * .06, 0, -dy * .06)); c.rotation.z = .15; }
       }
       const fv = r();
       if (fv < .3) { const d = decal(SHABBY_TEX.crack(), 1.4, 1.4); d.rotation.x = -Math.PI / 2; d.rotation.z = r() * 6; d.position.set((x + .2 + r() * .6) * S, .015, (y + .2 + r() * .6) * S); lv.group.add(d); }
@@ -421,4 +425,49 @@ function decorateShabby(lv, theme, r) {
       }
     }
   }
+}
+
+// ---------- real windows in outer walls: a hole, glass with drops, two rain layers and the city 9 m away (true parallax) ----------
+const rainTex = () => { const t = canvasTex(128, 256, (g, w, h) => { const r = rng(12); g.strokeStyle = "rgba(200,215,235,.55)"; g.lineWidth = 1.2; for (let i = 0; i < 70; i++) { const x = r() * w, y = r() * h, l = 10 + r() * 22; g.globalAlpha = .3 + r() * .6; g.beginPath(); g.moveTo(x, y); g.lineTo(x - l * .12, y + l); g.stroke(); } }, "rain"); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+const dropsTex = () => canvasTex(256, 192, (g, w, h) => { const r = rng(5); for (let i = 0; i < 90; i++) { const x = r() * w, y = r() * h, rad = 1 + r() * 3.5; g.fillStyle = "rgba(220,235,255,.35)"; g.beginPath(); g.arc(x, y, rad, 0, 7); g.fill(); g.fillStyle = "rgba(255,255,255,.7)"; g.fillRect(x - rad * .4, y - rad * .5, 1, 1); if (r() < .15) { g.fillStyle = "rgba(220,235,255,.18)"; g.fillRect(x - .7, y, 1.4, 10 + r() * 30); } } }, "drops");
+const skylineTex = day => canvasTex(1024, 512, (g, w, h) => {
+  const r = rng(day ? 3 : 9), gr = g.createLinearGradient(0, 0, 0, h);
+  if (day) { gr.addColorStop(0, "#5a6a8a"); gr.addColorStop(.45, "#c99a8a"); gr.addColorStop(.6, "#f0c08a"); gr.addColorStop(1, "#3a3a40"); }
+  else { gr.addColorStop(0, "#070a14"); gr.addColorStop(.5, "#1a2238"); gr.addColorStop(.62, "#3a3048"); gr.addColorStop(1, "#08080c"); }
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  if (!day) for (let i = 0; i < 4; i++) { g.fillStyle = "rgba(160,170,200,.08)"; g.beginPath(); g.ellipse(r() * w, 60 + r() * 120, 200, 30, 0, 0, 7); g.fill(); } // clouds
+  for (let layer = 0; layer < 3; layer++) {
+    let x = -20; const base = h * (.52 + layer * .1), col = day ? ["#7a7380", "#5a5560", "#3a363e"][layer] : ["#141826", "#0e111c", "#090b12"][layer];
+    while (x < w) { const bw = 30 + r() * 70, bh = 40 + r() * (170 - layer * 40); g.fillStyle = col; g.fillRect(x, base - bh, bw, h); for (let wy = base - bh + 8; wy < h - 10; wy += 11) for (let wx = x + 5; wx < x + bw - 6; wx += 9) if (r() < (day ? .12 : .35 - layer * .08)) { g.fillStyle = r() < .2 ? "rgba(190,220,255,.8)" : "rgba(255,214,140,.85)"; g.fillRect(wx, wy, 4, 5); } x += bw + r() * 12; }
+  }
+  if (!day) { for (let i = 0; i < 40; i++) { g.fillStyle = "rgba(255,200,120,.9)"; g.fillRect(r() * w, h * .86 + r() * 20, 2, 2); } g.fillStyle = "rgba(255,40,40,.9)"; g.fillRect(w * .7, h * .2, 3, 3); }
+}, "skyline" + day);
+function openWindow(lv, x, y, dx, dy, win, theme) {
+  const wx = x + dx, wy = y + dy, key = wx + "," + wy;
+  if (!isBorder(wx, wy) || !lv.wallIdx || !lv.wallIdx.has(key) || (lv.opened || (lv.opened = new Set())).has(key)) return;
+  if (DIRS.some(([a, b]) => (wx + a !== x || wy + b !== y) && !solidMove(cell(wx + a, wy + b)))) return; // corner walls stay solid
+  lv.opened.add(key);
+  const m4 = new THREE.Matrix4().makeScale(0, 0, 0); lv.wallMesh.setMatrixAt(lv.wallIdx.get(key), m4); lv.wallMesh.instanceMatrix.needsUpdate = true;
+  const g = new THREE.Group(), wallM = lv.wallMesh.material, D = .35, W = 1.56, y0 = 1.2, y1 = 2.3;
+  const piece = (u0, u1, v0, v1) => {
+    // remap UVs so the wall texture (light top, darker wainscot) lines up with the neighbouring walls
+    const geo = new THREE.BoxGeometry(1, 1, 1), uv = geo.attributes.uv; lv.perGeo.push(geo);
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (u0 + uv.getX(i) * (u1 - u0) + S / 2) / S, (v0 + uv.getY(i) * (v1 - v0)) / WALL_H);
+    const p = new THREE.Mesh(geo, wallM); p.scale.set(u1 - u0, v1 - v0, D); p.position.set((u0 + u1) / 2, (v0 + v1) / 2, -D / 2); p.receiveShadow = true; g.add(p); };
+  piece(-S / 2, -W / 2, 0, WALL_H); piece(W / 2, S / 2, 0, WALL_H); piece(-W / 2, W / 2, 0, y0); piece(-W / 2, W / 2, y1, WALL_H);
+  // frame
+  const fr = phong(0xe4e8e6, 50);
+  for (const [px, py, sx, sy] of [[0, y1, W + .08, .06], [0, y0, W + .08, .06], [-W / 2, (y0 + y1) / 2, .06, y1 - y0], [W / 2, (y0 + y1) / 2, .06, y1 - y0]]) { const f = new THREE.Mesh(GEO.box, fr); f.scale.set(sx, sy, .1); f.position.set(px, py, -.2); g.add(f); }
+  // glass with drops
+  if (!lv.glassMat) { lv.glassMat = new THREE.MeshStandardMaterial({ map: dropsTex(), color: 0xbfd0e0, transparent: true, opacity: .55, roughness: .05, metalness: .2, depthWrite: false }); lv.perMat.push(lv.glassMat); }
+  const gl = new THREE.Mesh(GEO.plane, lv.glassMat); gl.scale.set(W, y1 - y0, 1); gl.position.set(0, (y0 + y1) / 2, -.2); g.add(gl);
+  // rain: two layers at different depth = parallax
+  if (!lv.rainMat) { lv.rainTex = rainTex(); lv.rainMat = new THREE.MeshBasicMaterial({ map: lv.rainTex, transparent: true, depthWrite: false, opacity: .8, toneMapped: false }); lv.perMat.push(lv.rainMat); }
+  for (const [z, s] of [[-1.3, 3.5], [-4.5, 9]]) { const rp = new THREE.Mesh(GEO.plane, lv.rainMat); rp.scale.set(s, s * 1.2, 1); rp.position.set(0, 1.75, z); g.add(rp); }
+  // the city, 9 m outside
+  if (!lv.outsideMat) { lv.outsideMat = new THREE.MeshBasicMaterial({ map: skylineTex(theme === "derma"), fog: false, toneMapped: false }); lv.perMat.push(lv.outsideMat); }
+  const sky = new THREE.Mesh(GEO.plane, lv.outsideMat); sky.scale.set(30, 15, 1); sky.position.set(0, 1.5, -9); g.add(sky);
+  if (win && win.children[0]) win.children[0].visible = false; // the old painted window
+  g.position.set((x + .5) * S + dx * S / 2, 0, (y + .5) * S + dy * S / 2); g.rotation.y = Math.atan2(-dx, -dy);
+  lv.group.add(g);
 }

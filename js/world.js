@@ -568,3 +568,24 @@ const fpHand = new THREE.Group();
   pen.add(at(mesh(GEO.ball, basic(0xfff6d8), .0075), 0, .077, 0));
   pen.position.set(-.02, -.01, -.13); pen.rotation.set(-1.15, 0, .55); fpHand.add(pen); fpHand.userData.pen = pen; }
 fpHand.position.set(.2, -.2, -.34); fpHand.visible = false; camera.add(fpHand);
+
+// floating dust motes around the player, catching the light
+let dust = null;
+{
+  const N = 140, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 12; pos[i * 3 + 1] = .3 + Math.random() * 2.7; pos[i * 3 + 2] = (Math.random() - .5) * 12; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ size: .03, map: glowTex("rgba(255,250,235,1)"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .35, toneMapped: false });
+  dust = new THREE.Points(geo, mat); dust.frustumCulled = false; scene.add(dust); dust.userData.t = 0;
+}
+function updateDust(dt) {
+  const p = dust.geometry.attributes.position, a = p.array, px = player.x * S, pz = player.y * S; dust.userData.t += dt;
+  for (let i = 0; i < a.length; i += 3) {
+    a[i] += Math.sin(dust.userData.t * .3 + i) * dt * .05; a[i + 1] += Math.sin(dust.userData.t * .21 + i * .7) * dt * .03 - dt * .006; a[i + 2] += Math.cos(dust.userData.t * .27 + i) * dt * .05;
+    if (a[i] - px > 6) a[i] -= 12; else if (a[i] - px < -6) a[i] += 12;
+    if (a[i + 2] - pz > 6) a[i + 2] -= 12; else if (a[i + 2] - pz < -6) a[i + 2] += 12;
+    if (a[i + 1] < .2) a[i + 1] = 2.9;
+  }
+  p.needsUpdate = true;
+  dust.visible = typeof mode === "undefined" || mode !== "outro";
+}
