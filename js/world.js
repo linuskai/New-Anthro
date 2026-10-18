@@ -388,7 +388,9 @@ function makePerson(sp) {
   for (const sx of [-1, 1]) {
     add(GEO.ball, skin, .022, .034, .018, sx * .112, -.005, 0, head);
     add(GEO.ball, shade(skin, .7), .011, .018, .008, sx * .118, -.005, .006, head);
-    if (sp.glowEyes) add(GEO.ball, 0xff2010, .018, .012, .01, sx * .042, .015, .105, head).material = basic(0xff2010);
+    if (sp.glowEyes) { add(GEO.ball, 0xff2010, .018, .012, .01, sx * .042, .015, .105, head).material = basic(0xff2010);
+      // a red halo that cuts through the dark corridor (not through walls)
+      const halo = sprite(glowTex("rgba(255,40,24,1)"), .11, .11); halo.material.fog = false; halo.material.blending = THREE.AdditiveBlending; halo.material.depthWrite = false; halo.position.set(sx * .042, .015, .12); head.add(halo); }
     else if (!sp.ghost) {
       add(GEO.ball, 0xf8f8f4, .023, .017, .012, sx * .041, .016, .1, head);
       add(GEO.ball, sp.pose === "zombie" ? 0x8a1a1a : eyeC, .0115, .0115, .006, sx * .041, .015, .11, head);
@@ -584,10 +586,23 @@ const fpHand = new THREE.Group();
   const palm = mesh(GEO.ball, skin, .042, .04, .06); palm.position.set(.018, -.012, .045); fpHand.add(palm);
   for (let i = 0; i < 4; i++) { const f = mesh(GEO.taper, skin, .011, .05, .011); f.position.set(-.02, -.016 + .002 * i, .015 + i * .019); f.rotation.set(0, 0, -1.9); fpHand.add(f); }
   const thumb = mesh(GEO.taper, skin, .012, .05, .012); thumb.position.set(-.012, .022, .02); thumb.rotation.set(-1.4, 0, .4); fpHand.add(thumb);
-  // no geometric cone (it read as a grey wedge): the real spotlight does the work, the lens just glows
-  const glow = sprite(glowTex("rgba(255,240,200,1)"), .12, .12); glow.material.blending = THREE.AdditiveBlending; glow.material.depthTest = false; glow.position.set(0, 0, -.19); fl.add(glow); fpHand.userData.glow = glow;
+  const glow = sprite(glowTex("rgba(255,240,200,1)"), .055, .055); glow.material.blending = THREE.AdditiveBlending; glow.material.depthTest = false; glow.position.set(0, 0, -.19); fl.add(glow); fpHand.userData.glow = glow;
+  // the beam is part of the flashlight: it starts at the lens and runs exactly along the flashlight's axis
+  // texture v runs from the lens (top of the canvas) to the far end: bright at the lens, gone long before the open end
+  const BEAM_LEN = 7, beamTex = canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(255,240,210,.15)"); gr.addColorStop(.04, "rgba(255,240,210,.7)"); gr.addColorStop(.2, "rgba(255,240,210,.32)"); gr.addColorStop(.5, "rgba(255,240,210,.1)"); gr.addColorStop(.85, "rgba(255,240,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, "beam3");
+  const cg = new THREE.ConeGeometry(BEAM_LEN * Math.tan(.24), BEAM_LEN, 32, 6, true); cg.translate(0, -BEAM_LEN / 2, 0); cg.rotateX(Math.PI / 2);
+  const beam = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .26, side: THREE.DoubleSide, toneMapped: false, fog: false }));
+  beam.position.z = -.185; beam.renderOrder = 2; fl.add(beam); fpHand.userData.beam = beam;
+  fpHand.userData.fl = fl;
   }
-fpHand.position.set(.12, -.25, -.5); fpHand.rotation.set(.45, -.2, .1); fpHand.visible = false; camera.add(fpHand);
+/* held low on the right, pointing a little up and inwards so the beam crosses the middle of the view */
+fpHand.position.set(.13, -.2, -.34); fpHand.rotation.set(.2, .14, .14); fpHand.scale.setScalar(1.25); fpHand.visible = false; camera.add(fpHand);
+{ // the spotlight sits in the lens and shines along the same axis as the model and the visible beam
+  fpHand.updateMatrix(); const fl = fpHand.userData.fl; fl.updateMatrix();
+  const m = new THREE.Matrix4().multiplyMatrices(fpHand.matrix, fl.matrix), lensP = new THREE.Vector3(0, 0, -.19).applyMatrix4(m);
+  const axis = new THREE.Vector3(0, 0, -1).transformDirection(m);
+  flashlight.position.copy(lensP); flashlight.target.position.copy(lensP).addScaledVector(axis, 6);
+}
 
 // floating dust motes around the player, catching the light
 let dust = null;

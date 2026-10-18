@@ -122,8 +122,8 @@ function updateRouteChip() {
 function missionTick(dt) {
   if (run.mode !== "mission") return;
   run.announceT -= dt;
-  if (run.announceT <= 0 && toastT <= 0 && !call) {
-    run.announceT = 75 + Math.random() * 45;
+  if (run.announceT <= 0 && toastT <= 0 && quiet(25000)) {
+    run.announceT = 190 + Math.random() * 80;
     tone(660, 0, .35, "sine", .05); tone(523, .4, .5, "sine", .05);
     showToast("📢", "#2d3f8f", "Durchsage · Klinikleitung", "„" + pick(ANNOUNCE) + "“", []);
   }

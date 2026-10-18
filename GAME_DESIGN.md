@@ -353,6 +353,14 @@ Profil mit Spielername und Avatar. Als geteiltes claude.ai-Artefakt eine gemeins
 ### Entfernt
 Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Posteingang mit sieben Mails, Jobangebote per Anruf, Umsatteln im Parkhaus, Startup und Gesundheitsamt.
 
+## Version 14: Weniger Störung, schlimmerer Oberarzt, Zugang legen, Nachtdienst-Horror
+
+- **Taschenlampe**: Der sichtbare Lichtkegel ist jetzt Teil der Lampe. Er beginnt an der Linse und läuft genau in ihrer Achse, das Spotlicht auch.
+- **Weniger Meldungen**: höchstens zwei Anrufe pro Etage, längere Pausen zwischen Anrufen, Durchsagen und Szenarien, eine Ruhezeit nach jeder Meldung, Frau Bozkurts Pager nur noch bei Unter-Missionen und Endgegnern.
+- **Oberarzt**: drei Runden (Einstieg, Aufgaben-Lawine, Karrieregespräch), jede Antwort kostet Zeit, Aufgaben oder Dienste. Typisch 25 bis 40 Spielminuten.
+- **Pflege findet dich: Zugang legen** (Minispiel, realistisch): Hände desinfizieren, stauen, Vene tasten (tippen), Haut desinfizieren mit Einwirkzeit, punktieren im Winkel 15–30°, vorschieben bis zum Flashback, Stau lösen vor dem Mandrin, fixieren und spülen. Falsche Reihenfolge, Nachtasten nach der Desinfektion, zu steil oder zu tief kosten Minuten; nach zwei Fehlversuchen kommt der Anästhesist. Gelingt es, lässt dich die Pflege beim nächsten Mal durch.
+- **Nachtdienst neu**: Ziel „Niemand darf dich finden“. Größere Station (35 × 21) mit zwei Ringfluren, Querflur und Seitenfluren zum Ausweichen. Patienten schlafwandeln als Zombies mit roten, leuchtenden Augen und ohne Namensschild, Nachtschwestern machen Runde, Hildegard bleibt. Gefunden werden heißt Jumpscare und ein Strike, beim dritten Mal ist die Nacht vorbei („Du bist jetzt einer von ihnen“). Herzschlag, wenn dich etwas bemerkt hat, Stöhnen in der Nähe, nur noch Notbeleuchtung. Verpasste Pager-Aufgaben schicken die Nachtschwester los.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

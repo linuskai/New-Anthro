@@ -6,7 +6,9 @@ A browser game for iPhone (and any other browser). Your shift ended at 17:00. Ge
 
 A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). German UI. A thoroughly cost-cut hospital: Innere (5B), Orthopädie, Radiologie, Gastroenterologie, Dermatologie, Intensivstation, Keller, Notaufnahme, Parkhaus P2. Each mission uses its own selection of floors. The full design is in [`GAME_DESIGN.md`](GAME_DESIGN.md).
 
-- **Two modes:** *Feierabend* (the mission below) and *Nachtdienst*, a survival horror night shift from 22:00 to 07:00: pager tasks in the patient rooms, an escalating schedule (sleepwalkers, Dr. Ewig, blackouts, slamming doors, relatives at 3 am, the chief at 5), and Schwester Hildegard, who only moves while you are not looking at her. Win at dawn.
+- **Two modes:** *Feierabend* (the missions below) and *Nachtdienst*, a survival horror night shift from 22:00 to 07:00 on a bigger ward with loops: nobody may find you. Sleepwalking patients with glowing red eyes, night nurses on their rounds and Schwester Hildegard (who only moves while you are not looking); being found means a jump scare and a strike, three strikes and the night is over. Pager tasks still send you into the rooms, missed ones send the night nurse after you. Your heartbeat speeds up when something has noticed you.
+- **IV line mini-game:** when a nurse catches you, you place a peripheral line, step by step and realistically (hand hygiene, tourniquet, palpate, disinfect and wait, puncture at 15–30°, advance until flashback, release the tourniquet before pulling the needle, fix and flush).
+- **The attending:** three rounds of "only a minute", every answer costs time, tasks or shifts.
 - **Gastroenterology:** the ventilation was cut in 2017. Stink clouds drain energy and nerves until you switch it back on.
 - **Big emergency department:** ambulance bay, waiting hall, triage desk, curtained treatment bays, resuscitation room.
 - **Declining work:** night-shift pager jobs arrive as a card you can accept or decline; tasks in the mission panel can be declined (sometimes the PJ student takes them, sometimes you get a Saturday shift).

@@ -9,8 +9,8 @@ let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 
 
 function newRun(m = "mission", route = "stay") {
   run = { idx: 0, step: 0, route, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 40 + Math.random() * 15, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
-    announceT: 50 + Math.random() * 30, lostMin: 0 };
+    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
+    announceT: 130 + Math.random() * 40, lostMin: 0 };
   run.mode = m;
   if (m === "mission") run.idx = ROUTES[route].floors[0];
   if (m === "night") Object.assign(run, { idx: LEVELS.length - 1, minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
@@ -30,7 +30,7 @@ function loadFloor(idx) {
   player.x = level.start[0] + .5; player.y = level.start[1] + .5; player.yaw = level.startYaw; player.pitch = 0;
   Object.assign(player, { coffee: 0, busy: 0, inv: 0, hidden: false, stun: 0, slip: 0, channel: null, lampOn: true });
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
-  lure = null; nerdLure = null; blackout = 0; scare = null; endCall();
+  lure = null; nerdLure = null; blackout = 0; scare = null; endCall(); run.callsHere = 0;
   run.pageT = run.callbacks.length >= 2 ? 8 : null;
   run.reaRandomT = L.reaRandom ? 45 + Math.random() * 30 : null;
   run.reaScriptT = L.reaScript || null;
@@ -55,7 +55,7 @@ function applyEnv(force) {
   const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - 780) / 60)) : 0;
   hemi.intensity = (env.hemi * .55 + dawn * .45) * lightMul + bolt * .6; amb.intensity = (env.amb * .45 + dawn * .15) * lightMul; sun.intensity = (env.dir * 2.6 + dawn * .5) * lightMul;
   scene.environment = bo || env.dark ? ENV_DARK : ENV_BRIGHT;
-  ceilPower = bo ? 0 : (env.dark ? (cellarDark() ? 0 : .7) : 1.15) * Math.max(.25, lightMul);
+  ceilPower = bo ? 0 : (run && run.mode === "night" ? .3 + dawn * .6 : env.dark ? (cellarDark() ? 0 : .7) : 1.15) * Math.max(.25, lightMul); // night: only the emergency lights
   const fogC = new THREE.Color(bo ? 0x030504 : env.fog); if (!env.dark && !bo) fogC.multiplyScalar(.74); if (dawn) fogC.lerp(new THREE.Color(0x6a5a6a), dawn * .8);
   if (!env.dark) fogC.lerp(new THREE.Color(0x0a0d0c), 1 - lightMul);
   scene.fog.color.copy(fogC); scene.background.copy(fogC);
@@ -63,7 +63,7 @@ function applyEnv(force) {
   const need = inDarkness() || bo;
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
-  if (fpHand.userData.glow) { const on = flashlight.intensity > .3; fpHand.userData.glow.visible = on; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
+  if (fpHand.userData.glow) { const on = flashlight.intensity > .3; fpHand.userData.glow.visible = on; if (fpHand.userData.beam) fpHand.userData.beam.visible = on; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
   if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); }
   if (level && level.windowMat) level.windowMat.color.setHex(boltT > 0 ? 0xffffff : 0x8a9ab0);
   if (level && level.outsideMat) level.outsideMat.color.setHex(boltT > 0 ? 0xffffff : 0xb0b0b8);
@@ -77,6 +77,7 @@ function objectives() {
   if (run.mode === "night") {
     const left = Math.max(0, NIGHT_END - run.minutes), list = [];
     if (run.task) list.push({ id: "task", title: "Pager · Zi. " + run.task.room, text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
+    list.push({ id: "hide", title: "Unentdeckt bleiben", text: `Niemand darf dich finden · gefunden ${run.found || 0}/3`, main: true, done: false, brief: "Patienten mit roten Augen, Nachtschwestern, Hildegard: Wer dich erwischt, zählt. Dreimal, und die Nacht ist vorbei." });
     list.push({ id: "survive", title: "Überleben bis 07:00", text: `Überlebe bis 07:00 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
     return list;
   }
@@ -221,7 +222,10 @@ function gain(o) {
 }
 const good = text => ({ text, good: true });
 const stampsHtml = st => st.map(s => `<span class="stamp${s.good ? " good" : ""}">${esc(s.text)}</span>`).join("");
+let lastToastAt = 0;
+const quiet = (ms = 18000) => performance.now() - lastToastAt > ms && !call && $("dlg").hidden;
 function showToast(avatar, bg, who, line, stamps) {
+  lastToastAt = performance.now();
   $("toastAvatar").textContent = avatar; $("toastAvatar").style.background = bg;
   $("toastWho").textContent = who; $("toastLine").textContent = line; $("toastStamps").innerHTML = stampsHtml(stamps || []);
   const t = $("toast"); t.hidden = false; t.classList.remove("pop", "swipe"); t.style.transform = ""; void t.offsetWidth; t.classList.add("pop"); toastT = Math.min(9, 3 + String(line || "").length / 28);

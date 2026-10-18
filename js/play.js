@@ -384,7 +384,7 @@ function updateEnemy(e, dt) {
   if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); emote(e, FANS.includes(e.type) ? pick(["😍", "🙋", "🤩"]) : pick(["❗", "😠", "☝️"])); (run.spotted || (run.spotted = new Set())).add(run.idx); }
   if (e.state === "sus" && prev === "idle") { sfx.sus(); emote(e, pick(["❓", "🤨", "👀"])); }
   if (e.state !== prev || !e.person.expr) setExpression(e.person, exprFor(e));
-  if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { hostileDialog(e); return; }
+  if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { if (run.mode === "night") nightCaught(e); else hostileDialog(e); return; }
   if (t.ghost) {
     if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (blackout > 0 ? 1.5 : 1)); if (Math.random() < dt * .4) sfx.whisper(); }
     else patrol(e, t, dt);
@@ -490,7 +490,7 @@ function startCall(def) {
   const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud", "offer");
   sfx.ring();
 }
-function endCall() { call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 45 + Math.random() * 30; }
+function endCall() { call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 110 + Math.random() * 60; }
 function applyEffect(eff, title, av) {
   let st = [];
   if (eff.mins) { run.minutes += eff.mins; st.push({ text: "+" + eff.mins + " Min" }); }
@@ -533,7 +533,8 @@ function updateCalls(dt) {
     if (call.t > 18) { missCall(call.def, "verpasst"); }
   } else if (player.airplane <= 0) {
     run.nextCall -= dt;
-    if (run.nextCall <= 0) startCall(pick(CALLS));
+    // at most two calls per floor, and never right after another message
+    if (run.nextCall <= 0 && quiet() && (run.callsHere || 0) < 2) { run.callsHere = (run.callsHere || 0) + 1; startCall(pick(CALLS)); } else if (run.nextCall <= 0) run.nextCall = 10;
   }
 }
 
@@ -752,12 +753,12 @@ function spawnFar(type) {
   const dm = distMap(Math.floor(player.x), Math.floor(player.y), playerPass); let best = -1, bi = -1;
   for (let i = 0; i < dm.length; i++) { const x = i % GW, y = (i / GW) | 0; if (dm[i] > best && grid[y][x] === "." && level.zone[i] === 1) { best = dm[i]; bi = i; } }
   if (bi < 0) return null;
-  const e = spawnEnemy(level, type, bi % GW + .5, ((bi / GW) | 0) + .5); return e;
+  const e = spawnEnemy(level, type, bi % GW + .5, ((bi / GW) | 0) + .5); if (type === "Q") e.label.visible = false; return e;
 }
 function nightHour(h) {
   const [time, title, text] = NIGHT_HOURS[h];
   missionCard(time, title, text); if (h >= 2) sfx.stinger();
-  if (h === 1) { spawnFar("Q"); spawnFar("Q"); }
+  if (h === 1 || h === 4 || h === 6) { spawnFar("Q"); spawnFar("Q"); }
   if (h === 2) spawnFar("g");
   if (h === 3) { const e = spawnFar("J"); if (e) { e.tri.material = TRI_MAT.spot; level.hilde = e; } }
   if (h === 4) { run.nightBlackouts = true; run.nextBlackout = 8; }
@@ -790,8 +791,24 @@ function completeTask() {
 }
 function failTask() {
   const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 8 + Math.random() * 12;
+  // a missed page sends the night nurse looking for you
+  setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
   showToast("⏰", "#c0322a", "Zu spät · Zi. " + room, pick(["Zi. " + room + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
   updateHud(); checkDeath();
+}
+/* night shift: whoever finds you counts. Three times and the night is over. */
+function nightCaught(e) {
+  run.found = (run.found || 0) + 1; const n = run.found, t = TYPES[e.type];
+  flash("zap"); sfx.stinger(); sfx.hit(); noise(0, .45, 1400, .7, .22); tone(70, 0, .6, "sawtooth", .08, 40);
+  if (navigator.vibrate) try { navigator.vibrate([90, 40, 180]); } catch (_) {}
+  const sc = document.createElement("div"); sc.className = "jumpscare"; const url = portraitFor(e.person.sp);
+  sc.innerHTML = `${url ? `<img src="${url}" alt="">` : `<span class="js-emo">${t.av}</span>`}<b>GEFUNDEN ${n}/3</b><small>${esc(e.name)}: „${esc(pick(t.barks))}“</small>`;
+  document.body.appendChild(sc); setTimeout(() => sc.remove(), 1500);
+  player.inv = 4; e.stun = 6; e.aw = 0; e.state = "idle"; e.hunter = false;
+  { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; } // they shuffle off somewhere else
+  if (n >= 3) { mode = "dying"; clearInputs(); setTimeout(() => showGameOver(), 1500); }
+  else setMsg(n === 2 ? "Noch einmal gefunden, und die Nacht ist vorbei." : "Gefunden. Versteck dich. Sie vergessen schnell. Du nicht.", 4, true);
+  updateHud();
 }
 function nightHorror() {
   const opts = ["phone", "steps", "whisper"]; const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
@@ -809,6 +826,10 @@ function updateNight(dt) {
   if (run.task) { if (run.minutes > run.task.deadline) failTask(); }
   else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }
   run.horrorT -= dt; if (run.horrorT <= 0) { run.horrorT = 16 + Math.random() * 20; nightHorror(); }
+  // your own heartbeat: faster the closer something is that has noticed you; sleepwalkers groan nearby
+  let near = 99; for (const e of level.enemies) if (!e.gone && !e.done && (e.state === "spot" || e.state === "sus" || e.type === "J")) near = Math.min(near, Math.hypot(e.x - player.x, e.y - player.y));
+  if (near < 8 && (run.hbT = (run.hbT || 0) - dt) <= 0) { run.hbT = .35 + near * .09; tone(52, 0, .11, "sine", .16); tone(46, .15, .1, "sine", .12); }
+  if (Math.random() < dt * .25) { const z = level.enemies.find(e => e.type === "Q" && !e.gone && Math.hypot(e.x - player.x, e.y - player.y) < 7); if (z) { tone(90 + Math.random() * 30, 0, .9, "sawtooth", .018, 60); noise(0, .8, 300, 2, .03); } }
   if (run.zT != null) { run.zT -= dt; if (run.zT <= 0) { run.zT = 28; if (level.enemies.filter(e => e.type === "Z" && !e.done).length < 4) spawnFar("Z"); } }
 }
 /* Schwester Hildegard only moves while you are not looking at her (or the lights are out) */

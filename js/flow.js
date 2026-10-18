@@ -85,7 +85,8 @@ function announceObjective() {
   if (run.mode === "night") return;
   const c = currentObjective(); if (!c) return;
   missionCard(c.isExit ? "Weiter" : c.route ? "Route · " + c.route : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
-  setTimeout(() => { if (mode === "play" && c.brief) showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800);
+  if (!run.briefed) run.briefed = new Set();
+  if (c.brief && (c.route || c.boss) && !run.briefed.has(c.id)) { run.briefed.add(c.id); setTimeout(() => { if (mode === "play") showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800); }
 }
 function trackObjectives() {
   if (run.mode === "night") return;
@@ -177,8 +178,9 @@ function showGameOver() {
   const L = LEVELS[run.idx];
   run.duties.push("N");
   if (run.mode === "night") {
-    $("endText").textContent = `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
-    fillStats(); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
+    $("endEyebrow").textContent = "Station 5B · " + fmtTime(run.minutes); $("endTitle").textContent = (run.found || 0) >= 3 ? "Gefunden" : "Eingeschlafen";
+    $("endText").textContent = (run.found || 0) >= 3 ? `Um ${fmtTime(run.minutes)} haben sie dich zum dritten Mal gefunden. Du bist jetzt einer von ihnen. Du schlurfst über den Flur. Deine Augen leuchten rot. Morgen früh fragt der Frühdienst: „Ruhige Nacht?“ ${run.nightDone} Pager-Aufgaben erledigt.` : `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
+    fillStats(); $("endRank").textContent = (run.found || 0) >= 3 ? "Neuer Schlafwandler" : "Eingeschlafen"; $("stOver").textContent = "Nachtdienst bis " + fmtTime(run.minutes); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
     mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
   }
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
@@ -401,7 +403,7 @@ function render(time, dt) {
   camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
   if (mode === "story" && story && story.cam) { camera.position.copy(story.cam.p); camera.lookAt(story.cam.l); if (Math.abs(camera.fov - story.cam.fov) > .01) { camera.fov = story.cam.fov; camera.updateProjectionMatrix(); } }
   else if (camera.fov !== 72) { camera.fov = 72; camera.updateProjectionMatrix(); }
-  fpHand.position.y = -.25 + Math.sin(player.bob * 2) * .008; fpHand.position.x = .12 + Math.cos(player.bob) * .004;
+  fpHand.position.y = -.2 + Math.sin(player.bob * 2) * .008; fpHand.position.x = .13 + Math.cos(player.bob) * .004;
 
   let near = null, nd = 3.4;
   const cd = cellarDark();

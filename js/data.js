@@ -412,27 +412,28 @@ const ANNOUNCE = [
 
 /* ---------- Night shift (survival mode) ---------- */
 ENV.night = { theme: "ward", fog: 0x05080a, near: 2, far: 17, hemi: .12, amb: .06, dir: .04, flicker: .5, broken: .25, creep: 0, lamp: 0x9ab0c0, dark: true, storm: true };
-TYPES.Q = { label: "SCHLAFWANDLER", role: "Patient · schläft (eigentlich)", who: () => rnd(["Hr. Brösel, Zi. 5.03", "Fr. Mond, Zi. 5.07", "Hr. Gähn, Flurbett 3"]), av: "😴", color: "#9fb8d8",
-  spec: () => ({ skin: rnd(SKIN), hair: 0x8c8c8c, hairStyle: rnd(["messy", "bald"]), gown: true, shirt: 0x9cc6e6, pants: 0x9cc6e6, shoes: 0xd9d4c8, pose: "zombie", mood: "tired" }),
-  walk: .3, approach: .55, range: 3.5, fov: .3, detect: .5, barks: ["Mama…?", "Ist schon Frühstück?", "Zzzz… Herr Doktor…"] };
+TYPES.Q = { label: "SCHLAFWANDLER", role: "Patient · schläft (eigentlich)", who: () => rnd(["Hr. Brösel, Zi. 5.03", "Fr. Mond, Zi. 5.07", "Hr. Gähn, Flurbett 3", "Fr. Nacht, Zi. 5.11", "Hr. Grau, Zi. 5.02"]), av: "🧟", color: "#9fb8d8",
+  spec: () => ({ skin: rnd([0xc9d0c4, 0xd8d0c4, 0xbfc8bc]), hair: 0x8c8c8c, hairStyle: rnd(["messy", "bald"]), gown: true, shirt: 0x9cc6e6, pants: 0x9cc6e6, shoes: 0xd9d4c8, pose: "zombie", mood: "tired", glowEyes: true, acc: rnd(["iv", null]) }),
+  walk: .32, approach: .72, range: 5, fov: .35, detect: .62, barks: ["Herr… Doktor…", "Ist… schon… Frühstück?", "Bleib… da…", "Mmmh… Schlaftablette…"] };
 TYPES.J = { label: "SCHW. HILDEGARD", role: "Nachtwache · seit 1978", who: () => "Schwester Hildegard", av: "🕯️", color: "#e8e4d0",
   spec: () => ({ skin: 0xd8d0c8, hair: 0xf2f2f2, hairStyle: "bun", shirt: 0xf2efe6, pants: 0xf2efe6, robe: true, shoes: 0xf2f2f2, mood: "neutral", acc: "chart", scale: .97 }),
   walk: 0, approach: 2.3, range: 99, fov: -1, detect: 0, barks: ["…", "Kurven…", "Abzeichnen…"] };
 LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nachtdienst", floor: "5. OG", room: 5, env: "night", final: true, night: true,
-  safeNames: [["ARZTZIMMER 5B", "Hier bist du sicher. Fast."], ["STATIONSKÜCHE", "Der Kühlschrank brummt. Laut."]],
-  tip: "Überlebe bis 07:00. Der Pager schickt dich in die Zimmer. Jede Stunde wird es schlimmer. Und Schwester Hildegard bewegt sich nur, wenn du nicht hinsiehst.",
+  safeNames: [["ARZTZIMMER 5B", "Hier bist du sicher. Fast."]],
+  tip: "Überlebe bis 07:00, ohne dass dich jemand findet. Die Patienten schlafwandeln mit roten Augen über die Flure, die Nachtschwestern machen Runde. Wer dich erwischt, zählt: Dreimal gefunden, und die Nacht ist vorbei. Der Pager schickt dich trotzdem in die Zimmer.",
   objectives: [], exitText: "", lock: "Das Treppenhaus ist nachts verriegelt. Dienstende 07:00.",
-  map: LEVELS[0].map.map(r => r.replace(/[bIO]/g, ".").replace(/k/g, "9").replace(/F/g, "1").replace(/N/g, "9").replace(/P/g, "Q")) });
+  // a bigger ward with loops: two ring corridors, a cross corridor and side corridors, so you can always slip away (or get cornered)
+  map: ["###################################", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "#::::#::::#::::#::x:#::::#::::#:9:#", "#::::#::::#::$:#::::#::::#::::#:::#", "##d####d####d####d####d####d####d##", "#........w....o.....N...Q.........#", "#..###d#####d###..##############..#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_S___#:::::#..#:::::#:w::::#..#", "#..#_____#:::::#..#::3::#::::::#..#", "#E.#__1__#::1::#.N#:::::#::9:::#..^", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_____#::::M#..#::x::#::::w:#Q.#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#############..###d#####d####..#", "#.....u....Q................w.....#", "##d####d####d####d####d####d####d##", "#::::#::::#:Q::#::::#::::#::x:#:::#", "#::$:#::::#::::#::::#::::#::::#:1:#", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "###################################"] });
 const MISSION_LEVELS = 8; // legacy (night mode stats)
 const NIGHT_START = 300, NIGHT_END = 840;
 const STORY_NIGHT = [
   ["21:58", "Station 5B, Arztzimmer. Du hast Nachtdienst. Allein. Für 34 Patienten, zwei Stationen und „bei Bedarf“ die Notaufnahme."],
-  ["22:00", "Der Spätdienst geht. „Alles ruhig. Zi. 5.07 klingelt manchmal. Und Schwester Hildegard macht ihre Runde.“ – „Welche Hildegard?“ – Er ist schon weg."],
-  ["22:01", "Das Licht im Flur springt auf Nachtmodus. Irgendwo tropft etwas. Der Pager vibriert. Überlebe bis 07:00. Dann kommt der Frühdienst. Hoffentlich."],
+  ["22:00", "Der Spätdienst geht. „Alles ruhig. Die Patienten schlafwandeln manchmal. Mit offenen Augen. Rot. Ist normal. Und Schwester Hildegard macht ihre Runde.“ – „Welche Hildegard?“ – Er ist schon weg."],
+  ["22:01", "Regel Nummer eins im Nachtdienst: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:00."],
 ];
 const NIGHT_HOURS = [
   ["22:00", "Übergabe", "Der Pager schickt dich in die Zimmer. Erledige die Aufgaben, bevor die Zeit abläuft."],
-  ["23:00", "Schlafenszeit", "Die Patienten schlafen. Einige davon im Stehen. Auf dem Flur."],
+  ["23:00", "Schlafenszeit", "Die Patienten schlafen. Einige davon im Stehen. Auf dem Flur. Mit roten Augen."],
   ["00:00", "Geisterstunde", "Die Wanduhr schlägt zwölf. Sie hat keine Glocke. Dr. Ewig ist aus dem Keller hochgekommen."],
   ["01:00", "Schwester Hildegard", "Am Ende des Flurs: eine Schwesternhaube. Sie bewegt sich nur, wenn du NICHT hinsiehst."],
   ["02:00", "Nachtstrom", "Das Haus schaltet in den Sparmodus. Stromausfälle. Türen fallen von allein zu."],

@@ -148,6 +148,8 @@ function hostileDialog(e) {
     return runChain(e, "", [{ q: line, options: [opt("„Danke!“", () => free("Telefon-Karma eingelöst. Manchmal lohnt es sich, ranzugehen.", [good("Goodwill")]))] }]);
   }
   if (e.type === "J") return hildegardCatch(e);
+  if (run.mode === "mission" && e.type === "O" && !e.hunter) return oberarztDialog(e);
+  if (run.mode === "mission" && e.type === "N" && level.ivDone !== true) { level.ivDone = true; return nurseAccessDialog(e); }
   const pool = (run.mode === "night" && TALKS[e.type + "n"]) || TALKS[e.type] || TALKS.P;
   if (!run.usedTalks) run.usedTalks = new Set();
   let fresh = pool.filter(t => !run.usedTalks.has(e.type + t.id));

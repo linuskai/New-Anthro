@@ -478,6 +478,7 @@ function buildLevel(idx) {
     if (pending.length > 5 && "PFNOI".includes(ch) && optional++ % 3 === 1) continue; // fewer people in crowded wards
     const e = spawnEnemy(lv, ch, x + .5, y + .5, r);
     if (ch === "U") { e.static = true; e.tri.material = TRI_MAT.sus; }
+    if (ch === "Q") e.label.visible = false; // no name tag on a sleepwalker in the dark
   }
 
   // moving cars

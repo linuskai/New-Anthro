@@ -74,11 +74,12 @@ const SCENARIOS = [
     ] },
 ];
 
-let scenarioT = 75;
+let scenarioT = 110;
 function updateScenarios(dt) {
   if (run.mode !== "mission" || call || LEVELS[run.idx].safe || LEVELS[run.idx].final || playerSafe()) return;
   if ((scenarioT -= dt) > 0) return;
-  scenarioT = 80 + Math.random() * 50;
+  if (!quiet(20000)) { scenarioT = 8; return; }
+  scenarioT = 150 + Math.random() * 60;
   const pool = SCENARIOS.filter(s => !(run.usedScen || (run.usedScen = new Set())).has(s.id)); if (!pool.length) return;
   const sc = pick(pool); run.usedScen.add(sc.id);
   openDialog({ av: sc.av, color: "#f2b33d", name: sc.title, role: "Situation · du entscheidest", text: sc.text,
