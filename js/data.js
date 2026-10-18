@@ -58,7 +58,7 @@ const LEVELS = [
     map: ["#########################", "#S......................#", "#.####d#######d########.#", "#.#:Y:::::#:::::::::::#.#", "#.#:::r:::#:::::m:::::#.^", "#O#:::::::#:::::::::::#.#", "#.######d#########d####.#", "#...........A.........x.#", "#.####d######d#########.#", "#.#::::::9#:::::#_____#.#", "#9#:&:::A:#:::B:#_____#.#", "#.#:::::::#:x:::#_____#.#", "#.####l######d#####d###.#", "#.................C.9...#", "############E############", "#########################"] },
   { key: "gastro", short: "2 · GASTRO", name: "Gastroenterologie · Endoskopie", floor: "2. OG", room: 2, env: "gastro",
     safeNames: [["ENDO-AUFWACHRAUM", "Niemand wacht hier freiwillig auf"]],
-    tip: "Die Lüftung wurde 2017 eingespart. Seitdem riecht die Gastroenterologie nach… Gastroenterologie. Die grünen Wolken kosten Energie und Nerven. Luft anhalten hilft nicht. Lüftung einschalten schon.",
+    tip: "Die Lüftung wurde 2017 eingespart. Seitdem riecht die Gastroenterologie nach… Gastroenterologie. Die grünen Wolken kosten Energie. Luft anhalten hilft nicht. Lüftung einschalten schon.",
     objectives: [
       { id: "vent", title: "Operation Frischluft", text: "Lüftung im Endoskopie-Raum einschalten", main: true, at: "prop:y",
         brief: "Im Endoskopie-Raum hängt der Lüftungsschalter. Aus „Kostengründen“ seit 2017 aus. Die Gastroenterologen merken nichts mehr. Du schon." }],
@@ -180,14 +180,15 @@ const ITEMS = {
   "8": { emoji: "🧮", name: "Taschenrechner", desc: "Hilft gegen PD-Phil", metal: true },
   "9": { emoji: "🔋", name: "Batterie", desc: "Taschenlampe voll" },
   "0": { emoji: "🥫", name: "Energydrink", desc: "+55 Energie" },
-  "$": { emoji: "🍩", name: "Donut", desc: "+1 Nerv, +15 Energie" },
-  "+": { emoji: "🫙", name: "Wundercreme", desc: "+60 Energie, +1 Nerv" },
+  "$": { emoji: "🍩", name: "Donut", desc: "+15 % Energie, +15 Energie" },
+  "+": { emoji: "🫙", name: "Wundercreme", desc: "+60 Energie, +15 % Energie" },
   p: { emoji: "✏️", name: "Kugelschreiber", desc: "Werfen: macht Lärm, lenkt ab" },
   c: { emoji: "🥼", name: "Kittel", desc: "Ausziehen: Personal erkennt dich nicht mehr" },
   f: { emoji: "📱", name: "Fake-Telefonat", desc: "10 s lang wichtig telefonieren: Personal stört dich nicht" },
+  m: { emoji: "😷", name: "Noro-Maske", desc: "15 s: Maske auf, laut husten. Alle halten Abstand." },
   "&": { emoji: "📜", name: "Arbeitszeugnis", desc: "„…war stets bemüht…“", mission: "zeugnis" },
 };
-const INV_ORDER = ["c", "p", "f", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
+const INV_ORDER = ["c", "p", "f", "m", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
 
 const OFFERS = {};
 const BAG_NAMES = { excel: "Controlling-Excel", koffer: "Koffer", reel: "Intensiv-Reel", collab: "Collab-Selfie", probe: "Probetag-Zertifikat", binder: "Studienordner", lanyard: "Kongress-Lanyard", bizepsfoto: "Bizeps-Foto", ringlight: "Ringlicht", lunchbox: "Brotdose", helmet: "Fahrradhelm", key: "Autoschlüssel", approbation: "Approbationsurkunde", zeugnis: "Arbeitszeugnis", ticket: "Parkticket", fuse: "Ersatzsicherung", cream: "Sonnencreme", a38: "Formular A38", stamp1: "Stempel Controlling", stamp2: "Stempel Archiv", stamp3: "Stempel Notaufnahme", meds: "Reisetabletten", photo0: "Foto: Faxgerät", photo1: "Foto: Wartezeit", photo5: "Foto: Nummer 999" };
@@ -387,9 +388,10 @@ const ROUTES = {
 const ROUTE_ORDER = ["stay", "pharma", "consult", "botox", "ship", "influ"];
 /* the gear you start with, and what it is for */
 const KIT_HELP = {
-  c: ["Tarnen", "Kittel ausziehen: Pflege und Ärzte erkennen dich nicht mehr. Patienten und Angehörige fragen dich dann nach der Toilette."],
+  c: ["Tarnen", "Kittel ausziehen: Pflege, Ärzte und Verwaltung erkennen dich nicht mehr und drehen ab. Patienten und Angehörige fragen dich dafür nach der Toilette."],
   p: ["Ablenken", "Kugelschreiber werfen: Es klackt da hinten, alle drehen sich um und gehen nachsehen."],
-  f: ["Verteidigen", "Fake-Telefonat: 10 Sekunden ernst ins Handy reden. Niemand vom Personal spricht dich an."],
+  f: ["Verteidigen", "Fake-Telefonat: 10 Sekunden ernst ins Handy reden. Niemand vom Personal spricht dich an, wer schon auf dich zukommt, dreht ab."],
+  m: ["Abstand", "Noro-Maske: 15 Sekunden lang hält JEDER Abstand (Patienten, Angehörige, Personal). Hust."],
 };
 const ANNOUNCE = [
   "Liebe Mitarbeitende, ab sofort ist Lächeln Teil der Dienstkleidung. Bitte tragen Sie es korrekt.",
@@ -420,16 +422,21 @@ TYPES.J = { label: "SCHW. HILDEGARD", role: "Nachtwache · seit 1978", who: () =
   walk: 0, approach: 2.3, range: 99, fov: -1, detect: 0, barks: ["…", "Kurven…", "Abzeichnen…"] };
 LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nachtdienst", floor: "5. OG", room: 5, env: "night", final: true, night: true,
   safeNames: [["ARZTZIMMER 5B", "Hier bist du sicher. Fast."]],
-  tip: "Überlebe bis 07:00, ohne dass dich jemand findet. Die Patienten schlafwandeln mit roten Augen über die Flure, die Nachtschwestern machen Runde. Wer dich erwischt, zählt: Dreimal gefunden, und die Nacht ist vorbei. Der Pager schickt dich trotzdem in die Zimmer.",
+  tip: "Überlebe bis 07:30, ohne dass dich jemand findet. Die Patienten schlafwandeln mit roten Augen über die Flure, die Nachtschwestern machen Runde. Wer dich erwischt, zählt: Dreimal gefunden, und die Nacht ist vorbei. Der Pager schickt dich trotzdem in die Zimmer.",
   objectives: [], exitText: "", lock: "Das Treppenhaus ist nachts verriegelt. Dienstende 07:00.",
   // a bigger ward with loops: two ring corridors, a cross corridor and side corridors, so you can always slip away (or get cornered)
   map: ["###################################", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "#::::#::::#::::#::x:#::::#::::#:9:#", "#::::#::::#::$:#::::#::::#::::#:::#", "##d####d####d####d####d####d####d##", "#........w....o.....N...Q.........#", "#..###d#####d###..##############..#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_S___#:::::#..#:::::#:w::::#..#", "#..#_____#:::::#..#::3::#::::::#..#", "#E.#__1__#::1::#.N#:::::#::9:::#..^", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_____#::::M#..#::x::#::::w:#Q.#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#############..###d#####d####..#", "#.....u....Q................w.....#", "##d####d####d####d####d####d####d##", "#::::#::::#:Q::#::::#::::#::x:#:::#", "#::$:#::::#::::#::::#::::#::::#:1:#", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "###################################"] });
+LEVELS.push({ key: "nightER", short: "ZNA · NACHTDIENST", name: "Zentrale Notaufnahme · Nachtdienst", floor: "EG", room: 0, env: "night", final: true, night: true,
+  safeNames: [["PERSONALRAUM", "Die Tür klemmt. Gut so."]],
+  tip: "Die Notaufnahme bei Nacht: Wartehalle, Behandlungskabinen mit Vorhängen, der Schockraum. Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Lass dich von niemandem finden, bis um 07:30 die Ablösung kommt.",
+  objectives: [], exitText: "", lock: "Der Ausgang ist nachts verriegelt. Ablösung um 07:30.",
+  map: ["####################^############", "#.......#.....................S.#", "#.%..%..#.......................#", "#.......#.......................#", "#.......#.....Q...........TT....#", "#...x...#...............Q...N...#", "#.......#.3.....................#", "#.......####..########..######.##", "#.........Q.....................#", "#.||#||#||#||#||####d######d###.#", "#.:5#::#::#::#::#::::::::#1___#.#", "#.B:#B:#B:#B:#B:#:x::Y:::#___0#.#", "#.#############################.#", "#.....x....................w....#", "########M#######t#######L######E#", "#################################"] });
 const MISSION_LEVELS = 8; // legacy (night mode stats)
-const NIGHT_START = 300, NIGHT_END = 840;
+const NIGHT_START = 300, NIGHT_END = 870, NIGHT_DAWN = 810; // 22:00 … 07:30 handover, first light at 06:30
 const STORY_NIGHT = [
   ["21:58", "Station 5B, Arztzimmer. Du hast Nachtdienst. Allein. Für 34 Patienten, zwei Stationen und „bei Bedarf“ die Notaufnahme."],
   ["22:00", "Der Spätdienst geht. „Alles ruhig. Die Patienten schlafwandeln manchmal. Mit offenen Augen. Rot. Ist normal. Und Schwester Hildegard macht ihre Runde.“ – „Welche Hildegard?“ – Er ist schon weg."],
-  ["22:01", "Regel Nummer eins im Nachtdienst: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:00."],
+  ["22:01", "Regel Nummer eins im Nachtdienst: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:30."],
 ];
 const NIGHT_HOURS = [
   ["22:00", "Übergabe", "Der Pager schickt dich in die Zimmer. Erledige die Aufgaben, bevor die Zeit abläuft."],
@@ -440,7 +447,8 @@ const NIGHT_HOURS = [
   ["03:00", "Besuchszeit (inoffiziell)", "Familie Kowalski war „gerade in der Gegend“. Um drei Uhr nachts. Alle sieben."],
   ["04:00", "Die Notaufnahme ist voll", "Die ZNA schickt Pseudo-Notfälle hoch. „Nur zur Beobachtung.“"],
   ["05:00", "Frühaufsteher", "Der Chefarzt kommt früher. Er will „nur kurz die Kurven sehen“."],
-  ["06:00", "Morgengrauen", "Es wird hell. Fast geschafft. Hildegard wird schneller. Sie mag keine Übergaben."],
+  ["06:00", "Morgengrauen", "Ab 06:30 wird es draußen hell. Sie spüren, dass die Nacht endet. Alle werden schneller. Hildegard mag keine Übergaben."],
+  ["07:00", "Übergabe", "Um 07:30 kommt der Frühdienst. Schaff es ins Arztzimmer zur Übergabe. Ohne gefunden zu werden."],
 ];
 const NIGHT_TASKS = [
   "will wissen, wie spät es ist", "Infusion piept (sie piept immer)", "Patientin sieht Geister (sie hat recht)", "will eine Schlaftablette, aber homöopathisch",

@@ -90,7 +90,7 @@ sprintBtn.addEventListener("pointerdown", e => { e.preventDefault(); player.spri
 const sprintOff = () => { player.sprint = false; sprintBtn.classList.remove("on"); };
 sprintBtn.addEventListener("pointerup", sprintOff); sprintBtn.addEventListener("pointercancel", sprintOff);
 function toggleSneak() { player.sneak = !player.sneak; $("btnSneak").classList.toggle("on", player.sneak); $("btnSneak").setAttribute("aria-pressed", player.sneak); }
-function toggleLamp() { if (!inDarkness()) return; player.lampOn = !player.lampOn; sfx.tick(); setMsg(player.lampOn ? "Taschenlampe an. Du siehst mehr. Man sieht dich auch." : "Taschenlampe aus. Unsichtbarer. Und blinder.", 2.5); updateEnergy(); }
+function toggleLamp() { if (!inDarkness()) return; player.lampOn = !player.lampOn; sfx.tick(); setMsg(player.lampOn ? "Taschenlampe an. Du siehst mehr. Man sieht dich auch: von viel weiter weg, und wen du anleuchtest, der sieht dich sofort." : "Taschenlampe aus. Fast unsichtbar. Du siehst nur noch die roten Augen.", 3.5); updateEnergy(); }
 $("btnSneak").addEventListener("pointerdown", e => { e.preventDefault(); if (mode === "play") toggleSneak(); });
 $("chipLamp").addEventListener("click", () => { if (mode === "play") toggleLamp(); });
 $("btnAct").addEventListener("pointerdown", e => { e.preventDefault(); if (mode === "play") act(); });
@@ -237,11 +237,11 @@ function updatePlayer(dt) {
   if (player.hidden && moving) player.hidden = false;
   if (player.stun > 0) { player.stun -= dt; return; }
   const sneaking = moving && (player.sneak || (ptr.move && mag < .55));
-  const sprinting = (player.sprint || keys.has("shift")) && moving && run.energy > 3 && !sneaking;
+  const sprinting = (player.sprint || keys.has("shift")) && moving && run.energy > 10 && !sneaking;
   let mult = sneaking ? .5 : 1;
   if (player.coffee > 0) mult *= 1.3;
   if (sprinting) mult *= 1.6;
-  if (run.energy <= 0) mult *= .55;
+  if (run.energy <= 15) mult *= .75;
   player.moveMag = moving ? (sneaking ? .5 : sprinting ? 1.8 : 1) : .3;
   let vx, vy;
   if (player.slip > 0) { player.slip -= dt; vx = player.slipDir[0] * PLAYER_SPEED * 1.5 * dt; vy = player.slipDir[1] * PLAYER_SPEED * 1.5 * dt; player.yaw += dt * 3; }
@@ -253,7 +253,9 @@ function updatePlayer(dt) {
     const miss = objectives().filter(o => o.main && !o.done && !o.isExit), lk = miss.length && (miss[0].route || miss[0].boss || !LEVELS[run.idx].lock) ? "Noch nicht: " + miss.map(o => o.title || o.text).join(", ") : LEVELS[run.idx].lock || "Erst die Mission erledigen.";
     if (msg.text !== lk) setMsg(lk, 3, true);
   }
-  run.energy = Math.max(0, run.energy - dt * (sprinting ? 6 : moving ? (sneaking ? .2 : .4) : .1));
+  // running tires you but never knocks you out by itself; conversations, tasks and scares do
+  if (sprinting) run.energy = Math.max(Math.min(run.energy, 8), run.energy - dt * 4);
+  else if (playerSafe() && !moving && run.energy < 60) run.energy = Math.min(60, run.energy + dt * 2.5); // a breather in a safe room
   if (sprinting) { player.noiseT -= dt; if (player.noiseT <= 0) { player.noiseT = .5; makeNoise(4.5, .35); } }
   if (moving || player.slip > 0) { const prev = player.bob; player.bob += dt * 9 * mult; if (!sneaking && Math.floor(prev / Math.PI) !== Math.floor(player.bob / Math.PI)) sfx.step(); }
   level.visited[Math.floor(player.y) * GW + Math.floor(player.x)] = 1;
@@ -266,18 +268,32 @@ function makeNoise(radius, amount) {
 }
 
 // ---------- stealth AI ----------
+const STAFF = "NOCVIADRUn";
+/* what currently keeps this person away from you (the emoji is their reaction), or null */
+function protectedFrom(e) {
+  if (player.noroT > 0) return "🤢";
+  if (player.busy > 0) return "📋";
+  if (player.phoneT > 0 && STAFF.includes(e.type)) return "🤫";
+  if (player.civil && "NOCVIADR".includes(e.type)) return "🤷";
+  return null;
+}
 function perceive(e, t, dx, dy, d) {
-  if (player.hidden || playerSafe() || player.busy > 0) return 0;
-  let range = t.range;
-  if (inDarkness() && !t.ghost) range *= lampVisible() ? 1.15 : .5;
+  if (player.hidden || playerSafe() || player.busy > 0 || player.noroT > 0) return 0;
+  let range = t.range, beam = 1;
+  if (inDarkness() && !t.ghost) {
+    const lit = lampVisible();
+    range *= lit ? (run.mode === "night" ? 1.8 : 1.3) : .45; // the lamp gives you away; without it you are a shadow
+    // shining your light right at someone: they see you, wherever they were looking
+    if (lit && d < 9) { const pf = [-Math.sin(player.yaw), -Math.cos(player.yaw)]; if ((-dx * pf[0] - dy * pf[1]) / d > .94) beam = 1.7; }
+  }
   if (d > range) return 0;
   const fx = Math.sin(e.yaw), fy = Math.cos(e.yaw), dot = (dx * fx + dy * fy) / d;
-  if (d > 1.2 && dot < t.fov) return 0;
+  if (d > 1.2 && dot < t.fov && beam === 1) return 0;
   if (!(t.ghost && blackout > 0) && !los(e.x, e.y, player.x, player.y)) return 0;
   const civil = player.civil ? ("NOCVIADR".includes(e.type) ? .3 : 1.25) : 1, phone = player.phoneT > 0 && "NOCVIADnU".includes(e.type) ? .2 : 1;
   const grace = player.inv > 0 ? .15 : 1; // right after a conversation the others give you a moment
   if ((phone < 1 || civil < 1) && d < 4.5 && player.moveMag > 0 && !e.shrugged) { e.shrugged = true; emote(e, phone < 1 ? "🤫" : "🤷"); }
-  return t.detect * Math.max(.25, 1.5 - d / range) * player.moveMag * diffMul() * civil * grace * phone;
+  return t.detect * Math.max(.25, 1.5 - d / range) * Math.max(player.moveMag, beam > 1 ? .7 : 0) * diffMul() * civil * grace * phone * beam;
 }
 /* chasing: only towards where they last SAW you. Out of sight they go there, look around, give up.
    The chief and a paged attending always know where you are (they have the intercom). */
@@ -384,6 +400,9 @@ function updateEnemy(e, dt) {
   if (e.state === "spot" && prev !== "spot") { sfx.spot(); setMsg(`${t.label}: „${pick(t.barks)}“`, 2.5, true); emote(e, FANS.includes(e.type) ? pick(["😍", "🙋", "🤩"]) : pick(["❗", "😠", "☝️"])); (run.spotted || (run.spotted = new Set())).add(run.idx); }
   if (e.state === "sus" && prev === "idle") { sfx.sus(); emote(e, pick(["❓", "🤨", "👀"])); }
   if (e.state !== prev || !e.person.expr) setExpression(e.person, exprFor(e));
+  // protection really protects: whoever comes close while it works gives up and turns away (with a visible reaction)
+  const shield = run.mode === "mission" ? protectedFrom(e) : null;
+  if (shield && d < 2.4 && (e.state === "spot" || e.state === "sus" || d < 1.2)) { e.aw = 0; e.state = "idle"; e.stun = 1.2; if (!(e.shieldCd > level.t)) { e.shieldCd = level.t + 4; emote(e, shield); } if (player.noroT > 0) e.investigate = { x: e.hx + .5, y: e.hy + .5, t: 5 }; return; }
   if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { if (run.mode === "night") nightCaught(e); else hostileDialog(e); return; }
   if (t.ghost) {
     if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (blackout > 0 ? 1.5 : 1)); if (Math.random() < dt * .4) sfx.whisper(); }
@@ -396,7 +415,7 @@ function updateEnemy(e, dt) {
     else { walkTo(e, Math.floor(iv.x), Math.floor(iv.y), t.walk * 1.5, dt); return; }
   }
   if (e.state === "sus") { e.tyaw = Math.atan2(dx, dy); return; }
-  if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (settings.diff === "easy" ? .85 : 1)); return; }
+  if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (settings.diff === "easy" ? .85 : 1) * (run.mode === "night" && run.minutes > NIGHT_DAWN ? 1.3 : 1)); return; }
   if (e.state === "lured") { walkTo(e, lure.x, lure.y, t.approach * 1.2, dt); return; }
   if (e.state === "nerd" && nerdLure) { if (Math.hypot(e.x - nerdLure.x, e.y - nerdLure.y) > .8) walkTo(e, Math.floor(nerdLure.x), Math.floor(nerdLure.y), t.approach, dt); return; }
   if (e.hunter) {
@@ -479,8 +498,8 @@ function pickupPaper(p) {
 // what accepting or declining a call actually does, printed on the buttons
 function callHints(def) {
   const a = def.acc || {}, A = [];
-  if (def.onAccept) return ["Auftrag übernehmen · Zeit läuft", "Ruhe · evtl. −1 Nerv"];
-  if (a.mins) A.push(`+${a.mins} Min`); if (a.energy) A.push(`+${a.energy} Energie`); if (a.nerves > 0) A.push("+1 Nerv"); if (a.nerves < 0) A.push("−1 Nerv"); if (a.duties) A.push(`+${a.duties} Dienst`); if (def.hunt) A.push(`${DEPT_NAME[def.hunt]} lässt dich 1× ziehen`);
+  if (def.onAccept) return ["Auftrag übernehmen · Zeit läuft", "Ruhe · evtl. −15 % Energie"];
+  if (a.mins) A.push(`+${a.mins} Min`); if (a.energy) A.push(`+${a.energy} % Energie`); if (a.nerves > 0) A.push("+15 % Energie"); if (a.nerves < 0) A.push("−15 % Energie"); if (a.duties) A.push(`+${a.duties} Dienst`); if (def.hunt) A.push(`${DEPT_NAME[def.hunt]} lässt dich 1× ziehen`);
   return [A.join(" · ") || "nichts", def.hunt ? `${DEPT_HUNT[def.hunt]} kommt dich suchen` : "keine Folgen"];
 }
 function startCall(def) {
@@ -624,7 +643,7 @@ function update(dt) {
   player.inv = Math.max(0, player.inv - dt); player.coffee = Math.max(0, player.coffee - dt);
   if (run.pageT != null) { run.pageT -= dt; if (run.pageT <= 0) pageAnnounce(); }
   if (level.fireT > 0) { const b = Math.floor(level.fireT / 2.2); level.fireT -= dt; if (Math.floor(level.fireT / 2.2) !== b && level.fireT > 0) sfx.alarm(); }
-  player.phoneT = Math.max(0, (player.phoneT || 0) - dt); player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
+  player.phoneT = Math.max(0, (player.phoneT || 0) - dt); player.noroT = Math.max(0, (player.noroT || 0) - dt); player.busy = Math.max(0, player.busy - dt); player.airplane = Math.max(0, player.airplane - dt);
   updateStink(dt); updateEmotes(dt); updateScenarios(dt); missionTick(dt);
   if (lure) { lure.t -= dt; if (lure.t <= 0) lure = null; }
   if (nerdLure) { nerdLure.t -= dt; if (nerdLure.t <= 0) { if (nerdLure.mesh) level.group.remove(nerdLure.mesh); nerdLure = null; for (const e of level.enemies) if (e.state === "nerd") e.state = "idle"; } }
@@ -701,7 +720,7 @@ function updateStink(dt) {
   else if (Math.random() < dt * .25) setMsg(pick(["*hust*", "Bäh.", "Nicht durch die Nase atmen!", "Wer war das?!"]), 1.4);
 }
 function checkDeath() {
-  if (run.nerves > 0 || ["dying", "over", "win", "dialog"].includes(mode)) return;
+  if (run.energy > 0 || ["dying", "over", "win", "dialog"].includes(mode)) return;
   mode = "dying"; endCall(); clearInputs(); setTimeout(showGameOver, 1200);
 }
 
@@ -766,6 +785,7 @@ function nightHour(h) {
   if (h === 6) run.zT = 4;
   if (h === 7) spawnFar("C");
   if (h === 8) { level.hildeFast = true; spawnFar("Q"); }
+  if (h === 9) { level.dawnRush = true; sfx.ding(); }
 }
 function newTask() {
   const doors = level.doors.filter(d => !d.safe && d.num); if (!doors.length) return;
@@ -821,7 +841,8 @@ function nightHorror() {
 }
 function updateNight(dt) {
   const h = Math.floor((run.minutes - NIGHT_START) / 60);
-  if (run.minutes >= NIGHT_END) { nightWin(); return; }
+  // 07:30: the morning shift arrives. You win once you make it to the handover in the doctors' room.
+  if (run.minutes >= NIGHT_END) { if (playerSafe()) { nightWin(); return; } if ((run.handT = (run.handT || 0) - dt) <= 0) { run.handT = 5; setMsg("07:30! Die Ablösung ist da. Ab ins Arztzimmer zur Übergabe!", 4, true); sfx.beep(); } }
   if (h !== run.hour && h < NIGHT_HOURS.length) { run.hour = h; nightHour(h); }
   if (run.task) { if (run.minutes > run.task.deadline) failTask(); }
   else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }

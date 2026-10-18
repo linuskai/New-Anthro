@@ -51,12 +51,12 @@ function bossDialog(e) {
     return { text, stamps: [good("Weg frei")] };
   };
   const again = () => { player.inv = 1.5; e.cool = 3; };
-  const chance = Math.min(.85, .45 + run.nerves * .08);
+  const chance = Math.min(.85, .4 + run.energy / 250);
   openDialog({ ...base, text: B.line,
     options: [
-      { label: B.talk[0], hint: Math.round(chance * 100) + " % · sonst −1 Nerv", act: () => Math.random() < chance ? clear(B.talk[1]) : (setExpression(e.person, "angry"), { text: "„Netter Versuch.“ " + B.name + " verschränkt die Arme. Es wird nicht besser. Es wird nie besser.", stamps: pen({ nerves: 1 }) }) },
+      { label: B.talk[0], hint: Math.round(chance * 100) + " % · sonst −15 % Energie", act: () => Math.random() < chance ? clear(B.talk[1]) : (setExpression(e.person, "angry"), { text: "„Netter Versuch.“ " + B.name + " verschränkt die Arme. Es wird nicht besser. Es wird nie besser.", stamps: pen({ nerves: 1 }) }) },
       { label: "Formular ausfüllen (kostet Zeit, klappt immer)", hint: "Bürokratie-Minispiel", act: () => ({ next: () => formGame(B.form, 2, lost => openDialog({ ...base, text: `Du füllst aus. Durchschlag gelb, Durchschlag rosa, Original für die Ablage im Keller. ${B.name} prüft jede Zeile. Mit Lineal.`, options: [{ label: "Formular überreichen", act: () => clear(`„Sauber. Stempel. Gehen Sie.“ Das hat dich ${lost} Minuten gekostet.`) }], onClose: again })) }) },
-      { label: `Kämpfen! Stethoskop gegen ${B.weapon}`, hint: "Kampf · bei Niederlage −1 Nerv", act: () => ({ next: () => fightGame(e, ok => openDialog({ ...base, text: ok ? `${B.name} sitzt auf dem Boden, das Stethoskop elegant um das Handgelenk gewickelt. „Das… steht so in keiner Dienstvereinbarung.“` : `${B.name} rückt den ${B.weapon} zurecht. „Nächstes Mal mit Termin.“`,
+      { label: `Kämpfen! Stethoskop gegen ${B.weapon}`, hint: "Kampf · bei Niederlage −15 % Energie", act: () => ({ next: () => fightGame(e, ok => openDialog({ ...base, text: ok ? `${B.name} sitzt auf dem Boden, das Stethoskop elegant um das Handgelenk gewickelt. „Das… steht so in keiner Dienstvereinbarung.“` : `${B.name} rückt den ${B.weapon} zurecht. „Nächstes Mal mit Termin.“`,
         options: [{ label: ok ? "Kittel richten. Gehen." : "Aufstehen. Würde suchen.", act: () => ok ? clear("Der Weg ist frei. Hinter dir applaudiert jemand. Es ist Frau Bozkurt.") : { text: "Du stehst wieder. Irgendwie.", stamps: pen({ nerves: 1, energy: 10 }) } }], onClose: again }), { weapon: B.weapon, coat: B.coat, place: LEVELS[run.idx].short + " · ENDGEGNER", boss: true }) }) },
       { label: "„Ich komme gleich wieder.“", act: () => ({ text: "„Ich warte. Ich habe Zeit. Sie nicht.“" }) },
     ], onClose: again });
@@ -112,6 +112,11 @@ function updateRouteClock() {
 }
 function updateRouteChip() {
   const c = $("chipRoute"); if (!c || !run) return;
+  if (run.mode === "night") {
+    const left = NIGHT_END - run.minutes; c.hidden = false;
+    c.textContent = left > 0 ? `${run.minutes >= NIGHT_DAWN ? "🌅" : "🌙"} noch ${fmtSpan(left)} bis zur Ablösung 07:30` : "🌅 07:30 · ÜBERGABE IM ARZTZIMMER!";
+    c.classList.toggle("warn", left < 30); return;
+  }
   if (run.mode !== "mission") { c.hidden = true; return; }
   const R = mission(), left = routeDeadline(run.route) - run.minutes;
   c.hidden = false; c.textContent = `${R.av} ${goalsDoneCount()}/${R.goals.length} · ⏱ ${fmtSpan(left)} bis ${fmtTime(routeDeadline(run.route))}`;
@@ -129,9 +134,19 @@ function missionTick(dt) {
   }
 }
 
-// ---------- choosing a mission ----------
+// ---------- choosing a mission (or where to spend the night) ----------
+const NIGHT_PLACES = [
+  { k: "ward", av: "🛏️", color: "#2d3f8f", name: "Station 5B", title: "Station bei Nacht", tag: "Zwei Ringflure, Patientenzimmer, Wäschekammer. Schlafwandler mit roten Augen, Nachtschwestern, Hildegard." },
+  { k: "er", av: "🚑", color: "#7a1f1a", name: "Notaufnahme", title: "ZNA bei Nacht", tag: "Wartehalle, Behandlungskabinen mit Vorhängen, Schockraum. Die Wartenden sind im Stehen eingeschlafen. Mit offenen Augen." }];
+function showNightSelect() {
+  mode = "select"; hidePopups(); let nb = null; try { nb = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
+  $("selTitle").textContent = "Wo verbringst du die Nacht?"; $("selSub").textContent = "22:00 bis 07:30. Lass dich von niemandem finden. Dreimal gefunden, und die Nacht ist vorbei.";
+  $("selList").innerHTML = NIGHT_PLACES.map(p => `<button type="button" class="sel-card" data-night="${p.k}" style="--mc:${p.color}"><span class="sel-av">${p.av}</span><span class="sel-body"><span class="sel-kind">Nachtdienst · ${esc(p.name)}</span><b>${esc(p.title)}</b><small>${esc(p.tag)}</small><span class="sel-meta"><span>⏱ 22:00 bis 07:30</span><span>👁 3× gefunden = vorbei</span></span>${nb >= 0 ? `<em>Rekord: ${nb} Pager-Aufgaben</em>` : ""}</span></button>`).join("");
+  show("ovSelect"); $("ovSelect").scrollTop = 0;
+}
 function showSelect() {
   mode = "select"; hidePopups();
+  $("selTitle").textContent = "Wähle deine Flucht"; $("selSub").textContent = "Sechs Abende, sechs Auswege. Jede Mission hat ihre eigene Geschichte, eigene Etagen, eine Frist und einen Endgegner am Ausgang.";
   const recs = loadRecords();
   $("selList").innerHTML = ROUTE_ORDER.map(k => {
     const R = ROUTES[k], r = recs[k];
@@ -142,7 +157,7 @@ function showSelect() {
   show("ovSelect"); $("ovSelect").scrollTop = 0;
   setTimeout(() => { const f = document.querySelector(".sel-card"); if (f) f.focus({ preventScroll: true }); }, 50);
 }
-$("selList").addEventListener("click", e => { const b = e.target.closest(".sel-card"); if (!b) return; sfx.tick(); startStory("mission", b.dataset.k); });
+$("selList").addEventListener("click", e => { const b = e.target.closest(".sel-card"); if (!b) return; sfx.tick(); if (b.dataset.night) startStory("night", null, b.dataset.night); else startStory("mission", b.dataset.k); });
 $("btnSelBack").addEventListener("click", () => { mode = "title"; show("ovTitle"); });
 
 // ---------- the intro film: a phone in your hand while the camera moves through the doctors' room ----------
@@ -188,8 +203,8 @@ const HOW_HTML = `<ul class="legend how">
   <li><span class="ico">⌛</span><span><b>Zeit verlierst du</b> · wenn dich jemand erwischt und vollquatscht, wenn du Anrufe annimmst, bei Reanimationen und durch liegengebliebene Aufgaben (Formulare im Treppenhaus). Jeder Verlust blinkt rot an der Uhr.</span></li>
   <li><span class="ico">👀</span><span><b>Möglichst niemandem begegnen</b> · Dreieck über dem Kopf: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Schleichen, aus dem Sichtkegel bleiben, sichere Räume nutzen.</span></li>
   <li><span class="ico">📞</span><span><b>Anrufe</b> · Annehmen kostet Zeit. Ablehnen spart sie, aber dann kommt der Anrufer dich suchen.</span></li>
-  <li><span class="ico">♥</span><span><b>Nerven &amp; Energie</b> · Nerven sind deine Leben. Alle weg: Burnout, du übernimmst den Nachtdienst. Energie brauchst du zum Rennen und Kämpfen. Kaffee hilft.</span></li>
-  <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Nerven weg: Nachtdienst.</span></li></ul>`;
+  <li><span class="ico">⚡</span><span><b>Energie</b> · deine einzige Leiste. Gespräche, neue Aufgaben, Gestank, Schreckmomente und verlorene Kämpfe kosten Energie, die Leiste blinkt dann rot. Bei 0 % ist Burnout. Aufladen: ☕ Kaffee, 🥫 Energydrink, 🍩 Donut, 🥤 Shake, Sofa im sicheren Raum, Wellness-Liege, im Treppenhaus durchatmen (+20 %).</span></li>
+  <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, du übernimmst den Nachtdienst.</span></li></ul>`;
 function showBrief(fromGame) {
   if (fromGame) return openMC();
   $("briefBody").innerHTML = missionSheet(false) + `<h3>So funktioniert's</h3>${HOW_HTML}`;
@@ -198,8 +213,9 @@ function showBrief(fromGame) {
 }
 $("btnBrief").addEventListener("click", () => {
   initAudio(); show(null); mode = "play"; blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
+  let seen = false; try { seen = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {}
+  if (!seen) { setTimeout(() => { if (mode === "play") startTour(); }, 600); return; } // the first time: the guided tour
   announceObjective();
-  const h = $("hint"); h.textContent = "Linker Stick: laufen (leicht ziehen = schleichen) · rechts: umsehen · gelber Knopf: benutzen · 🎯 oben: Mission Control"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000);
 });
 
 // ---------- Mission Control (pauses the game) ----------
@@ -229,3 +245,39 @@ function missionFailed() {
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = true; clearCheckpoint();
   sfx.stinger(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
+
+// ---------- the guided tour: points at the real controls, with animated gestures ----------
+const TOUR = [
+  { el: "moveBase", t: "Laufen", d: "Daumen hier aufsetzen und ziehen. Nur ein bisschen ziehen = schleichen (leise, schwer zu bemerken).", g: "drag" },
+  { el: "touch", rect: () => ({ left: innerWidth * .5, top: innerHeight * .35, width: innerWidth * .4, height: innerHeight * .25 }), t: "Umsehen", d: "Überall sonst wischen, um dich umzusehen.", g: "swipe" },
+  { el: "btnAct", t: "Aktion", d: "Benutzen: Türen, Gegenstände, Leute ansprechen. Der Knopf zeigt, was gerade geht.", g: "tap" },
+  { el: "inv", t: "Deine Tricks", d: "🥼 Kittel aus = Personal erkennt dich nicht. ✏️ Kuli werfen = Ablenkung. 📱 Fake-Telefonat = Personal dreht ab. 😷 Noro-Maske = alle halten Abstand. Antippen zum Benutzen.", g: "tap" },
+  { el: "hudClock", t: "Die Uhr", d: "Die Spielzeit läuft. Jeder Zeitverlust (Gespräche, Anrufe, Formulare) blinkt hier rot.", g: "none" },
+  { el: "chipRoute", t: "Deine Frist", d: "So viel Zeit bleibt bis zur Frist. Und wie viele Unter-Missionen du schon hast.", g: "none" },
+  { el: "energyBox", t: "Energie", d: "Deine einzige Leiste. Gespräche, Aufgaben und Schreck kosten Energie, sie blinkt dann. Bei 0 %: Burnout. Aufladen mit Kaffee, Donuts, Sofa im sicheren Raum.", g: "none" },
+  { el: "chipStealth", t: "Werde ich gesehen?", d: "UNBEMERKT, VERDACHT, ENTDECKT. Das Dreieck über den Köpfen zeigt dasselbe: weiß, gelb, rot.", g: "none" },
+  { el: "mission", t: "Was jetzt?", d: "Dein aktuelles Ziel, wie es geht und wie weit es weg ist. Am Boden zeigen kleine Pfeile den Weg.", g: "none" },
+  { el: "mini", t: "Radar", d: "Rote Punkte = jemand hat dich bemerkt. Antippen = großer Lageplan.", g: "tap" },
+  { el: "btnMC", t: "Mission Control", d: "Pausiert das Spiel: Geschichte, Frist, Checkliste, Aufgaben, Ausrüstung. Und Speichern.", g: "tap" },
+];
+let tour = null;
+function startTour() {
+  if (mode !== "play") return; tour = { i: 0 }; mode = "tour"; clearInputs(); hidePopups();
+  const ov = document.createElement("div"); ov.id = "tour";
+  ov.innerHTML = `<div class="tr-ring"></div><div class="tr-hand">👆</div><div class="tr-card"><small></small><b></b><p></p><div class="tr-btns"><button type="button" class="tr-skip">Überspringen</button><button type="button" class="tr-next">Weiter</button></div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector(".tr-next").addEventListener("click", () => { tour.i++; tour.i >= TOUR.length ? endTour() : tourStep(); });
+  ov.querySelector(".tr-skip").addEventListener("click", endTour);
+  tourStep();
+}
+function tourStep() {
+  const s = TOUR[tour.i], ov = $("tour"), el = $(s.el);
+  const r = s.rect ? s.rect() : el && !el.hidden ? el.getBoundingClientRect() : { left: innerWidth / 2 - 40, top: innerHeight / 2 - 40, width: 80, height: 80 };
+  const ring = ov.querySelector(".tr-ring"), pad = 6;
+  Object.assign(ring.style, { left: r.left - pad + "px", top: r.top - pad + "px", width: r.width + pad * 2 + "px", height: r.height + pad * 2 + "px" });
+  const hand = ov.querySelector(".tr-hand"); hand.className = "tr-hand " + s.g; hand.hidden = s.g === "none";
+  Object.assign(hand.style, { left: r.left + r.width / 2 + "px", top: r.top + r.height / 2 + "px" });
+  const card = ov.querySelector(".tr-card"); card.querySelector("small").textContent = `So geht's · ${tour.i + 1} von ${TOUR.length}`; card.querySelector("b").textContent = s.t; card.querySelector("p").textContent = s.d;
+  card.classList.toggle("top", r.top > innerHeight * .55); ov.querySelector(".tr-next").textContent = tour.i === TOUR.length - 1 ? "Los geht's!" : "Weiter"; sfx.tick();
+}
+function endTour() { const ov = $("tour"); if (ov) ov.remove(); tour = null; try { localStorage.setItem("hospital-escape-tour", "1"); } catch (e) {} if (mode === "tour") { mode = "play"; run.clockSeen = run.minutes; } }

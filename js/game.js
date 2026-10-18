@@ -7,13 +7,15 @@ const player = { x: 0, y: 0, yaw: 0, pitch: 0, coffee: 0, busy: 0, airplane: 0, 
 let msg = { text: "", t: 0 };
 let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 0, lightMul = 1, ceilPower = 1, zoneMsgT = 0, boltT = 0, nextBolt = 25, scare = null, scareCd = 20;
 
-function newRun(m = "mission", route = "stay") {
+function newRun(m = "mission", route = "stay", place = "ward") {
   run = { idx: 0, step: 0, route, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
+    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3, m: 2 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
     announceT: 130 + Math.random() * 40, lostMin: 0 };
   run.mode = m;
+  /* there is only one meter now: energy. "Nerves" in older content are 20 % steps of it. */
+  Object.defineProperty(run, "nerves", { get() { return Math.ceil(run.energy / 20); }, set(v) { run.energy = Math.max(0, Math.min(100, v * 20)); }, configurable: true });
   if (m === "mission") run.idx = ROUTES[route].floors[0];
-  if (m === "night") Object.assign(run, { idx: LEVELS.length - 1, minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
+  if (m === "night") Object.assign(run, { place, idx: LEVELS.findIndex(l => l.key === (place === "er" ? "nightER" : "night")), minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
 const mission = () => ROUTES[run.route || "stay"];
 const missionFloors = () => mission().floors;
@@ -37,7 +39,7 @@ function loadFloor(idx) {
   run.nextBlackout = 16 + Math.random() * 8;
   $("hudFloor").textContent = L.short;
   if (run.mode === "mission") prepareMissionFloor();
-  setMsg(run.mode === "night" ? "Nachtdienst. Überlebe bis 07:00." : "Feierabend war um 17:00. Leise raus.", 0);
+  setMsg(run.mode === "night" ? "Nachtdienst. Überlebe bis 07:30." : "Feierabend war um 17:00. Leise raus.", 0);
   if (run.mode === "night") player.lamp = 100;
   naviT = 0; applyEnv(true); updateHud(); renderInv();
 }
@@ -52,7 +54,7 @@ function applyEnv(force) {
   const target = bo ? .06 : (tile && !env.dark ? .32 : 1);
   lightMul += (target - lightMul) * (force ? 1 : .06);
   const bolt = boltT > 0 ? .9 : 0;
-  const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - 780) / 60)) : 0;
+  const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - NIGHT_DAWN) / 60)) : 0;
   hemi.intensity = (env.hemi * .55 + dawn * .45) * lightMul + bolt * .6; amb.intensity = (env.amb * .45 + dawn * .15) * lightMul; sun.intensity = (env.dir * 2.6 + dawn * .5) * lightMul;
   scene.environment = bo || env.dark ? ENV_DARK : ENV_BRIGHT;
   ceilPower = bo ? 0 : (run && run.mode === "night" ? .3 + dawn * .6 : env.dark ? (cellarDark() ? 0 : .7) : 1.15) * Math.max(.25, lightMul); // night: only the emergency lights
@@ -63,10 +65,12 @@ function applyEnv(force) {
   const need = inDarkness() || bo;
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
-  if (fpHand.userData.glow) { const on = flashlight.intensity > .3; fpHand.userData.glow.visible = on; if (fpHand.userData.beam) fpHand.userData.beam.visible = on; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
+  if (fpHand.userData.glow) { const on = flashlight.intensity > .3; fpHand.userData.glow.visible = false; /* no glowing bulb: you never see the lens from behind */ if (fpHand.userData.beam) fpHand.userData.beam.visible = on; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
   if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); }
   if (level && level.windowMat) level.windowMat.color.setHex(boltT > 0 ? 0xffffff : 0x8a9ab0);
-  if (level && level.outsideMat) level.outsideMat.color.setHex(boltT > 0 ? 0xffffff : 0xb0b0b8);
+  if (level && level.outsideMat) { // first light behind the windows: the night skyline gives way to a pink-orange morning
+    if (dawn > .3 && !level.dawnSky) { level.dawnSky = true; level.outsideMat.map = skylineTex(true); level.outsideMat.needsUpdate = true; }
+    if (boltT > 0) level.outsideMat.color.setHex(0xffffff); else if (level.dawnSky) level.outsideMat.color.setRGB(1.05, .78 + dawn * .2, .62 + dawn * .3); else level.outsideMat.color.setRGB(.69 + dawn * .8, .69 + dawn * .5, .72 + dawn * .2); }
 }
 const lampVisible = () => inDarkness() && player.lampOn && player.lamp > 0;
 
@@ -76,9 +80,10 @@ const bouncersCleared = () => level ? level.enemies.filter(e => e.type === "U" &
 function objectives() {
   if (run.mode === "night") {
     const left = Math.max(0, NIGHT_END - run.minutes), list = [];
+    if (run.minutes >= NIGHT_END - 30) list.push({ id: "handover", title: "Übergabe 07:30", text: run.minutes >= NIGHT_END ? "Jetzt ins Arztzimmer: Übergabe!" : "Um 07:30 im Arztzimmer sein (Übergabe)", main: true, at: "safe", done: false, how: "Sicherer Raum mit braunem Holzboden (Arztzimmer / Personalraum)" });
     if (run.task) list.push({ id: "task", title: "Pager · Zi. " + run.task.room, text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
     list.push({ id: "hide", title: "Unentdeckt bleiben", text: `Niemand darf dich finden · gefunden ${run.found || 0}/3`, main: true, done: false, brief: "Patienten mit roten Augen, Nachtschwestern, Hildegard: Wer dich erwischt, zählt. Dreimal, und die Nacht ist vorbei." });
-    list.push({ id: "survive", title: "Überleben bis 07:00", text: `Überlebe bis 07:00 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
+    list.push({ id: "survive", title: "Überleben bis 07:30", text: `Überlebe bis 07:30 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
     return list;
   }
   const L = LEVELS[run.idx], R = mission(), last = isLastFloor();
@@ -109,6 +114,7 @@ function targetOf(o) {
   if (o.at === "task") return run.task ? [run.task.x + .5, run.task.y + .5] : null;
   if (o.at === "exit") return level.exit ? [level.exit[0] + .5, level.exit[1] + .5] : null;
   if (o.at === "rea") return run.rea && !run.rea.done ? [run.rea.x + .5, run.rea.y + .5] : (level.reaSpot ? [level.reaSpot[0] + .5, level.reaSpot[1] + .5] : null);
+  if (o.at === "safe") { const rg = level.safeRooms[0]; if (rg) { const [x, y] = rg.tiles[Math.floor(rg.tiles.length / 2)]; return [x + .5, y + .5]; } return level.start ? [level.start[0] + .5, level.start[1] + .5] : null; }
   if (o.at === "boss") return level.boss && !level.boss.cleared ? [level.boss.x, level.boss.y] : null;
   if (o.at === "bouncer") { const e = level.enemies.find(e => e.type === "U" && !e.cleared); return e ? [e.x, e.y] : null; }
   const [kind, key] = o.at.split(":");
@@ -174,8 +180,8 @@ function updateMissionHow(cur) {
 function setMsg(text, secs, alert) { msg = { text, t: secs }; $("hudMsg").textContent = text; $("hudMsg").classList.toggle("alert", !!alert); }
 function updateHud() {
   let h = "";
-  for (let i = 0; i < MAX_NERVES(); i++) h += i < run.nerves ? "♥" : '<span class="lost">♡</span>';
-  $("hudNerves").innerHTML = h;
+  $("hudNerves").hidden = run.mode !== "night";
+  if (run.mode === "night") { for (let i = 0; i < 3; i++) h += i < 3 - (run.found || 0) ? "👁" : '<span class="lost">✕</span>'; $("hudNerves").innerHTML = h; }
   $("chipTasks").textContent = "AUFG " + run.tasks.length; $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
@@ -185,17 +191,24 @@ function updateHud() {
   updateRouteChip();
   updateEnergy();
 }
+/* the energy bar: shows %, flashes when you lose some, turns red and blinks at 25 % and below */
+function energyHit() { const b = $("energyBox"); if (!b) return; b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit"); }
 function updateEnergy() {
   const e = Math.max(0, Math.round(run.energy));
-  $("energyFill").style.width = e + "%"; $("energyFill").className = e <= 0 ? "empty" : e < 25 ? "low" : ""; $("energyNum").textContent = e;
+  if (run.lastE != null && e < run.lastE - .5 && performance.now() - (run.lastHitAt || 0) > 900 && run.lastE - e >= 3) { run.lastHitAt = performance.now(); energyHit(); }
+  run.lastE = e;
+  $("energyFill").style.width = e + "%"; $("energyFill").className = e <= 0 ? "empty" : e <= 25 ? "crit" : e < 50 ? "low" : ""; $("energyNum").textContent = e + " %";
+  $("energyBox").classList.toggle("crit", e <= 25);
   const dark = inDarkness(), chip = $("chipLamp");
-  chip.hidden = !dark; chip.textContent = (player.lampOn ? "LAMPE " + Math.round(player.lamp) + "%" : "LAMPE AUS");
+  chip.hidden = !dark; chip.textContent = player.lampOn ? `🔦 AN · SICHTBAR · ${Math.round(player.lamp)}%` : "🔦 AUS · UNSICHTBAR";
   chip.classList.toggle("warn", player.lampOn && player.lamp < 25); chip.classList.toggle("good", !player.lampOn);
 }
 function buffText() {
   const b = [];
   if (player.hidden) b.push("VERSTECKT");
   if (player.civil) b.push("🥼ZIVIL");
+  if (player.noroT > 0) b.push("😷" + Math.ceil(player.noroT));
+  if (player.phoneT > 0) b.push("📱" + Math.ceil(player.phoneT));
   if (player.busy > 0) b.push("📋" + Math.ceil(player.busy));
   if (player.coffee > 0) b.push("☕" + Math.ceil(player.coffee));
   if (player.airplane > 0) b.push("✈️" + Math.ceil(player.airplane));
@@ -207,16 +220,16 @@ function addDuty(code) { code = code || pick(["WE", "WE", "N", "24", "RB"]); run
 function pen(o) {
   const st = [];
   if (o.mins) { run.minutes += o.mins; st.push({ text: "+" + o.mins + " Min" }); }
-  if (o.nerves) { run.nerves = Math.max(0, run.nerves - o.nerves); st.push({ text: "−" + o.nerves + " Nerv" + (o.nerves > 1 ? "en" : "") }); }
-  if (o.energy) { run.energy = Math.max(0, run.energy - o.energy); st.push({ text: "−" + o.energy + " Energie" }); }
+  const drain = (o.nerves || 0) * 15 + (o.energy || 0) + (o.tasks ? o.tasks.length * 4 : 0);
+  if (drain) { run.energy = Math.max(0, run.energy - drain); st.push({ text: "−" + drain + " % Energie" }); energyHit(); }
   if (o.tasks) { for (const t of o.tasks) addTask(t); st.push({ text: "+" + o.tasks.length + " Aufgabe" + (o.tasks.length > 1 ? "n" : "") }); }
   if (o.duties) for (let i = 0; i < o.duties; i++) st.push({ text: addDuty(o.dutyCode) });
   return st;
 }
 function gain(o) {
   const st = [];
-  if (o.nerves) { const before = run.nerves; run.nerves = Math.min(MAX_NERVES(), run.nerves + o.nerves); if (run.nerves > before) st.push({ text: "+" + (run.nerves - before) + " Nerv", good: true }); }
-  if (o.energy) { run.energy = Math.min(100, run.energy + o.energy); st.push({ text: "+" + o.energy + " Energie", good: true }); }
+  const up = (o.nerves || 0) * 15 + (o.energy || 0);
+  if (up) { const before = run.energy; run.energy = Math.min(100, run.energy + up); if (run.energy > before) st.push({ text: "+" + Math.round(run.energy - before) + " % Energie", good: true }); }
   if (o.text) st.push({ text: o.text, good: true });
   return st;
 }
@@ -275,8 +288,8 @@ function useItem(k) {
     case "2": takeItem(k); player.busy = 10; st = [good("10 s beschäftigt")]; line = "Klemmbrett hoch, Stirn runzeln, schnell gehen. Niemand spricht dich an."; break;
     case "3": {
       takeItem(k); let n = 0;
-      for (const e of level.enemies) if (!e.static && !e.done && Math.hypot(e.x - player.x, e.y - player.y) < 3.2) { e.stun = Math.max(e.stun, 6); e.aw = 0; e.state = "idle"; n++; }
-      flash("mist"); sfx.spray(); st = [good(n + " eingenebelt")]; line = "Hygieneoffensive! Alle in der Nähe desinfizieren sich erst mal die Augen."; break;
+      for (const e of level.enemies) if (!e.static && !e.done && Math.hypot(e.x - player.x, e.y - player.y) < 4 && los(player.x, player.y, e.x, e.y)) { e.stun = Math.max(e.stun, 7); e.aw = 0; e.state = "idle"; emote(e, "😵"); n++; }
+      flash("mist"); sfx.spray(); st = [good(n ? n + " für 7 s eingenebelt" : "niemand getroffen")]; line = n ? "Hygieneoffensive! Alle in der Nähe desinfizieren sich erst mal die Augen. Sieben Sekunden lang." : "Pssscht. Niemand in Reichweite (etwa 12 Meter, mit Sicht). Spray verschwendet."; break;
     }
     case "4": takeItem(k); player.airplane = 60; if (call && !call.def.forced) endCall(); st = [good("60 s Ruhe")]; line = "Pieper im Flugmodus. Offiziell: Funkloch."; break;
     case "5": { takeItem(k); const [x, y] = farthestTile(); lure = { x, y, t: 12 }; st = [good("12 s Ruhe")]; line = "„Achtung: Kostenloser Kuchen in der Cafeteria!“ Alle rennen los."; sfx.ding(); break; }
@@ -291,6 +304,8 @@ function useItem(k) {
     case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für PD-Phil auf."; break;
     case "p": takeItem(k); { const n = throwPen(); st = [good(n ? n + " abgelenkt" : "Klack")]; line = n ? "Klack! Der Kuli landet irgendwo da hinten. Alle drehen sich um und gehen nachsehen. Kugelschreiber: das Schweizer Taschenmesser der Medizin." : "Klack. Niemand in der Nähe, der sich dafür interessiert. Der Kuli ist trotzdem weg."; } break;
     case "c": toggleCoat(); line = player.civil ? "Kittel aus. Ohne Kittel erkennt dich das Personal nicht mehr: nur ein weiterer müder Besucher. Patienten und Angehörige fragen dich dafür nach der Toilette." : "Kittel wieder an. Du bist wieder Ärztin oder Arzt. Leider."; st = [good(player.civil ? "Zivil" : "Kittel an")]; break;
+    case "m": takeItem(k); player.noroT = 15; sfx.knock(); setTimeout(() => sfx.knock(), 350); for (const e of level.enemies) if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) < 6) { e.aw = 0; e.state = "idle"; emote(e, "🤢"); e.investigate = { x: e.hx + .5, y: e.hy + .5, t: 5 }; }
+      st = [good("15 s Abstand")]; line = pick(["Maske auf. „*hust* … Noro. Glaube ich.“ Der Flur leert sich schneller als bei einem Feueralarm.", "Du hustest dreimal feucht. Niemand will mehr eine „ganz kurze Frage“ stellen.", "„Ich war gerade in der Gastro.“ Das reicht. Alle treten zurück."]); break;
     case "f": takeItem(k); player.phoneT = 10; sfx.beep(); st = [good("10 s Ruhe vor dem Personal")]; line = pick(["„Ja, Herr Professor. Nein, Herr Professor. Die Studie, natürlich.“ Du redest mit niemandem. Alle machen einen Bogen um dich.", "„Ja, hier ist der Hintergrunddienst… nein, das kann ich nicht am Telefon…“ Niemand stört einen Arzt, der ernst ins Handy schaut.", "„Mhm. Mhm. Ganz schlechte Werte. Ich komme.“ Du gehst. Wohin, weiß keiner. Du auch nicht."]); break;
     case "9": takeItem(k); player.lamp = 100; player.lampOn = true; st = [good("Lampe 100 %")]; line = "Frische Batterie. Die letzte im Haus. Das Controlling weiß davon nichts."; break;
   }

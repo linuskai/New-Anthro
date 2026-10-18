@@ -5,11 +5,11 @@ function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", 
 
 // ---------- story in the doctors' room ----------
 let story = null, ceilT = 0, titleT = 0, fxOff = false;
-let lastMode = "mission", lastRoute = "stay";
-function startStory(m, route) {
-  m = m === "night" ? "night" : "mission"; lastMode = m; if (route) lastRoute = route;
+let lastMode = "mission", lastRoute = "stay", lastPlace = "ward";
+function startStory(m, route, place) {
+  m = m === "night" ? "night" : "mission"; lastMode = m; if (route) lastRoute = route; if (place) lastPlace = place;
   initAudio(); hidePopups(); show(null); clearInputs();
-  newRun(m, lastRoute); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
+  newRun(m, lastRoute, lastPlace); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
   mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? STORY_NIGHT : STORY_OPEN.concat(mission().story) };
   $("story").hidden = false; document.body.classList.add("cine");
   storyNext();
@@ -43,7 +43,7 @@ function updateStory(dt) {
   story.t += dt;
   if (story.shown < story.full.length) { story.shown = Math.min(story.full.length, story.shown + dt * 46); $("storyText").textContent = story.full.slice(0, Math.floor(story.shown)); if (Math.random() < .25) sfx.tick(); }
   // film shots in the doctors' room: each line has its own camera, eased in, with a slow push
-  const shots = run.mode === "night" ? STORY_SHOTS_NIGHT : STORY_SHOTS, sh = shots[Math.min(story.shot, shots.length - 1)];
+  const shots = run.mode === "night" ? nightShots() : STORY_SHOTS, sh = shots[Math.min(story.shot, shots.length - 1)];
   if (sh) {
     const push = Math.min(1, story.t / 7) * .25, [cx, cy, ch] = sh.cam, [lx, ly, lz] = sh.look;
     const tp = new THREE.Vector3(cx * S, ch, cy * S), tl = new THREE.Vector3(lx * S, ly, lz * S);
@@ -66,6 +66,12 @@ const STORY_SHOTS = [
   { cam: [3.9, 1.5, 1.35], look: [2.6, 3.15, 2.2], fov: 58, cut: 1 },     // the flickering lamp
   { cam: [3.6, 2.6, 1.6], look: [4.5, 1.65, 1.05], fov: 48, cut: 1 },     // the whiteboard: Frau Bozkurt's plan
 ];
+/* night maps differ, so the night film looks out from wherever the shift starts */
+function nightShots() {
+  const [sx, sy] = level.start, yaw = level.startYaw, at = (a, d) => [sx + .5 - Math.sin(yaw + a) * d, sy + .5 - Math.cos(yaw + a) * d];
+  const c0 = at(Math.PI, .3), l0 = at(0, 4), c1 = at(.4, .2), l1 = at(-.5, 3), c2 = at(0, .6), l2 = at(.15, 6);
+  return [{ cam: [c0[0], c0[1], 1.5], look: [l0[0], 1.2, l0[1]], fov: 66 }, { cam: [c1[0], c1[1], 1.35], look: [l1[0], 1.1, l1[1]], fov: 50, cut: 1 }, { cam: [c2[0], c2[1], 1.4], look: [l2[0], 1.4, l2[1]], fov: 58, cut: 1 }];
+}
 const STORY_SHOTS_NIGHT = [
   { cam: [4.55, 1.25, 2.4], look: [1.6, .7, 3.1], fov: 66 },
   { cam: [2.5, 2.0, 1.55], look: [3.5, 1.1, 4.0], fov: 50, cut: 1 },
@@ -124,11 +130,10 @@ function nextFloor() {
   enterFloor("Keine offenen Aufgaben. Kein Papierkram. Respekt.");
 }
 function enterFloor(note) {
-  const before = run.nerves; run.nerves = Math.min(MAX_NERVES(), run.nerves + 1);
-  run.energy = Math.min(100, run.energy + 10);
+  const before = run.energy; run.energy = Math.min(100, run.energy + 20);
   sfx.floor(); run.step++; run.idx = missionFloors()[run.step];
   loadFloor(run.idx); run.clockSeen = run.minutes; saveCheckpoint();
-  showIntro(note + (run.nerves > before ? " Kurz durchgeatmet: +1 Nerv, +10 Energie." : ""));
+  showIntro(note + (run.energy > before ? ` Im Treppenhaus durchgeatmet: +${Math.round(run.energy - before)} % Energie.` : ""));
 }
 
 // ---------- endings ----------
@@ -184,9 +189,9 @@ function showGameOver() {
     mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
   }
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
-  $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Nerven sind weg. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
+  $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Energie ist bei 0 %. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
   fillStats(); clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
-  $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Nerven sind deine Leben. Sichere Räume, Kaffee und Donuts bringen sie zurück.";
+  $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Energie lädst du mit Kaffee, Donuts, Energydrinks, dem Sofa im sicheren Raum und im Treppenhaus wieder auf. Gespräche und Aufgaben kosten sie.";
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = false;
   mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
@@ -223,6 +228,7 @@ function pause() { if (mode !== "play") return; mode = "pause"; clearInputs(); s
 function resume() { if (mode !== "pause") return; show(null); mode = "play"; }
 $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
 $("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
+$("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 50); });
 $("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
 $("mission").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
@@ -249,11 +255,11 @@ for (const id of ["setDiff", "setDiffTitle"]) {
   const el = $(id); el.value = settings.diff;
   el.addEventListener("change", () => {
     settings.diff = el.value; saveSettings(); $("setDiff").value = $("setDiffTitle").value = settings.diff;
-    if (run) { run.nerves = Math.min(run.nerves, MAX_NERVES()); updateHud(); }
+    if (run) updateHud();
   });
 }
 $("btnStart").addEventListener("click", () => { initAudio(); showSelect(); });
-$("btnNight").addEventListener("click", () => startStory("night"));
+$("btnNight").addEventListener("click", () => { initAudio(); showNightSelect(); });
 $("btnAgain").addEventListener("click", () => startStory(lastMode));
 $("btnEndMenu").addEventListener("click", () => { hidePopups(); newRun(); loadFloor(0); if (lastMode === "mission") showSelect(); else { mode = "title"; show("ovTitle"); } });
 $("btnNightNow").addEventListener("click", () => startStory("night"));
@@ -440,8 +446,12 @@ function render(time, dt) {
     if (e.static && !e.cleared) e.yaw = Math.atan2(player.x - e.x, player.y - e.y);
     else e.yaw = angLerp(e.yaw, e.tyaw, e.state === "sus" ? k * 1.4 : k);
     e.mesh.rotation.y = e.yaw;
-    const look = e.state === "sus" || e.state === "spot" ? 0 : Math.sin(time * .9 + e.hx) * .5;
-    for (const p of e.persons) { p.look = look; animatePerson(p, dt, e.moving && e.stun <= 0, e.speed || .5); }
+    // eyes on you: aware people turn their head to you, idle ones glance over when you pass close by
+    let toP = Math.atan2(player.x - e.x, player.y - e.y) - e.yaw; while (toP > Math.PI) toP -= Math.PI * 2; while (toP < -Math.PI) toP += Math.PI * 2;
+    const near = Math.hypot(player.x - e.x, player.y - e.y) < 3.2 && Math.abs(toP) < 1.6;
+    const want = e.state === "sus" || e.state === "spot" || near ? Math.max(-1.1, Math.min(1.1, toP)) : Math.sin(time * .9 + e.hx) * .5;
+    e.lookV = (e.lookV || 0) + (want - (e.lookV || 0)) * Math.min(1, dt * 4);
+    for (const p of e.persons) { p.look = e.lookV; animatePerson(p, dt, e.moving && e.stun <= 0, e.speed || .5); }
     // the floating triangle: white = unaware, yellow = suspicious, red = coming to talk
     if (e.tri) {
       e.tri.visible = !e.done && !e.cleared;

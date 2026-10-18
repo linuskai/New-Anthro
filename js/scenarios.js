@@ -51,7 +51,7 @@ const SCENARIOS = [
     ] },
   { id: "katze", av: "🐈", title: "Eine Katze auf Station", text: "Eine Katze sitzt auf dem Visitenwagen. Sie trägt ein Namensschild: „Dr. Miau, Palliativ“. Sie schaut dich an.",
     options: [
-      { label: "Streicheln", hint: "+1 Nerv", act: () => scn("Sie schnurrt. Für einen Moment ist alles gut. Dann geht sie, wie Katzen gehen: ohne Übergabe.", gain({ nerves: 1 }), 1) },
+      { label: "Streicheln", hint: "+15 % Energie", act: () => scn("Sie schnurrt. Für einen Moment ist alles gut. Dann geht sie, wie Katzen gehen: ohne Übergabe.", gain({ nerves: 1 }), 1) },
       { label: "„Haben Sie eine Approbation?“", act: () => scn("Sie hat. Sie zeigt sie dir. Sie hat bessere Noten als du.", []) },
       { label: "Ignorieren", act: () => scn("Sie folgt dir drei Meter, dann verliert sie das Interesse. Wie die Personalabteilung.", []) },
     ] },

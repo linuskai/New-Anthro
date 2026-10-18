@@ -19,6 +19,7 @@ const tube = (len, rad, c) => mesh(GEO.cyl, typeof c === "object" ? c : phong(c,
 const CHROME = () => phong(0xc8d0d6, 80);
 
 // ---------- hospital bed: lift column, casters, raised back section, side rails, head/foot boards ----------
+const BLANKET_MAT = {};
 function hospitalBed(opt = {}) {
   const g = new THREE.Group(), L = 2.08, W = .96, frame = phong(0x9aa5a8, 60), board = opt.board || 0xd9e1e4, accent = opt.accent || 0x6aa1d6;
   g.add(at(rmesh(.62, .08, 1.6, .03, 0x56605f), 0, .17, 0));
@@ -33,9 +34,20 @@ function hospitalBed(opt = {}) {
   g.add(at(rmesh(W - .1, .13, L * .58, .055, mat), 0, .555, L * .19));
   const back = new THREE.Group(); back.position.set(0, .5, -L * .1); back.rotation.x = opt.flat ? 0 : .32; g.add(back);
   back.add(at(rmesh(W - .1, .13, L * .4, .055, mat), 0, .055, -L * .2));
-  back.add(at(rmesh(.6, .1, .34, .05, 0xffffff), 0, .16, -L * .33));
-  // blanket over the legs
-  g.add(at(rmesh(W - .04, .05, L * .5, .025, opt.blanket || 0x8fb7d9), 0, .64, L * .24));
+  // a soft pillow with a dent in it
+  const pillow = mesh(GEO.ball, lambert(0xffffff), .3, .07, .17); pillow.position.set(0, .17, -L * .33); back.add(pillow);
+  const dent = mesh(GEO.ball, lambert(0xe8ecee), .12, .02, .08); dent.position.set(.04, .23, -L * .33); back.add(dent);
+  // a rumpled blanket that drapes over the sides of the mattress
+  const bl = new THREE.PlaneGeometry(W + .14, L * .56, 12, 16); bl.rotateX(-Math.PI / 2);
+  const pa = bl.attributes.position, seed = Math.random() * 10;
+  for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), edge = Math.max(0, Math.abs(x) - (W - .1) / 2) / .12;
+    pa.setY(i, .035 * Math.sin(z * 9 + seed) * Math.cos(x * 7 + seed) + .02 * Math.sin(z * 23 + x * 5) - edge * edge * .2 + (Math.abs(x) < .2 && z > .1 ? .03 : 0)); }
+  bl.computeVertexNormals();
+  const bc = opt.blanket || 0x8fb7d9, bm = BLANKET_MAT[bc] || (BLANKET_MAT[bc] = new THREE.MeshStandardMaterial({ color: bc, roughness: .95, side: THREE.DoubleSide }));
+  const blanket = new THREE.Mesh(bl, bm); blanket.position.set(0, .65, L * .22); blanket.castShadow = true; g.add(blanket);
+  // the chart clipped to the foot board
+  g.add(at(rmesh(.22, .28, .02, .01, 0xf6f6f2), .2, .76, L / 2 + .02));
+  g.add(at(boxMesh(.12, .02, .025, 0x404448), .2, .9, L / 2 + .025));
   g.add(at(rmesh(W - .02, .03, .12, .015, 0xf4f6f6), 0, .66, -L * .01));
   // head and foot boards
   for (const [z, h] of [[-L / 2 + .02, .62], [L / 2 - .02, .42]]) {

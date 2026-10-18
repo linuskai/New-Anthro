@@ -491,6 +491,7 @@ function animatePerson(p, dt, moving, speed) {
   const s = Math.sin(p.phase) * p.amp, c = Math.cos(p.phase) * p.amp, pose = p.sp.pose;
   if (p.seated) { for (let i = 0; i < 2; i++) { p.legs[i].rotation.x = -1.5; p.knees[i].rotation.x = 1.5; } p.body.position.y = -.45; p.arms[0].rotation.x = p.arms[1].rotation.x = -.3; p.elbows[0].rotation.x = p.elbows[1].rotation.x = -.8; return; }
   p.legs[0].rotation.x = s * .55; p.legs[1].rotation.x = -s * .55;
+  p.body.rotation.z = c * .035; p.body.rotation.x = p.amp * .05 * Math.min(1.5, speed + .4); // hips sway and a slight forward lean when walking
   p.knees[0].rotation.x = Math.max(0, -c) * .8; p.knees[1].rotation.x = Math.max(0, c) * .8;
   if (pose === "zombie") { p.arms[0].rotation.x = -1.45 + s * .12; p.arms[1].rotation.x = -1.4 - s * .12; p.elbows[0].rotation.x = p.elbows[1].rotation.x = -.15; p.head.rotation.z = Math.sin(p.phase * .5) * .15; }
   else if (pose === "flex") {

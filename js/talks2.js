@@ -5,7 +5,7 @@ Object.assign(TALKS, {
       { q: "„Sie machen doch Samstag, oder?“", options: [
         opt("„Selbstverständlich!“", () => say("„Wusste ich's doch. Teamplayer.“", pen({ duties: 1 }))),
         bluff("„Da ist die Hochzeit meiner Schwester.“", .45, "Er glaubt dir. Du hast keine Schwester.", "„Die hat doch letzten Monat schon geheiratet.“ Strafdienst.", { duties: 2, nerves: 1 }),
-        opt("„Nein.“", () => say("Stille. Er notiert sich etwas. Du weißt nicht, was. Das ist das Schlimmste.", pen({ nerves: 2 })), () => run.nerves >= 3 ? "−2 Nerven" : "braucht 3 Nerven", () => run.nerves < 3),
+        opt("„Nein.“", () => say("Stille. Er notiert sich etwas. Du weißt nicht, was. Das ist das Schlimmste.", pen({ nerves: 2 })), () => run.nerves >= 3 ? "−30 % Energie" : "braucht 60 % Energie", () => run.nerves < 3),
         breakFree(25, "Du tust, als würde dein Pieper gehen. Pieper wurden 2019 eingespart. Egal, du bist weg.")] },
       { q: "„Und morgen in der Frühbesprechung stellen Sie vor. Thema?“", options: [
         opt("„Hyponatriämie.“", () => say("„Langweilig. Aber gut.“ 40 Folien bis 6:30.", pen({ tasks: ["Vortrag Hyponatriämie (40 Folien)"] }))),
@@ -138,6 +138,7 @@ Object.assign(TALKS, {
 /* one conversation per person, no repeats inside a run */
 function hostileDialog(e) {
   flash(); sfx.hit();
+  if (run.mode === "mission") { run.energy = Math.max(1, run.energy - 5); energyHit(); } // every conversation wears you down
   if (navigator.vibrate) try { navigator.vibrate(100); } catch (_) {}
   if (call && !call.def.forced) endCall();
   if (e.type === "D" && (!TALKS.D || Math.random() < .6)) return phdQuiz(e);
