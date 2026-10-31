@@ -148,7 +148,7 @@ function findFocus() {
     if (p.kind === "brew") consider(p.x, p.y, 1.3, { type: "brew", ref: p, label: "Kaffee", name: "Kaffeemaschine" });
     if (["photo", "stamp", "meds", "grab", "film"].includes(p.kind) && !run.flags.has(p.goal)) consider(p.x, p.y, 1.5, { type: "routeprop", ref: p, label: p.kind === "photo" ? "Fotografieren" : p.grab ? p.grab[1] : "Einpacken", name: BAG_NAMES[p.goal] || "Beweis" });
   }
-  if (run.task && run.mode === "night") consider(run.task.x + .5, run.task.y + .5, 1.5, { type: "nighttask", label: "Versorgen", name: "Zi. " + run.task.room });
+  if (run.task && run.mode === "night") consider(run.task.x + .5, run.task.y + .5, 1.5, { type: "nighttask", label: "Versorgen", name: nightRoom(run.task.room) });
   if (run.rea && !run.rea.done) consider(run.rea.x + .5, run.rea.y + .5, 1.3, { type: "rea", label: "Reanimieren", name: "Patient ohne Puls" });
   return best;
 }
@@ -781,7 +781,7 @@ function spawnFar(type) {
   const e = spawnEnemy(level, type, bi % GW + .5, ((bi / GW) | 0) + .5); if (type === "Q") e.label.visible = false; return e;
 }
 function nightHour(h) {
-  const [time, title, text] = NIGHT_HOURS[h];
+  const [time, title, text] = nightHours()[h];
   missionCard(time, title, text); if (h >= 2) sfx.stinger();
   if (h === 1 || h === 4 || h === 6) { spawnFar("Q"); spawnFar("Q"); }
   if (h === 2) spawnFar("g");
@@ -799,14 +799,14 @@ function newTask() {
   if (!inner) { run.taskT = 3; return; }
   if (run.hour >= 1 && !run.rea && Math.random() < .15) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
   // the pager asks first: you may accept the job or palm it off (with consequences)
-  const t = { x: inner[0], y: inner[1], room: d.num, text: pick(NIGHT_TASKS) };
+  const t = { x: inner[0], y: inner[1], room: d.num, text: pick(nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS) };
   run.taskT = 9999; sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440);
-  startCall({ from: "Pager · Zi. " + t.room, sub: "Station 5B", av: "📟", text: t.text + ". 72 Minuten.",
-    onAccept: () => { run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · Zi. " + t.room, t.text + ". Du hast 72 Minuten.", []); updateHud(); },
+  startCall({ from: "Pager · " + nightRoom(t.room), sub: nightPlace(), av: "📟", text: t.text + ". 72 Minuten.",
+    onAccept: () => { run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
     onDecline: () => {
       run.taskT = 20 + Math.random() * 15; run.nightDeclined = (run.nightDeclined || 0) + 1;
-      if (Math.random() < .55) showToast("🙅", "#a6e38f", "Abgelehnt", pick(["Schwester Ayşe übernimmt. Ihr Seufzer kommt durch den Pager. In HD.", "Der Pager schweigt beleidigt. Zi. " + t.room + " klingelt jetzt bei der Notaufnahme.", "Du tippst „Bin in REA“. Du bist auf dem Sofa. Niemand prüft das. Noch."]), [good("Ruhe")]);
-      else showToast("🙅", "#e2483d", "Abgelehnt", pick(["Zi. " + t.room + " klingelt jetzt alle 30 Sekunden. Bis 7 Uhr.", "Die Stationsleitung notiert: „Arzt nicht erreichbar.“ Mit Datum. Und Uhrzeit. Und Smiley.", "Hildegard hat es gehört. Sie lächelt. Das ist schlimmer."]), pen({ nerves: 1 }));
+      if (Math.random() < .55) showToast("🙅", "#a6e38f", "Abgelehnt", pick(["Schwester Ayşe übernimmt. Ihr Seufzer kommt durch den Pager. In HD.", "Der Pager schweigt beleidigt. " + nightRoom(t.room) + " klingelt jetzt bei der Notaufnahme.", "Du tippst „Bin in REA“. Du bist auf dem Sofa. Niemand prüft das. Noch."]), [good("Ruhe")]);
+      else showToast("🙅", "#e2483d", "Abgelehnt", pick([nightRoom(t.room) + " klingelt jetzt alle 30 Sekunden. Bis 7 Uhr.", "Die Stationsleitung notiert: „Arzt nicht erreichbar.“ Mit Datum. Und Uhrzeit. Und Smiley.", "Hildegard hat es gehört. Sie lächelt. Das ist schlimmer."]), pen({ nerves: 1 }));
       updateHud(); checkDeath();
     } });
 }
@@ -819,7 +819,7 @@ function failTask() {
   const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 8 + Math.random() * 12;
   // a missed page sends the night nurse looking for you
   setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
-  showToast("⏰", "#c0322a", "Zu spät · Zi. " + room, pick(["Zi. " + room + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
+  showToast("⏰", "#c0322a", "Zu spät · " + nightRoom(room), pick([nightRoom(room) + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
   updateHud(); checkDeath();
 }
 /* night shift: whoever finds you counts. Three times and the night is over. */
@@ -848,7 +848,7 @@ function nightHorror() {
 function updateNight(dt) {
   const h = Math.floor((run.minutes - NIGHT_START) / 60);
   // 07:30: the morning shift arrives. You win once you make it to the handover in the doctors' room.
-  if (run.minutes >= NIGHT_END) { if (playerSafe()) { nightWin(); return; } if ((run.handT = (run.handT || 0) - dt) <= 0) { run.handT = 5; setMsg("07:30! Die Ablösung ist da. Ab ins Arztzimmer zur Übergabe!", 4, true); sfx.beep(); } }
+  if (run.minutes >= NIGHT_END) { if (playerSafe()) { nightWin(); return; } if ((run.handT = (run.handT || 0) - dt) <= 0) { run.handT = 5; setMsg(`07:30! Die Ablösung ist da. Ab ${nightSafeTo()} zur Übergabe!`, 4, true); sfx.beep(); } }
   if (h !== run.hour && h < NIGHT_HOURS.length) { run.hour = h; nightHour(h); }
   if (run.task) { if (run.minutes > run.task.deadline) failTask(); }
   else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }

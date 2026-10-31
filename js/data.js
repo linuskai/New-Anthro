@@ -250,14 +250,13 @@ const PAT_QUIZ = [
 
 const ENDINGS = {
   stay: { title: "Montag, 7:00", eyebrow: "Parkhaus P2", text: "Du fährst heim, schläfst sechs Stunden und kommst wieder. Natürlich. Die Station braucht dich. Und das Controlling auch: Es hat schon deine Parkgebühr erhöht." },
-  pharma: { title: "Medical Advisor", eyebrow: "Pharmazeutika AG", text: "Fr. Goldmann wartet mit einer schwarzen Limousine. Firmenwagen, Homeoffice, Feierabend um 16:00. Deine größte Sorge ab jetzt: die Folienfarben im PowerPoint." },
-  botox: { title: "Ästhetische Dermatologie", eyebrow: "Praxis Dr. Glatt · Innenstadt", text: "Montag bis Donnerstag, 9 bis 15 Uhr. Deine Patienten fragen nie „nur ganz kurz“. Sie buchen einen Termin. Und bezahlen ihn. Gurkenscheiben inklusive." },
-  botox: { title: "Ästhetische Dermatologie", eyebrow: "Praxis Dr. Glatt · Innenstadt", text: "Montag bis Donnerstag, 9 bis 15 Uhr. Deine Patienten fragen nie „nur ganz kurz“. Sie buchen einen Termin. Und bezahlen ihn. Gurkenscheiben inklusive." },
-  consult: { title: "Senior Consultant", eyebrow: "Consultwerk GmbH", text: "Du optimierst ab jetzt Krankenhäuser. Dein erstes Projekt ist deine alte Klinik. Deine Empfehlung: noch weniger Licht. Dr. Kurz schreibt dir nie wieder." },
+  pharma: { title: "Medical Advisor", eyebrow: "Pharmazeutika AG", text: "Fr. Goldmann wartet mit einer schwarzen Limousine. Ab morgen: Flat White um 9:30, Feierabend um 16:00 auf der Dachterrasse, Kongress in Lissabon im Mai. Deine größte Sorge ab jetzt: die Folienfarben im PowerPoint." },
+  botox: { title: "Ästhetische Dermatologie", eyebrow: "Praxis Dr. Glatt · Innenstadt", text: "Montag bis Donnerstag, 9 bis 15 Uhr. Freitags Yoga, samstags Brunch, sonntags: nichts. Deine Patienten fragen nie „nur ganz kurz“. Sie buchen einen Termin, bezahlen ihn und bringen Pralinen mit. Gurkenscheiben inklusive." },
+  consult: { title: "Senior Consultant", eyebrow: "Consultwerk GmbH", text: "Business Class nach Zürich, Hotel mit Spa, Partner-Track. Du optimierst ab jetzt Krankenhäuser. Dein erstes Projekt ist deine alte Klinik. Deine Empfehlung: mehr Personal. Kevin (27) ist schockiert. Der Kunde auch. Du bekommst trotzdem den Bonus." },
   tele: { title: "Chief Wellbeing Officer", eyebrow: "DocFlix · Startup", text: "Du schreibst Leute per Video krank. Aus dem Bett. Oben Hemd, unten Jogginghose. Es gibt Obstkorb, Kicker und Equity, die nichts wert ist." },
   amt: { title: "Amtsärztin / Amtsarzt", eyebrow: "Gesundheitsamt · Zimmer 4.117", text: "Gleitzeit 7:30 bis 15:30. Dein größter Notfall: ein Formular in der falschen Farbe. Die Kaffeemaschine hat einen eigenen Dienstplan. Du bist nicht drauf." },
-  influ: { title: "@dr.feierabend", eyebrow: "GlowUp Talents · Influencer-Van", text: "Du erklärst ab jetzt in 15 Sekunden, warum Krankenhäuser kaputt sind. Mit Ringlicht. Deine Ex-Kollegen liken heimlich. Der Chefarzt hat dich blockiert. Und dann wieder entblockt, um zu schauen." },
-  ship: { title: "Schiffsarzt", eyebrow: "MS Sorgenfrei · Karibik", text: "Häufigste Diagnose an Bord: Sonnenbrand. Zweithäufigste: Sonnenbrand nach dem Buffet. Dein Pager liegt auf dem Grund des Atlantiks." },
+  influ: { title: "@dr.feierabend", eyebrow: "GlowUp Talents · Influencer-Van", text: "2,1 Millionen Follower, ein Podcast-Studio und ein Van mit Fahrer. Du erklärst in 15 Sekunden, warum Krankenhäuser kaputt sind. Nächste Woche Bali. Deine Ex-Kollegen liken heimlich. Der Chefarzt hat dich blockiert. Und wieder entblockt, um zu schauen." },
+  ship: { title: "Schiffsarzt", eyebrow: "MS Sorgenfrei · Karibik", text: "Kabine mit Balkon, weiße Uniform, Delfine zum Frühstück. Häufigste Diagnose an Bord: Sonnenbrand. Zweithäufigste: Sonnenbrand nach dem Buffet. Dein Pager liegt auf dem Grund des Atlantiks. Er klingelt noch. Niemand hört ihn." },
 };
 
 
@@ -389,6 +388,28 @@ const ROUTES = {
     failTicker: "Tanzender Zahnarzt erreicht 2 Mio. Follower. @dr.feierabend postet Story aus dem Arztzimmer: „Noch kurz Briefe. 🙃“ 12 Likes." },
 };
 const ROUTE_ORDER = ["stay", "pharma", "consult", "botox", "ship", "influ"];
+/* what each exit offers, set against what the hospital gives you: [what, Klinikum St. Sparen, the offer] */
+const DEALS = {
+  stay: { org: "Zuhause", head: "Was dich zu Hause erwartet", hook: "🍝 Kims Pasta · 🛏️ eigenes Bett · 📵 Pager in der Schublade",
+    rows: [["🍝 Abendessen", "Automat, Snickers, 1,80 €", "Kims Pasta. Warm. Mit Parmesan."], ["🛏️ Schlaf", "Bereitschaftsraum, Matratze von 1994", "dein Bett. Sechs Stunden am Stück."], ["📺 Abend", "Arztbriefe bis 23 Uhr", "eine Folge Serie. Vielleicht zwei."], ["📵 Pager", "vibriert", "liegt in der Schublade. Aus."]],
+    perks: ["❤️ Kim", "🛋️ Sofa", "🌙 ein Abend ohne Klinik"] },
+  pharma: { org: "Pharmazeutika AG", head: "Das Angebot", hook: "💶 11.500 € + Bonus · 🚗 Audi e-tron GT · 🌙 nie wieder Dienste",
+    rows: [["💶 Gehalt", "4.900 € brutto, Stufe 2", "11.500 € + 20 % Bonus"], ["🕘 Arbeitszeit", "7:00 bis „gleich“", "9 bis 16 Uhr, Gleitzeit"], ["🌙 Dienste", "6 Nächte im Monat", "keine. Nie wieder."], ["🚗 Auto", "Parkticket 12 €/Std.", "Audi e-tron GT, auch privat"], ["✈️ Reisen", "Fortbildung im Keller", "Kongresse in Lissabon, Barcelona, Davos"], ["☕ Kaffee", "eingespart", "Barista im Foyer, Hafermilch"]],
+    perks: ["🏠 3 Tage Homeoffice", "🎁 15.000 € Startbonus", "📵 kein Pager"] },
+  consult: { org: "Consultwerk GmbH", head: "Das Angebot", hook: "💶 13.000 € + Bonus · ✈️ Business Class · 🏨 5 Sterne",
+    rows: [["💶 Gehalt", "4.900 € brutto", "13.000 € + Bonus, Partner-Track"], ["🏨 Schlafen", "Bereitschaftsraum, Matratze von 1994", "5-Sterne-Hotel mit Spa, Mo bis Do"], ["✈️ Reisen", "Treppenhaus, 5 Stockwerke", "Business Class, Lounge, Meilen"], ["🌙 Wochenende", "Dienst", "frei. Freitags Homeoffice."], ["🎓 Fortbildung", "Pflicht, Samstag, unbezahlt", "MBA in Fontainebleau, bezahlt"], ["🍽️ Essen", "Kantinen-Schnitzel, kalt", "Spesen: großzügig"]],
+    perks: ["💳 Firmen-Kreditkarte", "🚖 Limousine überallhin", "📈 Partner in 6 Jahren"] },
+  botox: { org: "Praxis Dr. Glatt", head: "Das Angebot", hook: "🕘 Mo–Do 9–15 Uhr · 💶 9.000 € + 30 % Umsatz · 🚘 pinkes Cabrio",
+    rows: [["🕘 Arbeitszeit", "60 Stunden pro Woche", "Mo bis Do, 9 bis 15 Uhr. Freitag frei."], ["💶 Gehalt", "4.900 € brutto", "9.000 € + 30 % vom Umsatz"], ["🚨 Notfälle", "jede Stunde", "keine. Höchstens ein Pickel."], ["🌙 Nächte", "6 im Monat", "nie"], ["🛋️ Arbeitsplatz", "Neonröhre, Schimmel", "Zimmerbrunnen, Duftkerzen, Barista"], ["🤝 Patienten", "„Nur ganz kurz …“", "buchen Termine. Und bezahlen sie."]],
+    perks: ["🚘 Cabrio-Leasing", "✨ Behandlungen gratis", "🧘 Team-Yoga am Mittwoch"] },
+  ship: { org: "MS Sorgenfrei", head: "Das Angebot", hook: "🌴 Karibik · 🛏️ Kabine mit Balkon · 🍹 All-inclusive",
+    rows: [["🌴 Arbeitsort", "Station 5B, Fenster zum Hof", "Karibik, Mittelmeer, Fjorde"], ["🛏️ Wohnen", "Bereitschaftsraum", "Offizierskabine mit Balkon"], ["🍽️ Essen", "Automat, Snickers", "5 Restaurants, Buffet rund um die Uhr"], ["👔 Kleidung", "Kittel mit Kaffeefleck", "weiße Uniform mit Goldstreifen"], ["🚨 Notfälle", "Polytrauma um 3 Uhr", "Sonnenbrand, Seekrankheit"], ["🗓️ Urlaub", "„Gerade ganz schlecht.“", "4 Monate an Bord, 2 Monate frei"]],
+    perks: ["🌅 Sonnenuntergang inklusive", "🐬 Delfine statt Oberarzt", "🎰 Offiziersrabatt im Casino"] },
+  influ: { org: "GlowUp Talents", head: "Das Angebot", hook: "📱 2,1 Mio. Reichweite · 💸 5.000 € pro Post · 🌍 Bali, Dubai, Tulum",
+    rows: [["📱 Reichweite", "Hausmitteilung (gelesen: 3)", "2,1 Mio. Follower ab Tag 1"], ["💸 Einkommen", "4.900 € brutto", "5.000 € pro Werbe-Post"], ["🕘 Arbeitszeit", "immer", "wann du willst. Hauptsache: Story."], ["🚐 Unterwegs", "Bus, Linie 7, 40 Minuten", "Van mit Fahrer und Ringlicht"], ["🌍 Reisen", "nie", "Content-Trips: Bali, Dubai, Tulum"], ["👕 Kleidung", "Kasack, Größe „passt schon“", "eigene Kollektion „Dr. Feierabend“"]],
+    perks: ["✔️ Blauer Haken", "🎙️ eigenes Podcast-Studio", "🍹 Gästeliste, überall"] },
+};
+
 /* the gear you start with, and what it is for */
 const KIT_HELP = {
   c: ["Tarnen", "Kittel ausziehen: Pflege, Ärzte und Verwaltung erkennen dich nicht mehr und drehen ab. Patienten und Angehörige fragen dich dafür nach der Toilette."],
@@ -442,6 +463,34 @@ const STORY_NIGHT = [
   ["22:00", "Der Spätdienst geht. „Alles ruhig. Die Patienten schlafwandeln manchmal. Mit offenen Augen. Rot. Ist normal. Und Schwester Hildegard macht ihre Runde.“ – „Welche Hildegard?“ – Er ist schon weg."],
   ["22:01", "Regel Nummer eins im Nachtdienst: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:30."],
 ];
+const STORY_NIGHT_ER = [
+  ["21:58", "Zentrale Notaufnahme, Personalraum. Nachtdienst. Allein. Für 41 Wartende, sechs Kabinen, einen Schockraum und „bei Bedarf“ alle Stationen im Haus."],
+  ["22:00", "Der Spätdienst übergibt im Rausgehen: „Wartehalle ist voll. Manche warten seit gestern. Ein paar sind im Stehen eingeschlafen. Mit offenen Augen. Rot. Ist normal. Und Schwester Hildegard macht die Triage.“ – „Welche Hildegard?“ – Die Schiebetür schließt sich hinter ihm."],
+  ["22:01", "Die Wartenummer-Anzeige springt auf 999. Dann auf 000. Die Schiebetür geht auf. Niemand kommt herein. Regel Nummer eins: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:30."],
+];
+const NIGHT_HOURS_ER = [
+  ["22:00", "Übergabe", "Der Pager schickt dich in die Kabinen. Erledige die Aufgaben, bevor die Zeit abläuft."],
+  ["23:00", "Wartehalle", "Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Sie schlurfen Richtung Anmeldung."],
+  ["00:00", "Geisterstunde", "Die Schiebetür öffnet sich von allein. Draußen ist niemand. Drinnen jetzt schon: Dr. Ewig aus dem Keller."],
+  ["01:00", "Triage nach Hildegard", "Am Ende der Wartehalle: eine Schwesternhaube. Sie sortiert nach Dringlichkeit. Sie bewegt sich nur, wenn du NICHT hinsiehst."],
+  ["02:00", "Nachtstrom", "Das Haus schaltet in den Sparmodus. Der Schockraum geht aus. Die Monitore piepen trotzdem weiter."],
+  ["03:00", "Besuch von draußen", "Familie Kowalski bringt Opa. „Er hat seit 2019 Rücken. Wir waren gerade in der Gegend.“ Alle sieben."],
+  ["04:00", "RTW-Welle", "Drei Rettungswagen gleichzeitig. Keiner hat einen Patienten dabei. Nur Formulare. Die Wartehalle füllt sich trotzdem."],
+  ["05:00", "Frühaufsteher", "Der Chefarzt kommt früher. Er will „nur kurz die Wartezeiten sehen“."],
+  ["06:00", "Morgengrauen", "Ab 06:30 wird es draußen hell. Sie spüren, dass die Nacht endet. Alle werden schneller. Hildegard mag keine Übergaben."],
+  ["07:00", "Übergabe", "Um 07:30 kommt der Frühdienst. Schaff es in den Personalraum zur Übergabe. Ohne gefunden zu werden."],
+];
+const NIGHT_TASKS_ER = [
+  "Wartenummer 312 fragt, wie lange noch (wartet seit 14 Uhr)", "Zeh gestoßen. Vor drei Wochen. Jetzt hat er Zeit", "will eine Krankmeldung. Für gestern", "hat Dr. Google gefragt: entweder nichts oder Ebola",
+  "RTW bringt jemanden, der „nur mal gucken“ wollte", "Betrunkener singt im Schockraum. In Dur", "will das WLAN-Passwort. Um drei Uhr", "Fieber 37,9 °C, mit dem Taxi gekommen, Taxi wartet",
+  "Schnitt am Finger, 40 Fotos davon auf dem Handy", "Monitor zeigt Asystolie (Elektrode ab)", "Bauchschmerzen seit 2017, heute Nacht besonders", "hat sich selbst eingewiesen. Wegen Langeweile",
+];
+/* night shift wording that depends on where you spend it */
+const nightER = () => !!(run && run.place === "er");
+const nightRoom = r => (nightER() ? "Kabine " : "Zi. ") + r;
+const nightSafe = () => nightER() ? "Personalraum" : "Arztzimmer", nightSafeTo = () => nightER() ? "in den Personalraum" : "ins Arztzimmer", nightSafeIn = () => nightER() ? "im Personalraum" : "im Arztzimmer";
+const nightPlace = () => nightER() ? "Notaufnahme" : "Station 5B";
+const nightHours = () => nightER() ? NIGHT_HOURS_ER : NIGHT_HOURS;
 const NIGHT_HOURS = [
   ["22:00", "Übergabe", "Der Pager schickt dich in die Zimmer. Erledige die Aufgaben, bevor die Zeit abläuft."],
   ["23:00", "Schlafenszeit", "Die Patienten schlafen. Einige davon im Stehen. Auf dem Flur. Mit roten Augen."],

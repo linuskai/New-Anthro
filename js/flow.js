@@ -10,7 +10,7 @@ function startStory(m, route, place) {
   m = m === "night" ? "night" : "mission"; lastMode = m; if (route) lastRoute = route; if (place) lastPlace = place;
   initAudio(); hidePopups(); show(null); clearInputs();
   newRun(m, lastRoute, lastPlace); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
-  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? STORY_NIGHT : STORY_OPEN.concat(mission().story) };
+  mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? (nightER() ? STORY_NIGHT_ER : STORY_NIGHT) : STORY_OPEN.concat(mission().story) };
   $("story").hidden = false; document.body.classList.add("cine");
   storyNext();
   setTimeout(() => $("btnStoryNext").focus({ preventScroll: true }), 50);
@@ -34,7 +34,7 @@ function endStory() {
   if (!story) return;
   story = null; $("story").hidden = true; storyPhone(null); document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
-  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = "Pager-Aufgaben erledigen · Arztzimmer ist sicher · Hildegard nie aus den Augen lassen"; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
+  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Pager-Aufgaben erledigen · ${nightSafe()} ist sicher · Hildegard nie aus den Augen lassen`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
   showBrief(false);
 }
 $("btnStoryNext").addEventListener("click", () => { if (mode === "outro") { if (outro && outro.shown < outro.full.length) { outro.shown = outro.full.length; $("storyText").textContent = outro.full; } else endOutro(); } else storyNext(); });
@@ -183,7 +183,7 @@ function showGameOver() {
   const L = LEVELS[run.idx];
   run.duties.push("N");
   if (run.mode === "night") {
-    $("endEyebrow").textContent = "Station 5B · " + fmtTime(run.minutes); $("endTitle").textContent = (run.found || 0) >= 3 ? "Gefunden" : "Eingeschlafen";
+    $("endEyebrow").textContent = nightPlace() + " · " + fmtTime(run.minutes); $("endTitle").textContent = (run.found || 0) >= 3 ? "Gefunden" : "Eingeschlafen";
     $("endText").textContent = (run.found || 0) >= 3 ? `Um ${fmtTime(run.minutes)} haben sie dich zum dritten Mal gefunden. Du bist jetzt einer von ihnen. Du schlurfst über den Flur. Deine Augen leuchten rot. Morgen früh fragt der Frühdienst: „Ruhige Nacht?“ ${run.nightDone} Pager-Aufgaben erledigt.` : `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
     fillStats(); $("endRank").textContent = (run.found || 0) >= 3 ? "Neuer Schlafwandler" : "Eingeschlafen"; $("stOver").textContent = "Nachtdienst bis " + fmtTime(run.minutes); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
     mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
@@ -202,10 +202,10 @@ function showNightEnd() {
   mode = "win"; clearInputs(); hidePopups(); endCall();
   let best = null; try { best = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
-  $("endEyebrow").textContent = "Station 5B · 07:00"; $("endTitle").textContent = "Übergabe";
+  $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
   $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
-  $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im Arztzimmer versteckt";
+  $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im " + nightSafe() + " versteckt";
   $("endTicker").hidden = true; $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Nachtdienst-Rekord." : "Bester Nachtdienst: " + best + " Aufgaben";
   $("btnAgain").firstElementChild.textContent = "Noch eine Nacht"; $("btnShare").hidden = $("btnNightNow").hidden = true; $("endScore").hidden = true; sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }

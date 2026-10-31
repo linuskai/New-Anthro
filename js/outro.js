@@ -7,7 +7,8 @@ const OUTRO_TEXT = {
   amt: ["Gesundheitsamt · Zimmer 4.117", "Du radelst durch den Abend. Morgen Gleitzeit ab 7:30. Du darfst sogar um 7:45 kommen. Du weinst ein bisschen vor Glück."],
   ship: ["Hafen · MS Sorgenfrei", "Der Shuttle hält am Kai. Das Schiff hupt dreimal. Dein Pager rutscht dir aus der Tasche, ins Hafenbecken. Hoppla."],
   stay: ["Heimweg · B27", "Du fährst nach Hause. Sechs Stunden Schlaf. Das Klinikum leuchtet im Rückspiegel. Es wartet auf Montag. Es wartet immer."],
-  night: ["07:00 · Übergabe", "Die Sonne geht auf. Der Frühdienst kommt: „Na? Ruhige Nacht gehabt?“ Du sagst nichts. Oben am Fenster winkt Schwester Hildegard. Niemand sonst sieht sie."],
+  nightER: ["07:30 · Übergabe · Notaufnahme", "Die Schiebetür geht auf. Sonnenlicht. Der Frühdienst schaut in die leere Wartehalle: „Na? Ruhige Nacht gehabt?“ Die Wartenummer-Anzeige zeigt 000. Hinter der Anmeldung winkt Schwester Hildegard. Niemand sonst sieht sie."],
+  night: ["07:30 · Übergabe", "Die Sonne geht auf. Der Frühdienst kommt: „Na? Ruhige Nacht gehabt?“ Du sagst nichts. Oben am Fenster winkt Schwester Hildegard. Niemand sonst sieht sie."],
 };
 let outro = null;
 const skyTex = dawn => canvasTex(16, 256, (g, w, h) => {
@@ -84,7 +85,7 @@ function buildOutro(kind) {
 function playOutro(kind, done) {
   mode = "outro"; clearInputs(); hidePopups();
   outro = buildOutro(kind); outro.done = done;
-  const [where, line] = OUTRO_TEXT[kind] || OUTRO_TEXT.stay;
+  const [where, line] = (kind === "night" && nightER() ? OUTRO_TEXT.nightER : OUTRO_TEXT[kind]) || OUTRO_TEXT.stay;
   $("story").hidden = false; document.body.classList.add("cine");
   $("storyTime").textContent = where; $("storyText").textContent = ""; $("btnStoryNext").textContent = "Weiter"; $("btnSkip").hidden = true;
   outro.full = line; outro.shown = 0;

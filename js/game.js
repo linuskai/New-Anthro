@@ -80,8 +80,8 @@ const bouncersCleared = () => level ? level.enemies.filter(e => e.type === "U" &
 function objectives() {
   if (run.mode === "night") {
     const left = Math.max(0, NIGHT_END - run.minutes), list = [];
-    if (run.minutes >= NIGHT_END - 30) list.push({ id: "handover", title: "Übergabe 07:30", text: run.minutes >= NIGHT_END ? "Jetzt ins Arztzimmer: Übergabe!" : "Um 07:30 im Arztzimmer sein (Übergabe)", main: true, at: "safe", done: false, how: "Sicherer Raum mit braunem Holzboden (Arztzimmer / Personalraum)" });
-    if (run.task) list.push({ id: "task", title: "Pager · Zi. " + run.task.room, text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
+    if (run.minutes >= NIGHT_END - 30) list.push({ id: "handover", title: "Übergabe 07:30", text: run.minutes >= NIGHT_END ? `Jetzt ${nightSafeTo()}: Übergabe!` : `Um 07:30 ${nightSafeIn()} sein (Übergabe)`, main: true, at: "safe", done: false, how: "Sicherer Raum mit braunem Holzboden (Arztzimmer / Personalraum)" });
+    if (run.task) list.push({ id: "task", title: "Pager · " + nightRoom(run.task.room), text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
     list.push({ id: "hide", title: "Unentdeckt bleiben", text: `Niemand darf dich finden · gefunden ${run.found || 0}/3`, main: true, done: false, brief: "Patienten mit roten Augen, Nachtschwestern, Hildegard: Wer dich erwischt, zählt. Dreimal, und die Nacht ist vorbei." });
     list.push({ id: "survive", title: "Überleben bis 07:30", text: `Überlebe bis 07:30 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
     return list;
@@ -156,7 +156,7 @@ function howTo(o) {
   if (o.at === "rea") return "Hin und AKTION: Herzdruckmassage im Takt tippen";
   if (o.at === "bouncer") return "Orthopäden ansprechen: Shake, Fachwissen oder Liegestütze";
   if (o.at === "task") return "Ins Zimmer, AKTION: versorgen";
-  if (o.id === "survive") return "Arztzimmer = sicher · Hildegard nie aus den Augen lassen";
+  if (o.id === "survive") return nightSafe() + " = sicher · Hildegard nie aus den Augen lassen";
   const [kind, key] = (o.at || "").split(":");
   if (kind === "friend") return (FRIENDS[key] ? FRIENDS[key].name : "Person") + " ansprechen (grüner Punkt)";
   if (kind === "item") return (ITEMS[key] ? ITEMS[key].name : "Gegenstand") + " aufheben (gelber Punkt)";

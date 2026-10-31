@@ -397,6 +397,12 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Grusel (witzig und gruselig) auch tagsüber:** etwa jede Minute, auf dunklen Etagen öfter, immer nur eins auf einmal und nie gefährlich: Licht fällt aus, und am Ende des Flurs steht Schwester Hildegard oder ein Patient im Flügelhemd mit roten Augen, beim nächsten Flackern weg. Ein leerer Rollstuhl rollt quietschend quer über den Flur. Schritte direkt hinter dir (manchmal liegt danach ein Formular von niemandem da). Patientenruf aus Zimmer 13, das es nicht gibt. Monitor-Dauerton aus einem leeren Zimmer. Flüstern aus dem Lüftungsschacht. Die Uhr zeigt kurz 03:33. Knackende Durchsagen („Code Blau auf Station 6. Wir haben keine Station 6.“). Dazu dunkle Bildränder mit Filmkorn und rote Edding-Schrift an den Wänden („WIR SEHEN DEINE ÜBERSTUNDEN“).
 - **iPhone-App vom Home-Bildschirm:** die schwarze Leiste unten ist weg. iOS meldet dort mit durchsichtiger Statusleiste eine um genau die Statusleiste zu kleine Höhe; das Spiel nimmt jetzt die volle Bildschirmhöhe.
 
+## Version 18: Exit-Strategie, bessere Angebote, Nachtdienst in der Notaufnahme
+
+- **Der Modus heißt jetzt „Exit-Strategie“** („6 Wege raus aus der Klinik“) statt „Feierabend“. Die Auswahl heißt „Wähle deinen Exit“. „Feierabend“ bleibt der Name der Mission „Einfach heim“.
+- **Die Angebote sind verlockender:** Im Trailer gibt es eine neue Karte „Das Angebot“: Zeile für Zeile Klinikum St. Sparen gegen das neue Angebot, die Klinik-Seite wird rot durchgestrichen, das Angebot leuchtet gold (Gehalt, Arbeitszeit, Dienste, Auto, Reisen, Kaffee …), dazu Extras als Goldchips (Startbonus, Firmen-Kreditkarte, Cabrio-Leasing, Delfine statt Oberarzt, blauer Haken). Die drei stärksten Punkte stehen auch auf der Missionskarte. Die Enden klingen nach dem Leben, das man gewinnt (Dachterrasse um 16 Uhr, Bali nächste Woche, Kabine mit Balkon).
+- **Nachtdienst in der Notaufnahme hat ein eigenes Intro:** Personalraum statt Arztzimmer, 41 Wartende, Schockraum, die Wartenummer springt auf 999 und dann auf 000, die Schiebetür geht auf und niemand kommt herein, Hildegard macht die Triage. Eigene Stundenkarten (Wartehalle, Triage nach Hildegard, RTW-Welle …), eigene Pager-Fälle („Zeh gestoßen. Vor drei Wochen. Jetzt hat er Zeit.“), Pager nennt Kabinen statt Zimmer, Übergabe im Personalraum, eigenes Ende.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

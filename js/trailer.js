@@ -21,6 +21,11 @@ function trailerSlides(R) {
     <div class="tl-clock"><b class="c-now">17:00</b><i class="c-bar"><i></i></i><b class="c-dl">${fmtTime(dl)}</b></div>
     <div class="tl-facts"><span>⏱ ${fmtSpan(dl)} Spielzeit ≈ ${realMin} Min. echt</span><span>📍 ${esc(floorLabel(lastF))}</span><span class="bad">✗ zu spät = gescheitert</span></div></div>`,
     after: st => clockRun(st, dl) });
+  const D = DEALS[k];
+  if (D) S.push({ k: D.head, html: `<div class="tl-slide s-deal"><h2 class="tl-h">${esc(D.head)}</h2>
+    <div class="tl-deal"><div class="dl-head"><span>🏥 Klinikum St. Sparen</span><span>${R.av} ${esc(D.org)}</span></div>
+    ${D.rows.map(([w, old, neu], i) => `<div class="dl-row" style="--i:${i}"><b>${esc(w)}</b><s>${esc(old)}</s><em>${esc(neu)}</em></div>`).join("")}</div>
+    <div class="tl-perks">${D.perks.map((p, i) => `<span style="--i:${i + D.rows.length}">${esc(p)}</span>`).join("")}</div></div>`, after: dealRun });
   const stops = fl.map((f, i) => {
     const L = LEVELS[f], last = i === fl.length - 1;
     const txt = o => { try { return typeof o.text === "function" ? o.text() : o.text; } catch (e) { return ""; } };
@@ -80,6 +85,10 @@ function clockRun(st, dl) {
 function wayRun(st) {
   const tok = tl.token, lis = [...st.querySelectorAll(".tl-line li")];
   lis.forEach((li, i) => setTimeout(() => { if (!tl || tl.token !== tok) return; lis.forEach(x => x.classList.remove("now")); li.classList.add("on", "now"); (i === lis.length - 1 ? sfx.ding : sfx.tick)(); }, 350 + i * 650));
+}
+function dealRun(st) {
+  const tok = tl.token, n = st.querySelectorAll(".dl-row").length;
+  for (let i = 0; i <= n; i++) setTimeout(() => { if (tl && tl.token === tok) (i < n ? sfx.pick : sfx.ding)(); }, 900 + i * 450);
 }
 function kitInfo(c) {
   const el = $("tlKitInfo"); if (!el || !c) return;

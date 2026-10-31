@@ -146,11 +146,11 @@ function showNightSelect() {
 }
 function showSelect() {
   mode = "select"; hidePopups();
-  $("selTitle").textContent = "Wähle deine Flucht"; $("selSub").textContent = "Sechs Abende, sechs Auswege. Jede Mission hat ihre eigene Geschichte, eigene Etagen, eine Frist und einen Endgegner am Ausgang.";
+  $("selTitle").textContent = "Wähle deinen Exit"; $("selSub").textContent = "Sechs Angebote, sechs Fristen. Jedes hat seine eigene Geschichte, eigene Etagen und einen Endgegner am Ausgang. Unterschrieben wird nur, wer es rechtzeitig rausschafft.";
   const recs = loadRecords();
   $("selList").innerHTML = ROUTE_ORDER.map(k => {
     const R = ROUTES[k], r = recs[k];
-    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b><small>${esc(R.tagline)}</small>
+    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b><small>${esc(R.tagline)}</small>${DEALS[k] ? `<span class="sel-deal">${esc(DEALS[k].hook)}</span>` : ""}
       <span class="sel-meta"><span>⏱ bis ${fmtTime(routeDeadline(k))}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span><span>${R.floors.length} Etagen</span></span>
       <em>${r ? `Rekord: ${r.score.toLocaleString("de-DE")} € · ${fmtTime(r.minutes)}` : "Noch nicht gespielt"}</em></span></button>`;
   }).join("");

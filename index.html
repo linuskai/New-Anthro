@@ -832,6 +832,19 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
 .kt span { font-size: 32px; line-height: 1; } .kt b { font: 900 14px/1 var(--display); text-transform: uppercase; } .kt em { font: 600 12px/1.15 var(--display); font-style: normal; opacity: .85; }
 .tl-kitinfo { margin: 0; min-height: 3.8em; background: #fbfaf4; color: #1d2622; border-radius: 12px; padding: 10px 12px; font: 500 16px/1.25 var(--display); }
 .tl-kitinfo b { font-weight: 900; text-transform: uppercase; margin-right: 4px; }
+/* the offer: the hospital, struck through, against what the exit gives you */
+.tl-deal { display: grid; gap: 6px; }
+.dl-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font: 800 12px/1.1 var(--display); letter-spacing: .12em; text-transform: uppercase; }
+.dl-head span:first-child { opacity: .55; } .dl-head span:last-child { color: #f2b33d; }
+.dl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 10px; align-items: start; background: rgba(255,255,255,.06); border-radius: 10px; padding: 6px 10px; animation: pop .35s calc(.4s + var(--i) * .45s) both; }
+.dl-row b { grid-column: 1 / -1; font: 800 11px/1.2 var(--mono); opacity: .7; letter-spacing: .04em; }
+.dl-row s { text-decoration: none; font: 500 14px/1.2 var(--display); color: rgba(243,248,241,.6); background: linear-gradient(#e2483d, #e2483d) no-repeat 0 55% / 0% 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; justify-self: start;
+  animation: strike .3s calc(.7s + var(--i) * .45s) forwards; }
+@keyframes strike { to { background-size: 100% 2px; color: rgba(243,248,241,.42); } }
+.dl-row em { font: 800 15px/1.15 var(--display); font-style: normal; color: #ffd36b; text-shadow: 0 0 14px rgba(242,179,61,.45); animation: dealIn .4s calc(.85s + var(--i) * .45s) both; }
+@keyframes dealIn { from { opacity: 0; transform: translateX(-8px) scale(.9); } 60% { transform: scale(1.06); } }
+.tl-perks { display: flex; flex-wrap: wrap; gap: 6px; } .tl-perks span { font: 800 14px/1 var(--display); background: linear-gradient(135deg, #f2b33d, #ffe08a); color: #2a1c00; border-radius: 999px; padding: 7px 11px; animation: pop .4s calc(.9s + var(--i) * .45s) both; box-shadow: 0 4px 16px rgba(242,179,61,.3); }
+.sel-deal { font: 800 13px/1.25 var(--display); color: #ffd36b; }
 /* trailer in landscape: wider, lower; the way runs left to right */
 @media (orientation: landscape) and (max-height: 600px) {
   .tl { gap: 6px; padding-top: calc(env(safe-area-inset-top, 0px) + 8px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); }
@@ -848,6 +861,7 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
   .s-boss .tl-boss { grid-row: 2; } .s-boss .tl-quote { grid-row: 3; font-size: 15px; } .s-boss > .tl-kicker:nth-of-type(2) { grid-column: 2; grid-row: 2; align-self: end; } .s-boss .tl-ways { grid-column: 2; grid-row: 3; }
   .tl-boss { grid-template-columns: 64px minmax(0, 1fr); padding: 10px; } .tl-boss .av { width: 64px; height: 64px; font-size: 34px; } .tl-boss b { font-size: 22px; }
   .tl-threats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .th { grid-template-columns: 1fr; } .demo { height: 52px; } .th p { font-size: 13px; }
+  .tl-deal { grid-template-columns: 1fr 1fr; gap: 5px 8px; } .dl-head { grid-column: 1 / -1; } .dl-row { padding: 4px 8px; } .dl-row s { font-size: 12px; } .dl-row em { font-size: 13px; } .tl-perks span { font-size: 12px; padding: 5px 9px; }
   .tl-kit { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); } .kt { padding: 7px 4px; } .kt span { font-size: 26px; } .tl-kitinfo { min-height: 0; font-size: 14px; padding: 7px 10px; } .tl-note { font-size: 12px; }
   .tl-nav .btn { padding-block: 10px; font-size: 18px; }
 }
@@ -979,12 +993,12 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
         </button>
         <button class="t-mode" id="btnStart" type="button">
           <span class="t-mode-art day" aria-hidden="true">🚗</span>
-          <span class="t-mode-body"><span class="t-mode-kind">Escape · 6 Missionen</span><b>Feierabend</b><small>Heim, Pharma, Beratung, Ästhetik, Kreuzfahrt oder Medfluencer. Jede Mission hat ihre eigene Geschichte und ihre Frist.</small><em id="bestLine" hidden></em></span>
+          <span class="t-mode-body"><span class="t-mode-kind">Escape · 6 Wege raus aus der Klinik</span><b>Exit-Strategie</b><small>Pharma, Beratung, Ästhetik, Kreuzfahrt, Medfluencer oder einfach heim. Jedes Angebot gilt nur bis zur Frist.</small><em id="bestLine" hidden></em></span>
           <span class="t-play" aria-hidden="true">▶</span>
         </button>
         <button class="t-mode night" id="btnNight" type="button">
           <span class="t-mode-art" aria-hidden="true">🕯️</span>
-          <span class="t-mode-body"><span class="t-mode-kind">Survival · Horror</span><b>Nachtdienst</b><small>22:00 bis 07:00. Lass dich von niemandem finden: Patienten mit roten Augen, Nachtschwestern und Schwester Hildegard.</small><em id="nightBestLine" hidden></em></span>
+          <span class="t-mode-body"><span class="t-mode-kind">Survival · Horror</span><b>Nachtdienst</b><small>22:00 bis 07:30, auf Station oder in der Notaufnahme. Lass dich von niemandem finden: Patienten mit roten Augen, Nachtschwestern und Schwester Hildegard.</small><em id="nightBestLine" hidden></em></span>
           <span class="t-play" aria-hidden="true">▶</span>
         </button>
       </div>
@@ -1014,8 +1028,8 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
   <section class="overlay" id="ovSelect" hidden>
     <div class="card sel">
       <div class="eyebrow">Klinikum St. Sparen · 16:40 · Station 5B</div>
-      <h2 id="selTitle">Wähle deine Flucht</h2>
-      <p class="small" id="selSub">Sechs Abende, sechs Auswege.</p>
+      <h2 id="selTitle">Wähle deinen Exit</h2>
+      <p class="small" id="selSub">Sechs Angebote, sechs Fristen.</p>
       <div class="sel-list" id="selList"></div>
       <button class="btn ghost" id="btnSelBack" type="button"><span>Zurück</span><span>←</span></button>
     </div>
