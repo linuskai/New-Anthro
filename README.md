@@ -2,7 +2,7 @@
 
 A browser game for iPhone (and any other browser). Your shift ended at 17:00. Get out of the hospital before anyone hands you more work.
 
-**Play it:** https://hospital-escape.vercel.app (no install, no login; on iPhone: Share → *Add to Home Screen*). Every push to the `hospital-escape` branch is deployed there.
+**Play it:** https://hospital-escape.vercel.app (no install, no login; on iPhone: Share → *Add to Home Screen*). It is deployed from the `hospital-escape` branch.
 
 ## Hospital Escape 3D (`index.html` + `js/`)
 
