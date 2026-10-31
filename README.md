@@ -10,6 +10,8 @@ A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). Ger
 - **One meter: energy.** Conversations, tasks, scares and lost fights drain it; the bar flashes on every loss and blinks red at 25 % and below. 0 % = burnout. Coffee, snacks, safe rooms and stairwells recharge it.
 - **Battles in the style of the classic handheld monster games** against orthopaedists and every boss: HP boxes, FIGHT / BAG / COLLEAGUES / RUN, typed moves, critical hits, and medical quiz questions as attacks (both ways).
 - **Protection that works:** whoever comes at you while the fake call, coat-off, clipboard or the new noro mask is active turns away with a visible reaction.
+- **Gear guide:** every item explained (what it does, how long, where to find more), shown once at the start with a skip button and always available via 🎒. Active effects show their time left above the items and tint the screen (blue = invisible, green = keep-away or phone call).
+- **Separate landscape layout** on phones, and a joystick that can no longer get stuck when iOS swallows the release.
 - **Guided tour** on the first game that points at the real controls with animated gestures.
 - **IV line mini-game:** when a nurse catches you, you place a peripheral line, step by step and realistically (hand hygiene, tourniquet, palpate, disinfect and wait, puncture at 15–30°, advance until flashback, release the tourniquet before pulling the needle, fix and flush).
 - **The attending:** three rounds of "only a minute", every answer costs time, tasks or shifts.

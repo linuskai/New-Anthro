@@ -9,7 +9,7 @@ let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 
 
 function newRun(m = "mission", route = "stay", place = "ward") {
   run = { idx: 0, step: 0, route, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
-    flags: new Set(), offers: new Set(), inv: { c: 1, p: 5, f: 3, m: 2 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
+    flags: new Set(), offers: new Set(), inv: { "2": 1, c: 1, p: 5, f: 3, m: 2 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
     announceT: 130 + Math.random() * 40, lostMin: 0 };
   run.mode = m;
   /* there is only one meter now: energy. "Nerves" in older content are 20 % steps of it. */
@@ -262,7 +262,7 @@ function flash(kind) { const f = $("flash"); f.className = ""; void f.offsetWidt
 function addItem(k, n = 1) { run.inv[k] = (run.inv[k] || 0) + n; renderInv(); }
 const hasItem = k => (run.inv[k] || 0) > 0;
 function takeItem(k) { if (!hasItem(k)) return false; run.inv[k]--; if (!run.inv[k]) delete run.inv[k]; renderInv(); return true; }
-const invSlots = () => INV_ORDER.filter(k => run.inv[k]).slice(0, 6);
+const invSlots = () => INV_ORDER.filter(k => run.inv[k]).slice(0, document.body.classList.contains("land") ? 9 : 7);
 function renderInv() {
   const box = $("inv"); box.innerHTML = "";
   invSlots().forEach(k => {
@@ -283,9 +283,9 @@ function useItem(k) {
   switch (k) {
     case "1": takeItem(k); player.coffee = 8; st = gain({ energy: 35 }).concat([good("8 s schneller")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
     case "0": takeItem(k); st = gain({ energy: 55 }); line = "Schmeckt nach Gummibärchen und Reue."; break;
-    case "$": takeItem(k); st = gain({ nerves: 1, energy: 15 }); line = "Vom Pharmavertreter. Ethisch fragwürdig, aber lecker."; break;
-    case "+": takeItem(k); st = gain({ nerves: 1, energy: 60 }); line = "Dr. Glatts Wundercreme. Du glänzt. Innerlich auch."; break;
-    case "2": takeItem(k); player.busy = 10; st = [good("10 s beschäftigt")]; line = "Klemmbrett hoch, Stirn runzeln, schnell gehen. Niemand spricht dich an."; break;
+    case "$": takeItem(k); st = gain({ energy: 30 }); line = "Vom Pharmavertreter. Ethisch fragwürdig, aber lecker."; break;
+    case "+": takeItem(k); st = gain({ energy: 75 }); line = "Dr. Glatts Wundercreme. Du glänzt. Innerlich auch."; break;
+    case "2": takeItem(k); player.busy = 12; for (const e of level.enemies) if (!e.static && (e.state === "spot" || e.state === "sus")) { e.aw = 0; e.state = "idle"; } st = [good("12 s unsichtbar")]; line = "Klemmbrett hoch, Stirn runzeln, schnell gehen. Du bist jetzt so beschäftigt, dass dich niemand mehr sieht."; break;
     case "3": {
       takeItem(k); let n = 0;
       for (const e of level.enemies) if (!e.static && !e.done && Math.hypot(e.x - player.x, e.y - player.y) < 4 && los(player.x, player.y, e.x, e.y)) { e.stun = Math.max(e.stun, 7); e.aw = 0; e.state = "idle"; emote(e, "😵"); n++; }

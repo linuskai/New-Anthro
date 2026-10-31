@@ -82,13 +82,18 @@ const endPtr = e => {
   if (ptr.move && e.pointerId === ptr.move.id) { ptr.move = null; $("moveStick").hidden = true; }
   if (ptr.look && e.pointerId === ptr.look.id) { ptr.look = null; $("lookStick").hidden = true; }
 };
-touchLayer.addEventListener("pointerup", endPtr); touchLayer.addEventListener("pointercancel", endPtr);
+touchLayer.addEventListener("pointerup", endPtr); touchLayer.addEventListener("pointercancel", endPtr); touchLayer.addEventListener("lostpointercapture", endPtr);
+// iOS sometimes swallows the pointerup (system gestures, a second finger, a popup appearing under the thumb).
+// Belt and braces: listen everywhere, and when no finger is on the screen any more, nothing can still be held.
+addEventListener("pointerup", endPtr, true); addEventListener("pointercancel", endPtr, true);
+let activeTouches = 0;
+for (const t of ["touchstart", "touchmove", "touchend", "touchcancel"]) document.addEventListener(t, e => { activeTouches = e.touches.length; if (!activeTouches && (ptr.move || ptr.look || player.sprint)) clearInputs(); }, { capture: true, passive: true });
 document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === touchLayer; if (!locked) ptr.look = null; });
 document.addEventListener("mousemove", e => { if (locked && mode === "play") look(e.movementX || 0, e.movementY || 0, true); });
 const sprintBtn = $("btnSprint");
 sprintBtn.addEventListener("pointerdown", e => { e.preventDefault(); player.sprint = true; sprintBtn.classList.add("on"); try { sprintBtn.setPointerCapture(e.pointerId); } catch (_) {} });
 const sprintOff = () => { player.sprint = false; sprintBtn.classList.remove("on"); };
-sprintBtn.addEventListener("pointerup", sprintOff); sprintBtn.addEventListener("pointercancel", sprintOff);
+sprintBtn.addEventListener("pointerup", sprintOff); sprintBtn.addEventListener("pointercancel", sprintOff); sprintBtn.addEventListener("lostpointercapture", sprintOff);
 function toggleSneak() { player.sneak = !player.sneak; $("btnSneak").classList.toggle("on", player.sneak); $("btnSneak").setAttribute("aria-pressed", player.sneak); }
 function toggleLamp() { if (!inDarkness()) return; player.lampOn = !player.lampOn; sfx.tick(); setMsg(player.lampOn ? "Taschenlampe an. Du siehst mehr. Man sieht dich auch: von viel weiter weg, und wen du anleuchtest, der sieht dich sofort." : "Taschenlampe aus. Fast unsichtbar. Du siehst nur noch die roten Augen.", 3.5); updateEnergy(); }
 $("btnSneak").addEventListener("pointerdown", e => { e.preventDefault(); if (mode === "play") toggleSneak(); });
@@ -156,7 +161,8 @@ function act() {
   else if (f.type === "boss") bossDialog(f.ref);
   else if (f.type === "machine") {
     f.ref.uses++; const v = Math.random();
-    if (v < .45) { addItem("$"); showToast("🍩", "#f3f8f1", "Snackautomat", "Ein Donut fällt. 4,50 €. Du hattest 5 €. Kein Wechselgeld.", [good("🍩 eingepackt")]); }
+    if (v > .85) { addItem("4"); showToast("✈️", "#f3f8f1", "Snackautomat", "Statt Schokolade fällt ein alter Pieper heraus. Er hängt im Flugmodus fest. Perfekt.", [good("✈️ eingepackt")]); }
+    else if (v < .45) { addItem("$"); showToast("🍩", "#f3f8f1", "Snackautomat", "Ein Donut fällt. 4,50 €. Du hattest 5 €. Kein Wechselgeld.", [good("🍩 eingepackt")]); }
     else if (v < .75) showToast("😤", "#f3f8f1", "Snackautomat", "Er klemmt. Du rüttelst. Er bleibt stur. Wartungsvertrag: gekündigt.", pen({ energy: 5 }));
     else { addItem("0"); showToast("🥫", "#f3f8f1", "Snackautomat", "Ein Energydrink! Das Universum mag dich heute.", [good("🥫 eingepackt")]); }
     sfx.knock(); updateHud();
@@ -506,10 +512,10 @@ function startCall(def) {
   call = { def, t: 0, loud: false };
   $("callFrom").textContent = def.from; $("callSub").textContent = def.sub + " · ruft an…"; $("callAvatar").textContent = def.av; $("callText").textContent = def.text;
   const [ha, hd] = callHints(def); $("btnAccept").innerHTML = `Annehmen<small>${esc(ha)}</small>`; $("btnDecline").innerHTML = `Ablehnen<small>${esc(hd)}</small>`;
-  const el = $("call"); el.hidden = false; el.classList.add("ring"); el.classList.remove("loud", "offer");
+  const el = $("call"); el.hidden = false; el.classList.add("ring"); document.body.classList.add("calling"); el.classList.remove("loud", "offer");
   sfx.ring();
 }
-function endCall() { call = null; const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 110 + Math.random() * 60; }
+function endCall() { call = null; document.body.classList.remove("calling"); const el = $("call"); el.hidden = true; el.classList.remove("ring", "loud", "offer"); if (run) run.nextCall = 110 + Math.random() * 60; }
 function applyEffect(eff, title, av) {
   let st = [];
   if (eff.mins) { run.minutes += eff.mins; st.push({ text: "+" + eff.mins + " Min" }); }
@@ -689,7 +695,7 @@ function update(dt) {
   if (labT > 0) { labT -= dt; if (labT <= 0) $("lab").hidden = true; }
   if (msg.t > 0) { msg.t -= dt; if (msg.t <= 0) setMsg(statusLine(), 0); } else { const s = statusLine(); if (s !== msg.text) setMsg(s, 0); }
   $("hudClock").textContent = fmtTime(run.minutes);
-  const bt = buffText(), chip = $("chipBuff"); if (chip.textContent !== bt) chip.textContent = bt; chip.hidden = !bt;
+  $("chipBuff").hidden = true; // the effect bar shows all of this, with time left
   $("hideVeil").hidden = !player.hidden; $("tired").hidden = run.energy > 0;
   // stealth indicator
   let maxAw = 0; for (const e of level.enemies) if (!e.done && !e.static && !(e.type === "J" && Math.hypot(e.x - player.x, e.y - player.y) > 6)) maxAw = Math.max(maxAw, e.type === "J" ? .5 : e.state === "spot" ? 1 : e.aw);
@@ -871,17 +877,22 @@ function updateHildegard(e, t, dt) {
 }
 
 // ---------- active protection: what is working right now ----------
+const EFFECT_FX = { invis: "UNSICHTBAR", noro: "ABSTAND", phone: "TELEFONAT", hidden: "VERSTECKT", coffee: "" };
 function updateBuffs() {
-  const B = [];
-  if (player.phoneT > 0) B.push(["📱", "Telefonat", player.phoneT / 10, true]);
-  if (player.civil) B.push(["🥼", "Zivil · Personal sieht dich kaum", null, true]);
-  if (player.hidden) B.push(["🙈", "Versteckt", null, true]);
-  if (player.inv > 0 && mode === "play") B.push(["😌", "Atempause", player.inv / 5, true]);
-  if (level.fireT > 0) B.push(["🔥", "Feueralarm · Flure leer", level.fireT / 20, true]);
-  if (lure && lure.t > 0) B.push(["✏️", "Ablenkung", Math.min(1, lure.t / 8), false]);
-  if (nerdLure && nerdLure.t > 0) B.push(["📄", "Nerds lesen", Math.min(1, nerdLure.t / 20), false]);
-  if (player.coffee > 0) B.push(["☕", "Koffein · schneller", player.coffee / 8, false]);
-  for (const [d, n] of Object.entries(run.goodwill || {})) if (n > 0 && DEPT_NAME[d]) B.push(["🤝", `${DEPT_NAME[d]} lässt dich ziehen ×${n}`, null, false]);
-  $("buffs").innerHTML = B.map(([i, t, k]) => `<div class="buff"><i>${i}</i><span>${esc(t)}${k != null ? `<s style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></s>` : ""}</span></div>`).join("");
-  $("shieldFx").style.opacity = B.some(b => b[3]) && mode === "play" ? 1 : 0;
+  const B = []; // [icon, label, seconds left (or null), share left (or null), screen effect]
+  if (player.busy > 0) B.push(["📋", "Unsichtbar", player.busy, player.busy / 12, "invis"]);
+  if (player.hidden) B.push(["🙈", "Versteckt", null, null, "hidden"]);
+  if (player.noroT > 0) B.push(["😷", "Alle halten Abstand", player.noroT, player.noroT / 15, "noro"]);
+  if (player.phoneT > 0) B.push(["📱", "Telefonat: Personal dreht ab", player.phoneT, player.phoneT / 10, "phone"]);
+  if (player.civil) B.push(["🥼", "Ohne Kittel: Personal erkennt dich nicht", null, null, null]);
+  if (player.coffee > 0) B.push(["☕", "Koffein: schneller", player.coffee, player.coffee / 8, "coffee"]);
+  if (player.airplane > 0) B.push(["✈️", "Keine Anrufe", player.airplane, player.airplane / 60, null]);
+  if (lure && lure.t > 0) B.push(["📢", "Alle sind abgelenkt", lure.t, Math.min(1, lure.t / 12), null]);
+  if (nerdLure && nerdLure.t > 0) B.push(["📕", "Nerds lesen", nerdLure.t, Math.min(1, nerdLure.t / 16), null]);
+  if (level.fireT > 0) B.push(["🔥", "Feueralarm: Flure leer", level.fireT, level.fireT / 20, null]);
+  if (player.inv > 0 && mode === "play" && player.inv < 5) B.push(["😌", "Atempause", player.inv, player.inv / 5, null]);
+  $("buffs").innerHTML = B.map(([i, t, sec, k]) => `<div class="buff${sec != null && sec < 3 ? " ending" : ""}"><i>${i}</i><span>${esc(t)}${sec != null ? ` <b>${Math.ceil(sec)} s</b>` : ""}${k != null ? `<s style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></s>` : ""}</span></div>`).join("");
+  const fx = mode === "play" ? (B.find(b => b[4] && b[4] !== "coffee") || B.find(b => b[4])) : null, el = $("effectFx");
+  el.className = fx ? "on " + fx[4] : ""; el.dataset.label = fx ? EFFECT_FX[fx[4]] + (fx[2] != null && EFFECT_FX[fx[4]] ? " · " + Math.ceil(fx[2]) + " s" : "") : "";
+  $("shieldFx").style.opacity = 0;
 }

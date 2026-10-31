@@ -16,7 +16,15 @@ function oberarztDialog(e) {
     { q: "Er schaut auf die Uhr. Dann auf dich. „17 Uhr und Sie haben noch Jacke an? Haben Sie etwa vor zu GEHEN?“", options: [
       opt("„Nein, mir ist nur kalt.“", () => say("„Gut. Dann können Sie ja noch die Aufnahmen machen. Die sind warm.“", pen({ mins: 6, tasks: ["2 Aufnahmen (ZNA)"] }))),
       opt("„Doch.“", () => say("Stille. Er notiert sich etwas. Du weißt nicht, was. Das ist das Schlimmste.", pen({ nerves: 1, mins: 4 }))),
-      breakFree(20, "Du drehst dich um und gehst. Hinter dir: „WIR SPRECHEN UNS NOCH!“ Ihr sprecht euch noch.")] }]);
+      breakFree(20, "Du drehst dich um und gehst. Hinter dir: „WIR SPRECHEN UNS NOCH!“ Ihr sprecht euch noch.")] },
+    { q: "„Sie sehen müde aus.“ Er mustert dich von oben bis unten. „Das ist gut. Müdigkeit ist nur Schwäche, die den Körper verlässt.“", options: [
+      opt("„Ich bin seit 31 Stunden wach.“", () => say("„31? Süß. Ich war 1997 mal 74 Stunden wach. Bei einer Lebertransplantation. Ich habe dabei habilitiert.“", pen({ mins: 9 }))),
+      opt("„Danke, Sie auch.“", () => say("Er lacht nicht. Er schreibt nur etwas auf. In ein Notizbuch mit der Aufschrift „PERSONALGESPRÄCHE“.", pen({ nerves: 1, mins: 3 }))),
+      opt("Gähnen. Laut.", () => say("„Gähnen ist ansteckend. Auch Faulheit. Ich setze Sie besser auf den Nachtdienst, da stecken Sie niemanden an.“", pen({ duties: 1 })))] },
+    { q: "„Ah, der Kollege mit der Work-Life-Balance.“ Er spricht das Wort aus wie eine Geschlechtskrankheit.", options: [
+      opt("„Life ist hier eher ein Gerücht.“", () => say("„Gute Einstellung! Das schreibe ich in Ihre Beurteilung. Unter ‚Belastbarkeit‘. Mit Fragezeichen.“", pen({ mins: 6 }))),
+      opt("„Balance ist wichtig für die Patientensicherheit.“", () => say("„Für die Patientensicherheit ist wichtig, dass jemand da ist. Sie zum Beispiel. Bis morgen früh.“", pen({ mins: 8, tasks: ["Patientensicherheit (bis morgen früh)"] }))),
+      bluff("„Mein Psychologe sagt, ich soll Grenzen setzen.“", .4, "Er tritt einen Schritt zurück. Psychologen machen ihm Angst. Sie dokumentieren.", "„Sagen Sie Ihrem Psychologen, er kann gern Samstag für Sie einspringen.“", { duties: 1, mins: 4 })] }]);
   const s2 = pick([
     { q: "„Drei Kleinigkeiten: die Briefe von Zimmer 4 bis 19, die Angehörigen in Zimmer 7, und morgen halten Sie die Fortbildung. Thema: Effizienz.“", options: [
       opt("„Alles klar.“", () => say("„Wusste ich's doch.“ Er klopft dir auf die Schulter. Es klingt wie ein Stempel.", pen({ mins: 5, tasks: ["Briefe Zi. 4–19", "Angehörige Zi. 7", "Fortbildung „Effizienz“"] }))),
@@ -29,7 +37,15 @@ function oberarztDialog(e) {
     { q: "„Kurze Frage zur Visite morgen, 6:30. Sie stellen alle 34 Patienten vor. Auswendig. Mit Laborwerten. Und dem Kalium von gestern.“", options: [
       opt("„Kalium von gestern war 4,1.“", () => say("„4,2. Aber ich mag Ihren Mut.“ Er gibt dir die Liste trotzdem. Doppelseitig.", pen({ mins: 8, tasks: ["34 Patienten auswendig lernen"] }))),
       opt("„Kann das nicht der PJler?“", () => say("„Jonas? Jonas macht schon die Visite von Station 3. Und die von 4. Er weint, aber er macht sie.“", pen({ mins: 6, duties: 1 }))),
-      opt("„Ich hab morgen frei.“", () => say("„Hatten Sie.“ Zwei Wörter. Ein ganzer Urlaub.", pen({ duties: 1, nerves: 1 })))] }]);
+      opt("„Ich hab morgen frei.“", () => say("„Hatten Sie.“ Zwei Wörter. Ein ganzer Urlaub.", pen({ duties: 1, nerves: 1 })))] },
+    { q: "„Ihr Kollege Dr. Kurz ist krank. Wieder. Sie übernehmen seine Patienten, seine Briefe und seinen Dienst. Und seine Brötchen-Schulden beim Bäcker.“", options: [
+      opt("„Selbstverständlich.“", () => say("„Sehen Sie, deshalb sind Sie mein Lieblings-Assistent. Mein einziger, aber trotzdem.“", pen({ mins: 6, tasks: ["Patienten von Dr. Kurz", "Briefe von Dr. Kurz"], duties: 1 }))),
+      opt("„Ist er wirklich krank?“", () => say("„Er hat ein Attest. Von Dr. Glatt. Dermatologie. Diagnose: ‚Teint fahl‘.“ Du übernimmst trotzdem.", pen({ mins: 8, tasks: ["Patienten von Dr. Kurz"] }))),
+      opt("„Dann werde ich auch krank.“", () => say("„Gute Idee. Aber erst nach Ihrem Dienst. Krankheit ist im Dienstplan nicht vorgesehen.“", pen({ nerves: 1, duties: 1 })))] },
+    { q: "Er hält dir sein Handy hin. „Lesen Sie mal die Mail vom Controlling vor. Laut. Damit es alle hören.“ Die Mail heißt: „Ihre Station: Kostenausreißer“.", options: [
+      opt("Vorlesen.", () => say("„… insbesondere die Ärztin bzw. der Arzt mit den meisten Überstunden verursacht Kosten.“ Das bist du. Alle schauen dich an. Er nickt zufrieden.", pen({ nerves: 1, mins: 7 }))),
+      opt("„Mein Akku ist leer. Und meine Augen.“", () => say("„Dann lese ich vor.“ Er liest sehr langsam. Mit Betonung. Mit Pausen. 14 Minuten.", pen({ mins: 14 }))),
+      opt("Das Handy fallen lassen. Aus Versehen.", () => say("Das Display zerspringt. Sein Gesicht auch. „Das ziehe ich Ihnen vom Fortbildungsbudget ab.“ Ihr Fortbildungsbudget war 0 €. Jetzt ist es −899 €.", pen({ nerves: 2 })))] }]);
   const s3 = pick([
     { q: "„Und, mal ganz offen: Wo sehen Sie sich in fünf Jahren?“", options: [
       opt("„Hier. Natürlich.“", () => say("Er strahlt. Er glaubt es. Du fast auch. Das ist das Traurigste an diesem Abend.", pen({ mins: 6 }))),
@@ -42,7 +58,15 @@ function oberarztDialog(e) {
     { q: "„Letzte Sache: Ihre Überstunden. 312. Die verfallen ja leider. Aber das wissen Sie. Sie sind ja nicht wegen des Geldes hier.“", options: [
       opt("„Natürlich nicht.“", () => say("„Eben.“ Er geht. Endlich. Er dreht sich nochmal um. „Ach, und…“ Nein. Doch nicht. Doch. Doch nicht.", pen({ mins: 5 }))),
       opt("„Doch, eigentlich schon.“", () => say("Er schaut dich an wie einen Laborwert, der nicht ins Bild passt. „Interessant. Wir sprechen nächstes Quartal.“", pen({ nerves: 1, mins: 3 }))),
-      opt("„Kann ich die spenden? An Dr. Kurz?“", () => say("„Rührend.“ Er nimmt sie. Für sich. „Ich habe auch so viele.“", pen({ mins: 4 })))] }]);
+      opt("„Kann ich die spenden? An Dr. Kurz?“", () => say("„Rührend.“ Er nimmt sie. Für sich. „Ich habe auch so viele.“", pen({ mins: 4 })))] },
+    { q: "„Noch eine Sache für Ihre Entwicklung: Ihre Arztbriefe sind zu kurz. Und zu lang. Und zu spät. Und zu früh, das ist verdächtig.“", options: [
+      opt("„Wie soll ich sie denn schreiben?“", () => say("„Richtig.“ Er geht. Das war die ganze Antwort. Du wirst sie nie verstehen.", pen({ mins: 4, nerves: 1 }))),
+      opt("„Ich nehme mir das zu Herzen.“", () => say("„Gut. Ihr Herz ist ja jung. Das hält das aus.“ Er klopft dir auf die Brust. Etwas zu fest.", pen({ mins: 3, energy: 10 }))),
+      opt("„Und Ihre Visiten sind zu lang.“", () => say("Totenstille. Eine Pflegekraft lässt ein Tablett fallen. Er lächelt. Dieses Lächeln wirst du im Dienstplan wiederfinden. Monatelang.", pen({ duties: 2 })))] },
+    { q: "„Abschließend: Ich habe Sie für das Qualitätsmanagement-Projekt nominiert. ‚Weniger Überstunden durch bessere Dokumentation der Überstunden.‘ Treffen ist immer nach Dienstschluss.“", options: [
+      opt("„Was für eine Ehre.“", () => say("„Nicht wahr? Drei Kollegen haben abgelehnt. Die sind jetzt in der Industrie. Undankbar.“", pen({ tasks: ["QM-Projekt (nach Dienstschluss)"], mins: 3 }))),
+      opt("„Ich bin ab sofort in der Industrie.“", () => say("Er wird bleich. Dann rot. Dann beigefarben, wie die Wand. „Das… schreiben Sie mir bitte als Formular.“", pen({ mins: 6 }))),
+      opt("Wortlos davonschleichen, während er auf sein Klemmbrett schaut.", () => say("Du kommst drei Meter weit. „KOLLEGE?“ Du drehst dich um. Er hat es nicht mal angehoben, das Klemmbrett.", pen({ mins: 5, nerves: 1 })))] }]);
   pen({ mins: 4 }); // he was already talking when you noticed him
   runChain(e, "Ein Oberarzt. Er hat dich gesehen. Es gibt kein Entkommen. (Schon 4 Minuten weg.)", [s1, s2, s3], score => ({
     text: pick(["Er geht. Du schaust auf die Uhr. Die Uhr schaut zurück. Mitleidig.", "Er klopft dir zum Abschied auf die Schulter. Drei Aufgaben fallen heraus. Sie gehören jetzt dir.", "„Schönen Feierabend!“ ruft er. Er meint es nicht ironisch. Das ist das Schlimmste."]),

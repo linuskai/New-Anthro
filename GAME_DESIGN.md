@@ -373,6 +373,16 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Gameplay-Tour:** beim ersten Spiel zeigt eine geführte Tour mit animierten Gesten direkt auf die echten Bedienelemente (Laufen, Umsehen, Aktion, Tricks, Uhr, Frist, Energie, Sichtbarkeit, Ziel, Radar, Mission Control). Jederzeit wieder im Pause-Menü.
 - **Taschenlampe:** Das Glühen an der Linse ist weg, der Lichtkegel bleibt.
 
+## Version 16: iPhone-Bedienung, Querformat, Ausrüstung
+
+- **Joystick hängt nicht mehr:** Stick, Umsehen und Rennen werden freigegeben, sobald kein Finger mehr auf dem Display liegt, auch wenn iOS das Loslassen verschluckt (Systemgesten, zweiter Finger, Popup unter dem Daumen).
+- **Eigenes Querformat:** links Pager und Ziel, rechts Radar mit den Knöpfen daneben, oben in der Mitte Kompass und Meldungen, unten in der Mitte Items, Effekte und Anrufe (während eines Anrufs werden die Items ausgeblendet). Nichts liegt mehr übereinander.
+- **Ausrüstung erklärt:** beim ersten Spiel eine Übersicht aller Items nach Zweck (Unsichtbar, Tarnen, Verteidigen, Ablenken, Energie, Werkzeug) mit Wirkung, Dauer und Fundort, mit Überspringen. Jederzeit über 🎒 im Titel und im Pausenmenü.
+- **Items überarbeitet:** Klemmbrett = 12 s echte Unsichtbarkeit (jetzt auch zum Start dabei). Flugmodus-Pieper und Taschenrechner kann man jetzt wirklich finden. Donut +30 %, Wundercreme +75 %.
+- **Was wirkt, sieht man:** über den Items eine Leiste mit jedem aktiven Effekt und seiner Restzeit (blinkt kurz vor Schluss), und der Bildschirm färbt sich: blau mit Schimmer = unsichtbar, grün = Abstand oder Telefonat, dunkel = versteckt, warm = Koffein.
+- **Oberärzte:** 18 Namen (Dr. Nurkurz, Dr. Gnadenlos, Dr. Überstunde …), mehr böse Sprüche, fünf statt drei Varianten pro Gesprächsrunde.
+- **Schwerere Fachfragen:** Weber B, Monteggia, Unhappy Triad, Salter-Harris, Anionenlücke, Anaphylaxie, Digitalis, CHA₂DS₂-VASc, qSOFA, C. difficile, Opt-out und mehr.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

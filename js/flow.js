@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
@@ -229,6 +229,8 @@ function resume() { if (mode !== "pause") return; show(null); mode = "play"; }
 $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
 $("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 50); });
+$("btnGuidePause").addEventListener("click", () => showItemGuide(null));
+$("btnGuide").addEventListener("click", () => showItemGuide(null));
 $("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
 $("mission").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
@@ -500,7 +502,7 @@ function render(time, dt) {
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }
   drawWaypoint();
 }
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 66; camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight; document.body.classList.toggle("land", w > h && h < 600); if (run && level) renderInv(); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 66; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize);
 
 let last = performance.now();
@@ -511,7 +513,7 @@ function frame(now) {
   if (mode === "play" && !document.hidden) update(dt);
   else if (mode === "story" && story) { updateStory(dt); applyEnv(); }
   if (mode === "play") clockWatch();
-  if (["title", "story", "outro", "over", "win", "brief", "intro", "select", "mc"].includes(mode) && !fxOff) { fxOff = true; for (const id of ["shieldFx", "frostFx", "stinkFx"]) $(id).style.opacity = 0; $("buffs").innerHTML = ""; } else if (mode === "play") fxOff = false;
+  if (["title", "story", "outro", "over", "win", "brief", "intro", "select", "mc"].includes(mode) && !fxOff) { fxOff = true; for (const id of ["shieldFx", "frostFx", "stinkFx"]) $(id).style.opacity = 0; $("buffs").innerHTML = ""; $("effectFx").className = ""; } else if (mode === "play") fxOff = false;
   if ((mode === "title") !== document.body.classList.contains("titlemode")) document.body.classList.toggle("titlemode", mode === "title");
   if (mode === "title") {
     // attract mode: a slow dolly down the ward corridor, looking around a little

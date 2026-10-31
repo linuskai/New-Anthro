@@ -39,7 +39,7 @@ const LEVELS = [
     tip: "Die Internisten hier sind Nerds: Wer dich erwischt, will Differentialdiagnosen hören. Ein seltener Fallbericht lenkt sie ab. Türen kannst du öffnen und hinter dir schließen.",
     objectives: [],
     reaRandom: true,
-    map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2...x...I...3....N..E#", "############l############"] },
+    map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2.8.x...I...3....N..E#", "############l############"] },
   { key: "ortho", short: "4 · ORTHOPÄDIE", name: "Orthopädie · 4. OG", floor: "4. OG", room: 4, env: "ortho",
     safeNames: [["UMKLEIDE", "Riecht nach Deo und Verzweiflung"]],
     tip: "In der Orthopädie stehen die Orthopäden einfach im Flur herum, zwischen zwei Sätzen Bizeps-Curls. Lauchige Futzis wie Internisten lassen sie nicht durch. Beweise, dass du keiner bist: Proteinshake, Fachwissen, Liegestütze. Oder Schmeicheln.",
@@ -47,7 +47,7 @@ const LEVELS = [
       { id: "gates", title: "Bizeps-Bürokratie", text: () => `An den Orthopäden vorbeikommen (${bouncersCleared()}/${bouncersTotal()})`, main: true, at: "bouncer", done: () => bouncersCleared() >= bouncersTotal(),
         brief: "Drei Orthopäden stehen im Flur herum und halten jeden für einen Internisten. Internisten kommen hier nicht durch. Zu lauchig. Beweis das Gegenteil: Shake, Liegestütze, Rotatorenmanschette oder ein ehrliches Kompliment für den Bizeps." },
       ],
-    map: ["################l########", "#S........x.....O.......#", "####d#######d#######d####", "#:::::::#:Y:::x:#_______#", "#6::Y:::#:::::::#_____1_#", "############U############", "#..............D......w.#", "#.....#.V.........#.....^", "#............x..........#", "###U#####################", "#..x........O...........#", "######d########d#######U#", "#::::::::P::#:::2::::##E#", "#::0::::::::#:::::B::####", "########l################"] },
+    map: ["################l########", "#S........x.....O.......#", "####d#######d#######d####", "#:::::::#:Y:::x:#_______#", "#6::Y:::#:::::::#_____1_#", "############U############", "#..............D......w.#", "#.....#.V.........#.....^", "#............x..........#", "###U#####################", "#..x....4...O...........#", "######d########d#######U#", "#::::::::P::#:::2::::##E#", "#::0::::::::#:::::B::####", "########l################"] },
   { key: "radio", short: "3 · RADIOLOGIE", name: "Radiologie · 3. OG", floor: "3. OG", room: 3, env: "radio",
     safeNames: [["DUNKELKAMMER", "Dunkel. Ruhig. Perfekt."]],
     tip: "Die Radiologie spart Strom, indem sie grundsätzlich im Dunkeln befundet. Die Taschenlampe hilft beim Sehen, verrät dich aber. Tipp auf LAMPE, um sie auszuschalten. Im MRT-Raum: kein Metall!",
@@ -118,9 +118,9 @@ const TYPES = {
   N: { label: "PFLEGE", role: "Pflege", who: () => rnd(["Schwester Gertrud", "Pfleger Kevin", "Schwester Ayşe"]), av: "🩺", color: "#4fb3a9",
        spec: () => ({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: rnd(["bun", "short", "long"]), shirt: 0x3f8fb3, pants: 0x3f8fb3, shoes: 0xf2f2f2, acc: "chart", short: true }),
        walk: .6, approach: 1.0, range: 5, fov: .45, detect: .65, barks: ["Ah, gut dass du noch da bist!", "Kurz abzeichnen!", "Nicht weglaufen!"] },
-  O: { label: "OBERARZT", role: "Oberarzt", who: () => rnd(["OA Dr. Kranich", "OÄ Dr. Stahlhart", "OA Dr. Hammer"]), av: "🧐", color: "#e2483d",
+  O: { label: "OBERARZT", role: "Oberarzt", who: () => rnd(["OA Dr. Kranich", "OÄ Dr. Stahlhart", "OA Dr. Hammer", "OA Dr. Nurkurz", "OÄ Dr. Gnadenlos", "OA Dr. Überstunde", "OÄ Dr. Kaltherz", "OA Dr. Samstag", "OA PD Dr. Ehrgeiz", "OÄ Dr. Dienstplan", "OA Dr. Feierabendlos", "OA Dr. Morgenvisite", "OÄ Dr. Eiskalt-Lächelnd", "OA Dr. Wiedermal", "OA Dr. h.c. Vorbild", "OÄ Dr. Ohnepause", "OA Dr. Mehrarbeit", "OA Dr. Freiwillig"]), av: "🧐", color: "#e2483d",
        spec: () => ({ skin: rnd(SKIN), hair: 0x8c8c8c, hairStyle: rnd(["short", "baldSides"]), coat: true, shirt: 0x9fc0e0, pants: 0x2f3440, tie: 0xb02a2a, glasses: "normal", steth: true, acc: "clipboard" }),
-       walk: .75, approach: 1.35, range: 6, fov: .75, detect: .95, cone: true, barks: ["Kollege! Auf ein Wort!", "Ah, Sie sind ja noch da. Perfekt.", "Haben Sie Samstag schon was vor?"] },
+       walk: .75, approach: 1.35, range: 6, fov: .75, detect: .95, cone: true, barks: ["Kollege! Auf ein Wort!", "Ah, Sie sind ja noch da. Perfekt.", "Haben Sie Samstag schon was vor?", "Gehen Sie etwa schon? Um DIESE Uhrzeit?", "Ich hab da noch was Kleines für Sie!", "Wir müssen über Ihre Einstellung reden.", "Feierabend ist ein Gefühl, kein Zeitpunkt!", "Zu meiner Zeit gab es keinen Feierabend. Und es hat uns nicht geschadet!", "Sie sehen müde aus. Gut, dann sind Sie im Flow."] },
   C: { label: "CHEFARZT", role: "Chefarzt", who: () => "Prof. Dr. Dr. h.c. Übermut", av: "🤴", color: "#9b6bff",
        spec: () => ({ skin: SKIN[0], hair: 0xbbbbbb, hairStyle: "baldSides", coat: true, shirt: 0x23262e, pants: 0x23262e, tie: 0xd4af37, glasses: "normal", scale: 1.07, build: "big" }),
        walk: .6, approach: 1.05, range: 7, fov: .3, detect: .8, barks: ["SIE DA!", "Mein Büro. Jetzt.", "Ich sehe alles."] },
@@ -169,26 +169,28 @@ const FRIENDS = {
        spec: { skin: SKIN[0], hair: 0xd9b26c, hairStyle: "long", shirt: 0xff7ab8, pants: 0xf2f2f2, acc: "phone", glasses: "sun", short: true } },
 };
 
+/* cat: what it is for · dur: how long it lasts · where: where to get more */
 const ITEMS = {
-  "1": { emoji: "☕", name: "Kaffee", desc: "+35 Energie, 8 s schneller" },
-  "2": { emoji: "📋", name: "Klemmbrett", desc: "10 s beschäftigt wirken", metal: true },
-  "3": { emoji: "🧴", name: "Desinfektionsspray", desc: "Alle in der Nähe 6 s außer Gefecht" },
-  "4": { emoji: "✈️", name: "Flugmodus-Pieper", desc: "60 s keine Anrufe" },
-  "5": { emoji: "📢", name: "Durchsage-Mikro", desc: "Alle rennen zur Cafeteria" },
-  "6": { emoji: "🥤", name: "Proteinshake", desc: "Für Orthopäden. Oder +25 Energie" },
-  "7": { emoji: "📕", name: "Seltener Fallbericht", desc: "Köder für Nerds" },
-  "8": { emoji: "🧮", name: "Taschenrechner", desc: "Hilft gegen PD-Phil", metal: true },
-  "9": { emoji: "🔋", name: "Batterie", desc: "Taschenlampe voll" },
-  "0": { emoji: "🥫", name: "Energydrink", desc: "+55 Energie" },
-  "$": { emoji: "🍩", name: "Donut", desc: "+15 % Energie, +15 Energie" },
-  "+": { emoji: "🫙", name: "Wundercreme", desc: "+60 Energie, +15 % Energie" },
-  p: { emoji: "✏️", name: "Kugelschreiber", desc: "Werfen: macht Lärm, lenkt ab" },
-  c: { emoji: "🥼", name: "Kittel", desc: "Ausziehen: Personal erkennt dich nicht mehr" },
-  f: { emoji: "📱", name: "Fake-Telefonat", desc: "10 s lang wichtig telefonieren: Personal stört dich nicht" },
-  m: { emoji: "😷", name: "Noro-Maske", desc: "15 s: Maske auf, laut husten. Alle halten Abstand." },
-  "&": { emoji: "📜", name: "Arbeitszeugnis", desc: "„…war stets bemüht…“", mission: "zeugnis" },
+  "2": { emoji: "📋", name: "Klemmbrett", cat: "Unsichtbar", dur: "12 s", where: "Start, Stationen", desc: "Klemmbrett hoch, Stirn runzeln, schnell gehen: Du wirkst so beschäftigt, dass dich NIEMAND sieht. Echte Unsichtbarkeit.", metal: true },
+  c: { emoji: "🥼", name: "Kittel", cat: "Tarnen", dur: "an/aus", where: "Start", desc: "Kittel ausziehen: Pflege, Ärzte und Verwaltung erkennen dich nicht mehr und drehen ab. Patienten und Angehörige finden dich dafür noch interessanter." },
+  m: { emoji: "😷", name: "Noro-Maske", cat: "Tarnen", dur: "15 s", where: "Start", desc: "Maske auf, laut husten: ALLE halten Abstand, auch Patienten und Angehörige." },
+  f: { emoji: "📱", name: "Fake-Telefonat", cat: "Verteidigen", dur: "10 s", where: "Start", desc: "Ernst ins Handy reden: Personal spricht dich nicht an, wer schon kommt, dreht ab." },
+  "3": { emoji: "🧴", name: "Desinfektionsspray", cat: "Verteidigen", dur: "7 s", where: "Flure, Stationen", desc: "Alle im Umkreis von etwa 12 m (mit Sicht) sind 7 Sekunden außer Gefecht." },
+  "4": { emoji: "✈️", name: "Flugmodus-Pieper", cat: "Verteidigen", dur: "60 s", where: "Orthopädie, Snackautomat", desc: "60 Sekunden lang keine Anrufe. Offiziell: Funkloch." },
+  p: { emoji: "✏️", name: "Kugelschreiber", cat: "Ablenken", dur: "8 s", where: "Start", desc: "In Blickrichtung werfen: Es klackt da hinten, alle in der Nähe gehen nachsehen." },
+  "5": { emoji: "📢", name: "Durchsage-Mikro", cat: "Ablenken", dur: "12 s", where: "Innere, Notaufnahme", desc: "„Gratis Kuchen in der Cafeteria!“ Alle auf dem Stockwerk rennen hin." },
+  "7": { emoji: "📕", name: "Seltener Fallbericht", cat: "Ablenken", dur: "16 s", where: "Innere", desc: "Hinlegen: Alle Internisten-Nerds bleiben lesend daran kleben." },
+  "1": { emoji: "☕", name: "Kaffee", cat: "Energie", dur: "sofort + 8 s", where: "überall", desc: "+35 % Energie und 8 Sekunden schneller." },
+  "0": { emoji: "🥫", name: "Energydrink", cat: "Energie", dur: "sofort", where: "Snackautomat, Räume", desc: "+55 % Energie." },
+  "$": { emoji: "🍩", name: "Donut", cat: "Energie", dur: "sofort", where: "Snackautomat, Räume", desc: "+30 % Energie. Vom Pharmavertreter. Ethisch fragwürdig." },
+  "6": { emoji: "🥤", name: "Proteinshake", cat: "Energie", dur: "sofort", where: "Orthopädie (Kraftraum)", desc: "+25 % Energie. Oder einem Orthopäden geben: Er lässt dich sofort durch (auch mitten im Kampf)." },
+  "+": { emoji: "🫙", name: "Wundercreme", cat: "Energie", dur: "sofort", where: "Dermatologie", desc: "+75 % Energie. Nebenwirkung: Du glänzt." },
+  "9": { emoji: "🔋", name: "Batterie", cat: "Werkzeug", dur: "sofort", where: "dunkle Etagen", desc: "Taschenlampe wieder 100 %." },
+  "8": { emoji: "🧮", name: "Taschenrechner", cat: "Werkzeug", dur: "einmal", where: "Innere", desc: "PD Dr. Phil fragt Statistik? Der Taschenrechner beantwortet alles richtig. Achtung: Metall (MRT!)." , metal: true },
+  "&": { emoji: "📜", name: "Arbeitszeugnis", cat: "Mission", desc: "„…war stets bemüht…“", mission: "zeugnis" },
 };
-const INV_ORDER = ["c", "p", "f", "m", "1", "0", "$", "+", "2", "3", "5", "4", "7", "6", "8", "9"];
+const ITEM_CATS = [["Unsichtbar", "👻", "Niemand sieht dich"], ["Tarnen", "🥸", "Bestimmte Leute erkennen dich nicht"], ["Verteidigen", "🛡️", "Leute drehen ab oder fallen aus"], ["Ablenken", "🎯", "Leute schauen woanders hin"], ["Energie", "⚡", "Lädt deine Energie auf"], ["Werkzeug", "🔧", "Für bestimmte Situationen"]];
+const INV_ORDER = ["2", "c", "m", "f", "p", "3", "1", "0", "$", "+", "6", "5", "4", "7", "8", "9"];
 
 const OFFERS = {};
 const BAG_NAMES = { excel: "Controlling-Excel", koffer: "Koffer", reel: "Intensiv-Reel", collab: "Collab-Selfie", probe: "Probetag-Zertifikat", binder: "Studienordner", lanyard: "Kongress-Lanyard", bizepsfoto: "Bizeps-Foto", ringlight: "Ringlicht", lunchbox: "Brotdose", helmet: "Fahrradhelm", key: "Autoschlüssel", approbation: "Approbationsurkunde", zeugnis: "Arbeitszeugnis", ticket: "Parkticket", fuse: "Ersatzsicherung", cream: "Sonnencreme", a38: "Formular A38", stamp1: "Stempel Controlling", stamp2: "Stempel Archiv", stamp3: "Stempel Notaufnahme", meds: "Reisetabletten", photo0: "Foto: Faxgerät", photo1: "Foto: Wartezeit", photo5: "Foto: Nummer 999" };
@@ -392,6 +394,7 @@ const KIT_HELP = {
   p: ["Ablenken", "Kugelschreiber werfen: Es klackt da hinten, alle drehen sich um und gehen nachsehen."],
   f: ["Verteidigen", "Fake-Telefonat: 10 Sekunden ernst ins Handy reden. Niemand vom Personal spricht dich an, wer schon auf dich zukommt, dreht ab."],
   m: ["Abstand", "Noro-Maske: 15 Sekunden lang hält JEDER Abstand (Patienten, Angehörige, Personal). Hust."],
+  "2": ["Unsichtbar", "Klemmbrett: 12 Sekunden lang so beschäftigt wirken, dass dich niemand sieht."],
 };
 const ANNOUNCE = [
   "Liebe Mitarbeitende, ab sofort ist Lächeln Teil der Dienstkleidung. Bitte tragen Sie es korrekt.",
