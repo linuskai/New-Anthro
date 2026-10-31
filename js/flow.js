@@ -232,9 +232,9 @@ $("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 5
 $("btnGuidePause").addEventListener("click", () => showItemGuide(null));
 $("btnGuide").addEventListener("click", () => showItemGuide(null));
 $("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
-$("mission").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
+$("mission").addEventListener("click", () => { if (!$("mission").classList.contains("open")) { freshNote(); sfx.tick(); } else if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
-if (settings.hudmin) document.body.classList.add("hudmin");
+if (settings.hudmin) document.body.classList.add("hudmin"); // landscape only (the portrait HUD is compact anyway)
 function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); $("mapView").hidden = false; drawBigMap(); }
 function closeMap() { if (mode !== "map") return; $("mapView").hidden = true; mode = "play"; }
 $("mini").addEventListener("click", openMap); $("btnMapClose").addEventListener("click", closeMap); $("mapView").addEventListener("click", e => { if (e.target.id === "mapView") closeMap(); });

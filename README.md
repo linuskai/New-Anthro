@@ -13,6 +13,7 @@ A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). Ger
 - **Battles in the style of the classic handheld monster games** against orthopaedists and every boss: HP boxes, FIGHT / BAG / COLLEAGUES / RUN, typed moves, critical hits, and medical quiz questions as attacks (both ways).
 - **Protection that works:** whoever comes at you while the fake call, coat-off, clipboard or the new noro mask is active turns away with a visible reaction.
 - **Gear guide as tabs:** one line per item (what it does, how long), tap for details and where to find more; via 🎒 in the title and pause menu. Tips pop up at the moment an item would help (someone gets suspicious → clipboard, low energy → coffee). Active effects show their time left above the items and tint the screen.
+- **Calm portrait HUD:** one status strip (clock, energy, what matters now), a one-line goal note that opens up when the goal changes, items down the right edge, no compass and no sneak button (push the stick lightly to sneak).
 - **Separate landscape layout** on phones, and a joystick that can no longer get stuck when iOS swallows the release.
 - **Guided tour** on the first game that points at the real controls with animated gestures.
 - **IV line mini-game:** when a nurse catches you, you place a peripheral line, step by step and realistically (hand hygiene, tourniquet, palpate, disinfect and wait, puncture at 15–30°, advance until flashback, release the tourniquet before pulling the needle, fix and flush).

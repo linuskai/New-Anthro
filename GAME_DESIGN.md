@@ -403,6 +403,16 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Die Angebote sind verlockender:** Im Trailer gibt es eine neue Karte „Das Angebot“: Zeile für Zeile Klinikum St. Sparen gegen das neue Angebot, die Klinik-Seite wird rot durchgestrichen, das Angebot leuchtet gold (Gehalt, Arbeitszeit, Dienste, Auto, Reisen, Kaffee …), dazu Extras als Goldchips (Startbonus, Firmen-Kreditkarte, Cabrio-Leasing, Delfine statt Oberarzt, blauer Haken). Die drei stärksten Punkte stehen auch auf der Missionskarte. Die Enden klingen nach dem Leben, das man gewinnt (Dachterrasse um 16 Uhr, Bali nächste Woche, Kabine mit Balkon).
 - **Nachtdienst in der Notaufnahme hat ein eigenes Intro:** Personalraum statt Arztzimmer, 41 Wartende, Schockraum, die Wartenummer springt auf 999 und dann auf 000, die Schiebetür geht auf und niemand kommt herein, Hildegard macht die Triage. Eigene Stundenkarten (Wartehalle, Triage nach Hildegard, RTW-Welle …), eigene Pager-Fälle („Zeh gestoßen. Vor drei Wochen. Jetzt hat er Zeit.“), Pager nennt Kabinen statt Zimmer, Übergabe im Personalraum, eigenes Ende.
 
+## Version 19: Ruhigeres Hochformat
+
+- **Eine Statusleiste statt Pager-Kasten:** Uhr und Energie in einer Zeile; darunter nur, was gerade zählt (Nachtdienst: Fund-Augen, Countdown zur Ablösung, Lampe; Mission: Unter-Missionen und Frist). Der Etagenname und „UNBEMERKT/VERDACHT/ENTDECKT“ sind im Hochformat weg: Das Dreieck über den Köpfen und der (jetzt dünnere) farbige Bildschirmrand zeigen dasselbe.
+- **Die Pager-Zeile zeigt keine Ziele mehr doppelt**, nur noch Neuigkeiten und Zustände („Sicherer Raum“, Grusel, REA).
+- **Gelber Zettel einzeilig:** Ziel und Entfernung in einer Zeile; wenn sich das Ziel ändert, klappt er 8 Sekunden lang mit Anleitung auf. Antippen klappt auf, nochmal antippen öffnet Mission Control.
+- **Kein Kompass im Hochformat** (Wegpunkt, Pfeile am Boden und Radar reichen), Radar kleiner, nur noch 🎯 und Pause daneben (Ton steht im Pausenmenü).
+- **Items am rechten Rand** untereinander, die Bildmitte bleibt frei. Item-Tipps zeigen jetzt seitlich darauf.
+- **Keine Schleichen-Taste mehr:** Den Stick nur leicht ziehen = schleichen (stand schon am Stick). Tastatur: C bleibt.
+- Die Tour überspringt Schritte für Dinge, die es im aktuellen Format nicht gibt, und erklärt im Hochformat den farbigen Rand.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

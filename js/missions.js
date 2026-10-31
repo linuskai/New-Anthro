@@ -114,7 +114,7 @@ function updateRouteChip() {
   const c = $("chipRoute"); if (!c || !run) return;
   if (run.mode === "night") {
     const left = NIGHT_END - run.minutes; c.hidden = false;
-    c.textContent = left > 0 ? `${run.minutes >= NIGHT_DAWN ? "🌅" : "🌙"} noch ${fmtSpan(left)} bis zur Ablösung 07:30` : "🌅 07:30 · ÜBERGABE IM ARZTZIMMER!";
+    c.textContent = left > 0 ? `${run.minutes >= NIGHT_DAWN ? "🌅" : "🌙"} ${fmtSpan(left)} bis Ablösung 07:30` : `🌅 07:30 · Übergabe ${nightSafeIn()}!`;
     c.classList.toggle("warn", left < 30); return;
   }
   if (run.mode !== "mission") { c.hidden = true; return; }
@@ -250,6 +250,7 @@ const TOUR = [
   { el: "chipRoute", t: "Deine Frist", d: "So viel Zeit bleibt bis zur Frist. Und wie viele Unter-Missionen du schon hast.", g: "none" },
   { el: "energyBox", t: "Energie", d: "Deine einzige Leiste. Gespräche, Aufgaben und Schreck kosten Energie, sie blinkt dann. Bei 0 %: Burnout. Aufladen mit Kaffee, Donuts, Sofa im sicheren Raum.", g: "none" },
   { el: "chipStealth", t: "Werde ich gesehen?", d: "UNBEMERKT, VERDACHT, ENTDECKT. Das Dreieck über den Köpfen zeigt dasselbe: weiß, gelb, rot.", g: "none" },
+  { el: "edgeDemo", rect: () => ({ left: 6, top: innerHeight * .3, width: innerWidth - 12, height: innerHeight * .3 }), t: "Werde ich gesehen?", d: "Das Dreieck über den Köpfen: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Der Bildschirmrand leuchtet dann gelb oder rot.", g: "none", portrait: true },
   { el: "mission", t: "Was jetzt?", d: "Dein aktuelles Ziel, wie es geht und wie weit es weg ist. Am Boden zeigen kleine Pfeile den Weg.", g: "none" },
   { el: "mini", t: "Radar", d: "Rote Punkte = jemand hat dich bemerkt. Antippen = großer Lageplan.", g: "tap" },
   { el: "btnMC", t: "Mission Control", d: "Pausiert das Spiel: Geschichte, Frist, Checkliste, Aufgaben, Ausrüstung. Und Speichern.", g: "tap" },
@@ -266,6 +267,7 @@ function startTour() {
 }
 function tourStep() {
   const s = TOUR[tour.i], ov = $("tour"), el = $(s.el);
+  if ((s.portrait && document.body.classList.contains("land")) || (!s.rect && (!el || el.hidden || !el.getBoundingClientRect().width))) { tour.i++; return tour.i >= TOUR.length ? endTour() : tourStep(); } // not on screen in this layout
   const r = s.rect ? s.rect() : el && !el.hidden ? el.getBoundingClientRect() : { left: innerWidth / 2 - 40, top: innerHeight / 2 - 40, width: 80, height: 80 };
   const ring = ov.querySelector(".tr-ring"), pad = 6;
   Object.assign(ring.style, { left: r.left - pad + "px", top: r.top - pad + "px", width: r.width + pad * 2 + "px", height: r.height + pad * 2 + "px" });

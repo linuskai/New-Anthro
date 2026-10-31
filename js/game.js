@@ -155,7 +155,7 @@ function howTo(o) {
   if (o.isExit || o.at === "exit") return "Grünen Treppenhaus-Schildern folgen · oder Aufzug (⇅)";
   if (o.at === "rea") return "Hin und AKTION: Herzdruckmassage im Takt tippen";
   if (o.at === "bouncer") return "Orthopäden ansprechen: Shake, Fachwissen oder Liegestütze";
-  if (o.at === "task") return "Ins Zimmer, AKTION: versorgen";
+  if (o.at === "task") return (nightER() ? "In die Kabine" : "Ins Zimmer") + ", AKTION: versorgen";
   if (o.id === "survive") return nightSafe() + " = sicher · Hildegard nie aus den Augen lassen";
   const [kind, key] = (o.at || "").split(":");
   if (kind === "friend") return (FRIENDS[key] ? FRIENDS[key].name : "Person") + " ansprechen (grüner Punkt)";
@@ -165,6 +165,9 @@ function howTo(o) {
   return "";
 }
 const ARROWS = ["⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖"];
+/* the yellow note opens up for a few seconds when the goal changes (and on tap), otherwise it is one line */
+let noteT = null;
+function freshNote(ms = 8000) { const m = $("mission"); m.classList.add("open"); clearTimeout(noteT); noteT = setTimeout(() => m.classList.remove("open"), ms); }
 function updateMissionHow(cur) {
   const el = $("missionHow"); if (!el) return;
   const how = howTo(cur), t = cur ? targetOf(cur) : null;
@@ -177,7 +180,11 @@ function updateMissionHow(cur) {
   el.innerHTML = (how ? esc(how) : "") + (where ? ` <i>· ${where}</i>` : "");
   el.hidden = !how && !where;
 }
-function setMsg(text, secs, alert) { msg = { text, t: secs }; $("hudMsg").textContent = text; $("hudMsg").classList.toggle("alert", !!alert); }
+function setMsg(text, secs, alert) {
+  msg = { text, t: secs }; const el = $("hudMsg"); el.textContent = text; el.classList.toggle("alert", !!alert);
+  // the goal already stands on the yellow note: in portrait the pager line only shows news and states
+  el.parentNode.classList.toggle("live", secs > 0 || !/^(Ziel:|Zum Auto)/.test(text));
+}
 function updateHud() {
   let h = "";
   $("hudNerves").hidden = run.mode !== "night";
@@ -186,7 +193,8 @@ function updateHud() {
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
   $("missionHead").textContent = run.mode === "night" ? "Nachtdienst" : cur && cur.boss ? "Endgegner" : cur && cur.isExit ? (isLastFloor() ? "Fast geschafft" : "Weiter") : cur && cur.route ? `${mission().av} Unter-Mission · ${goalsDoneCount()}/${mission().goals.length}` : `Hindernis · ${floorLabel(run.idx)}`;
-  $("missionText").textContent = cur ? cur.text : "Zum Auto!";
+  const mt = cur ? cur.text : "Zum Auto!";
+  if ($("missionText").textContent !== mt) { $("missionText").textContent = mt; freshNote(); }
   updateMissionHow(cur);
   updateRouteChip();
   updateEnergy();
@@ -200,7 +208,7 @@ function updateEnergy() {
   $("energyFill").style.width = e + "%"; $("energyFill").className = e <= 0 ? "empty" : e <= 25 ? "crit" : e < 50 ? "low" : ""; $("energyNum").textContent = e + " %";
   $("energyBox").classList.toggle("crit", e <= 25);
   const dark = inDarkness(), chip = $("chipLamp");
-  chip.hidden = !dark; chip.textContent = player.lampOn ? `🔦 AN · SICHTBAR · ${Math.round(player.lamp)}%` : "🔦 AUS · UNSICHTBAR";
+  chip.hidden = !dark; chip.textContent = player.lampOn ? `🔦 ${Math.round(player.lamp)} % · sichtbar` : "🔦 aus · unsichtbar";
   chip.classList.toggle("warn", player.lampOn && player.lamp < 25); chip.classList.toggle("good", !player.lampOn);
 }
 function buffText() {

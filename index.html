@@ -56,7 +56,7 @@ button { font-family: inherit; }
 .chip.good { color: #9fe0ff; border-color: #2c5468; }
 button.chip { pointer-events: auto; cursor: pointer; touch-action: manipulation; }
 #hudNerves .lost { color: var(--lcd-dim); }
-.energy { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; font-size: 15px; }
+.energy { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; font-size: 15px; } .energy em { font-style: normal; }
 .bar { height: 8px; border-radius: 4px; background: #1d2a23; overflow: hidden; border: 1px solid #2f4038; }
 #energyFill { height: 100%; width: 100%; background: var(--lcd); transition: width .2s linear; }
 #energyFill.low { background: var(--amber); }
@@ -333,8 +333,8 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
   .card h1 { font-size: 34px; } .overlay .card { padding: 14px 16px; }
   #tasks { top: calc(env(safe-area-inset-top, 0px) + 40px); max-height: calc(100% - 60px); }
 }
-body.hudmin .pager .energy, body.hudmin .pager .chips, body.hudmin #hudMsg { display: none; }
-body.hudmin .mission { display: none; }
+body.land.hudmin .pager .energy, body.land.hudmin .pager .chips, body.land.hudmin #hudMsg { display: none; }
+body.land.hudmin .mission { display: none; }
 
 #mini { border-radius: 50%; pointer-events: auto; cursor: pointer; }
 #mcard { position: absolute; left: 0; right: 0; top: 24%; text-align: center; pointer-events: none; z-index: 4; padding: 0 20px; }
@@ -871,6 +871,36 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
   .fm-card { width: min(100%, 720px); padding: 10px 12px; gap: 7px; } .fm-head b { font-size: 18px; display: inline; margin-right: 8px; } .fm-head small { font-size: 13px; }
   .fm-now { padding: 5px 9px; font-size: 15px; } .fm-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; } .fm-btn { min-height: 38px; padding: 6px 4px; font-size: 13px; }
 }
+
+/* ---------- v19: a calmer portrait HUD ----------
+   One status strip (clock, energy, what matters right now), one goal line (opens up when the goal changes or on tap),
+   minimap with two buttons, items along the right edge, no compass, no sneak button (pushing the stick lightly sneaks). */
+body:not(.land) #compass { display: none; }
+body:not(.land) .hud { gap: 5px; }
+body:not(.land) .pager { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; row-gap: 3px; padding: 4px 8px; border-width: 1px; border-radius: 9px; background: rgba(11,21,19,.66); }
+body:not(.land) .pager > .pager-row:first-child { grid-column: 1; } body:not(.land) #hudFloor { display: none; } body:not(.land) #hudClock { font-size: 19px; }
+body:not(.land) .pager > .pager-row:nth-child(2) { grid-column: 1 / -1; grid-row: 2; display: none; } body:not(.land) .pager > .pager-row:nth-child(2).live { display: flex; }
+body:not(.land) #hudMsg { min-height: 0; -webkit-line-clamp: 2; font-size: 15px; }
+body:not(.land) .energy { grid-column: 2; grid-row: 1; font-size: 14px; gap: 5px; } body:not(.land) .energy em { display: none; } body:not(.land) #energyNum { min-width: 2.6em; }
+body:not(.land) .chips { grid-column: 1 / -1; gap: 4px; } body:not(.land) .chips:not(:has(.chip:not([hidden]):not(#chipStealth):not(#chipTasks):not(#chipDuty):not(#chipBuff))) { display: none; }
+body:not(.land) .chip { font-size: 13px; padding: 2px 5px; }
+body:not(.land) #chipStealth, body:not(.land) #chipTasks, body:not(.land) #chipDuty, body:not(.land) #chipBuff { display: none; }
+body:not(.land) .mission { display: flex; align-items: baseline; gap: 6px; padding: 5px 8px; font-size: 14px; transform: none; border-radius: 6px; opacity: .94; }
+body:not(.land) .mission b { display: none; }
+body:not(.land) #missionText { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body:not(.land) #missionHow { flex: 0 0 auto; margin: 0; padding: 0; border: 0; font-size: 0; } body:not(.land) #missionHow i { font-size: 13px; }
+body:not(.land) .mission.open { display: block; } body:not(.land) .mission.open b { display: block; } body:not(.land) .mission.open #missionText { white-space: normal; }
+body:not(.land) .mission.open #missionHow { font-size: 12px; margin-top: 3px; padding-top: 3px; border-top: 1px dashed rgba(42,38,16,.3); }
+body:not(.land) #mini { width: 84px; height: 84px; } body:not(.land) .icon-btn { width: 38px; height: 38px; font-size: 18px; }
+body:not(.land) #btnSound, body:not(.land) #btnHud { display: none; }
+body:not(.land) #inv { left: auto; right: max(10px, env(safe-area-inset-right, 0px)); transform: none; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 190px); flex-direction: column; gap: 6px; }
+body:not(.land) .slot { width: 42px; height: 42px; font-size: 21px; background: rgba(11,21,19,.55); }
+body:not(.land) #buffs { bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }
+body:not(.land) .hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 190px); }
+body:not(.land) #edge { box-shadow: inset 0 0 36px 4px var(--edge, rgba(242,179,61,.7)); }
+body:not(.land) #wp { font-size: 13px; }
+/* the item tip points sideways at the right-hand column */
+#itemTip.side::after { bottom: auto; top: calc(var(--ay, 50%) - 7px); left: auto; right: -7px; border: 7px solid transparent; border-right: 0; border-left-color: #f2b33d; }
 </style>
 </head>
 <body>
@@ -897,7 +927,7 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
         <div class="pager" aria-live="polite">
           <div class="pager-row"><span id="hudFloor">5B · INNERE</span><span id="hudClock">17:00</span></div>
           <div class="pager-row"><span id="hudMsg">Feierabend war um 17:00.</span></div>
-          <div class="energy" id="energyBox"><span>⚡ ENERGIE</span><div class="bar"><div id="energyFill"></div></div><span id="energyNum">100 %</span></div>
+          <div class="energy" id="energyBox"><span>⚡<em> ENERGIE</em></span><div class="bar"><div id="energyFill"></div></div><span id="energyNum">100 %</span></div>
           <div class="chips">
             <span class="chip" id="hudNerves" aria-label="Nerven">♥♥♥♥♥</span>
             <span class="chip good" id="chipStealth">UNBEMERKT</span>
@@ -922,7 +952,7 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
 
   <div id="inv"></div>
   <div class="pad">
-    <button class="round" id="btnSneak" type="button" aria-pressed="false">Schlei&shy;chen</button>
+    <button class="round" id="btnSneak" type="button" aria-pressed="false" hidden>Schlei&shy;chen</button>
     <button class="round" id="btnSprint" type="button">Rennen</button>
     <button class="round" id="btnAct" type="button"><div class="prog" id="actProg"></div><span id="actLabel">Aktion</span></button>
   </div>

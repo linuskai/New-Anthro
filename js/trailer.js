@@ -137,8 +137,11 @@ function itemTip(k, text) {
   const r = slot.getBoundingClientRect(), el = document.createElement("div"); el.id = "itemTip";
   el.innerHTML = `<b>${ITEMS[k].emoji} Tipp</b><span>${esc(text)}</span>`;
   document.body.appendChild(el);
-  const w = el.offsetWidth, cx = r.left + r.width / 2;
-  el.style.left = Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2)) + "px"; el.style.bottom = (appH() - r.top + 12) + "px"; el.style.setProperty("--ax", (cx - Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2))) + "px");
+  const w = el.offsetWidth, h = el.offsetHeight, cx = r.left + r.width / 2;
+  if (getComputedStyle($("inv")).flexDirection === "column") { // items run down the right edge: point sideways
+    const top = Math.max(8, r.top + r.height / 2 - h / 2); el.classList.add("side");
+    el.style.left = Math.max(8, r.left - w - 12) + "px"; el.style.top = top + "px"; el.style.setProperty("--ay", (r.top + r.height / 2 - top) + "px");
+  } else { el.style.left = Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2)) + "px"; el.style.bottom = (appH() - r.top + 12) + "px"; el.style.setProperty("--ax", (cx - Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2))) + "px"); }
   slot.classList.add("tip"); sfx.beep(); tipCool = 25;
   const off = () => { el.remove(); const s = document.querySelector(`#inv .slot[data-k="${k}"]`); if (s) s.classList.remove("tip"); };
   setTimeout(off, 7000); el.addEventListener("click", off);
