@@ -205,45 +205,12 @@ const HOW_HTML = `<ul class="legend how">
   <li><span class="ico">📞</span><span><b>Anrufe</b> · Annehmen kostet Zeit. Ablehnen spart sie, aber dann kommt der Anrufer dich suchen.</span></li>
   <li><span class="ico">⚡</span><span><b>Energie</b> · deine einzige Leiste. Gespräche, neue Aufgaben, Gestank, Schreckmomente und verlorene Kämpfe kosten Energie, die Leiste blinkt dann rot. Bei 0 % ist Burnout. Aufladen: ☕ Kaffee, 🥫 Energydrink, 🍩 Donut, 🥤 Shake, Sofa im sicheren Raum, Wellness-Liege, im Treppenhaus durchatmen (+20 %).</span></li>
   <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, du übernimmst den Nachtdienst.</span></li></ul>`;
-function showBrief(fromGame) {
-  if (fromGame) return openMC();
-  $("briefBody").innerHTML = missionSheet(false) + `<h3>So funktioniert's</h3>${HOW_HTML}`;
-  mode = "brief"; show("ovBrief"); $("ovBrief").scrollTop = 0;
-  setTimeout(() => $("btnBrief").focus({ preventScroll: true }), 50);
-}
-$("btnBrief").addEventListener("click", () => {
-  let itemsSeen = false; try { itemsSeen = !!localStorage.getItem("hospital-escape-items"); } catch (e) {}
-  if (!itemsSeen) { initAudio(); showItemGuide(beginMission); return; } // the first time: what every item does
-  beginMission();
-});
 function beginMission() {
   initAudio(); show(null); mode = "play"; blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
   let seen = false; try { seen = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {}
   if (!seen) { setTimeout(() => { if (mode === "play") startTour(); }, 600); return; } // the first time: the guided tour
   announceObjective();
 }
-
-// ---------- the gear guide: every item, what it does, how long, where to find more ----------
-let guideDone = null;
-function showItemGuide(done) {
-  guideDone = done || null;
-  const have = run && run.inv ? run.inv : {};
-  $("guideBody").innerHTML = ITEM_CATS.map(([cat, ico, sub]) => {
-    const ks = Object.keys(ITEMS).filter(k => ITEMS[k].cat === cat); if (!ks.length) return "";
-    return `<h3>${ico} ${esc(cat)} <small>${esc(sub)}</small></h3><div class="ig-grid">` + ks.map(k => { const it = ITEMS[k], n = have[k] || 0;
-      return `<div class="ig-item${n ? " have" : ""}"><span class="ig-ico">${it.emoji}</span><div><b>${esc(it.name)}</b>${it.dur ? `<em>⏱ ${esc(it.dur)}</em>` : ""}${n ? `<em class="h">dabei ×${n}</em>` : ""}<p>${esc(it.desc)}</p>${it.where ? `<small>Fundort: ${esc(it.where)}</small>` : ""}</div></div>`; }).join("") + "</div>";
-  }).join("");
-  $("btnGuideGo").firstElementChild.textContent = done ? "Verstanden · los geht's" : "Schließen";
-  $("btnGuideSkip").hidden = !done; $("btnGuideSkipTop").textContent = done ? "Überspringen ⏭" : "Schließen ✕";
-  show("ovGuide"); $("ovGuide").scrollTop = 0; mode = mode === "play" ? "guide" : mode;
-}
-function closeGuide() {
-  try { localStorage.setItem("hospital-escape-items", "1"); } catch (e) {}
-  const d = guideDone; guideDone = null;
-  if (d) return d();
-  if (mode === "guide") { show(null); mode = "play"; } else if (run && mode === "pause") show("ovPause"); else { mode = "title"; show("ovTitle"); }
-}
-$("btnGuideGo").addEventListener("click", closeGuide); $("btnGuideSkip").addEventListener("click", closeGuide); $("btnGuideSkipTop").addEventListener("click", closeGuide);
 
 // ---------- Mission Control (pauses the game) ----------
 let mcReturn = "play";

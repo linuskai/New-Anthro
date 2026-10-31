@@ -383,6 +383,20 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Oberärzte:** 18 Namen (Dr. Nurkurz, Dr. Gnadenlos, Dr. Überstunde …), mehr böse Sprüche, fünf statt drei Varianten pro Gesprächsrunde.
 - **Schwerere Fachfragen:** Weber B, Monteggia, Unhappy Triad, Salter-Harris, Anionenlücke, Anaphylaxie, Digitalis, CHA₂DS₂-VASc, qSOFA, C. difficile, Opt-out und mehr.
 
+## Version 17: Missions-Trailer, Ausrüstung neu, Grusel, iPhone-App
+
+- **Missions-Trailer statt Briefing-Blatt:** fünf kurze, animierte Karten, jede passt ohne Scrollen auf den Bildschirm (Hoch- und Querformat), wischen oder „Weiter“, jederzeit „Überspringen“.
+  1. *Der Auftrag:* wer, was, und der eine Satz, um den es geht („Um 22:00 wartet die Limousine von Fr. Goldmann“). Eine Uhr läuft von 17:00 bis zur Frist, darunter Spielzeit in echten Minuten, Zielort, was bei Verspätung passiert.
+  2. *Dein Weg nach draußen:* die Etagen als Linie von oben nach unten (quer: von links nach rechts). Ein Läufer springt von Station zu Station, an jeder Etage poppen auf, was dort zu holen ist (gelb), was im Weg steht (rot), am Ende Endgegner und Fahrzeug. Hinweis: Treppenhaus erst offen, wenn die Etage erledigt ist.
+  3. *Am Ausgang wartet:* der Endgegner mit seinem Satz und den drei Wegen vorbei (Reden, Formular, Kampf).
+  4. *Was dich aufhält:* Zeit, Energie, gesehen werden, jeweils mit einer kleinen Endlos-Animation (Uhr springt +12 Min, Leiste läuft leer und blinkt, Dreieck wechselt weiß/gelb/rot).
+  5. *Deine Tricks:* nur die Items, die du dabeihast, als Kacheln mit Wirkung und Dauer, antippen = Erklärung.
+- **Ausrüstung neu:** die große Item-Wand ist weg. Im Pausenmenü und im Titel: Tabs (Dabei, Unsichtbar, Tarnen, Verteidigen, Ablenken, Energie, Werkzeug), eine Zeile pro Item mit Kurzwirkung und Dauer, antippen klappt Details und Fundort auf.
+- **Tipps im richtigen Moment:** wird jemand misstrauisch, zeigt eine Sprechblase auf das Klemmbrett; kommt jemand auf dich zu, auf die Noro-Maske; bei wenig Energie auf den Kaffee; bei Anrufen auf den Flugmodus; bei schwacher Lampe auf die Batterie. Jeder Tipp einmal pro Gerät.
+- **Formular im Querformat:** vier Spalten, alles auf einem Bildschirm.
+- **Grusel (witzig und gruselig) auch tagsüber:** etwa jede Minute, auf dunklen Etagen öfter, immer nur eins auf einmal und nie gefährlich: Licht fällt aus, und am Ende des Flurs steht Schwester Hildegard oder ein Patient im Flügelhemd mit roten Augen, beim nächsten Flackern weg. Ein leerer Rollstuhl rollt quietschend quer über den Flur. Schritte direkt hinter dir (manchmal liegt danach ein Formular von niemandem da). Patientenruf aus Zimmer 13, das es nicht gibt. Monitor-Dauerton aus einem leeren Zimmer. Flüstern aus dem Lüftungsschacht. Die Uhr zeigt kurz 03:33. Knackende Durchsagen („Code Blau auf Station 6. Wir haben keine Station 6.“). Dazu dunkle Bildränder mit Filmkorn und rote Edding-Schrift an den Wänden („WIR SEHEN DEINE ÜBERSTUNDEN“).
+- **iPhone-App vom Home-Bildschirm:** die schwarze Leiste unten ist weg. iOS meldet dort mit durchsichtiger Statusleiste eine um genau die Statusleiste zu kleine Höhe; das Spiel nimmt jetzt die volle Bildschirmhöhe.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

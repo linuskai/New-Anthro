@@ -674,7 +674,7 @@ function update(dt) {
   zoneMsgT -= dt;
   if (inDark && !run.wasDark) { sfx.stinger(); if (zoneMsgT <= 0) { setMsg(pick(["Hier hat das Controlling die Beleuchtung gestrichen.", "Dieser Gang ist seit dem Sparprogramm 2019 unbeleuchtet.", "Irgendwo tropft etwas. Hoffentlich Wasser.", "Stromsparmodus. Patientenorientiert."]), 3, true); zoneMsgT = 8; } }
   run.wasDark = inDark;
-  updateScares(dt); updateStorm(dt);
+  updateScares(dt); updateStorm(dt); updateSpook(dt);
   applyEnv();
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }
@@ -694,7 +694,7 @@ function update(dt) {
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $("toast").hidden = true; }
   if (labT > 0) { labT -= dt; if (labT <= 0) $("lab").hidden = true; }
   if (msg.t > 0) { msg.t -= dt; if (msg.t <= 0) setMsg(statusLine(), 0); } else { const s = statusLine(); if (s !== msg.text) setMsg(s, 0); }
-  $("hudClock").textContent = fmtTime(run.minutes);
+  const glitch = run.glitchT > 0; $("hudClock").textContent = glitch ? "03:33" : fmtTime(run.minutes); $("hudClock").classList.toggle("glitch", glitch);
   $("chipBuff").hidden = true; // the effect bar shows all of this, with time left
   $("hideVeil").hidden = !player.hidden; $("tired").hidden = run.energy > 0;
   // stealth indicator
@@ -703,7 +703,7 @@ function update(dt) {
   sc.textContent = safe ? "SICHER" : maxAw >= 1 ? "ENTDECKT" : maxAw >= .35 ? "VERDACHT" : (player.moveMag === .5 ? "SCHLEICHT" : "UNBEMERKT");
   sc.className = "chip " + (safe ? "good" : maxAw >= 1 ? "bad" : maxAw >= .35 ? "warn" : "good");
   const edge = $("edge"); edge.style.opacity = safe ? 0 : Math.min(1, maxAw); edge.style.setProperty("--edge", maxAw >= 1 ? "rgba(226,72,61,.75)" : "rgba(242,179,61,.6)");
-  updateEnergy();
+  updateEnergy(); gameTips(dt, maxAw, safe);
 }
 function statusLine() {
   if (player.hidden) return "Im Wäschewagen. Nicht bewegen.";

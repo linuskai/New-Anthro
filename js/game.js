@@ -32,7 +32,7 @@ function loadFloor(idx) {
   player.x = level.start[0] + .5; player.y = level.start[1] + .5; player.yaw = level.startYaw; player.pitch = 0;
   Object.assign(player, { coffee: 0, busy: 0, inv: 0, hidden: false, stun: 0, slip: 0, channel: null, lampOn: true });
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
-  lure = null; nerdLure = null; blackout = 0; scare = null; endCall(); run.callsHere = 0;
+  lure = null; nerdLure = null; blackout = 0; scare = null; endCall(); run.callsHere = 0; spookReset();
   run.pageT = run.callbacks.length >= 2 ? 8 : null;
   run.reaRandomT = L.reaRandom ? 45 + Math.random() * 30 : null;
   run.reaScriptT = L.reaScript || null;
@@ -267,7 +267,7 @@ function renderInv() {
   const box = $("inv"); box.innerHTML = "";
   invSlots().forEach(k => {
     const b = document.createElement("button"); b.type = "button"; b.className = "slot"; b.title = ITEMS[k].name + ": " + ITEMS[k].desc;
-    b.setAttribute("aria-label", ITEMS[k].name + " benutzen");
+    b.setAttribute("aria-label", ITEMS[k].name + " benutzen"); b.dataset.k = k;
     b.innerHTML = `${ITEMS[k].emoji}${run.inv[k] > 1 ? `<i>${run.inv[k]}</i>` : ""}`;
     b.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); if (mode === "play") useItem(k); });
     box.appendChild(b);

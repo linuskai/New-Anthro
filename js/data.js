@@ -281,6 +281,7 @@ const POSTERS = [
   { bg: "#1f9d55", t: "FEEDBACK?", b: ["Kritik bitte schriftlich", "an die Geschäftsführung.", "Briefkasten: zugeklebt."], i: "📮" },
   { bg: "#c13584", t: "FOLGE UNS!", b: ["@klinikum.st.sparen", "Wir posten, was wir", "nicht bezahlen."], i: "📱" },
 ];
+const CREEPY_SCRAWL = ["DU GEHST NIE NACH HAUSE", "WIR SEHEN DEINE ÜBERSTUNDEN", "NICHT DOKUMENTIERT = NICHT PASSIERT", "Zimmer 13 ist frei. Für immer.", "Hier war Dr. Kurz · 2009 – ∞", "LAUF.", "Hinter dir: das Controlling", "Hildegard sieht alles", "Nur noch eine Aufnahme…"];
 const GRAFFITI = ["ER GEHT NIE HEIM", "Dr. Ewig war hier · 2009", "NUR KURZ", "FEIERABEND IST EINE LÜGE", "Hilfe. Bin noch im Dienst.", "Budget: 0 €", "Dreh dich nicht um."];
 const SAFE_NAMES = [["BEREITSCHAFTSRAUM", "Hier findet dich keiner"], ["STATIONSKÜCHE", "Kaffee: eingespart. Sofa: noch da."], ["ABSTELLKAMMER", "Perfekt zum Verstecken"], ["WÄSCHEKAMMER", "Riecht nach Station 4"]];
 

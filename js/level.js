@@ -229,6 +229,8 @@ function buildLevel(idx) {
       else if (v < .32) planeM(graffitiTex(pick(["Wer liest das? Geh heim.", "Budget: 0 €", "NUR KURZ"])), 2.2, .55, 1.3, .01, true);
       continue;
     }
+    // now and then something written in red marker. It was not there yesterday.
+    if (theme !== "derma" && v > .97) { planeM(graffitiTex(pick(CREEPY_SCRAWL)), 2.2, .55, 1.25 + (v - .97) * 20, .01, true); continue; }
     if (v < .07 && theme !== "radio") place(funnyArt(Math.floor(r() * 99)), 1.65);
     else if (v < .1) { const p = theme === "derma" ? { bg: "#e26fa0", t: "SELF CARE", b: ["Creme ist", "Medizin.", "— Dr. Glatt"], i: "🧖" } : theme === "radio" && r() < .5 ? POSTERS[6] : pick(POSTERS); place(framed(posterTex(p), .72, 1.0, 0x2a2a2a), 1.65); }
     else if (v < .17 && theme !== "radio" && theme !== "derma") place(chairRow(3, theme === "er" ? 0xc0322a : 0x2b7bb9), 0, 0, (r() - .5) * .6);

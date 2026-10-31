@@ -502,8 +502,15 @@ function render(time, dt) {
   if (mode === "play" || mode === "pause" || mode === "dialog") { drawMini(time); drawCompass(); }
   drawWaypoint();
 }
-function resize() { const w = innerWidth, h = innerHeight; document.body.classList.toggle("land", w > h && h < 600); if (run && level) renderInv(); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 66; camera.updateProjectionMatrix(); }
-addEventListener("resize", resize);
+/* iOS home-screen app with a translucent status bar: innerHeight comes up short by exactly the status bar,
+   which left a black strip at the bottom. Use the full screen height there. */
+function appH() {
+  const h = innerHeight; if (!navigator.standalone) return h;
+  const full = innerWidth < innerHeight ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  return full > h && full - h < 100 ? full : h;
+}
+function resize() { const w = innerWidth, h = appH(); document.documentElement.style.setProperty("--app-h", h + "px"); document.body.classList.toggle("land", w > h && h < 600); if (run && level) renderInv(); renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 66; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize); addEventListener("orientationchange", () => setTimeout(resize, 350));
 
 let last = performance.now();
 function frame(now) {
