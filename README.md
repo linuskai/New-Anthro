@@ -2,6 +2,8 @@
 
 A browser game for iPhone (and any other browser). Your shift ended at 17:00. Get out of the hospital before anyone hands you more work.
 
+**Play it:** https://hospital-escape.vercel.app (no install, no login; on iPhone: Share → *Add to Home Screen*). Every push to the `hospital-escape` branch is deployed there.
+
 ## Hospital Escape 3D (`index.html` + `js/`)
 
 A satirical first-person stealth game in Three.js (r128, loaded from cdnjs). German UI. A thoroughly cost-cut hospital: Innere (5B), Orthopädie, Radiologie, Gastroenterologie, Dermatologie, Intensivstation, Keller, Notaufnahme, Parkhaus P2. Each mission uses its own selection of floors. The full design is in [`GAME_DESIGN.md`](GAME_DESIGN.md).
