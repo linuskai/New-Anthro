@@ -58,7 +58,7 @@ const LEVELS = [
     map: ["#########################", "#S......................#", "#.####d#######d########.#", "#.#:Y:::::#:::::::::::#.#", "#.#:::r:::#:::::m:::::#.^", "#O#:::::::#:::::::::::#.#", "#.######d#########d####.#", "#...........A.........x.#", "#.####d######d#########.#", "#.#::::::9#:::::#_____#.#", "#9#:&:::A:#:::B:#_____#.#", "#.#:::::::#:x:::#_____#.#", "#.####l######d#####d###.#", "#.................C.9...#", "############E############", "#########################"] },
   { key: "gastro", short: "2 · GASTRO", name: "Gastroenterologie · Endoskopie", floor: "2. OG", room: 2, env: "gastro",
     safeNames: [["ENDO-AUFWACHRAUM", "Niemand wacht hier freiwillig auf"]],
-    tip: "Die Lüftung wurde 2017 eingespart. Seitdem riecht die Gastroenterologie nach… Gastroenterologie. Die grünen Wolken kosten Energie. Luft anhalten hilft nicht. Lüftung einschalten schon.",
+    tip: "Die Lüftung wurde 2017 eingespart. Seitdem riecht die Gastroenterologie nach… Gastroenterologie. Die Wolken sind inzwischen giftig: Wer drin steht, verliert schnell Energie, der Bildschirm wird rot und die Warnleuchten blinken. Luft anhalten hilft nicht. Lüftung im Endoskopie-Raum einschalten schon.",
     objectives: [
       { id: "vent", title: "Operation Frischluft", text: "Lüftung im Endoskopie-Raum einschalten", main: true, at: "prop:y",
         brief: "Im Endoskopie-Raum hängt der Lüftungsschalter. Aus „Kostengründen“ seit 2017 aus. Die Gastroenterologen merken nichts mehr. Du schon." }],
@@ -66,7 +66,7 @@ const LEVELS = [
     map: ["###########################", "#S......nffff.P...........#", "#.###d#######d######d####.#", "#.#:\"\":::#:::::::#:B::::#.#", "#.#:B::B:#::y::::#::::B:#.^", "#f#::::::#:::::::#::::::#.#", "#f##########l############.#", "#...$............nfffff...#", "#f####d######d#######d###.#", "#f#:::::::#______#:::::9#f#", "#n#::x::\"\"#_0__1_#::B:::#f#", "#.#:::::::#______#::::::#f#", "#.#######################.#", "#........x....ffff....N...#", "#########################E#"] },
   { key: "derma", short: "1 · DERMATOLOGIE", name: "Dermatologie · Rettungsstation", floor: "1. OG", room: 1, env: "derma", safe: true,
     safeNames: [],
-    tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Und vielleicht gibt es einen Job mit Feierabend um 15 Uhr.",
+    tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Vorsicht: Auf dem Boden liegen Gurkenscheiben und Kortison-Tuben. Wer läuft, rutscht aus (−12 % Energie). Darüber schleichen!",
     objectives: [
       { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Bei Dr. Glatt melden (oder auf eine Wellness-Liege)", main: true, at: "friend:e",
         brief: "Die Dermatologie ist die einzige Abteilung mit Feierabend. Dr. Glatt besteht auf einer Behandlung, bevor du weiterdarfst. Medizinisch notwendig, sagt sie." }],

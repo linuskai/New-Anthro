@@ -464,8 +464,20 @@ function updateHazards(dt) {
       if (h.active && d < .5 && h.cd <= 0 && player.inv <= 0) { h.cd = 1.5; player.stun = .7; flash("zap"); sfx.zap(); showToast("⚡", "#9fd8ff", "Stromschlag", "Kaputtes Kabel. Deine Haare stehen. Dein EKG auch.", pen({ energy: 20 })); makeNoise(5, .4); updateHud(); }
     } else if (h.kind === "o" && d < .55 && h.cd <= 0 && player.slip <= 0) {
       const [f] = moveInput();
-      if (Math.abs(f) > .6 && !player.sneak) { const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw), sg = Math.sign(f); h.cd = 2.5; player.slip = .7; player.slipDir = [fx * sg, fy * sg]; sfx.slip(); setMsg("Rutschgefahr! Schleichen wäre klüger gewesen.", 2.5, true); run.energy = Math.max(0, run.energy - 5); makeNoise(4, .3); }
+      if (Math.abs(f) > .6 && player.moveMag !== .5) { const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw), sg = Math.sign(f); h.cd = 2.5; player.slip = .7; player.slipDir = [fx * sg, fy * sg]; sfx.slip(); setMsg("Rutschgefahr! Schleichen wäre klüger gewesen.", 2.5, true); run.energy = Math.max(0, run.energy - 5); makeNoise(4, .3); }
     }
+  }
+  for (const h of level.hazards) {
+    if (h.kind !== "slip" || h.done || player.slip > 0 || Math.hypot(player.x - h.x, player.y - h.y) > .42) continue;
+    if (player.moveMag === .5 || player.moveMag < .5 || player.inv > 0) { if (player.moveMag === .5 && !h.warned) { h.warned = true; setMsg(h.obj === "tube" ? "Vorsicht, Kortison-Tube. Schleichend drübersteigen." : "Vorsicht, Gurkenscheiben. Schleichend drübersteigen.", 2); } continue; }
+    h.done = true; h.mesh.scale.set(1.4, .25, 1.4);
+    const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw); player.slip = .9; player.slipDir = [fx, fy]; player.stun = .5;
+    sfx.slip(); setTimeout(() => sfx.knock(), 650); flash(); makeNoise(4, .3);
+    showToast(h.obj === "tube" ? "🧴" : "🥒", "#c0322a", h.obj === "tube" ? "Ausgerutscht · Kortison-Tube" : "Ausgerutscht · Gurkenscheibe", pick(h.obj === "tube"
+      ? ["Mometason, 0,1 %. Zweimal täglich dünn auftragen. Nicht großflächig mit dem Hintern.", "Die Tube platzt. Dein Kittel ist jetzt entzündungshemmend. Dein Steißbein nicht.", "Kortison auf dem Boden. Dr. Glatt: „Ausschleichen, Liebling. Nicht ausrutschen.“"]
+      : ["Bio-Gurke, Scheibe 3 von 40. Du landest auf dem Rücken. Dr. Glatt: „Gut für die Augenringe. Bleib liegen.“", "Die Gurkenscheibe hatte Vorfahrt. Du liegst im Wellness-Flur. Jemand zündet eine Duftkerze an.", "Ausgerutscht. Die Scheibe klebt dir jetzt im Gesicht. Wenigstens die Augenringe sind weg."]),
+      pen({ energy: 12 }));
+    updateHud(); checkDeath();
   }
   if (level.mrt) {
     const [mx, my] = level.mrt, d = Math.hypot(player.x - mx, player.y - my), metal = hasItem("2") || hasItem("8");
@@ -719,10 +731,14 @@ function statusLine() {
 // gastro: standing in the stink fog costs energy, and every few seconds a nerve
 function updateStink(dt) {
   const on = !!(level.stinkSet && !run.flags.has("vent") && !player.hidden && level.stinkSet.has(Math.floor(player.x) + "," + Math.floor(player.y)));
-  $("stinkFx").style.opacity = on ? 1 : 0;
+  $("stinkFx").style.opacity = on ? 1 : 0; $("stinkFx").classList.toggle("toxic", on);
   if (!on) { run.stinkT = Math.max(0, (run.stinkT || 0) - dt); return; }
-  run.energy = Math.max(0, run.energy - dt * 1.4); run.stinkT = (run.stinkT || 0) + dt;
-  if (run.stinkT > 9) { run.stinkT = 0; flash(); showToast("🤢", "#7a9a3a", "Stink-Alarm", pick(["Du atmest aus Versehen ein. Fehler.", "Dein Kittel riecht jetzt auch so. Für immer.", "Irgendwo hat jemand „nur kurz“ gelüftet. 2017.", "Die Augen tränen. Die Nase kündigt."]), pen({ nerves: 1 })); updateHud(); checkDeath(); }
+  // toxic: drains fast, red screen, a warning beacon and an alarm while you stand in it
+  run.energy = Math.max(0, run.energy - dt * 3.2); run.stinkT = (run.stinkT || 0) + dt;
+  if ((run.gasBeep = (run.gasBeep || 0) - dt) <= 0) { run.gasBeep = 1.1; tone(880, 0, .16, "square", .035); tone(660, .2, .16, "square", .035); }
+  if (Math.random() < dt * .8) { tone(110, 0, .25, "sawtooth", .02, 80); }
+  updateEnergy(); checkDeath();
+  if (run.stinkT > 6) { run.stinkT = 0; flash(); showToast("🤢", "#7a9a3a", "Stink-Alarm", pick(["Du atmest aus Versehen ein. Fehler.", "Dein Kittel riecht jetzt auch so. Für immer.", "Irgendwo hat jemand „nur kurz“ gelüftet. 2017.", "Die Augen tränen. Die Nase kündigt."]), pen({ nerves: 1 })); updateHud(); checkDeath(); }
   else if (Math.random() < dt * .25) setMsg(pick(["*hust*", "Bäh.", "Nicht durch die Nase atmen!", "Wer war das?!"]), 1.4);
 }
 function checkDeath() {

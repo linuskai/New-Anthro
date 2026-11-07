@@ -413,6 +413,11 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Keine Schleichen-Taste mehr:** Den Stick nur leicht ziehen = schleichen (stand schon am Stick). Tastatur: C bleibt.
 - Die Tour überspringt Schritte für Dinge, die es im aktuellen Format nicht gibt, und erklärt im Hochformat den farbigen Rand.
 
+## Version 20: Rutschgefahr in der Dermatologie, Giftgas in der Gastro
+
+- **Dermatologie:** Auf dem polierten Holzboden liegen Gurkenscheiben und Kortison-Tuben (mit Cremeklecks). Wer drüberläuft oder rennt, rutscht aus: kurzer Kontrollverlust, Geräusch (lockt Leute an), −12 % Energie und ein Spruch („Die Gurkenscheibe hatte Vorfahrt“). Wer schleicht, steigt sicher drüber und bekommt einen Hinweis. Jede Stelle erwischt dich nur einmal. Auch die alten Pfützen erkennen jetzt das Schleichen über den Stick.
+- **Gastro-Giftgas:** Die Wolken sind giftig. Wer drin steht, verliert gut dreimal so schnell Energie wie vorher, der Bildschirm wird rot und pulsiert, ein rotes Warnlicht kreist über das Bild, ein Banner blinkt („☣ GIFTGAS · RAUS HIER ODER LÜFTUNG AN“), ein Alarm piept. Unter der Decke blinken rote Warnleuchten, ein Schild hängt am Eingang. Alles aus, sobald die Lüftung läuft.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

@@ -432,6 +432,26 @@ function buildLevel(idx) {
     }
   }
 
+  // dermatology: cucumber slices and cortisone tubes on the polished floor. Walk and you slip; sneak and you are fine.
+  if (theme === "derma") {
+    const free = [];
+    for (let y = 1; y < GH - 1; y++) for (let x = 1; x < GW - 1; x++) if (grid[y][x] === "." && lv.zone[y * GW + x] === 1 && !(lv.start && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) < 3)) free.push([x, y]);
+    const gloss = c => new THREE.MeshStandardMaterial({ color: c, roughness: .25, metalness: .05 });
+    for (let n = 0; n < 8 && free.length; n++) {
+      const [x, y] = free.splice(Math.floor(r() * free.length), 1)[0], tube = r() < .4, g = new THREE.Group(), ox = (r() - .5) * 1.3, oz = (r() - .5) * 1.3;
+      if (tube) {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(.045, .055, .26, 10), gloss(0xf4f6fa)); body.rotation.z = Math.PI / 2; body.position.y = .05; g.add(body);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .05, 8), gloss(0x2d6fd8)); cap.rotation.z = Math.PI / 2; cap.position.set(.15, .05, 0); g.add(cap);
+        const blob = new THREE.Mesh(new THREE.CircleGeometry(.16, 14), new THREE.MeshStandardMaterial({ color: 0xfafaf2, roughness: .05, transparent: true, opacity: .85 })); blob.rotation.x = -Math.PI / 2; blob.position.set(.3, .012, .02); g.add(blob);
+      } else for (let k = 0; k < 3; k++) {
+        const sl = new THREE.Group(), rim = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, .018, 16), gloss(0x3f8a2a)), core = new THREE.Mesh(new THREE.CylinderGeometry(.088, .088, .02, 16), gloss(0xd6efa0));
+        sl.add(rim, core); sl.position.set((r() - .5) * .5, .012, (r() - .5) * .5); g.add(sl);
+      }
+      g.rotation.y = r() * 6; g.position.set((x + .5) * S + ox, 0, (y + .5) * S + oz); group.add(g); dyn(g);
+      lv.hazards.push({ kind: "slip", obj: tube ? "tube" : "gurke", x: x + .5 + ox / S, y: y + .5 + oz / S, cd: 0, mesh: g });
+    }
+  }
+
   // corridor clutter along the walls
   for (const [x, y, dx, dy] of faces) {
     if (grid[y][x] !== "." || r() > .05 || theme === "park") continue;
@@ -534,6 +554,15 @@ function buildLevel(idx) {
       lv.clouds.push({ s: sp, bx: sp.position.x, bz: sp.position.z, by: sp.position.y, p: r() * 6 });
     }
     lv.stinkSet = new Set(lv.stink.map(([x, y]) => x + "," + y));
+    // toxic: red warning beacons under the ceiling and a hazard sign, until the ventilation runs
+    lv.beacons = [];
+    lv.stink.forEach(([x, y], i) => {
+      if (i % 3) return;
+      const mat = new THREE.MeshBasicMaterial({ color: 0xff2a1a, toneMapped: false }); lv.perMat.push(mat);
+      const b = new THREE.Mesh(new THREE.SphereGeometry(.16, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat); b.rotation.x = Math.PI; b.position.set((x + .5) * S, WALL_H - .02, (y + .5) * S); group.add(b); dyn(b);
+      lv.beacons.push({ mesh: b, mat, p: i * .7 });
+    });
+    { const [x, y] = lv.stink[0], sg = sprite(labelTex("☣ GIFTGAS · LÜFTUNG AUS", "#c0322a", "#fff"), 1.8, .3); sg.position.set((x + .5) * S, 2.55, (y + .5) * S); group.add(sg); dyn(sg); lv.gasSign = sg; }
   }
   lv.merged = mergeStatic(group, lv.perGeo);
   scene.add(group);

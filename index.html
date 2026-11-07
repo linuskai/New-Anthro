@@ -383,7 +383,14 @@ body.land.hudmin .mission { display: none; }
 .mode-card.night { background: #12161f; color: #e8e4d0; border: 2px solid #3a4a6a; }
 .mode-card:focus-visible { outline: 3px solid #f2b33d; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { #flash.on, #toast.pop, #lab.pop, #call.ring, #tired { animation: none; } }
-#stinkFx { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s; background: radial-gradient(ellipse at center, rgba(140,160,60,.12) 30%, rgba(90,100,30,.55) 100%); z-index: 2; }
+#stinkFx { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(ellipse at center, rgba(140,160,60,.12) 30%, rgba(90,100,30,.55) 100%); z-index: 2; overflow: hidden; }
+/* toxic gas: the screen goes red, a warning beacon sweeps, the warning blinks */
+#stinkFx.toxic { background: radial-gradient(ellipse at center, rgba(160,40,20,.18) 20%, rgba(150,20,10,.62) 100%); animation: gasPulse 1.1s ease-in-out infinite; }
+#stinkFx.toxic::before { content: ""; position: absolute; left: 50%; top: 50%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax;
+  background: conic-gradient(from 0deg, rgba(255,60,30,.38) 0deg, rgba(255,60,30,0) 40deg, rgba(255,60,30,0) 180deg, rgba(255,60,30,.38) 180deg, rgba(255,60,30,0) 220deg, rgba(255,60,30,0) 360deg); animation: beacon 1.1s linear infinite; mix-blend-mode: screen; }
+#stinkFx.toxic::after { content: "☣ GIFTGAS · RAUS HIER ODER LÜFTUNG AN"; position: absolute; left: 50%; top: 30%; transform: translateX(-50%); white-space: nowrap; font: 900 clamp(16px, 4.6vw, 24px)/1 var(--display); letter-spacing: .06em;
+  color: #fff; background: #c0322a; padding: 8px 12px; border-radius: 6px; box-shadow: 0 0 0 3px #ffd36b, 0 0 30px rgba(255,40,20,.8); animation: blink .55s steps(2) infinite; }
+@keyframes beacon { to { transform: rotate(360deg); } } @keyframes gasPulse { 50% { filter: brightness(1.25); } }
 
 /* ---------- title screen ---------- */
 #ovTitle { place-items: end center; background: linear-gradient(180deg, rgba(5,10,9,.05) 0%, rgba(5,10,9,.2) 30%, rgba(5,10,9,.82) 62%, rgba(5,10,9,.96) 100%); }

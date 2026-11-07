@@ -425,6 +425,8 @@ function render(time, dt) {
     const vent = run.flags.has("vent");
     for (const c of level.clouds) { c.p += dt * .4; c.s.position.set(c.bx + Math.sin(c.p) * .5, c.by + Math.sin(c.p * 1.3) * .15, c.bz + Math.cos(c.p * .8) * .5); c.s.material.opacity += ((vent ? 0 : .55) - c.s.material.opacity) * Math.min(1, dt * .8); c.s.visible = c.s.material.opacity > .01; }
     if (level.ventFan) level.ventFan.rotation.z += dt * (vent ? 14 : 0);
+    for (const b of level.beacons || []) { const on = !vent && Math.sin(time * 9 + b.p) > 0; b.mat.color.setHex(on ? 0xff2a1a : 0x3a0e0a); }
+    if (level.gasSign) level.gasSign.visible = !vent;
   }
   if (level.rainTex) level.rainTex.offset.y += dt * 2.4;
   if (dust) updateDust(dt);
