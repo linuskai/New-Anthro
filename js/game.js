@@ -138,10 +138,10 @@ function updateNavi(dt) {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const pts = [[player.x, player.y]].concat(path.slice(1).map(([x, y]) => [x + .5, y + .5]));
   let c = 0, walked = 0, next = .8; const ch = level.chev;
-  for (let i = 0; i < pts.length - 1 && c < 10; i++) {
+  for (let i = 0; i < pts.length - 1 && c < 14; i++) {
     const [ax, ay] = pts[i], [bx, by] = pts[i + 1], len = Math.hypot(bx - ax, by - ay); if (len < .01) continue;
     const yaw = Math.atan2(bx - ax, by - ay); q.setFromAxisAngle(up, yaw + Math.PI);
-    while (next <= walked + len && c < 10) { const k = (next - walked) / len; pos.set((ax + (bx - ax) * k) * S, .02, (ay + (by - ay) * k) * S); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); next += .85; }
+    while (next <= walked + len && c < 14) { const k = (next - walked) / len; pos.set((ax + (bx - ax) * k) * S, .02, (ay + (by - ay) * k) * S); m.compose(pos, q, sc); ch.setMatrixAt(c++, m); next += .85; }
     walked += len;
   }
   nv.count = 0; nv.instanceMatrix.needsUpdate = true; if (ch) { ch.count = c; ch.instanceMatrix.needsUpdate = true; }

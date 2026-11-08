@@ -72,7 +72,7 @@ function stairGame(done) {
     card(head(Q.av, Q.who, Q.role), `<p class="st-intro">${esc(Q.intro)}</p><div class="st-q"></div><div class="st-timer"><i></i></div><div class="st-opts"></div><p class="st-say" aria-live="polite"></p>`);
     cost(0);
     const body = ov.querySelector(".st-body"), qEl = body.querySelector(".st-q"), opts = body.querySelector(".st-opts"), say = body.querySelector(".st-say"), bar = body.querySelector(".st-timer i"), prog = ov.querySelector(".fm-prog");
-    const T = 9000;
+    const T = settings.diff === "easy" ? 9000 : 6500;
     const ask = () => {
       const q = qs[i]; prog.textContent = `Frage ${i + 1} von ${qs.length}`;
       qEl.textContent = q.q; say.textContent = ""; say.className = "st-say";
@@ -105,7 +105,7 @@ function stairGame(done) {
       if (spawned >= total) { if (!cells.some(c => !c.disabled)) return finish(miss ? `${hit} von ${total} weggedrückt` : "Alle weggedrückt!", miss ? `${miss} Rückrufe stehen noch aus. Du rufst zurück. Natürlich.` : "Der Pager schweigt. Zum ersten Mal seit 2019."); return setTimeout(spawn, 200); }
       const free = cells.filter(c => c.disabled); if (free.length) {
         const c = pick(free); spawned++; c.disabled = false; c.textContent = pick(PAGER_MSGS); c.className = "pg on"; sfx.beep();
-        const life = Math.max(900, 1700 - spawned * 55);
+        const life = Math.max(800, (settings.diff === "easy" ? 1900 : 1500) - spawned * 55);
         c._t = setTimeout(() => { if (c.disabled) return; c.disabled = true; c.className = "pg missed"; miss++; cost(2, 1); setTimeout(() => { if (c.disabled) c.className = "pg"; c.textContent = ""; }, 400); }, life);
       }
       setTimeout(spawn, Math.max(380, 760 - spawned * 30));

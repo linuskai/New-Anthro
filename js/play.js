@@ -303,10 +303,12 @@ function perceive(e, t, dx, dy, d) {
   return t.detect * Math.max(.25, 1.5 - d / range) * Math.max(player.moveMag, beam > 1 ? .7 : 0) * diffMul() * civil * grace * phone * beam;
 }
 /* chasing: only towards where they last SAW you. Out of sight they go there, look around, give up.
-   The chief and a paged attending always know where you are (they have the intercom). */
+   A paged attending always knows where you are; the chief for 20 s after he last saw you (intercom). */
 function chase(e, t, dx, dy, d, dt, sp) {
   const sees = !player.hidden && !playerSafe() && los(e.x, e.y, player.x, player.y) && d < t.range * 1.2;
-  const omniscient = e.type === "C" || e.hunter;
+  // the chief follows you over the intercom for 20 s after he last saw you; hiding or a safe room shakes him off
+  if (sees) e.callT = 20; else e.callT = Math.max(0, (e.callT || 0) - dt);
+  const omniscient = e.hunter || (e.type === "C" && e.callT > 0 && !player.hidden && !playerSafe());
   if (sees || omniscient) { e.lastSeen = [player.x, player.y]; e.lostT = 0; e.searching = 0; }
   if (sees && d < 1.2) { const st = Math.min(sp * dt, d), nx = e.x + dx / d * st, ny = e.y + dy / d * st; if (!blockedAt(nx, ny)) { e.x = nx; e.y = ny; e.tx = Math.floor(e.x); e.ty = Math.floor(e.y); } e.tyaw = Math.atan2(dx, dy); e.moving = true; e.speed = sp; return; }
   const ls = e.lastSeen || [player.x, player.y];

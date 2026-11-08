@@ -47,17 +47,17 @@ function trailerSlides(R) {
   });
   S.push({ k: "Dein Weg nach draußen", html: `<div class="tl-slide s-way"><p class="tl-kicker">So kommst du raus</p><h2 class="tl-h">Etage für Etage nach unten</h2>
     <ol class="tl-line" style="--n:${fl.length}">${stops.join("")}</ol>
-    <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist.</p></div>`, after: wayRun });
+    <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist. ⏩ Grüne Pfeile am Boden zeigen dir immer den Weg zum nächsten Ziel (abschaltbar in den Einstellungen).</p></div>`, after: wayRun });
   S.push({ k: "Was dich aufhält", html: `<div class="tl-slide s-danger"><p class="tl-kicker tl-cave">⚠ Cave!</p><h2 class="tl-h">Drei Dinge halten dich auf</h2><div class="tl-threats">
     <div class="th" style="--i:0"><div class="demo d-time"><b>18:42</b><i>+12 Min</i></div><div><b>Zeit</b><p>Gespräche, Anrufe, Extra-Arbeit und Zwischenstopps im Treppenhaus kosten Minuten. Jeder Verlust blinkt rot an der Uhr.</p></div></div>
     <div class="th" style="--i:1"><div class="demo d-energy"><i></i></div><div><b>Energie</b><p>Stress, Schreck, Gestank und Unfälle saugen sie leer. Unter 25 % blinkt sie rot, 0 % = Burnout = Game over. Kaffee und Snacks laden auf.</p></div></div>
     <div class="th" style="--i:2"><div class="demo d-eye"><i>▲</i></div><div><b>Gesehen werden</b><p>Dreieck über den Köpfen: weiß = ahnungslos, gelb = misstrauisch, rot = kommt. Leicht ziehen = schleichen.</p></div></div></div></div>` });
   const kit = INV_ORDER.filter(c => run.inv[c]);
-  S.push({ k: "Deine Gadgets", html: `<div class="tl-slide s-kit"><p class="tl-kicker">Deine Gadgets · wie bei James Bond, nur aus dem Stationszimmer</p><h2 class="tl-h">Damit bleibst du unbemerkt</h2>
-    <ol class="tl-how"><li><b>1</b>Unten am Bildschirm antippen</li><li><b>2</b>Wirkt sofort, ein paar Sekunden lang</li><li><b>3</b>Die Zahl zeigt, wie oft du es noch hast</li></ol>
+  S.push({ k: "Deine Gadgets", html: `<div class="tl-slide s-kit"><p class="tl-kicker">Deine Gadgets</p><h2 class="tl-h">Damit bleibst du unbemerkt</h2>
+    <p class="tl-howline">Im Spiel liegen sie unten am Bildschirm. Antippen, und das Gadget wirkt sofort für ein paar Sekunden. Die kleine Zahl daneben zeigt, wie oft du es noch hast.</p>
     <div class="tl-kit">${kit.map((c, i) => `<button type="button" class="kt${i ? "" : " on"}" data-k="${c}" style="--i:${i}"><span>${ITEMS[c].emoji}</span><b>${esc(ITEMS[c].name)}</b><em>${esc(itemShort(c))}</em></button>`).join("")}</div>
     <p class="tl-kitinfo" id="tlKitInfo"></p>
-    <p class="tl-note">Tipp hier ein Gadget an: Dann steht oben, was es genau macht. Unterwegs findest du mehr (Kaffee, Spray, Mikro …). Alle: 🎒 im Pausenmenü.</p></div>`,
+    <p class="tl-note">Tipp hier auf ein Gadget, dann steht darunter, was es genau macht. Unterwegs findest du mehr (Kaffee, Spray, Mikro …). Alle: 🎒 im Pausenmenü.</p></div>`,
     after: () => kitInfo(kit[0]) });
   return S;
 }
