@@ -7,7 +7,7 @@ function scoreBreakdown(ending) {
   const rows = [], add = (label, pts) => { if (pts) rows.push([label, Math.round(pts)]); };
   const R = ROUTES[ending] || ROUTES.stay;
   add(`Fallpauschale „${R.title}“`, 1200 + R.stars * 300);
-  add(`Unter-Missionen (${R.goals.filter(goalDone).length} × 400 €)`, R.goals.filter(goalDone).length * 400);
+  add(`Exit-Liste (${R.goals.filter(goalDone).length} × 400 €)`, R.goals.filter(goalDone).length * 400);
   const left = routeDeadline(ending) - run.minutes;
   add(`Zeitpuffer bis zur Frist (${fmtSpan(left)})`, Math.max(0, left) * 6);
   const floors = R.floors.length, sneaky = Math.max(0, floors - (run.spotted ? run.spotted.size : 0));

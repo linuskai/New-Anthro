@@ -146,12 +146,15 @@ function showNightSelect() {
 }
 function showSelect() {
   mode = "select"; hidePopups();
-  $("selTitle").textContent = "Wähle deinen Exit"; $("selSub").textContent = "Sechs Angebote, sechs Fristen. Jedes hat seine eigene Geschichte, eigene Etagen und einen Endgegner am Ausgang. Unterschrieben wird nur, wer es rechtzeitig rausschafft.";
+  $("selTitle").textContent = "Wähle deine Exit-Strategie"; $("selSub").textContent = "17:00, Dienstende. Die Klinik lässt dich nie gehen. Aber heute hast du ein Angebot, und jemand holt dich heute Abend ab. Wähle, wer. Dann hol, was verlangt wird, und sei pünktlich am Treffpunkt.";
   const recs = loadRecords();
   $("selList").innerHTML = ROUTE_ORDER.map(k => {
     const R = ROUTES[k], r = recs[k];
-    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b><small>${esc(R.tagline)}</small>${DEALS[k] ? `<span class="sel-deal">${esc(DEALS[k].hook)}</span>` : ""}
-      <span class="sel-meta"><span>⏱ bis ${fmtTime(routeDeadline(k))}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span><span>${R.floors.length} Etagen</span></span>
+    const fl = R.floors, place = floorLabel(fl[fl.length - 1]), ride = R.ride[0].toUpperCase() + R.ride.slice(1);
+    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b>
+      <span class="sel-pick">🚘 ${k === "stay" ? "Du fährst selbst" : esc(ride) + " holt dich ab"} · <b>${fmtTime(routeDeadline(k))}</b> · ${esc(place)}</span>
+      ${DEALS[k] ? `<span class="sel-deal">${esc(DEALS[k].hook)}</span>` : ""}
+      <span class="sel-meta"><span>📋 Exit-Liste: ${R.goals.map(g => esc(g.title)).join(", ")}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span></span>
       <em>${r ? `Rekord: ${r.score.toLocaleString("de-DE")} € · ${fmtTime(r.minutes)}` : "Noch nicht gespielt"}</em></span></button>`;
   }).join("");
   show("ovSelect"); $("ovSelect").scrollTop = 0;
@@ -186,7 +189,7 @@ function missionSheet(live) {
     + (live ? INV_ORDER.filter(c => !KIT_HELP[c] && hasItem(c)).map(c => `<li><span class="kit-ico">${ITEMS[c].emoji}</span><span><b>${esc(ITEMS[c].name)}</b><small>${esc(ITEMS[c].desc)}</small></span></li>`).join("") : "");
   let h = `<div class="ms-head" style="--mc:${R.color}"><span class="ms-av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(R.tagline)}</span></div></div>`;
   h += `<div class="ms-clock"><div><small>${live ? "Jetzt" : "Start"}</small><b>${fmtTime(now)}</b></div><div><small>Frist</small><b>${fmtTime(dl)}</b></div><div class="${left < 45 ? "warn" : ""}"><small>Noch</small><b>${fmtSpan(left)}</b></div>${live ? `<div><small>Verloren</small><b>${fmtSpan(run.lostMin || 0)}</b></div>` : ""}</div>`;
-  h += `<h3>Unter-Missionen ${live ? `· ${goalsDoneCount()} von ${R.goals.length}` : ""}</h3><ul class="ms-goals">${goals}</ul>`;
+  h += `<h3>Exit-Liste ${live ? `· ${goalsDoneCount()} von ${R.goals.length}` : ""}</h3><ul class="ms-goals">${goals}</ul>`;
   h += `<h3>Dein Weg</h3><div class="ms-floors">${floors}<i class="arr">→</i><span class="fl fin">${R.av} ${esc(R.ride)}</span></div>`;
   h += `<div class="ms-boss"><span>${R.boss.av}</span><div><b>Endgegner: ${esc(R.boss.name)}</b><small>${esc(R.boss.role)}. Reden, Formular ausfüllen oder kämpfen.</small></div></div>`;
   if (live) {
@@ -198,7 +201,7 @@ function missionSheet(live) {
   return h;
 }
 const HOW_HTML = `<ul class="legend how">
-  <li><span class="ico">🎯</span><span><b>Ziel</b> · Alle Unter-Missionen erledigen, am Endgegner vorbei und vor der Frist ${"zum Treffpunkt"}. Ein Stockwerk ist erst offen, wenn seine Aufgaben erledigt sind.</span></li>
+  <li><span class="ico">🎯</span><span><b>Ziel</b> · Heute holt dich jemand aus der Klinik ab. Hol alles von deiner Exit-Liste, komm am Endgegner vorbei und sei vor der Frist am Treffpunkt. Ein Stockwerk ist erst offen, wenn seine Aufgaben erledigt sind.</span></li>
   <li><span class="ico">⏱</span><span><b>Die Uhr</b> · oben links im Pager. Eine Sekunde echte Zeit ist eine halbe Minute im Spiel (auf „Entspannt“ weniger). Das gelbe Feld darunter zeigt, wie viel Zeit bis zur Frist bleibt.</span></li>
   <li><span class="ico">⌛</span><span><b>Zeit verlierst du</b> · wenn dich jemand erwischt und vollquatscht, wenn du Anrufe annimmst, bei Reanimationen und durch liegengebliebene Aufgaben (Formulare im Treppenhaus). Jeder Verlust blinkt rot an der Uhr.</span></li>
   <li><span class="ico">👀</span><span><b>Möglichst niemandem begegnen</b> · Dreieck über dem Kopf: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Schleichen, aus dem Sichtkegel bleiben, sichere Räume nutzen.</span></li>
@@ -247,7 +250,7 @@ const TOUR = [
   { el: "btnAct", t: "Aktion", d: "Benutzen: Türen, Gegenstände, Leute ansprechen. Der Knopf zeigt, was gerade geht.", g: "tap" },
   { el: "inv", t: "Deine Tricks", d: "🥼 Kittel aus = Personal erkennt dich nicht. ✏️ Kuli werfen = Ablenkung. 📱 Fake-Telefonat = Personal dreht ab. 😷 Noro-Maske = alle halten Abstand. Antippen zum Benutzen.", g: "tap" },
   { el: "hudClock", t: "Die Uhr", d: "Die Spielzeit läuft. Jeder Zeitverlust (Gespräche, Anrufe, Formulare) blinkt hier rot.", g: "none" },
-  { el: "chipRoute", t: "Deine Frist", d: "So viel Zeit bleibt bis zur Frist. Und wie viele Unter-Missionen du schon hast.", g: "none" },
+  { el: "chipRoute", t: "Deine Frist", d: "So viel Zeit bleibt, bis du abgeholt wirst. Und wie viel von deiner Exit-Liste du schon hast.", g: "none" },
   { el: "energyBox", t: "Energie", d: "Deine einzige Leiste. Gespräche, Aufgaben und Schreck kosten Energie, sie blinkt dann. Bei 0 %: Burnout. Aufladen mit Kaffee, Donuts, Sofa im sicheren Raum.", g: "none" },
   { el: "chipStealth", t: "Werde ich gesehen?", d: "UNBEMERKT, VERDACHT, ENTDECKT. Das Dreieck über den Köpfen zeigt dasselbe: weiß, gelb, rot.", g: "none" },
   { el: "edgeDemo", rect: () => ({ left: 6, top: innerHeight * .3, width: innerWidth - 12, height: innerHeight * .3 }), t: "Werde ich gesehen?", d: "Das Dreieck über den Köpfen: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Der Bildschirmrand leuchtet dann gelb oder rot.", g: "none", portrait: true },

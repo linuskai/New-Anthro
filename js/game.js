@@ -192,7 +192,7 @@ function updateHud() {
   $("chipTasks").textContent = "AUFG " + run.tasks.length; $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
-  $("missionHead").textContent = run.mode === "night" ? "Nachtdienst" : cur && cur.boss ? "Endgegner" : cur && cur.isExit ? (isLastFloor() ? "Fast geschafft" : "Weiter") : cur && cur.route ? `${mission().av} Unter-Mission · ${goalsDoneCount()}/${mission().goals.length}` : `Hindernis · ${floorLabel(run.idx)}`;
+  $("missionHead").textContent = run.mode === "night" ? "Nachtdienst" : cur && cur.boss ? "Endgegner" : cur && cur.isExit ? (isLastFloor() ? "Fast geschafft" : "Weiter") : cur && cur.route ? `${mission().av} Exit-Liste · ${goalsDoneCount()}/${mission().goals.length}` : `Hindernis · ${floorLabel(run.idx)}`;
   const mt = cur ? cur.text : "Zum Auto!";
   if ($("missionText").textContent !== mt) { $("missionText").textContent = mt; freshNote(); }
   updateMissionHow(cur);

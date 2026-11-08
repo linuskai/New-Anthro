@@ -90,7 +90,7 @@ function missionCard(eyebrow, title, sub, done) {
 function announceObjective() {
   if (run.mode === "night") return;
   const c = currentObjective(); if (!c) return;
-  missionCard(c.isExit ? "Weiter" : c.route ? "Route · " + c.route : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
+  missionCard(c.isExit ? "Weiter" : c.route ? "Exit-Liste · " + c.route : c.main ? "Mission" : "Nebenjob", c.title || c.text, c.text);
   if (!run.briefed) run.briefed = new Set();
   if (c.brief && (c.route || c.boss) && !run.briefed.has(c.id)) { run.briefed.add(c.id); setTimeout(() => { if (mode === "play") showToast("🧹", "#7ec8a0", "Pager · Frau Bozkurt", c.brief, []); }, 1800); }
 }

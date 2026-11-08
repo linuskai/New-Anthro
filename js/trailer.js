@@ -1,5 +1,5 @@
-/* Hospital Escape 3D · the mission trailer: five short animated cards instead of one long sheet (the job, the way down
-   with every sub-mission, the boss, what stops you, your tricks); the gear guide as tabs; item tips at the right moment. */
+/* Hospital Escape 3D · the mission trailer: six short animated cards instead of one long sheet. Why (today someone picks
+   you up), what you win (the offer), what it takes (your exit list), then how (the way down, what stops you, your tricks); the gear guide as tabs; item tips at the right moment. */
 
 const FLOOR_ICON = { innere: "🛏️", ortho: "🦴", radio: "☢️", gastro: "🤢", derma: "🧴", cellar: "🕯️", er: "🚑", park: "🅿️", icu: "💓" };
 const GOAL_ICON = { key: "🔑", lunchbox: "🥪", ticket: "🎫", approbation: "📜", zeugnis: "📄", binder: "📂", photo0: "📠", photo1: "📸", excel: "📊", photo5: "📸",
@@ -12,21 +12,31 @@ const itemShort = c => (ITEM_SHORT[c] || "") + (ITEMS[c].dur && /\d+ s$/.test(IT
 // ---------- the trailer ----------
 let tl = null;
 function trailerSlides(R) {
-  const k = run.route, dl = routeDeadline(k), fl = R.floors, lastF = fl[fl.length - 1], B = R.boss;
+  const k = run.route, dl = routeDeadline(k), fl = R.floors, lastF = fl[fl.length - 1];
   const realMin = Math.round(dl / (typeof CLOCK === "number" ? CLOCK : .5) / 60), ride = R.ride[0].toUpperCase() + R.ride.slice(1);
   const S = [];
-  S.push({ k: "Der Auftrag", html: `<div class="tl-slide s-job">
-    <div class="tl-client"><span class="av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(R.tagline)}</span></div></div>
-    <p class="tl-big">Um <mark>${fmtTime(dl)}</mark> wartet ${esc(R.ride)}.<span>Sei pünktlich da. Mit allem, was verlangt wird.</span></p>
+  // 1 why: today somebody comes to get you out. 2 what you win. 3 what it takes. Then how: the way down, what stops you, your tricks.
+  const who = R.client.split(" · ")[0], home = k === "stay", place = floorLabel(lastF), n = R.goals.length;
+  S.push({ k: "Dein Exit-Tag", html: `<div class="tl-slide s-job">
+    <p class="tl-kicker">${home ? "Heute willst du einfach nur heim" : "Heute ist dein Exit-Tag"}</p>
+    <div class="tl-client"><span class="av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(home ? "Feierabend war um 17:00. Die Klinik sieht das anders." : who + " will dich. Heute noch.")}</span></div></div>
+    <p class="tl-big">${home ? `Um <mark>${fmtTime(dl)}</mark> musst du bei deinem Auto sein.<span>Sonst isst Kim deine Portion. Und schläft auf deiner Seite.</span>`
+      : `${esc(ride)} holt dich heute um <mark>${fmtTime(dl)}</mark> ab.<span>Wer dann nicht am Treffpunkt ist, bleibt in der Klinik. Für immer.</span>`}</p>
+    <ol class="tl-steps"><li><b>1</b>Hol alles von deiner Exit-Liste (${n} Dinge)</li><li><b>2</b>Raus aus der Klinik, Etage für Etage</li><li><b>3</b>Pünktlich ${home ? "ins Auto" : "einsteigen"} · 📍 ${esc(place)}</li></ol>
     <div class="tl-clock"><b class="c-now">17:00</b><i class="c-bar"><i></i></i><b class="c-dl">${fmtTime(dl)}</b></div>
-    <div class="tl-facts"><span>⏱ ${fmtSpan(dl)} Spielzeit ≈ ${realMin} Min. echt</span><span>📍 ${esc(floorLabel(lastF))}</span><span class="bad">✗ zu spät = gescheitert</span></div></div>`,
+    <p class="tl-note">⏱ ${fmtSpan(dl)} Spielzeit ≈ ${realMin} Minuten echt</p></div>`,
     after: st => clockRun(st, dl) });
   const D = DEALS[k];
-  if (D) S.push({ k: D.head, html: `<div class="tl-slide s-deal"><h2 class="tl-h">${esc(D.head)}</h2>
+  if (D) S.push({ k: home ? "Warum du heim willst" : "Das Angebot", html: `<div class="tl-slide s-deal"><p class="tl-kicker">${home ? "Warum du heim willst" : "Das Angebot von " + esc(D.org)}</p><h2 class="tl-h">${home ? "Was dich zu Hause erwartet" : "Das bekommst du, wenn du es rausschaffst"}</h2>
     <div class="tl-deal"><div class="dl-head"><span>🏥 Klinikum St. Sparen</span><span>${R.av} ${esc(D.org)}</span></div>
     ${D.rows.map(([w, old, neu], i) => `<div class="dl-row" style="--i:${i}"><b>${esc(w)}</b><s>${esc(old)}</s><em>${esc(neu)}</em></div>`).join("")}</div>
     <div class="tl-perks">${D.perks.map((p, i) => `<span style="--i:${i + D.rows.length}">${esc(p)}</span>`).join("")}</div></div>`, after: dealRun });
-  const stops = fl.map((f, i) => {
+  const gtxt = o => { try { return typeof o.text === "function" ? o.text() : o.text; } catch (e) { return ""; } };
+  S.push({ k: "Deine Exit-Liste", html: `<div class="tl-slide s-list"><p class="tl-kicker">Was du dafür tun musst</p><h2 class="tl-h">Deine Exit-Liste</h2>
+    <p class="tl-lead">${esc(home ? "Ohne diese Dinge brauchst du gar nicht heimkommen." : who + " will das sehen. Ohne diese Dinge kein Vertrag.")}</p>
+    <ul class="tl-list">${R.goals.map((g, i) => `<li style="--i:${i}"><i>${GOAL_ICON[g.id] || "★"}</i><div><b>${esc(g.title)}</b><span>${esc(gtxt(g))}</span><small>📍 ${esc(floorLabel(g.lvl))}</small></div><span class="ck"></span></li>`).join("")}
+      <li class="fin" style="--i:${n}"><i>${R.av}</i><div><b>Dann: pünktlich ${home ? "zum Auto" : "einsteigen"}</b><span>${esc(ride)} · ${fmtTime(dl)} · ${esc(place)}</span></div><span class="ck"></span></li></ul></div>`, after: listRun });
+  const B = R.boss;  const stops = fl.map((f, i) => {
     const L = LEVELS[f], last = i === fl.length - 1;
     const txt = o => { try { return typeof o.text === "function" ? o.text() : o.text; } catch (e) { return ""; } };
     const todo = R.goals.filter(g => g.lvl === f).map(g => `<span class="td goal"><i>${GOAL_ICON[g.id] || "★"}</i><span><b>${esc(g.title)}</b><small>${esc(txt(g))}</small></span></span>`)
@@ -35,15 +45,9 @@ function trailerSlides(R) {
     if (!todo.length) todo.push(`<span class="td pass">nur durch</span>`);
     return `<li${last ? ' class="last"' : ""}><span class="stop">${FLOOR_ICON[L.key] || "🏥"}</span><div class="st-body"><small>${esc(L.floor)}</small><b class="st-name">${esc(floorLabel(f))}</b><div class="tds">${todo.join("")}</div></div></li>`;
   });
-  S.push({ k: "Dein Weg nach draußen", html: `<div class="tl-slide s-way"><h2 class="tl-h">${R.goals.length} Dinge holen. Dann raus.</h2>
+  S.push({ k: "Dein Weg nach draußen", html: `<div class="tl-slide s-way"><p class="tl-kicker">So kommst du raus</p><h2 class="tl-h">Etage für Etage nach unten</h2>
     <ol class="tl-line" style="--n:${fl.length}">${stops.join("")}</ol>
-    <p class="tl-note">🔒 Das Treppenhaus einer Etage öffnet erst, wenn dort alles erledigt ist. Der Weg führt nach unten.</p></div>`, after: wayRun });
-  S.push({ k: "Am Ausgang wartet", html: `<div class="tl-slide s-boss"><p class="tl-kicker">Endgegner · ${esc(floorLabel(lastF))}</p>
-    <div class="tl-boss" style="--bc:${B.color}"><span class="av">${B.av}</span><div><b>${esc(B.name)}</b><small>${esc(B.role)}</small></div></div>
-    <p class="tl-quote">${esc(B.line)}</p>
-    <p class="tl-kicker">Drei Wege vorbei</p>
-    <div class="tl-ways"><span style="--i:0">💬<b>Reden</b><small>Glückssache</small></span><span style="--i:1">📝<b>Formular</b><small>klappt immer, kostet Zeit</small></span><span style="--i:2">⚔️<b>Kampf</b><small>Quiz-Duell</small></span></div></div>`,
-    after: () => { setTimeout(() => sfx.stinger(), 250); } });
+    <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist. ${B.av} Am Ausgang wartet ${esc(B.name)}: reden, Formular ausfüllen oder kämpfen.</p></div>`, after: wayRun });
   S.push({ k: "Was dich aufhält", html: `<div class="tl-slide s-danger"><h2 class="tl-h">Drei Dinge halten dich auf</h2><div class="tl-threats">
     <div class="th" style="--i:0"><div class="demo d-time"><b>18:42</b><i>+12 Min</i></div><div><b>Zeit</b><p>Gespräche, Anrufe und Formulare kosten Minuten. Jeder Verlust blinkt rot an der Uhr.</p></div></div>
     <div class="th" style="--i:1"><div class="demo d-energy"><i></i></div><div><b>Energie</b><p>Stress, Schreck und Gestank saugen sie leer. 0 % = Burnout. Kaffee und Snacks laden auf.</p></div></div>
@@ -89,6 +93,10 @@ function wayRun(st) {
 function dealRun(st) {
   const tok = tl.token, n = st.querySelectorAll(".dl-row").length;
   for (let i = 0; i <= n; i++) setTimeout(() => { if (tl && tl.token === tok) (i < n ? sfx.pick : sfx.ding)(); }, 900 + i * 450);
+}
+function listRun(st) {
+  const tok = tl.token, lis = [...st.querySelectorAll(".tl-list li")];
+  lis.forEach((li, i) => setTimeout(() => { if (tl && tl.token === tok) { li.classList.add("on"); (i === lis.length - 1 ? sfx.ding : sfx.tick)(); } }, 700 + i * 550));
 }
 function kitInfo(c) {
   const el = $("tlKitInfo"); if (!el || !c) return;
