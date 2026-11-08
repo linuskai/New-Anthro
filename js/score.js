@@ -16,7 +16,6 @@ function scoreBreakdown(ending) {
   add(`Reanimationen (${run.lives})`, run.lives * 150);
   add(`Verlorene Zeit (${fmtSpan(run.lostMin || 0)})`, -(run.lostMin || 0) * 3);
   add(`Neue Dienste (${run.duties.length})`, -run.duties.length * 120);
-  add(`Liegengelassene Aufgaben (${run.tasks.length})`, -run.tasks.length * 60);
   for (const [l, p] of run.scoreLog || []) add(l, p);
   const total = Math.max(0, rows.reduce((a, r) => a + r[1], 0)), rk = RANKS.find(r => total >= r[0]);
   return { rows, total, rank: rk[1], rankName: rk[2] };

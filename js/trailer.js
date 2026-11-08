@@ -4,8 +4,8 @@
 const FLOOR_ICON = { innere: "🛏️", ortho: "🦴", radio: "☢️", gastro: "🤢", derma: "🧴", cellar: "🕯️", er: "🚑", park: "🅿️", icu: "💓" };
 const GOAL_ICON = { key: "🔑", lunchbox: "🥪", ticket: "🎫", approbation: "📜", zeugnis: "📄", binder: "📂", photo0: "📠", photo1: "📸", excel: "📊", photo5: "📸",
   bizepsfoto: "💪", probe: "💆", cream: "🧴", koffer: "🧳", ringlight: "💡", collab: "🤳", testi: "🎬" };
-const ITEM_SHORT = { "2": "unsichtbar", c: "Personal erkennt dich nicht", m: "alle halten Abstand", f: "Personal dreht ab", "3": "alle in der Nähe k.o.", "4": "keine Anrufe",
-  p: "lenkt alle ab", "5": "alle rennen zur Cafeteria", "7": "Internisten lesen statt jagen", "1": "+35 % Energie, schneller", "0": "+55 % Energie", "$": "+30 % Energie",
+const ITEM_SHORT = { "2": "keiner sieht dich", c: "ausziehen: Personal erkennt dich nicht", m: "alle halten Abstand", f: "Personal lässt dich in Ruhe", "3": "alle in der Nähe k.o.", "4": "keine Anrufe",
+  p: "werfen: alle schauen hin", "5": "alle rennen zur Cafeteria", "7": "Internisten lesen statt jagen", "1": "+35 % Energie, schneller", "0": "+55 % Energie", "$": "+30 % Energie",
   "6": "+25 % Energie oder Orthopäde lässt dich durch", "+": "+75 % Energie", "9": "Taschenlampe wieder voll", "8": "löst Statistik-Fragen", "&": "Missionsgegenstand" };
 const itemShort = c => (ITEM_SHORT[c] || "") + (ITEMS[c].dur && /\d+ s$/.test(ITEMS[c].dur) ? " · " + ITEMS[c].dur : ITEMS[c].dur === "an/aus" ? " · an/aus" : "");
 
@@ -48,15 +48,16 @@ function trailerSlides(R) {
   S.push({ k: "Dein Weg nach draußen", html: `<div class="tl-slide s-way"><p class="tl-kicker">So kommst du raus</p><h2 class="tl-h">Etage für Etage nach unten</h2>
     <ol class="tl-line" style="--n:${fl.length}">${stops.join("")}</ol>
     <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist.</p></div>`, after: wayRun });
-  S.push({ k: "Was dich aufhält", html: `<div class="tl-slide s-danger"><h2 class="tl-h">Drei Dinge halten dich auf</h2><div class="tl-threats">
-    <div class="th" style="--i:0"><div class="demo d-time"><b>18:42</b><i>+12 Min</i></div><div><b>Zeit</b><p>Gespräche, Anrufe und Formulare kosten Minuten. Jeder Verlust blinkt rot an der Uhr.</p></div></div>
-    <div class="th" style="--i:1"><div class="demo d-energy"><i></i></div><div><b>Energie</b><p>Stress, Schreck und Gestank saugen sie leer. 0 % = Burnout. Kaffee und Snacks laden auf.</p></div></div>
+  S.push({ k: "Was dich aufhält", html: `<div class="tl-slide s-danger"><p class="tl-kicker tl-cave">⚠ Cave!</p><h2 class="tl-h">Drei Dinge halten dich auf</h2><div class="tl-threats">
+    <div class="th" style="--i:0"><div class="demo d-time"><b>18:42</b><i>+12 Min</i></div><div><b>Zeit</b><p>Gespräche, Anrufe, Extra-Arbeit und Zwischenstopps im Treppenhaus kosten Minuten. Jeder Verlust blinkt rot an der Uhr.</p></div></div>
+    <div class="th" style="--i:1"><div class="demo d-energy"><i></i></div><div><b>Energie</b><p>Stress, Schreck, Gestank und Unfälle saugen sie leer. Unter 25 % blinkt sie rot, 0 % = Burnout = Game over. Kaffee und Snacks laden auf.</p></div></div>
     <div class="th" style="--i:2"><div class="demo d-eye"><i>▲</i></div><div><b>Gesehen werden</b><p>Dreieck über den Köpfen: weiß = ahnungslos, gelb = misstrauisch, rot = kommt. Leicht ziehen = schleichen.</p></div></div></div></div>` });
   const kit = INV_ORDER.filter(c => run.inv[c]);
-  S.push({ k: "Deine Tricks", html: `<div class="tl-slide s-kit"><h2 class="tl-h">Damit kommst du durch</h2>
+  S.push({ k: "Deine Gadgets", html: `<div class="tl-slide s-kit"><p class="tl-kicker">Deine Gadgets · wie bei James Bond, nur aus dem Stationszimmer</p><h2 class="tl-h">Damit bleibst du unbemerkt</h2>
+    <ol class="tl-how"><li><b>1</b>Unten am Bildschirm antippen</li><li><b>2</b>Wirkt sofort, ein paar Sekunden lang</li><li><b>3</b>Die Zahl zeigt, wie oft du es noch hast</li></ol>
     <div class="tl-kit">${kit.map((c, i) => `<button type="button" class="kt${i ? "" : " on"}" data-k="${c}" style="--i:${i}"><span>${ITEMS[c].emoji}</span><b>${esc(ITEMS[c].name)}</b><em>${esc(itemShort(c))}</em></button>`).join("")}</div>
     <p class="tl-kitinfo" id="tlKitInfo"></p>
-    <p class="tl-note">Antippen = Erklärung. Im Spiel unten am Bildschirm antippen = benutzen. Unterwegs findest du mehr. Alle Items: 🎒 im Pausenmenü.</p></div>`,
+    <p class="tl-note">Tipp hier ein Gadget an: Dann steht oben, was es genau macht. Unterwegs findest du mehr (Kaffee, Spray, Mikro …). Alle: 🎒 im Pausenmenü.</p></div>`,
     after: () => kitInfo(kit[0]) });
   return S;
 }
@@ -133,11 +134,11 @@ function missionFlyIn(done) {
   let t = 900;
   lines.forEach((txt, i) => { const el = ov.querySelectorAll(".fi-l")[i]; later(t, () => { el.classList.add("on"); let k = 0; const w = setInterval(() => { k += 2; el.textContent = txt.slice(0, k); if (k % 6 === 0) sfx.tick(); if (k >= txt.length) { clearInterval(w); el.textContent = txt; } }, 22); timers.push(w); }); t += 450 + txt.length * 11; });
   const burn = ov.querySelector(".fi-burn");
-  later(t + 300, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 …"; sfx.beep(); });
-  later(t + 1100, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 …"; sfx.beep(); });
-  later(t + 1900, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 … 1"; sfx.beep(); });
-  later(t + 2600, () => { ov.classList.add("burn"); noise(0, .9, 800, .5, .08); });
-  later(t + 3500, end);
+  later(t + 1200, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 …"; sfx.beep(); });
+  later(t + 2200, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 …"; sfx.beep(); });
+  later(t + 3200, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 … 1"; sfx.beep(); });
+  later(t + 4100, () => { ov.classList.add("burn"); noise(0, .9, 800, .5, .08); });
+  later(t + 5000, end);
 }
 
 // ---------- the gear guide: tabs, one line per item, tap for the details ----------

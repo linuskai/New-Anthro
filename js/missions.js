@@ -81,13 +81,13 @@ function missionLost(B) {
   if (run.routeFailed) return;
   run.routeFailed = run.route; const R = mission(); typeof track === "function" && track("mission_lost", { route: run.route, boss: B.name, energy: Math.round(run.energy) });
   hidePopups(); clearInputs(); endCall(); mode = "over";
-  $("endEyebrow").textContent = `${R.av} ${R.name} · Nicht geschafft`; $("endTitle").textContent = "Game over";
-  $("endText").textContent = `${B.name} hat gewonnen. ${R.ride[0].toUpperCase() + R.ride.slice(1)} fährt ohne dich. Du stehst im ${floorLabel(run.idx).toLowerCase()} und hältst deine Exit-Liste in der Hand. Morgen um 7:00 ist Frühbesprechung. Tipp: Mit mehr Energie gehst du stärker in den Endkampf. Spar sie dir auf.`;
+  $("endEyebrow").textContent = `${R.av} ${R.name} · Nicht geschafft`; $("endTitle").textContent = "Endkampf verloren";
+  $("endText").textContent = `${B.name} hat gewonnen. ${R.ride[0].toUpperCase() + R.ride.slice(1)} fährt ohne dich. Du stehst im ${floorLabel(run.idx).toLowerCase()} und hältst deine Exit-Liste in der Hand. Morgen um 7:00 ist Frühbesprechung.`;
   $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.failTicker)}</span>`;
   fillStats(); $("endScore").hidden = true; $("endRank").textContent = "Nicht geschafft";
   $("endBest").hidden = false; $("endBest").textContent = `Besiegt von ${B.name} um ${fmtTime(run.minutes)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = true; clearCheckpoint();
-  sfx.stinger(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  showGameOverCard(`Endkampf gegen ${B.name} verloren.`, "Deine Energie ist im Kampf deine KP. Tipp: Mit mehr Energie gehst du stärker in den Endkampf. Spar sie dir auf und lade vorher mit Kaffee auf.");
 }
 
 // ---------- paperwork: the penalty that costs real game time ----------
@@ -198,7 +198,8 @@ function phoneHtml(ui) {
   if (ui.kind === "chat" || ui.kind === "insta") body = ui.msgs.map((m, i) => { const [who, t] = Array.isArray(m) ? m : ["them", m]; return `<p class="bub ${who === "me" ? "me" : ""}" style="--d:${.4 + i * 1.1}s">${esc(t)}</p>`; }).join("");
   else if (ui.kind === "slides") body = ui.msgs.map((t, i) => `<p class="slide" style="--d:${.3 + i * 1.3}s">${esc(t)}</p>`).join("");
   else body = `<div class="ph-face">${ui.kind === "voice" ? '<i class="wave"></i>' : esc([...ui.from][0])}</div>` + ui.msgs.map((t, i) => `<p class="ph-sub" style="--d:${.5 + i * 1.6}s">${esc(t)}</p>`).join("");
-  return `<div class="phone ${ui.kind}"><div class="ph-top"><b>${esc(ui.from)}</b><small>${esc(head)}</small></div><div class="ph-body">${body}</div></div>`;
+  const offer = run && run.mode === "mission" && run.route !== "stay" ? `<div class="ph-offer">💼 Jobangebot<small>Deine Chance, endlich raus aus der Klinik</small></div>` : "";
+  return `<div class="phone ${ui.kind}"><div class="ph-top"><b>${esc(ui.from)}</b><small>${esc(head)}</small></div>${offer}<div class="ph-body">${body}</div></div>`;
 }
 function storyPhone(ui) {
   const el = $("storyPhone");
@@ -223,19 +224,18 @@ function missionSheet(live) {
   if (live) {
     const here = objectives().filter(o => !o.isExit && !o.route && !o.boss);
     if (here.length) h += `<h3>Hindernis hier · ${esc(floorLabel(run.idx))}</h3><ul class="ms-goals">${here.map(o => `<li class="${o.done ? "done" : ""}"><span class="ck">${o.done ? "✓" : ""}</span><span><b>${esc(o.title || "")}</b> · ${esc(o.text)}</span></li>`).join("")}</ul>`;
-    h += `<h3>Liegengebliebene Aufgaben · ${run.tasks.length}</h3><ol class="ms-tasks" id="taskList">${run.tasks.length ? run.tasks.map((t, i) => `<li><span>${esc(t)}</span><button type="button" class="task-x" data-i="${i}" aria-label="Aufgabe ablehnen">Ablehnen</button></li>`).join("") : "<li>Nichts. Verdächtig.</li>"}</ol><p class="small">Jede Aufgabe wird im Treppenhaus als Formular fällig und kostet Zeit.</p>`;
   }
   h += `<h3>${live ? "Deine Ausrüstung" : "Das hast du dabei"}</h3><ul class="ms-kit">${kit}</ul><p class="small">Gegenstände unten am Bildschirm antippen. Unterwegs findest du mehr: ☕ Kaffee, 🧴 Spray, 📢 Mikro, 📕 Fallbericht …</p>`;
   return h;
 }
 const HOW_HTML = `<ul class="legend how">
-  <li><span class="ico">🎯</span><span><b>Ziel</b> · Heute holt dich jemand aus der Klinik ab. Hol alles von deiner Exit-Liste und sei vor der Frist am Treffpunkt. Am Ausgang wartet noch eine letzte Prüfung. Ein Stockwerk ist erst offen, wenn seine Aufgaben erledigt sind.</span></li>
+  <li><span class="ico">🎯</span><span><b>Ziel</b> · Heute holt dich jemand aus der Klinik ab. Hol alles von deiner Exit-Liste und sei vor der Frist am Treffpunkt. Am Ausgang wartet noch eine letzte Prüfung. Ein Stockwerk ist erst offen, wenn sein Hindernis erledigt ist.</span></li>
   <li><span class="ico">⏱</span><span><b>Die Uhr</b> · oben links im Pager. Eine Sekunde echte Zeit ist eine halbe Minute im Spiel (auf „Entspannt“ weniger). Das gelbe Feld darunter zeigt, wie viel Zeit bis zur Frist bleibt.</span></li>
-  <li><span class="ico">⌛</span><span><b>Zeit verlierst du</b> · wenn dich jemand erwischt und vollquatscht, wenn du Anrufe annimmst, bei Reanimationen und durch liegengebliebene Aufgaben (Formulare im Treppenhaus). Jeder Verlust blinkt rot an der Uhr.</span></li>
+  <li><span class="ico">⌛</span><span><b>Zeit verlierst du</b> · wenn dich jemand erwischt und vollquatscht, wenn dir jemand Extra-Arbeit aufdrückt, wenn du Anrufe annimmst, bei Reanimationen und bei den Zwischenstopps im Treppenhaus. Extra-Arbeit musst du nicht erledigen: Sie kostet sofort Zeit und Energie, fertig. Jeder Verlust blinkt rot an der Uhr.</span></li>
   <li><span class="ico">👀</span><span><b>Möglichst niemandem begegnen</b> · Dreieck über dem Kopf: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Schleichen, aus dem Sichtkegel bleiben, sichere Räume nutzen.</span></li>
   <li><span class="ico">📞</span><span><b>Anrufe</b> · Annehmen kostet Zeit. Ablehnen spart sie, aber dann kommt der Anrufer dich suchen.</span></li>
-  <li><span class="ico">⚡</span><span><b>Energie</b> · deine einzige Leiste. Gespräche, neue Aufgaben, Gestank, Schreckmomente und verlorene Kämpfe kosten Energie, die Leiste blinkt dann rot. Bei 0 % ist Burnout. Aufladen: ☕ Kaffee, 🥫 Energydrink, 🍩 Donut, 🥤 Shake, Sofa im sicheren Raum, Wellness-Liege, im Treppenhaus durchatmen (+20 %).</span></li>
-  <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, du übernimmst den Nachtdienst.</span></li></ul>`;
+  <li><span class="ico">⚡</span><span><b>Energie</b> · deine einzige Leiste. Gespräche, Extra-Arbeit, Gestank, Unfälle (Ausrutschen, Autos in der Garage), Schreckmomente und verlorene Kämpfe kosten Energie, die Leiste blinkt dann rot. Bei 0 % ist Burnout. Aufladen: ☕ Kaffee, 🥫 Energydrink, 🍩 Donut, 🥤 Shake, Sofa im sicheren Raum, Wellness-Liege, im Treppenhaus durchatmen (+20 %).</span></li>
+  <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, GAME OVER. Endkampf verloren: GAME OVER.</span></li></ul>`;
 function beginMission() {
   initAudio(); show(null); blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
   typeof track === "function" && track("mission_start", { route: run.route }); missionFlyIn(startPlaying);
@@ -270,9 +270,9 @@ function missionFailed() {
   $("endText").textContent = R.failText;
   $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.failTicker)}</span>`;
   fillStats(); $("endScore").hidden = true; $("endRank").textContent = "Mission gescheitert";
-  $("endBest").hidden = false; $("endBest").textContent = `Frist war ${fmtTime(routeDeadline(run.route))}. Du hast ${fmtSpan(run.lostMin || 0)} durch Gespräche, Anrufe und Papierkram verloren.`;
+  $("endBest").hidden = false; $("endBest").textContent = `Frist war ${fmtTime(routeDeadline(run.route))}. Du hast ${fmtSpan(run.lostMin || 0)} durch Gespräche, Anrufe und Extra-Arbeit verloren.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = true; clearCheckpoint();
-  sfx.stinger(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  showGameOverCard(`Zu spät: Die Frist war ${fmtTime(routeDeadline(run.route))}.`, `${R.ride[0].toUpperCase() + R.ride.slice(1)} ist ohne dich weg. Zeit verlierst du durch Gespräche, Anrufe, Extra-Arbeit und Zwischenstopps im Treppenhaus.`);
 }
 
 // ---------- the guided tour: points at the real controls, with animated gestures ----------
@@ -281,14 +281,14 @@ const TOUR = [
   { el: "touch", rect: () => ({ left: innerWidth * .5, top: innerHeight * .35, width: innerWidth * .4, height: innerHeight * .25 }), t: "Umsehen", d: "Überall sonst wischen, um dich umzusehen.", g: "swipe" },
   { el: "btnAct", t: "Aktion", d: "Benutzen: Türen, Gegenstände, Leute ansprechen. Der Knopf zeigt, was gerade geht.", g: "tap" },
   { el: "inv", t: "Deine Tricks", d: "🥼 Kittel aus = Personal erkennt dich nicht. ✏️ Kuli werfen = Ablenkung. 📱 Fake-Telefonat = Personal dreht ab. 😷 Noro-Maske = alle halten Abstand. Antippen zum Benutzen.", g: "tap" },
-  { el: "hudClock", t: "Die Uhr", d: "Die Spielzeit läuft. Jeder Zeitverlust (Gespräche, Anrufe, Formulare) blinkt hier rot.", g: "none" },
+  { el: "hudClock", t: "Die Uhr", d: "Die Spielzeit läuft. Jeder Zeitverlust (Gespräche, Anrufe, Extra-Arbeit) blinkt hier rot.", g: "none" },
   { el: "chipRoute", t: "Deine Frist", d: "So viel Zeit bleibt, bis du abgeholt wirst. Und wie viel von deiner Exit-Liste du schon hast.", g: "none" },
-  { el: "energyBox", t: "Energie", d: "Deine einzige Leiste. Gespräche, Aufgaben und Schreck kosten Energie, sie blinkt dann. Bei 0 %: Burnout. Aufladen mit Kaffee, Donuts, Sofa im sicheren Raum.", g: "none" },
+  { el: "energyBox", t: "Energie", d: "Deine einzige Leiste. Gespräche, Extra-Arbeit und Schreck kosten Energie, sie blinkt dann. Unter 25 % blinkt sie rot. Bei 0 %: Burnout, Game over. Aufladen mit Kaffee, Donuts, Sofa im sicheren Raum.", g: "none" },
   { el: "chipStealth", t: "Werde ich gesehen?", d: "UNBEMERKT, VERDACHT, ENTDECKT. Das Dreieck über den Köpfen zeigt dasselbe: weiß, gelb, rot.", g: "none" },
   { el: "edgeDemo", rect: () => ({ left: 6, top: innerHeight * .3, width: innerWidth - 12, height: innerHeight * .3 }), t: "Werde ich gesehen?", d: "Das Dreieck über den Köpfen: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Der Bildschirmrand leuchtet dann gelb oder rot.", g: "none", portrait: true },
   { el: "mission", t: "Was jetzt?", d: "Dein aktuelles Ziel, wie es geht und wie weit es weg ist. Am Boden zeigen kleine Pfeile den Weg.", g: "none" },
   { el: "mini", t: "Radar", d: "Rote Punkte = jemand hat dich bemerkt. Antippen = großer Lageplan.", g: "tap" },
-  { el: "btnMC", t: "Mission Control", d: "Pausiert das Spiel: Geschichte, Frist, Checkliste, Aufgaben, Ausrüstung. Und Speichern.", g: "tap" },
+  { el: "btnMC", t: "Mission Control", d: "Pausiert das Spiel: Geschichte, Frist, Checkliste, Ausrüstung. Und Speichern.", g: "tap" },
 ];
 let tour = null;
 function startTour() {

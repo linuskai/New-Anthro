@@ -14,7 +14,7 @@ Object.assign(TALKS, {
     { id: "paper", go: T("„Haben Sie Lust auf ein kleines Paper? Retrospektiv. 4.000 Akten. Bis Freitag.“", [{ q: "„Sie werden Drittautor. Vielleicht Viertautor.“", options: [
       opt("„Total!“", () => say("Er klopft dir auf die Schulter. Die Akten liegen im Keller. Bei Dr. Ewig.", pen({ tasks: ["4.000 Akten auswerten (Keller)"] }))),
       bluff("„Ich bin ab Montag in Elternzeit.“", .4, "„Oh! Glückwunsch!“ Er fragt nicht nach. Er will keine Details.", "„Sie haben doch gar keine Kinder.“ – „Noch nicht.“ Er gibt dir trotzdem das Paper.", { tasks: ["4.000 Akten auswerten"] }),
-      opt("„Ich arbeite schon mit PD Dr. Phil.“", () => free("Er wird blass. „Dann haben Sie genug gelitten.“ Er legt dir kurz die Hand auf die Schulter.", gain({ nerves: 1 })))] }]) },
+      opt("„Ich arbeite schon mit Dr. PD Phil.“", () => free("Er wird blass. „Dann haben Sie genug gelitten.“ Er legt dir kurz die Hand auf die Schulter.", gain({ nerves: 1 })))] }]) },
     { id: "briefe", go: T("„Ihre Arztbriefe. 23 Stück. Die gehen heute noch raus, ja?“", [{ q: "Er hält einen Stapel hoch. Er ist dicker als das Telefonbuch von 1998.", options: [
       opt("„Klar, heute noch.“", () => say("Er nickt zufrieden. Heute endet um Mitternacht. Theoretisch.", pen({ mins: 25, tasks: ["23 Arztbriefe (heute!)"] }))),
       opt("„Mein Diktiergerät ist kaputt.“", () => say("Er gibt dir seins. Es ist von 1994. Mit Kassette. Und alten Diktaten.", pen({ tasks: ["Briefe auf Kassette diktieren"] }))),
@@ -170,7 +170,7 @@ function liftDialog(p) {
       opt("Einsteigen", () => {
         dlgState.onClose = () => nextFloor();
         const v = Math.random();
-        if (v < .35) return { next: () => openDialog({ sp: TYPES.C.spec(), av: "🤴", color: "#9b6bff", name: "Prof. Dr. Dr. h.c. Übermut", role: "steigt im 4. OG zu · Fahrstuhlgespräch", text: "„Ah, Kollege! Gut, dass ich Sie treffe. Drei Stockwerke, Zeit für ein kurzes Gespräch. Wie wär's mit Ostern?“",
+        if (v < .35) return { next: () => openDialog({ sp: TYPES.C.spec(), av: "🤴", color: "#9b6bff", name: "Prof. Dr. Dr. h.c. mult. Übermut", role: "steigt im 4. OG zu · Fahrstuhlgespräch", text: "„Ah, Kollege! Gut, dass ich Sie treffe. Drei Stockwerke, Zeit für ein kurzes Gespräch. Wie wär's mit Ostern?“",
           options: [
             opt("„Ostern? Sehr gern.“", () => say("„Wunderbar.“ Die Tür geht auf. Er steigt aus. Du bist jetzt Ostern verplant.", pen({ duties: 1 }))),
             opt("Den Nothalt drücken", () => say("Alarm. Der Chef steht mit dir zwischen zwei Etagen. Er ruft den Hausmeister. Der Hausmeister ist im Keller. 15 Minuten Stille.", pen({ mins: 15 }))),

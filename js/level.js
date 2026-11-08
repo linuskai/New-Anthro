@@ -514,7 +514,7 @@ function buildLevel(idx) {
     const tx = Math.floor(tr.x), ty = Math.floor(tr.y);
     const len = (dx, dy) => { let n = 0; while (openTile(tx + dx * (n + 1), ty + dy * (n + 1))) n++; return n; };
     tr.dir = len(1, 0) + len(-1, 0) >= len(0, 1) + len(0, -1) ? [1, 0] : [0, 1]; tr.speed = 2.6;
-    const g = new THREE.Group(); g.add(makeCar(0xd4af37, true)); g.add(at(sprite(labelTex(chance(.5) ? "PORSCHE DES CHEFS" : "OA PARKT AUS", "#d4af37", "#222"), 1.8, .28), 0, 2.2, 0));
+    const g = new THREE.Group(); g.add(makeCar(0xd4af37, true)); g.add(at(sprite(labelTex(chance(.5) ? "PORSCHE DES CHEFS · BREMST NICHT" : "OA PARKT AUS · SIEHT DICH NICHT", "#d4af37", "#222"), 2.4, .28), 0, 2.2, 0));
     tr.mesh = g; group.add(g);
   }
 

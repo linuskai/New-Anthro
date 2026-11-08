@@ -139,7 +139,7 @@ function phdQuiz(e) {
   let correct = 0;
   runChain(e, "„" + pick(t.lines) + "“", qs.map(Q => ({ q: Q.q + (calc ? " (🧮 hilft)" : ""), options: Q.o.map((label, j) => ({ label, hint: calc && j === Q.a ? "🧮 ✓" : "", act: () => {
     const ok = j === Q.a; if (ok) correct++;
-    return { text: ok ? pick(["„Hm. Korrekt. Langweilig, aber korrekt.“", "„Okay, du kannst rechnen. Respekt.“", "„Richtig. Das schreib ich mir auf. Als meine Idee.“"]) : pick(["„Genau so machen wir das!“ Du hast gerade wissenschaftlich gesündigt.", "„Falsch, aber publizierbar.“", "PD-Phil lacht. „Reviewer 2 wird dich lieben.“"]), stamps: [ok ? good("Richtig") : { text: "Falsch" }] };
+    return { text: ok ? pick(["„Hm. Korrekt. Langweilig, aber korrekt.“", "„Okay, du kannst rechnen. Respekt.“", "„Richtig. Das schreib ich mir auf. Als meine Idee.“"]) : pick(["„Genau so machen wir das!“ Du hast gerade wissenschaftlich gesündigt.", "„Falsch, aber publizierbar.“", "Dr. PD Phil lacht. „Reviewer 2 wird dich lieben.“"]), stamps: [ok ? good("Richtig") : { text: "Falsch" }] };
   } })) })), () => {
     if (calc) takeItem("8");
     run.coauthor++;
@@ -258,7 +258,7 @@ function friendDialog(f) {
   }
   if (f.kind === "s") return openDialog({ ...base, text: "„Hast du Aufgaben für mich? Ich will was lernen! Bitte! Ich krieg 0 € im PJ, aber ich will was lernen!“",
     options: [
-      { label: "„Hier, nimm drei.“", disabled: !run.tasks.length, hint: run.tasks.length ? "" : "keine Aufgaben", act: () => { const n = Math.min(3, run.tasks.length); run.tasks.splice(0, n); return { text: `Jonas strahlt. Er übernimmt ${n} Aufgabe${n > 1 ? "n" : ""}. Noch ist er glücklich.`, stamps: [good("−" + n + " Aufgaben")] }; } },
+      { label: "„Hier, schreib meine drei Briefe.“", disabled: !!f.letters, act: () => { f.letters = true; return { text: "Jonas strahlt. Er drückt die Briefe an sich wie ein Geschenk. Noch ist er glücklich. Du fühlst dich leichter.", stamps: gain({ energy: 12 }) }; } },
       { label: "„Lern nicht zu viel. Geh heim.“", disabled: !!f.home, act: () => { f.home = true; return { text: "Er schaut dich an, als hättest du ihm das Leben gerettet. Vielleicht hast du das.", stamps: gain({ nerves: 1 }) }; } },
     ] });
   if (f.kind === "e") { run.flags.add("spa"); updateHud(); }

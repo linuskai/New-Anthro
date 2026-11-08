@@ -445,6 +445,8 @@ function updateHorde(dt) {
 }
 function updateTransports(dt) {
   for (const tr of level.transports) {
+    // first time a car comes close: a clear warning that nobody here brakes for you
+    if (!run.carWarned && mode === "play" && Math.hypot(player.x - tr.x, player.y - tr.y) < 5) { run.carWarned = true; setMsg("⚠ Autos bremsen hier nicht! Überfahren = −30 % Energie. Am Rand warten.", 5, true); sfx.car(); }
     const nx = tr.x + tr.dir[0] * tr.speed * dt, ny = tr.y + tr.dir[1] * tr.speed * dt;
     if (blockedAt(nx + tr.dir[0] * .9, ny + tr.dir[1] * .9)) tr.dir = [-tr.dir[0], -tr.dir[1]]; else { tr.x = nx; tr.y = ny; }
     if (Math.hypot(player.x - tr.x, player.y - tr.y) < .7 && player.inv <= 0) {
@@ -452,7 +454,7 @@ function updateTransports(dt) {
       const kx = tr.dir[0] || Math.sign(player.x - tr.x) || 1, ky = tr.dir[1] || Math.sign(player.y - tr.y) || 1;
       for (let i = 0; i < 6; i++) { stepAxis(kx * .12, 0); stepAxis(0, ky * .12); }
       player.stun = .6;
-      showToast("🚗", "#d4af37", "Parkhaus", pick(["Der Chef setzt zurück. Er hat dich nicht gesehen. Er sieht nie jemanden.", "Hupen! „Das ist MEIN Parkplatz!“ Es ist nicht seiner."]), pen({ nerves: 1, energy: 15 }));
+      showToast("🚗", "#d4af37", "Parkhaus", pick(["ÜBERFAHREN. Der Chef setzt zurück. Er hat dich nicht gesehen. Er sieht nie jemanden.", "ÜBERFAHREN. Hupen! „Das ist MEIN Parkplatz!“ Es ist nicht seiner. Er fährt einfach weiter.", "ÜBERFAHREN. Der Oberarzt winkt aus dem Fenster. „Sorry, Kollege, Golfplatz!“ Er bremst nicht.", "ÜBERFAHREN. Der Fahrer telefoniert weiter. „Nein, nichts passiert. Nur ein Assistenzarzt.“"]), pen({ nerves: 1, energy: 15 }));
       updateHud(); checkDeath();
     }
   }
@@ -503,11 +505,11 @@ function pickupPaper(p) {
   if (Math.random() < .35) {
     const pts = []; let v = 37; for (let i = 0; i < 14; i++) { v = Math.max(36.2, Math.min(40.5, v + (Math.random() - .35) * 1.1)); pts.push(v); }
     const poly = pts.map((t, i) => `${10 + i * 22},${(90 - (t - 36) * 18).toFixed(1)}`).join(" ");
-    lab.innerHTML = `<h3>Kurve · Zi. ${room} · Hr. K., 74 J.</h3><svg viewBox="0 0 310 100" role="img" aria-label="Fieberkurve"><rect width="310" height="100" fill="#fff"/>${[37, 38, 39, 40].map(t => `<line x1="0" x2="310" y1="${90 - (t - 36) * 18}" y2="${90 - (t - 36) * 18}" stroke="#dde"/>`).join("")}<line x1="0" x2="310" y1="54" y2="54" stroke="#c0322a" stroke-dasharray="4 3"/><polyline points="${poly}" fill="none" stroke="#2d3f8f" stroke-width="2.5"/><text x="270" y="51" font-size="10" fill="#c0322a">38,0</text></svg><div class="foot">Fieber seit drei Tagen. Niemand hat's gesehen. Jetzt du. +1 Aufgabe</div>`;
+    lab.innerHTML = `<h3>Kurve · Zi. ${room} · Hr. K., 74 J.</h3><svg viewBox="0 0 310 100" role="img" aria-label="Fieberkurve"><rect width="310" height="100" fill="#fff"/>${[37, 38, 39, 40].map(t => `<line x1="0" x2="310" y1="${90 - (t - 36) * 18}" y2="${90 - (t - 36) * 18}" stroke="#dde"/>`).join("")}<line x1="0" x2="310" y1="54" y2="54" stroke="#c0322a" stroke-dasharray="4 3"/><polyline points="${poly}" fill="none" stroke="#2d3f8f" stroke-width="2.5"/><text x="270" y="51" font-size="10" fill="#c0322a">38,0</text></svg><div class="foot">Fieber seit drei Tagen. Niemand hat's gesehen. Jetzt du. +5 Min</div>`;
     addTask(`Fieberkurve Zi. ${room} anschauen`);
   } else {
     const rows = LAB_POOL.slice().sort(() => Math.random() - .5).slice(0, 5);
-    lab.innerHTML = `<h3>Laborbefund · Zi. ${room} · Eilt!</h3><table>${rows.map(r => `<tr><td>${r[0]}</td><td class="v">${r[1]}</td><td>${r[2]}</td><td class="f">${r[3]}</td></tr>`).join("")}</table><div class="foot">Du bist drübergestolpert. Jetzt ist es dein Problem. +1 Aufgabe</div>`;
+    lab.innerHTML = `<h3>Laborbefund · Zi. ${room} · Eilt!</h3><table>${rows.map(r => `<tr><td>${r[0]}</td><td class="v">${r[1]}</td><td>${r[2]}</td><td class="f">${r[3]}</td></tr>`).join("")}</table><div class="foot">Du bist drübergestolpert. Jetzt ist es dein Problem. +5 Min</div>`;
     addTask(`Laborwerte Zi. ${room} nachverfolgen`);
   }
   lab.hidden = false; lab.classList.remove("pop"); void lab.offsetWidth; lab.classList.add("pop"); labT = 4;
@@ -787,7 +789,7 @@ function fireAlarmDialog(p) {
   if (p.used) { showToast("🔥", "#c0322a", "Feuermelder", "Schon gezogen. Die Feuerwehr kennt dich jetzt beim Vornamen.", []); return; }
   openDialog({ av: "🔥", color: "#c0322a", name: "Feuermelder", role: "Nur im Notfall · Glas einschlagen", text: "Ein roter Kasten. „Nur im Brandfall.“ Darunter jemand mit Kuli: „oder bei Feierabend“. Wenn du ziehst, evakuieren alle für 20 Sekunden. Danach gibt es sehr viel Papierkram.",
     options: [
-      opt("Ziehen", () => { p.used = true; const [x, y] = farthestTile(); lure = { x, y, t: 20 }; level.fireT = 20; sfx.alarm(); setTimeout(() => sfx.alarm(), 2100); flash("zap"); return say("RRRRING! Alle rennen zur Sammelstelle. Durch die Lautsprecher: „Bitte bewahren Sie Ruhe und vergessen Sie nicht, Ihre Überstunden einzutragen.“", pen({ mins: 15, tasks: ["Brandschutzbericht (3-fach)", "Gespräch mit der Feuerwehr"] }).concat([good("20 s freie Bahn")])); }, "+15 Min · 2 Aufgaben"),
+      opt("Ziehen", () => { p.used = true; const [x, y] = farthestTile(); lure = { x, y, t: 20 }; level.fireT = 20; sfx.alarm(); setTimeout(() => sfx.alarm(), 2100); flash("zap"); return say("RRRRING! Alle rennen zur Sammelstelle. Durch die Lautsprecher: „Bitte bewahren Sie Ruhe und vergessen Sie nicht, Ihre Überstunden einzutragen.“", pen({ mins: 15, tasks: ["Brandschutzbericht (3-fach)", "Gespräch mit der Feuerwehr"] }).concat([good("20 s freie Bahn")])); }, "+25 Min"),
       opt("Lieber nicht", () => say("Vernünftig. Langweilig, aber vernünftig."))] });
 }
 

@@ -189,7 +189,7 @@ function updateHud() {
   let h = "";
   $("hudNerves").hidden = run.mode !== "night";
   if (run.mode === "night") { for (let i = 0; i < 3; i++) h += i < 3 - (run.found || 0) ? "👁" : '<span class="lost">✕</span>'; $("hudNerves").innerHTML = h; }
-  $("chipTasks").textContent = "AUFG " + run.tasks.length; $("chipTasks").classList.toggle("warn", run.tasks.length >= 5);
+  run.tasks = run.tasks || [];
   $("chipDuty").textContent = "DIENSTE " + run.duties.length; $("chipDuty").classList.toggle("warn", run.duties.length > 0);
   const obj = objectives(), cur = currentObjective(), mains = obj.filter(o => o.main && !o.isExit);
   $("missionHead").textContent = run.mode === "night" ? "Nachtdienst" : cur && cur.boss ? "Endgegner" : cur && cur.isExit ? (isLastFloor() ? "Fast geschafft" : "Weiter") : cur && cur.route ? `${mission().av} Exit-Liste · ${goalsDoneCount()}/${mission().goals.length}` : `Hindernis · ${floorLabel(run.idx)}`;
@@ -207,6 +207,10 @@ function updateEnergy() {
   run.lastE = e;
   $("energyFill").style.width = e + "%"; $("energyFill").className = e <= 0 ? "empty" : e <= 25 ? "crit" : e < 50 ? "low" : ""; $("energyNum").textContent = e + " %";
   $("energyBox").classList.toggle("crit", e <= 25);
+  // low energy: the bar blinks red, the screen edge pulses, and the pager warns once per dip
+  document.body.classList.toggle("lowE", e > 0 && e <= 25 && (mode === "play" || mode === "dialog"));
+  if (e > 0 && e <= 25 && !run.lowWarned && run.mode === "mission") { run.lowWarned = true; setMsg("⚠ Energie unter 25 %! Kaffee, Snack oder Sofa suchen, sonst Burnout.", 5, true); tone(520, 0, .18, "square", .04); tone(390, .22, .3, "square", .04); }
+  if (e > 35) run.lowWarned = false;
   const dark = inDarkness(), chip = $("chipLamp");
   chip.hidden = !dark; chip.textContent = player.lampOn ? `🔦 ${Math.round(player.lamp)} % · sichtbar` : "🔦 aus · unsichtbar";
   chip.classList.toggle("warn", player.lampOn && player.lamp < 25); chip.classList.toggle("good", !player.lampOn);
@@ -227,10 +231,12 @@ function addTask(t) { run.tasks.push(t); run.tasksTotal++; }
 function addDuty(code) { code = code || pick(["WE", "WE", "N", "24", "RB"]); run.duties.push(code); return DUTIES[code]; }
 function pen(o) {
   const st = [];
-  if (o.mins) { run.minutes += o.mins; st.push({ text: "+" + o.mins + " Min" }); }
-  const drain = (o.nerves || 0) * 15 + (o.energy || 0) + (o.tasks ? o.tasks.length * 4 : 0);
+  // extra work someone dumps on you is paid on the spot: in minutes and energy, nothing to carry around
+  const nt = o.tasks ? o.tasks.length : 0, mins = (o.mins || 0) + nt * 5;
+  if (nt) run.tasksTotal += nt;
+  if (mins) { run.minutes += mins; st.push({ text: "+" + mins + " Min" }); }
+  const drain = (o.nerves || 0) * 15 + (o.energy || 0) + nt * 4;
   if (drain) { run.energy = Math.max(0, run.energy - drain); st.push({ text: "−" + drain + " % Energie" }); energyHit(); }
-  if (o.tasks) { for (const t of o.tasks) addTask(t); st.push({ text: "+" + o.tasks.length + " Aufgabe" + (o.tasks.length > 1 ? "n" : "") }); }
   if (o.duties) for (let i = 0; i < o.duties; i++) st.push({ text: addDuty(o.dutyCode) });
   return st;
 }
@@ -309,7 +315,7 @@ function useItem(k) {
       st = [good(n ? n + " Nerds abgelenkt" : "Hingelegt")]; line = "Du legst den Fallbericht „Morbus Whipple mit Zebrastreifen“ hin. Jeder Internist im Umkreis kommt angerannt."; break;
     }
     case "6": takeItem(k); st = gain({ energy: 25 }); line = "Schmeckt nach Vanille und Kreidestaub. Eigentlich für die Orthopäden gedacht."; break;
-    case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für PD-Phil auf."; break;
+    case "8": line = "Du rechnest deine Überstunden aus. Schlechte Idee. Heb ihn dir für Dr. PD Phil auf."; break;
     case "p": takeItem(k); { const n = throwPen(); st = [good(n ? n + " abgelenkt" : "Klack")]; line = n ? "Klack! Der Kuli landet irgendwo da hinten. Alle drehen sich um und gehen nachsehen. Kugelschreiber: das Schweizer Taschenmesser der Medizin." : "Klack. Niemand in der Nähe, der sich dafür interessiert. Der Kuli ist trotzdem weg."; } break;
     case "c": toggleCoat(); line = player.civil ? "Kittel aus. Ohne Kittel erkennt dich das Personal nicht mehr: nur ein weiterer müder Besucher. Patienten und Angehörige fragen dich dafür nach der Toilette." : "Kittel wieder an. Du bist wieder Ärztin oder Arzt. Leider."; st = [good(player.civil ? "Zivil" : "Kittel an")]; break;
     case "m": takeItem(k); player.noroT = 15; sfx.knock(); setTimeout(() => sfx.knock(), 350); for (const e of level.enemies) if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) < 6) { e.aw = 0; e.state = "idle"; emote(e, "🤢"); e.investigate = { x: e.hx + .5, y: e.hy + .5, t: 5 }; }

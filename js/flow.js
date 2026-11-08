@@ -25,6 +25,11 @@ function storyNext() {
   $("storyTime").textContent = time; $("storyText").textContent = "";
   $("btnStoryNext").textContent = story.i === story.lines.length - 1 ? (run.mode === "night" ? "Dienst beginnen" : "Zur Mission") : "Weiter";
   storyPhone(run.mode === "night" ? null : ui);
+  // the clock shot: say plainly what the clock means, a countdown to the pick-up
+  const sc = $("storyCount"), lastShot = run.mode === "mission" && story.i === story.lines.length - 1;
+  sc.hidden = !lastShot;
+  if (lastShot) { const R = mission(), dl = routeDeadline(run.route), h = Math.floor(dl / 60), m = dl % 60;
+    sc.innerHTML = `<small>Ab jetzt läuft die Uhr</small><b>17:00<i>→</i>${fmtTime(dl)}</b><span>Noch ${h} Stunde${h === 1 ? "" : "n"}${m ? ` ${m} Min` : ""}, dann ${run.route === "stay" ? "musst du an deinem Auto sein" : ("fährt " + R.ride + " ab. Mit oder ohne dich")}.</span>`; }
   if (run.mode === "night") { if (story.i === 2) { sfx.stinger(); setTimeout(() => sfx.beep(), 500); } return; }
   if (story.i === 1) { sfx.knock(); setTimeout(() => sfx.beep(), 400); }
   if (ui) { sfx.ring(); }
@@ -32,7 +37,7 @@ function storyNext() {
 }
 function endStory() {
   if (!story) return;
-  story = null; $("story").hidden = true; storyPhone(null); document.body.classList.remove("cine");
+  story = null; $("story").hidden = true; storyPhone(null); $("storyCount").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
   if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Pager-Aufgaben erledigen · ${nightSafe()} ist sicher · Hildegard nie aus den Augen lassen`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
   showBrief(false);
@@ -125,10 +130,10 @@ function nextFloor() {
   typeof track === "function" && track("floor", { route: run.route, from: run.idx });
   if (run.mode === "mission" && isLastFloor()) { finale(); return; }
   endCall(); hidePopups(); clearInputs();
-  const n = run.tasks.length;
-  // open tasks come due in the stairwell: as paperwork that costs time
-  if (n) { formGame(`Dokumentation im Treppenhaus: ${n} liegengebliebene Aufgabe${n > 1 ? "n" : ""}`, n, lost => { run.tasks = []; enterFloor(`Im Treppenhaus ${n} Aufgabe${n > 1 ? "n" : ""} dokumentiert: +${lost} Min.`); }); return; }
-  enterFloor("Keine offenen Aufgaben. Kein Papierkram. Respekt.");
+  run.tasks = [];
+  // the stairwell is never empty: someone or something holds you up there, as a quick mini-game
+  if (run.mode === "mission" && stairDue()) { stairGame(res => enterFloor(res)); return; }
+  enterFloor(pick(["Leeres Treppenhaus. Verdächtig leer.", "Niemand im Treppenhaus. Du nimmst zwei Stufen auf einmal.", "Das Treppenhaus ist frei. Nur das Notlicht summt."]));
 }
 function enterFloor(note) {
   const before = run.energy; run.energy = Math.min(100, run.energy + 20);
@@ -143,7 +148,7 @@ function finale() {
   const lines = { stay: "Du sitzt im Auto. Motor an. Das Radio spielt „Highway to Hell“. Du schaltest um. „Stayin' Alive“. Wie passend. Kim schreibt: „Und?“", pharma: "Fr. Goldmann lehnt an der Limousine und tippt auf ihre Uhr. „Approbation? Zeugnis? Studie? Wunderbar. Unterschreiben Sie hier. Und hier. Und da, das ist nur die Seele.“", botox: "Dr. Glatt hupt aus dem pinken Cabrio. Das Verdeck ist offen. Es regnet. Sie lächelt trotzdem. „Steig ein, Liebling. Gurkenwasser im Handschuhfach.“", consult: "Die Limousine von McKinny gleitet vor den Haupteingang. Kevin lässt die Scheibe runter. „Krasse Fotos. Folie 12 wird legendär. Steig ein, wir billen ab jetzt.“", ship: "Der Hafen-Shuttle hupt dreimal. Der Fahrer trägt Hawaiihemd. „Leinen los, Doc! Die Karibik wartet nicht. Der Kapitän schon gar nicht.“", influ: "Ein pinker Van mit Ringlicht auf dem Dach. Die Schiebetür geht auf. „OMG, du bist es! Wir drehen gleich im Auto ein Reel. Smile!“" };
   openDialog({ av: R.av, color: R.color, name: R.client.split(" · ")[0], role: fmtTime(run.minutes) + " · " + (LEVELS[run.idx].final ? "Parkhaus P2" : "Haupteingang") + " · der letzte Schritt",
     text: lines[k] || lines.stay,
-    options: [{ label: k === "stay" ? "Losfahren. Heim." : `Einsteigen: ${R.title}`, hint: `vor ${fmtTime(routeDeadline(k))} · geschafft!`, act: () => { showEnd(k, run.tasks.length); return { end: true }; } }] });
+    options: [{ label: k === "stay" ? "Losfahren. Heim." : `Einsteigen: ${R.title}`, hint: `vor ${fmtTime(routeDeadline(k))} · geschafft!`, act: () => { showEnd(k); return { end: true }; } }] });
 }
 const rankFor = over => over < 60 ? "Legende der Pünktlichkeit" : over < 120 ? "Fast pünktlich" : over < 200 ? "Typische Assistenzärztin, typischer Assistenzarzt" : over < 300 ? "Wohnt im Bereitschaftsraum" : "Gehört zum Inventar";
 function buildRoster(ending) {
@@ -179,6 +184,20 @@ function fillStats(ending) {
 const BEST_KEY = "hospital-escape-3d-best";
 const getBest = () => { try { const v = parseFloat(localStorage.getItem(BEST_KEY)); return isFinite(v) ? v : null; } catch (e) { return null; } };
 const setBest = v => { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} };
+/* losing is loud: a big GAME OVER with the reason first, then the stats card with the same reason on top */
+function endOverBanner(reason, why) {
+  const b = $("endOver"); b.hidden = !reason;
+  if (reason) { $("endOverWhy").textContent = reason; $("endOverHow").textContent = why || ""; }
+}
+function showGameOverCard(reason, why) {
+  endOverBanner(reason, why); hidePopups();
+  const old = document.getElementById("overSplash"); if (old) old.remove();
+  const sp = document.createElement("div"); sp.id = "overSplash";
+  sp.innerHTML = `<b>GAME OVER</b><span>${esc(reason)}</span>${why ? `<small>${esc(why)}</small>` : ""}<em>Antippen</em>`;
+  document.body.appendChild(sp); sfx.stinger();
+  const go = () => { if (!sp.isConnected) return; sp.remove(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); };
+  setTimeout(() => sp.addEventListener("click", go), 600); setTimeout(go, 3600);
+}
 function showGameOver() {
   hidePopups(); clearInputs();
   const L = LEVELS[run.idx];
@@ -188,15 +207,18 @@ function showGameOver() {
     $("endEyebrow").textContent = nightPlace() + " · " + fmtTime(run.minutes); $("endTitle").textContent = (run.found || 0) >= 3 ? "Gefunden" : "Eingeschlafen";
     $("endText").textContent = (run.found || 0) >= 3 ? `Um ${fmtTime(run.minutes)} haben sie dich zum dritten Mal gefunden. Du bist jetzt einer von ihnen. Du schlurfst über den Flur. Deine Augen leuchten rot. Morgen früh fragt der Frühdienst: „Ruhige Nacht?“ ${run.nightDone} Pager-Aufgaben erledigt.` : `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
     fillStats(); $("endRank").textContent = (run.found || 0) >= 3 ? "Neuer Schlafwandler" : "Eingeschlafen"; $("stOver").textContent = "Nachtdienst bis " + fmtTime(run.minutes); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
-    mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
+    mode = "over";
+    if ((run.found || 0) >= 3) showGameOverCard("Dreimal gefunden.", "Die Nachtgestalten haben dich dreimal erwischt. Bleib im Dunkeln, Lampe aus, und behalte Hildegard im Blick.");
+    else showGameOverCard("Eingeschlafen: Deine Energie ist auf 0 %.", "Schreck, Laufen und verpasste Pager-Aufgaben kosten Energie. Im " + nightSafe() + " lädst du sie wieder auf.");
+    return;
   }
   typeof track === "function" && track("burnout", { route: run.route, idx: run.idx, minutes: Math.round(run.minutes) });
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
-  $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Energie ist bei 0 %. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
+  $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“.`;
   fillStats(); clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
-  $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Energie lädst du mit Kaffee, Donuts, Energydrinks, dem Sofa im sicheren Raum und im Treppenhaus wieder auf. Gespräche und Aufgaben kosten sie.";
+  $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Energie lädst du mit Kaffee, Donuts, Energydrinks, dem Sofa im sicheren Raum und im Treppenhaus wieder auf.";
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = false;
-  mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  mode = "over"; showGameOverCard("Burnout: Deine Energie ist auf 0 %.", "Gespräche, Extra-Arbeit, Gestank, Unfälle und Schreck haben sie leergesaugt. Tipp: Kaffee und Snacks einsammeln, Leuten mit gelbem Dreieck ausweichen, im sicheren Raum aufs Sofa.");
 }
 function showEnd(key, n) { playOutro(key, () => showEndScreen(key, n)); }
 function nightWin() { run.nightWon = true; playOutro("night", showNightEnd); }
@@ -206,7 +228,7 @@ function showNightEnd() {
   let best = null; try { best = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
   submitNight(run.place, run.nightDone); typeof track === "function" && track("night_win", { place: run.place, tasks: run.nightDone });
-  $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
+  endOverBanner(); $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
   $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
   $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im " + nightSafe() + " versteckt";
@@ -216,8 +238,8 @@ function showNightEnd() {
 function showEndScreen(key, n) {
   const E = ENDINGS[key], R = ROUTES[key];
   mode = "win"; clearInputs(); hidePopups(); endCall(); clearCheckpoint();
-  $("endEyebrow").textContent = E.eyebrow + " · " + fmtTime(run.minutes); $("endTitle").textContent = E.title;
-  $("endText").textContent = E.text + (n ? ` (${n} offene Aufgabe${n > 1 ? "n" : ""} hast du einfach liegen lassen. Mutig.)` : "");
+  endOverBanner(); $("endEyebrow").textContent = E.eyebrow + " · " + fmtTime(run.minutes); $("endTitle").textContent = E.title;
+  $("endText").textContent = E.text;
   $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.ticker)}</span>`;
   fillStats(key);
   const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
