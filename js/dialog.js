@@ -230,6 +230,7 @@ function pushupGame(e, done) {
 function friendDialog(f) {
   const def = FRIENDS[f.kind], base = { sp: f.person ? f.person.sp : def.spec, av: def.av, color: def.color, name: def.name, role: def.role };
   f.talked++;
+  if (f.kind === "!") return butlerDialog(f, base);
   if (f.kind === "b") return openDialog({ ...base, text: run.flags.has("secret1") ? "„Die Tür mit dem Verbotsschild ist offen. Wenn wer fragt: Ich war's nicht.“" : "„Na, Herr Doktor, wieder auf der Flucht? Ich kenn jeden Gang hier. Auch die, die es offiziell nicht gibt. Seit sie zwei von uns eingespart haben, putze ich das ganze Haus.“",
     options: [
       { label: "„Zeigen Sie mir eine Abkürzung?“", disabled: run.flags.has("secret1"), act: () => { openSecrets(); run.flags.add("secret1"); return { text: "Sie zwinkert. „Das Lager mit dem Verbotsschild. Einfach drücken. Spart dir den halben Flur.“", stamps: [good("Geheimgang offen")] }; } },

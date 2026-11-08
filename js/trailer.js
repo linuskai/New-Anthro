@@ -18,11 +18,11 @@ function trailerSlides(R) {
   // 1 why: today somebody comes to get you out. 2 what you win. 3 what it takes. Then how: the way down, what stops you, your tricks.
   const who = R.client.split(" · ")[0], home = k === "stay", place = floorLabel(lastF), n = R.goals.length;
   S.push({ k: "Dein Exit-Tag", html: `<div class="tl-slide s-job">
-    <p class="tl-kicker">${home ? "Heute willst du einfach nur heim" : "Heute ist dein Exit-Tag"}</p>
+    <p class="tl-kicker">${home ? "Du willst einfach nur noch nach Hause" : "Heute ist dein Exit-Tag"}</p>
     <div class="tl-client"><span class="av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(home ? "Feierabend war um 17:00. Die Klinik sieht das anders." : who + " will dich. Heute noch.")}</span></div></div>
     <p class="tl-big">${home ? `Um <mark>${fmtTime(dl)}</mark> musst du bei deinem Auto sein.<span>Sonst isst Kim deine Portion. Und schläft auf deiner Seite.</span>`
       : `${esc(ride)} holt dich heute um <mark>${fmtTime(dl)}</mark> ab.<span>Wer dann nicht am Treffpunkt ist, bleibt in der Klinik. Für immer.</span>`}</p>
-    <ol class="tl-steps"><li><b>1</b>Hol alles von deiner Exit-Liste (${n} Dinge)</li><li><b>2</b>Raus aus der Klinik, Etage für Etage</li><li><b>3</b>Pünktlich ${home ? "ins Auto" : "einsteigen"} · 📍 ${esc(place)}</li></ol>
+    <ol class="tl-steps"><li><b>1</b>Du brauchst ${esc(needList(R))}</li><li><b>2</b>Raus aus der Klinik, Etage für Etage</li><li><b>3</b>Pünktlich ${home ? "ins Auto" : "einsteigen"} · 📍 ${esc(place)}</li></ol>
     <div class="tl-clock"><b class="c-now">17:00</b><i class="c-bar"><i></i></i><b class="c-dl">${fmtTime(dl)}</b></div>
     <p class="tl-note">⏱ ${fmtSpan(dl)} Spielzeit ≈ ${realMin} Minuten echt</p></div>`,
     after: st => clockRun(st, dl) });
@@ -33,7 +33,7 @@ function trailerSlides(R) {
     <div class="tl-perks">${D.perks.map((p, i) => `<span style="--i:${i + D.rows.length}">${esc(p)}</span>`).join("")}</div></div>`, after: dealRun });
   const gtxt = o => { try { return typeof o.text === "function" ? o.text() : o.text; } catch (e) { return ""; } };
   S.push({ k: "Deine Exit-Liste", html: `<div class="tl-slide s-list"><p class="tl-kicker">Was du dafür tun musst</p><h2 class="tl-h">Deine Exit-Liste</h2>
-    <p class="tl-lead">${esc(home ? "Ohne diese Dinge brauchst du gar nicht heimkommen." : who + " will das sehen. Ohne diese Dinge kein Vertrag.")}</p>
+    <p class="tl-lead">${esc("Du brauchst " + needList(R) + ". " + (home ? "Ohne das brauchst du gar nicht heimkommen." : "Ohne das kein Vertrag."))}</p>
     <ul class="tl-list">${R.goals.map((g, i) => `<li style="--i:${i}"><i>${GOAL_ICON[g.id] || "★"}</i><div><b>${esc(g.title)}</b><span>${esc(gtxt(g))}</span><small>📍 ${esc(floorLabel(g.lvl))}</small></div><span class="ck"></span></li>`).join("")}
       <li class="fin" style="--i:${n}"><i>${R.av}</i><div><b>Dann: pünktlich ${home ? "zum Auto" : "einsteigen"}</b><span>${esc(ride)} · ${fmtTime(dl)} · ${esc(place)}</span></div><span class="ck"></span></li></ul></div>`, after: listRun });
   const stops = fl.map((f, i) => {
@@ -111,6 +111,34 @@ $("btnTlSkip").addEventListener("click", () => { initAudio(); tl = null; beginMi
   st.addEventListener("pointerdown", e => { sx = e.clientX; sy = e.clientY; });
   st.addEventListener("pointerup", e => { if (sx == null || !tl) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) tlGo(tl.i + (dx < 0 ? 1 : -1)); }); }
 addEventListener("keydown", e => { if (mode !== "brief" || !tl) return; if (e.key === "ArrowRight") tlGo(tl.i + 1); if (e.key === "ArrowLeft") tlGo(tl.i - 1); });
+
+// ---------- the mission flies in, secret-agent style, every time a mission starts ----------
+function missionFlyIn(done) {
+  const R = mission(), dl = routeDeadline(run.route), fl = R.floors, place = floorLabel(fl[fl.length - 1]), home = run.route === "stay";
+  const ride = R.ride[0].toUpperCase() + R.ride.slice(1), have = R.goals.filter(goalDone).length;
+  mode = "flyin"; clearInputs();
+  const ov = document.createElement("div"); ov.id = "flyin";
+  const lines = [
+    home ? `Du willst einfach nur noch nach Hause.` : `${R.client.split(" · ")[0]} will dich als ${R.title}. Heute noch.`,
+    `Du brauchst ${needList(R)}.` + (have ? ` (${have} von ${R.goals.length} hast du schon.)` : ""),
+    home ? `Bis ${fmtTime(dl)} musst du bei deinem Auto sein · ${place}.` : `${ride} holt dich um ${fmtTime(dl)} ab · ${place}.`,
+    `Sei pünktlich. Sonst bleibst du hier. Für immer.`];
+  ov.innerHTML = `<div class="fi-scan"></div><div class="fi-box"><small class="fi-k">Streng vertraulich · ${fmtTime(run.minutes)} · Klinikum St. Sparen</small><b class="fi-t"><span>Deine Mission:</span> ${esc(R.title)}</b>${lines.map((l, i) => `<p class="fi-l" style="--i:${i}"></p>`).join("")}<p class="fi-burn"></p></div><button type="button" class="fi-skip">Antippen zum Starten</button>`;
+  document.body.appendChild(ov);
+  let over = false, timers = [];
+  const end = () => { if (over) return; over = true; timers.forEach(clearTimeout); ov.classList.add("gone"); setTimeout(() => ov.remove(), 450); done(); };
+  ov.addEventListener("pointerdown", e => { e.stopPropagation(); end(); });
+  const later = (ms, f) => timers.push(setTimeout(f, ms));
+  tone(196, .05, .25, "square", .04); tone(196, .35, .25, "square", .04); tone(233, .65, .2, "square", .04); tone(262, .9, .3, "square", .04);
+  let t = 900;
+  lines.forEach((txt, i) => { const el = ov.querySelectorAll(".fi-l")[i]; later(t, () => { el.classList.add("on"); let k = 0; const w = setInterval(() => { k += 2; el.textContent = txt.slice(0, k); if (k % 6 === 0) sfx.tick(); if (k >= txt.length) { clearInterval(w); el.textContent = txt; } }, 22); timers.push(w); }); t += 450 + txt.length * 11; });
+  const burn = ov.querySelector(".fi-burn");
+  later(t + 300, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 …"; sfx.beep(); });
+  later(t + 1100, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 …"; sfx.beep(); });
+  later(t + 1900, () => { burn.textContent = "Diese Nachricht zerstört sich in 3 … 2 … 1"; sfx.beep(); });
+  later(t + 2600, () => { ov.classList.add("burn"); noise(0, .9, 800, .5, .08); });
+  later(t + 3500, end);
+}
 
 // ---------- the gear guide: tabs, one line per item, tap for the details ----------
 let guideFrom = "title", guideTab = null;

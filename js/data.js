@@ -66,12 +66,12 @@ const LEVELS = [
     map: ["###########################", "#S......nffff.P...........#", "#.###d#######d######d####.#", "#.#:\"\":::#:::::::#:B::::#.#", "#.#:B::B:#::y::::#::::B:#.^", "#f#::::::#:::::::#::::::#.#", "#f##########l############.#", "#...$............nfffff...#", "#f####d######d#######d###.#", "#f#:::::::#______#:::::9#f#", "#n#::x::\"\"#_0__1_#::B:::#f#", "#.#:::::::#______#::::::#f#", "#.#######################.#", "#........x....ffff....N...#", "#########################E#"] },
   { key: "derma", short: "1 · DERMATOLOGIE", name: "Dermatologie · Rettungsstation", floor: "1. OG", room: 1, env: "derma", safe: true,
     safeNames: [],
-    tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, niemand hat Dienst. Die Wellness-Liegen füllen Energie auf. Vorsicht: Auf dem Boden liegen Gurkenscheiben und Kortison-Tuben. Wer läuft, rutscht aus (−12 % Energie). Darüber schleichen!",
+    tip: "Geschafft: die Dermatologie. Holzboden, Gurkenduft, Spa und Beauty-Studio. Butler Ambrosius empfängt dich am Eingang. Gurkenscheiben und Kortison-Tuben am Boden: drüberschleichen, sonst rutschst du aus. Und sag NIE, dass du heute noch keine Sonnencreme mit LSF 50 aufgetragen hast.",
     objectives: [
       { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Bei Dr. Glatt melden (oder auf eine Wellness-Liege)", main: true, at: "friend:e",
         brief: "Die Dermatologie ist die einzige Abteilung mit Feierabend. Dr. Glatt besteht auf einer Behandlung, bevor du weiterdarfst. Medizinisch notwendig, sagt sie." }],
     lock: "Dr. Glatt besteht auf Wellness. Ohne Gurkenscheibe kein Weiterkommen.",
-    map: ["#########################", "#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:R:+:#", "#:::::::#:::::::#:::::::#", "####d#######d#######d####", "#S.......$...R.......i..^", "######d#########d######.#", "#:::::::::::#:::::::###E#", "#:+:::e::R::#:::W:::#####", "#:::::::::::#:::::::#####", "#########################"] },
+    map: ["#################################", "#:::::::#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:R:+:#:W:W:W:#", "#:::::::#:::::::#:::::::#:::R:::#", "####d#######d#######d#######d####", "#S.!.....$...R.......i...R......^", "######d#########d######.####d####", "#:::::::::::#:::::::###E#:::::::#", "#:+:::e::R::#:::W:::#####::W:W::#", "#:::::::::::#:::::::#####:::R:::#", "#################################"] },
   { key: "cellar", short: "UG · KELLER", name: "Keller · Pathologie & Archiv", floor: "UG", room: 0, env: "cellar", envOn: "cellarOn",
     safeNames: [["WERKSTATT", "Hausmeister Schraube · Zutritt nur mit Bier"]],
     tip: "Das Treppenhaus ins EG ist gesperrt (Brandschutzbegehung seit 2021). Der Weg führt durch den Keller. Strom: weg. Wartung: gestrichen. Und Dr. Ewig ist noch da.",
@@ -141,7 +141,7 @@ const TYPES = {
        walk: .5, approach: 1.0, range: 5, fov: .45, detect: .65, barks: ["Riechen Sie das auch? Nein? Gut.", "Kurze Frage zum Stuhlgang!", "Haben Sie schon gegessen?"] },
   Z: { label: "NOTFALL?", role: "Pseudo-Notfall", who: () => rnd(["Hr. Schnupfen", "Fr. Zeckenbiss (2019)", "Hr. Rezept-nur-kurz", "Fr. Seit-gestern-komisch"]), av: "🧟", color: "#a7c48a",
        spec: () => ({ skin: rnd([0xc9d6b0, 0xd8d0b0, 0xb8c8a0]), hair: rnd(HAIR), hairStyle: rnd(["messy", "bald", "long"]), robe: true, shirt: rnd([0x8a6fae, 0x6a8fae, 0xae6a6a, 0x7aa07a]), pants: 0x5a5a6a, pose: "zombie", lowDetail: true }),
-       walk: .25, approach: .55, range: 5, fov: .2, detect: .55, barks: ["Ist das… ein Arzt?", "Ich hab Schnupfen!", "Rezept…"] },
+       walk: .25, approach: .55, range: 5, fov: .2, detect: .55, barks: ["Ist das… ein Arzt?", "Doktor… mein Knie… seit März…", "Ich hab seit Monaten Rücken…", "Krankmeldung… für letzte Woche…", "Ein Wehwehchen… von 2022…", "Nur… ganz… kurz…", "Rezept…"] },
   D: { label: "PD DR. PHIL", role: "Habilitand · übermütig", who: () => "PD Dr. Phil", av: "📊", color: "#ff7ab8",
        spec: () => ({ skin: SKIN[1], hair: 0xd9b26c, hairStyle: "spiky", coat: true, shirt: 0x4a7fd0, pants: 0x1f2a44, glasses: "sunTop", acc: "laptop", shoes: 0xb08850 }),
        walk: .9, approach: 1.5, range: 6, fov: .4, detect: .8, barks: ["Buddy! Kurze Statistikfrage!", "Impact Factor, Baby!", "Du wärst perfekter Co-Autor!"],
@@ -165,6 +165,8 @@ const FRIENDS = {
        spec: { skin: SKIN[4], hair: 0x9a6b3f, hairStyle: "short", coat: true, shirt: 0xe8e8e8, pants: 0x3a4a6a, acc: "book", build: "thin", scale: .96 } },
   e: { name: "Dr. Glatt", role: "Dermatologie · Oberärztin für Wohlbefinden", av: "🧴", color: "#f6c1d4",
        spec: { skin: 0xf6dcc8, hair: 0xd9b26c, hairStyle: "long", coat: true, shirt: 0xf6c1d4, pants: 0xf2f2f2, shoes: 0xf2f2f2, acc: "jar" } },
+  "!": { name: "Butler Ambrosius", role: "Empfang · Dermatologie & Spa", av: "🤵", color: "#e8e2d0",
+       spec: { skin: SKIN[0], hair: 0xc8c8c8, hairStyle: "short", shirt: 0xf4f4f0, jacket: 0x16181c, pants: 0x16181c, shoes: 0x111111, acc: "tray", pose: "butler", glasses: "none", mood: "neutral" } },
   i: { name: "@doc.wellness", role: "Patientin · Influencerin", av: "🤳", color: "#ff9fd0",
        spec: { skin: SKIN[0], hair: 0xd9b26c, hairStyle: "long", shirt: 0xff7ab8, pants: 0xf2f2f2, acc: "phone", glasses: "sun", short: true } },
 };
@@ -294,9 +296,9 @@ const STORY_OPEN = [
 ];
 const ROUTES = {
   stay: { name: "Einfach heim", title: "Feierabend", av: "🏠", color: "#1f9d55", deadline: 420, stars: 1, floors: [0, 1, 5, 6, 7], vehicle: "car", ride: "dein Auto",
-    client: "Kim · per WhatsApp", tagline: "Vor Mitternacht zu Hause sein. Mehr willst du nicht.",
+    client: "Kim · per WhatsApp", tagline: "Du willst einfach nur noch nach Hause. Vor Mitternacht. Mehr nicht.",
     story: [["16:58", "Dein Handy vibriert. Kim.", 3, { kind: "chat", from: "Kim ❤️", msgs: [["them", "Kommst du heute pünktlich? 🍝"], ["them", "Ich koche. Ausnahmsweise."], ["them", "Wenn du nicht vor Mitternacht da bist, esse ich deine Portion. Und schlafe auf deiner Seite."], ["me", "Bin gleich weg. Versprochen 🙏"], ["them", "Das hast du gestern auch gesagt."]] }],
-      ["17:00", "Feierabend. Offiziell. Dein Autoschlüssel liegt bei Dr. Kurz, deine Brotdose seit Montag im Flur, und das Parkticket kostet 12 Euro. Mitternacht. Keine Minute später.", 2]],
+      ["17:00", "Feierabend. Offiziell. Du willst einfach nur noch nach Hause. Dein Autoschlüssel liegt bei Dr. Kurz, deine Brotdose seit Montag im Flur, und das Parkticket (12 Euro) gibt es nur am Automaten in der Notaufnahme. Mitternacht. Keine Minute später.", 2]],
     goals: [
       { lvl: 0, id: "key", title: "Autoschlüssel", text: "Autoschlüssel von Dr. Kurz zurückholen", at: "friend:k", brief: "Dr. Kurz hat deinen Autoschlüssel „nur kurz“ ausgeliehen, um Brötchen zu holen. Das war um 9 Uhr. Er versteckt sich in einem Patientenzimmer." },
       { lvl: 0, id: "lunchbox", title: "Brotdose", text: "Deine Brotdose retten", at: "prop:grab", kind: "grab", spot: [16, 11], obj: "lunchbox", grab: ["🥪", "Retten", "Deine Brotdose. Seit Montag im Flur. Der Inhalt hat inzwischen einen eigenen Lebenslauf. Kim hat sie dir geschenkt. Ohne Brotdose brauchst du gar nicht heimkommen."], brief: "Die Brotdose von Kim steht seit Montag auf Station. Ohne sie brauchst du gar nicht heimkommen." },
@@ -326,7 +328,7 @@ const ROUTES = {
   consult: { name: "Beratung", title: "Senior Consultant", av: "📊", color: "#e8682a", deadline: 240, stars: 3, floors: [0, 1, 6], vehicle: "stretch", ride: "die Limousine von Consultwerk",
     client: "Kevin (27) · Consultwerk GmbH", tagline: "Drei Beweisfotos und eine Excel. Die Limousine kommt um 21:00 an den Haupteingang.",
     story: [["16:56", "Eine Mail mit 14 Anhängen. Betreff: „Quick Win? 🚀“", 3, { kind: "slides", from: "Consultwerk GmbH · Healthcare Excellence", msgs: ["FOLIE 1 · Ihr Krankenhaus hat Potenzial. (Zum Sparen.)", "FOLIE 2 · Wir brauchen Beweise: drei Fotos von Ineffizienz und die Excel vom Controlling.", "FOLIE 3 · Unsere Limousine holt Sie um 21:00 am Haupteingang ab. Wir rechnen in 6-Minuten-Takten ab. Auch die Wartezeit."] }],
-      ["17:00", "Ein Faxgerät auf deiner Station. Die Wartezeit-Anzeige in der Orthopädie. Hr. Paragraf mit seiner Excel. Wartenummer 999 in der Notaufnahme. 21:00, Haupteingang.", 2]],
+      ["17:00", "Ein Faxgerät auf deiner Station. Die Wartezeit-Anzeige in der Orthopädie. Hr. Paragraf vom Controlling sitzt mit seiner Excel auch in der Orthopädie. Wartenummer 999 in der Notaufnahme. 21:00, Haupteingang.", 2]],
     goals: [
       { lvl: 0, id: "photo0", title: "Beweisfoto: Fax", text: "Das Faxgerät fotografieren (in Betrieb!)", at: "prop:photo", kind: "photo", spot: [6, 5], obj: "fax", brief: "Ein Faxgerät. 2026. Es faxt gerade Befunde. Kevin wird weinen vor Glück." },
       { lvl: 1, id: "photo1", title: "Beweisfoto: Wartezeit", text: "Die Wartezeit-Anzeige fotografieren", at: "prop:photo", kind: "photo", spot: [5, 1], obj: "board", brief: "Die Anzeige im Gang zeigt „Wartezeit: 14 Std.“ Perfekt für Folie 12." },
@@ -341,7 +343,7 @@ const ROUTES = {
     failTicker: "Consultwerk: „Wir haben uns für einen Kandidaten mit mehr Folien entschieden.“ Klinikum St. Sparen spart weiter. Ohne Beratung. Wie immer." },
   botox: { name: "Ästhetik", title: "Ästhetische Dermatologie", av: "💉", color: "#ff7ab8", deadline: 300, stars: 2, floors: [0, 1, 4, 7], vehicle: "cabrio", ride: "das pinke Cabrio von Dr. Glatt",
     client: "Dr. Glatt · Praxis für Ästhetik", tagline: "Mo bis Do, 9 bis 15 Uhr. Probetag heute, Cabrio um 22:00.",
-    story: [["16:55", "Eine Sprachnachricht. 4 Minuten 12. Im Hintergrund plätschert ein Zimmerbrunnen.", 3, { kind: "voice", from: "Dr. Glatt 🧴", msgs: ["Liebling, ich hab dich gestern im Aufzug gesehen. Deine Augenringe sind ein medizinischer Notfall.", "Komm zum Probetag in die Dermatologie. Approbation mitbringen. Und ein Vorher-Foto für Instagram: der Bizeps des Monats aus der Orthopädie.", "Um 22:00 fahr ich mit dem Cabrio in die Praxis. Mo bis Do, 9 bis 15 Uhr. Gurkenwasser steht bereit. Namasté."] }],
+    story: [["16:55", "Eine Sprachnachricht. 4 Minuten 12. Im Hintergrund plätschert ein Zimmerbrunnen.", 3, { kind: "voice", from: "Dr. Glatt 🧴", msgs: ["Liebling, ich hab dich gestern im Aufzug gesehen. Deine Augenringe sind ein medizinischer Notfall.", "Komm zum Probetag in die Dermatologie. Approbation mitbringen. Und ein Vorher-Foto für Instagram: der Bizeps des Monats aus der Orthopädie.", "Ich hol dich um 22:00 im Parkhaus P2 ab, mit dem Cabrio. Danach: Mo bis Do, 9 bis 15 Uhr. Gurkenwasser steht bereit. Namasté."] }],
       ["17:00", "Approbation aus dem Spind. Ein Vorher-Foto in der Orthopädie. Probetag bei Dr. Glatt in der Dermatologie. Dann ins pinke Cabrio, Parkhaus P2, 22:00.", 2]],
     goals: [
       { lvl: 0, id: "approbation", title: "Approbation", text: "Approbationsurkunde aus deinem Spind", at: "prop:L", brief: "Ohne Approbation keine Praxis. Sie liegt im Spind, unter 14 Kugelschreibern und einer Banane." },
@@ -372,7 +374,7 @@ const ROUTES = {
     failTicker: "MS Sorgenfrei legt ohne Arzt ab. „Wir haben einen Erste-Hilfe-Kasten“, so der Kapitän. Klinikum St. Sparen: „Unser Arzt bleibt. Er weiß es nur noch nicht.“" },
   influ: { name: "Medfluencer", title: "@dr.feierabend", av: "🤳", color: "#c13584", deadline: 390, stars: 2, floors: [0, 2, ICU, 4, 6], vehicle: "van", ride: "der Van von GlowUp Talents",
     client: "GlowUp Talents · Influencer-Agentur", tagline: "10.000 Follower bis 23:30. Dann Vertrag, Van und Ringlicht für immer.",
-    story: [["16:53", "Eine Instagram-DM. Blauer Haken. 2,1 Mio. Follower.", 3, { kind: "insta", from: "glowup.talents ✔️", msgs: ["hey doc!! 💅 dein Reel „Wenn der OA ‚nur kurz‘ sagt“ hat 400k views 🔥🔥", "wir machen dich zum medfluencer!! 10.000 neue follower bis 23:30 und du bist unter vertrag ✨", "du brauchst: ringlicht, ein reel von der intensiv, ein collab mit @doc.wellness und 3 patienten-storys. der van holt dich am haupteingang ab 🚐💨"] }],
+    story: [["16:53", "Eine Instagram-DM. Blauer Haken. 2,1 Mio. Follower.", 3, { kind: "insta", from: "glowup.talents ✔️", msgs: ["hey doc!! 💅 dein Reel „Wenn der OA ‚nur kurz‘ sagt“ hat 400k views 🔥🔥", "wir machen dich zum medfluencer!! 10.000 neue follower bis 23:30 und du bist unter vertrag ✨", "du brauchst: ringlicht, ein reel von der intensiv, ein collab mit @doc.wellness und 3 patienten-storys. der van holt dich um 23:30 am haupteingang ab 🚐💨"] }],
       ["17:00", "Das Ringlicht liegt in der dunklen Radiologie. Die Intensivstation hat das beste Licht im Haus. @doc.wellness liegt in der Dermatologie. Storys gibt's in der Notaufnahme. 23:30. #feierabend", 2]],
     goals: [
       { lvl: 2, id: "ringlight", title: "Ringlicht", text: "Ringlicht aus dem dunklen Radiologie-Flur", at: "prop:grab", kind: "grab", spot: [5, 7], obj: "ringlight", grab: ["💡", "Mitnehmen", "Ein Ringlicht. In der Radiologie. Niemand weiß warum. +800 Follower allein für das Unboxing."], brief: "Ohne Ringlicht kein Content. Irgendwer hat eins in der Radiologie vergessen. Im Dunkeln. Natürlich." },
@@ -387,6 +389,12 @@ const ROUTES = {
     ticker: "Neuer Medfluencer @dr.feierabend erklärt in 15 Sekunden, warum niemand mehr im Krankenhaus arbeiten will. 3 Mio. Aufrufe. Klinikum St. Sparen: „Kein Kommentar.“",
     failTicker: "Tanzender Zahnarzt erreicht 2 Mio. Follower. @dr.feierabend postet Story aus dem Arztzimmer: „Noch kurz Briefe. 🙃“ 12 Likes." },
 };
+/* the exit list as a sentence: "Du brauchst deine Approbation, dein Arbeitszeugnis und den Studienordner." */
+const NEED = { key: "deinen Autoschlüssel", lunchbox: "deine Brotdose", ticket: "ein Parkticket", approbation: "deine Approbation", zeugnis: "dein Arbeitszeugnis", binder: "den Studienordner „Wunderpille“",
+  photo0: "ein Beweisfoto vom Faxgerät", photo1: "ein Beweisfoto der Wartezeit-Anzeige", excel: "die Excel vom Controlling", photo5: "ein Beweisfoto von Wartenummer 999",
+  bizepsfoto: "ein Vorher-Foto vom Bizeps des Monats", probe: "einen bestandenen Probetag", cream: "Sonnencreme (LSF 50)", meds: "Reisetabletten", koffer: "deinen Koffer",
+  ringlight: "ein Ringlicht", reel: "ein Reel von der Intensiv", collab: "ein Collab-Selfie mit @doc.wellness", testi: "drei Patienten-Storys" };
+const needList = R => { const a = R.goals.map(g => NEED[g.id] || g.title); return a.length > 1 ? a.slice(0, -1).join(", ") + " und " + a[a.length - 1] : a[0] || ""; };
 const ROUTE_ORDER = ["stay", "pharma", "consult", "botox", "ship", "influ"];
 /* what each exit offers, set against what the hospital gives you: [what, Klinikum St. Sparen, the offer] */
 const DEALS = {

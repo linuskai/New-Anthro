@@ -32,7 +32,7 @@ function loadFloor(idx) {
   player.x = level.start[0] + .5; player.y = level.start[1] + .5; player.yaw = level.startYaw; player.pitch = 0;
   Object.assign(player, { coffee: 0, busy: 0, inv: 0, hidden: false, stun: 0, slip: 0, channel: null, lampOn: true });
   if (ENV[L.env].dark) player.lamp = Math.max(player.lamp, 70);
-  lure = null; nerdLure = null; blackout = 0; scare = null; endCall(); run.callsHere = 0; spookReset();
+  lure = null; nerdLure = null; blackout = 0; scare = null; endCall(); run.callsHere = 0; spookReset(); player.fallT = 0;
   run.pageT = run.callbacks.length >= 2 ? 8 : null;
   run.reaRandomT = L.reaRandom ? 45 + Math.random() * 30 : null;
   run.reaScriptT = L.reaScript || null;
@@ -93,8 +93,8 @@ function objectives() {
     (o.fin ? fin : list).push({ ...o, text: typeof o.text === "function" ? o.text() : o.text, done: o.done ? o.done() : run.flags.has(o.id) });
   }
   for (const g of R.goals) if (g.lvl === run.idx) list.push({ ...g, main: true, route: R.name, text: typeof g.text === "function" ? g.text() : g.text, done: goalDone(g) });
-  if (last && level && level.boss) list.push({ id: "boss", title: "Endgegner: " + level.boss.def.name, text: level.boss.def.name + " steht dir im Weg", main: true, at: "boss", done: !!level.boss.cleared, boss: true,
-    how: "Ansprechen: reden, Formular ausfüllen oder kämpfen", brief: level.boss.def.line });
+  if (last && level && level.boss) list.push({ id: "boss", title: "Endgegner: " + level.boss.def.name, text: level.boss.def.name + " sucht dich. Endkampf!", main: true, at: "boss", done: !!level.boss.cleared, boss: true,
+    how: "Kein Entkommen: Er kommt zu dir. Endkampf!", brief: level.boss.def.line });
   list.push(...fin);
   if (!L.final) list.push(last
     ? { id: "exit", title: "Haupteingang", text: "Raus! " + R.ride[0].toUpperCase() + R.ride.slice(1) + " wartet", brief: "Der Haupteingang. Dahinter: Freiheit. Und " + R.ride + ".", main: true, at: "exit", done: false, isExit: true }

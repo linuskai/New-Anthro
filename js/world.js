@@ -454,6 +454,7 @@ function makePerson(sp) {
   if (sp.pose === "curl") { const db = new THREE.Group(); db.position.set(0, -.32, .02); hand.add(db); const bar = mesh(GEO.cyl, phong(0x8a8f94, 80), .015, .3, .015); bar.rotation.z = Math.PI / 2; db.add(bar); for (const sx of [-1, 1]) { const w = mesh(GEO.cyl, lambert(0x1e1f22), .07, .06, .07); w.rotation.z = Math.PI / 2; w.position.x = sx * .13; db.add(w); } }
   if (acc === "shake") { const h0 = elbows[0]; add(GEO.cyl, 0x2b2b2b, .045, .16, .045, 0, -.36, .05, h0); add(GEO.cyl, 0xf2c300, .047, .03, .047, 0, -.27, .05, h0); }
   if (acc === "jar") add(GEO.cyl, 0xf6c1d4, .05, .07, .05, 0, -.34, .06, hand);
+  if (acc === "tray") { add(GEO.box, 0x1d1d1d, .26, .012, .2, 0, -.33, .1, hand); add(GEO.cyl, 0xf4f4ee, .04, .09, .04, .05, -.28, .12, hand); add(GEO.cyl, 0x9ccc65, .036, .015, .036, .05, -.23, .12, hand); add(GEO.box, 0x2a2a2a, .09, .012, .12, -.07, -.32, .08, hand); }
   if (acc === "phone") add(GEO.box, 0x111111, .065, .13, .012, 0, -.36, .07, hand);
   if (acc === "handbag") add(GEO.box, 0x6a3a2a, .24, .18, .09, .04, -.42, 0, hand);
   if (acc === "toolbox") add(GEO.box, 0xc0322a, .34, .16, .15, .08, -.44, 0, hand);
@@ -494,6 +495,10 @@ function animatePerson(p, dt, moving, speed) {
   p.body.rotation.z = c * .035; p.body.rotation.x = p.amp * .05 * Math.min(1.5, speed + .4); // hips sway and a slight forward lean when walking
   p.knees[0].rotation.x = Math.max(0, -c) * .8; p.knees[1].rotation.x = Math.max(0, c) * .8;
   if (pose === "zombie") { p.arms[0].rotation.x = -1.45 + s * .12; p.arms[1].rotation.x = -1.4 - s * .12; p.elbows[0].rotation.x = p.elbows[1].rotation.x = -.15; p.head.rotation.z = Math.sin(p.phase * .5) * .15; }
+  else if (pose === "butler") { // one hand behind the back, the other one holding the tray, very upright
+    p.arms[0].rotation.set(.55, 0, .3); p.elbows[0].rotation.set(-1.7, 0, 0); p.arms[1].rotation.set(-.55, 0, 0); p.elbows[1].rotation.set(-1.15, 0, 0);
+    p.body.rotation.x = -.04; p.head.rotation.x = -.08; p.head.rotation.y = (p.look || 0) * .6;
+  }
   else if (pose === "flex") {
     // right arm: classic biceps flex, pumping a little; left arm holds the shake
     const pump = Math.sin(p.phase * .6) * .12;

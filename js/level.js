@@ -432,6 +432,12 @@ function buildLevel(idx) {
     }
   }
 
+  if (theme === "ortho") buildGym(lv, group, r);
+  if (theme === "derma") { // signs for the two new wings
+    const sign = (txt, c, x, y) => { const s2 = sprite(labelTex(txt, c, "#fff"), 2.1, .32); s2.position.set((x + .5) * S, 2.6, (y + .5) * S); group.add(s2); };
+    if (grid[4] && grid[4][28] === "d") sign("🧖 SPA · LSF-50-PFLICHT", "#e26fa0", 28, 4.6);
+    if (grid[6] && grid[6][28] === "d") sign("💄 BEAUTY-STUDIO", "#b0487a", 28, 5.4);
+  }
   // dermatology: cucumber slices and cortisone tubes on the polished floor. Walk and you slip; sneak and you are fine.
   if (theme === "derma") {
     const free = [];

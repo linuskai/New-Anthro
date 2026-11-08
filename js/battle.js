@@ -92,11 +92,12 @@ const PLAYER_SP = { skin: SKIN[0], hair: 0x5a3a22, hairStyle: "short", coat: tru
 
 // ---------- types and moves ----------
 const EFFECT = { DIAGNOSTIK: { KRAFT: 2, HIERARCHIE: .5 }, PAPIER: { BÜROKRATIE: 2, KRAFT: .5 }, EMPATHIE: { GREMIUM: 2, HIERARCHIE: 2, BÜROKRATIE: .5 }, KOFFEIN: {} };
+/* what an assistant doctor brings to a fight: paper, knowledge, exhaustion and bad coffee */
 const MY_MOVES = [
-  { n: "AUSKULTATION", t: "DIAGNOSTIK", p: 40, pp: 15, txt: "hört ihn ab. Systolikum! Er ist verunsichert." },
+  { n: "ARZTBRIEF-WURF", t: "PAPIER", p: 46, pp: 15, txt: "wirft einen 14-seitigen Arztbrief. Ungelesen. Mit Tippfehlern. Mitten ins Gesicht." },
   { n: "FACHFRAGE", t: "DIAGNOSTIK", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." },
-  { n: "LEITLINIE", t: "PAPIER", p: 50, pp: 10, txt: "zitiert die S3-Leitlinie. Seite 412. Mit Fußnote." },
-  { n: "KAFFEEPAUSE", t: "KOFFEIN", heal: 35, pp: 3, txt: "trinkt lauwarmen Stationskaffee." },
+  { n: "AUGENRING-BLICK", t: "EMPATHIE", p: 30, pp: 8, weaken: 1, txt: "zeigt die Augenringe. 31 Stunden wach. Der Gegner fühlt sich kurz schuldig." },
+  { n: "KAFFEEPAUSE", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern." },
 ];
 const FOES = {
   U: { type: "KRAFT", lvl: 52, quiz: "ortho", moves: [
@@ -105,10 +106,11 @@ const FOES = {
     { n: "PROTEINWOLKE", debuff: 1, txt: "schüttelt seinen Shake. Eine PROTEINWOLKE! Deine Genauigkeit sinkt!" },
     { n: "FACHFRAGE", quiz: true, txt: "stellt dir eine orthopädische Frage!" }] },
   boss: { lvl: 70, moves: [
-    { n: "DIENSTPLAN", p: 24, txt: "zückt den DIENSTPLAN! Ostern UND Pfingsten!" },
-    { n: "FORMULAR-HAGEL", p: 18, txt: "setzt FORMULAR-HAGEL ein! Durchschlag gelb, rosa, blau!" },
-    { n: "STRENGER BLICK", buff: 1, txt: "setzt STRENGER BLICK ein! Du fühlst dich klein. Sein ANGRIFF steigt!" },
-    { n: "FACHFRAGE", quiz: true, txt: "prüft dein Wissen!" }] },
+    { n: "DIENSTPLAN", p: 22, txt: "zückt den DIENSTPLAN! Ostern UND Pfingsten! Und Silvester, „weil du ja eh nichts vorhast“!" },
+    { n: "NUR GANZ KURZ", p: 15, acc: 1, txt: "sagt „NUR GANZ KURZ …“! Es dauert 45 Minuten. Deine Genauigkeit sinkt!" },
+    { n: "WIR SIND FAMILIE", buff: 1, txt: "sagt „WIR SIND DOCH EINE FAMILIE“! Sein ANGRIFF steigt. Dein Gehalt nicht." },
+    { n: "ÜBERSTUNDEN-SOG", p: 18, drain: 1, txt: "saugt deine Überstunden ab! Er fühlt sich erholt. Du nicht." },
+    { n: "FACHFRAGE", quiz: true, txt: "prüft dein Wissen! Vor versammelter Mannschaft!" }] },
 };
 /* every boss has a signature move, used more often once it is angry (phase 2, under half its KP) */
 const BOSS_SIG = {
@@ -135,7 +137,7 @@ function pokeBattle(e, done, o = {}) {
   const isBoss = !!o.boss, foe = isBoss ? FOES.boss : FOES.U;
   const ftype = isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[0] : foe.type, qpool = QUIZ[isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[1] : foe.quiz];
   const name = (e.name || "Gegner").toUpperCase(), kind = isBoss ? (e.def ? e.def.role.split(" · ")[0] : "Endgegner") : "Orthopäde";
-  const S = { me: 100, foe: 100, foeAtk: 1, myAcc: 1, pp: MY_MOVES.map(m => m.pp), jonas: true, over: false, busy: true, asked: new Set() }, sig = isBoss ? BOSS_SIG[run.route] || BOSS_SIG.stay : null;
+  const S = { me: isBoss ? Math.max(1, Math.round(run.energy)) : 100, foe: 100, foeAtk: 1, myAcc: 1, pp: MY_MOVES.map(m => m.pp), jonas: true, over: false, busy: true, asked: new Set() }, sig = isBoss ? BOSS_SIG[run.route] || BOSS_SIG.stay : null;
   const ov = document.createElement("div"); ov.id = "battle"; if (isBoss) ov.classList.add("boss");
   const fs = battleSprite(e.person.sp, false, "e" + e.name), ps = battleSprite(PLAYER_SP, true, "player");
   ov.innerHTML = `<div class="pb-field">
@@ -200,6 +202,7 @@ function pokeBattle(e, done, o = {}) {
     const m = MY_MOVES[i]; S.pp[i]--;
     await say(`DU setzt ${m.n} ein!`, 350); lunge("me");
     if (m.heal) { S.me = Math.min(100, S.me + m.heal); hpUi(); sfx.spa(); await say(`DU ${m.txt} KP +${m.heal}!`); return; }
+    if (m.weaken) { S.foeAtk *= .85; }
     if (Math.random() > .92 * S.myAcc && !m.quiz) { await say("Die Attacke ging daneben!"); return; }
     let mult = (EFFECT[m.t][ftype] || 1), crit = false;
     if (m.quiz) { await say(`DU ${m.txt} Wenn er sie nicht kann, sitzt sie.`, 300); const ok = await quiz(qpool); if (!ok) { await say("Falsch! Er lacht. Die Attacke verpufft."); return; } crit = true; }
@@ -207,6 +210,7 @@ function pokeBattle(e, done, o = {}) {
     const dmg = Math.round(m.p * mult * (crit ? 1.5 : 1) * (.85 + Math.random() * .3) * .55 * (isBoss ? .8 : 1));
     hit("foe", dmg);
     if (!m.quiz) await say(`DU ${m.txt}`, 500);
+    if (m.weaken) await say(`Der ANGRIFF von ${name} sinkt!`, 450);
     if (crit) await say("Volltreffer!", 500);
     if (mult > 1) await say("Es ist sehr effektiv!", 500); else if (mult < 1) await say("Es ist nicht sehr effektiv …", 500);
   }
@@ -222,7 +226,8 @@ function pokeBattle(e, done, o = {}) {
     S.jonas = false; await say("Jonas, ich wähle dich!"); await say("Jonas, der PJler, springt dazwischen. Er hat 0 € und 100 % Motivation."); S.shield = true;
   }
   async function flee() {
-    if (S.fakeEscape || Math.random() < (isBoss ? .2 : .45)) { await say("Du bist entkommen!"); finish(false, true); return true; }
+    if (isBoss) { await say("Vor einem Endkampf kann man nicht fliehen! Hinter dir ist nur die Klinik."); return false; }
+    if (S.fakeEscape || Math.random() < .45) { await say("Du bist entkommen!"); finish(false, true); return true; }
     await say(isBoss ? `Du kannst nicht fliehen! ${name} steht in der Tür.` : "Du kannst nicht fliehen! Er versperrt den Flur. Mit Bizeps."); return false;
   }
   async function ultimate() {
@@ -254,13 +259,15 @@ function pokeBattle(e, done, o = {}) {
     if (S.shield) { S.shield = false; await say(`Jonas fängt den Treffer ab! Jonas ist besiegt! Er war sowieso unterbezahlt.`); return; }
     const dmg = Math.round(mv.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1) * (.85 + Math.random() * .3));
     hit("me", dmg); if (dmg > 25) await say("Ein Volltreffer!", 450);
+    if (mv.acc) { S.myAcc *= .85; }
+    if (mv.drain) { S.foe = Math.min(100, S.foe + Math.round(dmg / 2)); hpUi(); sfx.spa(); await say(`${name} erholt sich um ${Math.round(dmg / 2)} KP!`, 450); }
   }
   async function win() {
     foeMon.classList.add("faint"); sfx.ding();
     if (isBoss) { bossMusic(false); const ko = document.createElement("div"); ko.className = "pb-ko"; ko.innerHTML = "<b>K.O.!</b><small>Du bist frei.</small>"; ov.appendChild(ko); [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .14, .3, "square", .05)); tone(1047, .6, .9, "triangle", .06); await sleep(1600); }
     await say(`${name} wurde besiegt!`); await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
   async function lose() { bossMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say("DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", 900); finish(false); }
-  function finish(ok, fled) { if (S.over) return; S.over = true; bossMusic(false); ov.remove(); fightOn = false; run.energy = Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
+  function finish(ok, fled) { if (S.over) return; S.over = true; bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
   ov.cheat = () => { S.foe = 0; hpUi(); win(); };
   hpUi();
   (async () => {
@@ -271,6 +278,7 @@ function pokeBattle(e, done, o = {}) {
     }
     foeMon.classList.add("enter"); meMon.classList.add("enter");
     await say(isBoss ? `ENDKAMPF! ${name} versperrt dir den Weg in die Freiheit!` : `Ein wilder ${kind.toUpperCase()} erscheint!`, 700);
+    if (isBoss) await say(`Deine KP sind deine Energie: ${Math.round(S.me)} von 100. Wer vorher viel verloren hat, hat jetzt wenig.`, 600);
     if (isBoss) await say(`Hinter ${name} wartet ${mission().ride}. Los, DU!`, 500); else await say("Los, DU!", 400);
     showMenu(); })();
 }

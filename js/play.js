@@ -158,7 +158,7 @@ function act() {
   if (f.type === "friend") friendDialog(f.ref);
   else if (f.type === "item") pickupItem(f.ref);
   else if (f.type === "bouncer") bouncerDialog(f.ref);
-  else if (f.type === "boss") bossDialog(f.ref);
+  else if (f.type === "boss") encounter(f.ref);
   else if (f.type === "machine") {
     f.ref.uses++; const v = Math.random();
     if (v > .85) { addItem("4"); showToast("✈️", "#f3f8f1", "Snackautomat", "Statt Schokolade fällt ein alter Pieper heraus. Er hängt im Flugmodus fest. Perfekt.", [good("✈️ eingepackt")]); }
@@ -242,6 +242,7 @@ function updatePlayer(dt) {
   }
   if (player.hidden && moving) player.hidden = false;
   if (player.stun > 0) { player.stun -= dt; return; }
+  if (player.fallT > 0 && !(player.slip > 0)) { player.moveMag = 0; return; } // on the floor after slipping
   const sneaking = moving && (player.sneak || (ptr.move && mag < .55));
   const sprinting = (player.sprint || keys.has("shift")) && moving && run.energy > 10 && !sneaking;
   let mult = sneaking ? .5 : 1;
@@ -383,7 +384,8 @@ function updateEnemy(e, dt) {
   if (e.gone) return;
   if (e.static) {
     if (e.cool > 0) e.cool -= dt;
-    if (!e.cleared && Math.hypot(player.x - e.x, player.y - e.y) < .95 && !(e.cool > 0) && player.inv <= 0) { e.cool = 3; (e.boss ? bossDialog : bouncerDialog)(e); }
+    if (e.boss) { if (!e.cleared) bossHunt(e, dt); return; }
+    if (!e.cleared && Math.hypot(player.x - e.x, player.y - e.y) < .95 && !(e.cool > 0) && player.inv <= 0) { e.cool = 3; bouncerDialog(e); }
     return;
   }
   if (e.state === "leaving") {
@@ -471,8 +473,8 @@ function updateHazards(dt) {
     if (h.kind !== "slip" || h.done || player.slip > 0 || Math.hypot(player.x - h.x, player.y - h.y) > .42) continue;
     if (player.moveMag === .5 || player.moveMag < .5 || player.inv > 0) { if (player.moveMag === .5 && !h.warned) { h.warned = true; setMsg(h.obj === "tube" ? "Vorsicht, Kortison-Tube. Schleichend drübersteigen." : "Vorsicht, Gurkenscheiben. Schleichend drübersteigen.", 2); } continue; }
     h.done = true; h.mesh.scale.set(1.4, .25, 1.4);
-    const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw); player.slip = .9; player.slipDir = [fx, fy]; player.stun = .5;
-    sfx.slip(); setTimeout(() => sfx.knock(), 650); flash(); makeNoise(4, .3);
+    const fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw); player.slip = .55; player.slipDir = [fx, fy];
+    sfx.slip(); makeNoise(4, .3); slipFall(h);
     showToast(h.obj === "tube" ? "🧴" : "🥒", "#c0322a", h.obj === "tube" ? "Ausgerutscht · Kortison-Tube" : "Ausgerutscht · Gurkenscheibe", pick(h.obj === "tube"
       ? ["Mometason, 0,1 %. Zweimal täglich dünn auftragen. Nicht großflächig mit dem Hintern.", "Die Tube platzt. Dein Kittel ist jetzt entzündungshemmend. Dein Steißbein nicht.", "Kortison auf dem Boden. Dr. Glatt: „Ausschleichen, Liebling. Nicht ausrutschen.“"]
       : ["Bio-Gurke, Scheibe 3 von 40. Du landest auf dem Rücken. Dr. Glatt: „Gut für die Augenringe. Bleib liegen.“", "Die Gurkenscheibe hatte Vorfahrt. Du liegst im Wellness-Flur. Jemand zündet eine Duftkerze an.", "Ausgerutscht. Die Scheibe klebt dir jetzt im Gesicht. Wenigstens die Augenringe sind weg."]),
@@ -686,7 +688,7 @@ function update(dt) {
   zoneMsgT -= dt;
   if (inDark && !run.wasDark) { sfx.stinger(); if (zoneMsgT <= 0) { setMsg(pick(["Hier hat das Controlling die Beleuchtung gestrichen.", "Dieser Gang ist seit dem Sparprogramm 2019 unbeleuchtet.", "Irgendwo tropft etwas. Hoffentlich Wasser.", "Stromsparmodus. Patientenorientiert."]), 3, true); zoneMsgT = 8; } }
   run.wasDark = inDark;
-  updateScares(dt); updateStorm(dt); updateSpook(dt);
+  updateScares(dt); updateStorm(dt); updateSpook(dt); updateFloors(dt);
   applyEnv();
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }

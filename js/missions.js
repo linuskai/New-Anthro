@@ -39,23 +39,54 @@ function spawnBoss() {
 }
 
 // ---------- the boss ----------
+/* like a trainer in the old handheld games: it spots you ("!"), walks up to you, the screen flashes, and the battle starts */
+function bossHunt(e, dt) {
+  if (e.cool > 0) { e.cool -= dt; return; }
+  const d = Math.hypot(player.x - e.x, player.y - e.y);
+  if (!e.hunting) {
+    const own = grid[e.ty][e.tx]; grid[e.ty][e.tx] = "."; const sees = d < 9 && los(e.x, e.y, player.x, player.y); grid[e.ty][e.tx] = own; // its own tile blocks the view otherwise
+    if (sees) {
+      e.hunting = true; e.huntT = 1; grid[e.ty][e.tx] = "."; emote(e, "❗"); sfx.spot(); setTimeout(() => sfx.stinger(), 250);
+      setExpression(e.person, "angry"); e.tyaw = Math.atan2(player.x - e.x, player.y - e.y); clearInputs();
+      setMsg(`${e.def.name} hat dich entdeckt! Kein Entkommen.`, 4, true);
+    }
+    return;
+  }
+  if (e.huntT > 0) { e.huntT -= dt; e.tyaw = Math.atan2(player.x - e.x, player.y - e.y); return; }
+  if (d < 1.15) { if (mode === "play" && player.inv <= 0) encounter(e); return; }
+  walkTo(e, Math.floor(player.x), Math.floor(player.y), 2.8, dt);
+}
+function encounter(e) {
+  if (mode !== "play" || e.cleared || $("encounter")) return;
+  mode = "dialog"; clearInputs(); hidePopups(); endCall();
+  const ov = document.createElement("div"); ov.id = "encounter"; ov.innerHTML = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>"; document.body.appendChild(ov);
+  [880, 988, 880, 988, 880, 1175].forEach((f, i) => tone(f, i * .09, .08, "square", .05)); tone(220, .6, .7, "sawtooth", .05, 110);
+  setTimeout(() => { ov.remove(); mode = "play"; bossDialog(e); }, 1500);
+}
 function bossDialog(e) {
   const B = e.def; setExpression(e.person, "angry"); clearInputs(); hidePopups();
-  fightGame(e, (ok, fled) => {
+  fightGame(e, ok => {
     if (ok) {
-      e.cleared = true; e.done = true; grid[e.ty][e.tx] = "."; run.talks++;
-      const side = DIRS.find(([dx, dy]) => cell(e.tx + dx, e.ty + dy) === "#") || [1, 0];
-      e.x = e.tx + .5 + side[0] * .62; e.y = e.ty + .5 + side[1] * .62; e.tri.visible = false;
-      e.label.material.map = labelTex("✓ " + B.name.toUpperCase(), "#7b8a85", "#fff"); e.label.material.needsUpdate = true;
+      e.cleared = true; e.done = true; e.hunting = false; run.talks++;
+      e.tri.visible = false; e.label.material.map = labelTex("✓ " + B.name.toUpperCase(), "#7b8a85", "#fff"); e.label.material.needsUpdate = true;
       setExpression(e.person, "sad"); emote(e, "😵"); addScore(300, "Endgegner: " + B.name);
       showToast(B.av, "#1f9d55", B.name + " ist besiegt!", "Der Weg ist frei. " + mission().ride[0].toUpperCase() + mission().ride.slice(1) + " wartet. Lauf!", [good("Weg frei")]);
-    } else {
-      player.inv = 3; e.cool = 4;
-      if (!fled) { run.minutes += 15; clockLoss(15, "Endkampf verloren"); }
-      showToast(B.av, "#e2483d", fled ? "Geflohen" : "Verloren", fled ? `${B.name} wartet. Und hat Zeit. Du nicht.` : `${B.name} steht wieder in der Tür. Revanche, sobald du bereit bist. Tipp: Kaffee trinken, Fachfragen nutzen, und unter einem Drittel KP: KÜNDIGUNG.`, []);
-    }
-    updateHud();
+      updateHud();
+    } else missionLost(B);
   }, { weapon: B.weapon, coat: B.coat, place: LEVELS[run.idx].short + " · ENDKAMPF", boss: true });
+}
+/* losing the final battle ends the run */
+function missionLost(B) {
+  if (run.routeFailed) return;
+  run.routeFailed = run.route; const R = mission();
+  hidePopups(); clearInputs(); endCall(); mode = "over";
+  $("endEyebrow").textContent = `${R.av} ${R.name} · Nicht geschafft`; $("endTitle").textContent = "Game over";
+  $("endText").textContent = `${B.name} hat gewonnen. ${R.ride[0].toUpperCase() + R.ride.slice(1)} fährt ohne dich. Du stehst im ${floorLabel(run.idx).toLowerCase()} und hältst deine Exit-Liste in der Hand. Morgen um 7:00 ist Frühbesprechung. Tipp: Mit mehr Energie gehst du stärker in den Endkampf. Spar sie dir auf.`;
+  $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.failTicker)}</span>`;
+  fillStats(); $("endScore").hidden = true; $("endRank").textContent = "Nicht geschafft";
+  $("endBest").hidden = false; $("endBest").textContent = `Besiegt von ${B.name} um ${fmtTime(run.minutes)}.`;
+  $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = true; clearCheckpoint();
+  sfx.stinger(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
 // ---------- paperwork: the penalty that costs real game time ----------
@@ -150,7 +181,7 @@ function showSelect() {
     return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b>
       <span class="sel-pick">🚘 ${k === "stay" ? "Du fährst selbst" : esc(ride) + " holt dich ab"} · <b>${fmtTime(routeDeadline(k))}</b> · ${esc(place)}</span>
       ${DEALS[k] ? `<span class="sel-deal">${esc(DEALS[k].hook)}</span>` : ""}
-      <span class="sel-meta"><span>📋 Exit-Liste: ${R.goals.map(g => esc(g.title)).join(", ")}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span></span>
+      <span class="sel-meta"><span>📋 Du brauchst ${esc(needList(R))}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span></span>
       <em>${r ? `Rekord: ${r.score.toLocaleString("de-DE")} € · ${fmtTime(r.minutes)}` : "Noch nicht gespielt"}</em></span></button>`;
   }).join("");
   show("ovSelect"); $("ovSelect").scrollTop = 0;
@@ -205,7 +236,11 @@ const HOW_HTML = `<ul class="legend how">
   <li><span class="ico">⚡</span><span><b>Energie</b> · deine einzige Leiste. Gespräche, neue Aufgaben, Gestank, Schreckmomente und verlorene Kämpfe kosten Energie, die Leiste blinkt dann rot. Bei 0 % ist Burnout. Aufladen: ☕ Kaffee, 🥫 Energydrink, 🍩 Donut, 🥤 Shake, Sofa im sicheren Raum, Wellness-Liege, im Treppenhaus durchatmen (+20 %).</span></li>
   <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, du übernimmst den Nachtdienst.</span></li></ul>`;
 function beginMission() {
-  initAudio(); show(null); mode = "play"; blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
+  initAudio(); show(null); blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
+  missionFlyIn(startPlaying);
+}
+function startPlaying() {
+  mode = "play"; run.clockSeen = run.minutes;
   let seen = false; try { seen = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {}
   if (!seen) { setTimeout(() => { if (mode === "play") startTour(); }, 600); return; } // the first time: the guided tour
   announceObjective();

@@ -73,7 +73,7 @@ function resumeCheckpoint() {
   Object.assign(run, { step: d.step, idx: d.idx, minutes: d.minutes, nerves: d.nerves, energy: d.energy, flags: new Set(d.flags), picked: new Set(d.picked), inv: d.inv, duties: d.duties, tasks: d.tasks, tasksTotal: d.tasksTotal,
     talks: d.talks, callsAcc: d.callsAcc, callsDec: d.callsDec, lives: d.lives, scoreLog: d.scoreLog, testi: d.testi, spa: d.spa, lostMin: d.lostMin, spotted: new Set(d.spotted) });
   loadFloor(run.idx); run.clockSeen = run.minutes; renderInv();
-  showIntro(`Gespeicherter Stand: ${mission().av} ${mission().name}, ${fmtTime(run.minutes)} Uhr. Frist ${fmtTime(routeDeadline(run.route))}.`);
+  missionFlyIn(() => showIntro(`Gespeicherter Stand: ${mission().av} ${mission().name}, ${fmtTime(run.minutes)} Uhr. Frist ${fmtTime(routeDeadline(run.route))}.`));
 }
 
 // ---------- title screen ----------

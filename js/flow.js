@@ -409,7 +409,11 @@ function render(time, dt) {
   const bob = settings.bob && mode === "play" ? Math.sin(player.bob) * (player.moveMag === .5 ? .025 : .05) : 0, shake = player.stun > 0 ? (Math.random() - .5) * .06 : 0;
   const crouch = mode === "play" && player.moveMag === .5 ? .18 : 0;
   camera.position.set(player.x * S + shake, EYE + bob - crouch - (player.hidden ? .7 : 0), player.y * S);
-  camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
+  camera.rotation.y = player.yaw; camera.rotation.x = player.pitch; camera.rotation.z = 0;
+  if (player.fallT > 0 && mode === "play") { // slipped: down on your back, looking at the ceiling, then up again
+    const t = 1 - player.fallT / 2.1, down = t < .2 ? t / .2 : t > .75 ? (1 - t) / .25 : 1;
+    camera.position.y -= down * 1.15; camera.rotation.x += down * 1.1; camera.rotation.z = down * .45 + Math.sin(t * 20) * .02 * down;
+  }
   if (mode === "story" && story && story.cam) { camera.position.copy(story.cam.p); camera.lookAt(story.cam.l); if (Math.abs(camera.fov - story.cam.fov) > .01) { camera.fov = story.cam.fov; camera.updateProjectionMatrix(); } }
   else if (camera.fov !== 72) { camera.fov = 72; camera.updateProjectionMatrix(); }
   fpHand.position.y = -.2 + Math.sin(player.bob * 2) * .008; fpHand.position.x = .13 + Math.cos(player.bob) * .004;
