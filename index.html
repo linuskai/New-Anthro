@@ -636,6 +636,8 @@ body.land.hudmin .mission { display: none; }
 .st-lift { display: grid; gap: 6px; justify-items: center; } .st-count { font: 900 54px/1 var(--display); color: #1d2622; }
 .st-res { display: grid; gap: 4px; text-align: center; padding: 6px 0; } .st-res b { font: 900 26px/1.05 var(--display); } .st-res p { margin: 0; font-size: 15px; line-height: 1.35; } .st-res span { font: 800 16px/1 var(--mono); color: #a3261d; margin-top: 4px; }
 .st-card.clean .st-res span { color: #1f9d55; } .st-go { width: 100%; justify-content: space-between; }
+.st-card .btn { background: #1d2622; color: #fff; border: 0; box-shadow: 0 4px 0 #000; } .st-card .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
+.st-card.late .fm-foot, .st-card.clean .fm-foot { display: none; } .st-card.clean .st-go { background: #1f9d55; }
 .fm-card.stamped::after { content: "GENEHMIGT"; position: absolute; right: 18px; top: 40%; font: 900 34px/1 var(--display); color: rgba(192,50,42,.85); border: 4px solid rgba(192,50,42,.85); padding: 4px 10px; transform: rotate(-14deg); border-radius: 6px; }
 @media (orientation: landscape) and (max-height: 520px) {
   .sel-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sel-card { grid-template-columns: 1fr; } .sel-av { width: 40px; height: 40px; font-size: 22px; } .sel-card small { display: none; }
