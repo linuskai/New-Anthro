@@ -179,7 +179,7 @@ function showSelect() {
   $("selList").innerHTML = ROUTE_ORDER.map(k => {
     const R = ROUTES[k], r = recs[k];
     const fl = R.floors, place = floorLabel(fl[fl.length - 1]), ride = R.ride[0].toUpperCase() + R.ride.slice(1);
-    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${esc(R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b>
+    return `<button type="button" class="sel-card" data-k="${k}" style="--mc:${R.color}"><span class="sel-av">${R.av}</span><span class="sel-body"><span class="sel-kind">${k === "stay" ? "Einfach nur nach Hause" : "Jobangebot · " + esc(DEALS[k] ? DEALS[k].org : R.name)}${r ? ' · <i class="ok">✓ geschafft</i>' : ""}</span><b>${esc(R.title)}</b>
       <span class="sel-pick">🚘 ${k === "stay" ? "Du fährst selbst" : esc(ride) + " holt dich ab"} · <b>${fmtTime(routeDeadline(k))}</b> · ${esc(place)}</span>
       ${DEALS[k] ? `<span class="sel-deal">${esc(DEALS[k].hook)}</span>` : ""}
       <span class="sel-meta"><span>📋 Du brauchst ${esc(needList(R))}</span><span>${"★".repeat(R.stars)}${"☆".repeat(3 - R.stars)}</span></span>

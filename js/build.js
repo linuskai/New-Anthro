@@ -411,7 +411,18 @@ const SHABBY_TEX = {
     const gr = g.createRadialGradient(w / 2, h, 4, w / 2, h, w * .45); gr.addColorStop(0, "rgba(30,36,26,.4)"); gr.addColorStop(1, "rgba(30,36,26,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
   }, "shabby:mold2"),
   grime: () => canvasTex(128, 256, (g, w, h) => { const r = rng(23); for (let i = 0; i < 14; i++) { const x = r() * w, len = h * (.3 + r() * .7), gr = g.createLinearGradient(0, 0, 0, len); gr.addColorStop(0, "rgba(80,60,35,.45)"); gr.addColorStop(1, "rgba(80,60,35,0)"); g.fillStyle = gr; g.fillRect(x, 0, 2 + r() * 6, len); } }, "shabby:grime"),
-  tiles: () => canvasTex(128, 128, (g, w, h) => { const r = rng(9); for (let i = 0; i < 5; i++) { g.fillStyle = `rgba(${60 + r() * 30},${60 + r() * 30},55,.55)`; g.fillRect(r() * 96, r() * 96, 24 + r() * 16, 24 + r() * 16); } }, "shabby:tiles"),
+  // worn floor: soft stains, shoe scuffs, fine grit; the edges fade out so it blends into the tiles (it used to be five hard squares)
+  tiles: () => canvasTex(256, 256, (g, w, h) => { const r = rng(9);
+    for (let i = 0; i < 8; i++) { const x = w * (.18 + r() * .64), y = h * (.18 + r() * .64), rad = 18 + r() * 48, gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, `rgba(${70 + r() * 30},${62 + r() * 25},${48 + r() * 15},${.16 + r() * .14})`); gr.addColorStop(.6, `rgba(70,62,48,${.05 + r() * .06})`); gr.addColorStop(1, "rgba(70,62,48,0)");
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rad, rad * (.45 + r() * .5), r() * 3, 0, 7); g.fill(); }
+    g.lineCap = "round";
+    for (let i = 0; i < 18; i++) { g.strokeStyle = `rgba(30,30,30,${.05 + r() * .12})`; g.lineWidth = 1 + r() * 2.5; const x = r() * w, y = r() * h, a = r() * 6, l = 10 + r() * 40;
+      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a + .5) * l * .5, y + Math.sin(a + .5) * l * .5, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    for (let i = 0; i < 700; i++) { g.fillStyle = `rgba(40,36,30,${r() * .25})`; g.beginPath(); g.arc(r() * w, r() * h, .4 + r() * 1.1, 0, 7); g.fill(); }
+    g.globalCompositeOperation = "destination-in"; const fade = g.createRadialGradient(w / 2, h / 2, w * .22, w / 2, h / 2, w * .5);
+    fade.addColorStop(0, "rgba(0,0,0,1)"); fade.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = fade; g.fillRect(0, 0, w, h); g.globalCompositeOperation = "source-over";
+  }, "shabby:tiles2"),
 };
 const SCRIBBLES = ["Tage bis zur Rente: 4.311", "Dr. K. war hier (2014–?)", "IIII IIII IIII IIII II\nDienste ohne Pause", "„Nur kurz“ – seit 2019", "Hier stand mal ein Kaffeeautomat. RIP", "BITTE NICHT AN DIE WAND LEHNEN\n(sie fällt um)", "Wasserschaden gemeldet: 03/2017\nStatus: in Prüfung"];
 const scribbleTex = t => canvasTex(256, 96, (g, w, h) => { g.fillStyle = "rgba(40,50,90,.75)"; g.font = `italic 600 20px "Comic Sans MS", "Marker Felt", ${SF}`; g.textAlign = "center"; t.split("\n").forEach((l, i, a) => g.fillText(l, w / 2, h / 2 + (i - (a.length - 1) / 2) * 24 + 7, w - 12)); }, "scrib:" + t);

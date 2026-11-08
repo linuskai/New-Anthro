@@ -18,10 +18,10 @@ function trailerSlides(R) {
   // 1 why: today somebody comes to get you out. 2 what you win. 3 what it takes. Then how: the way down, what stops you, your tricks.
   const who = R.client.split(" · ")[0], home = k === "stay", place = floorLabel(lastF), n = R.goals.length;
   S.push({ k: "Dein Exit-Tag", html: `<div class="tl-slide s-job">
-    <p class="tl-kicker">${home ? "Du willst einfach nur noch nach Hause" : "Heute ist dein Exit-Tag"}</p>
-    <div class="tl-client"><span class="av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(home ? "Feierabend war um 17:00. Die Klinik sieht das anders." : who + " will dich. Heute noch.")}</span></div></div>
+    <p class="tl-kicker">${home ? "Du willst einfach nur noch nach Hause" : "Dein Jobangebot für den Exit"}</p>
+    <div class="tl-client"><span class="av">${R.av}</span><div><small>${esc(R.client)}</small><b>${esc(R.title)}</b><span>${esc(home ? "Feierabend war um 17:00. Die Klinik sieht das anders." : "Jobangebot von " + who + ". Unterschrift heute.")}</span></div></div>
     <p class="tl-big">${home ? `Um <mark>${fmtTime(dl)}</mark> musst du bei deinem Auto sein.<span>Sonst isst Kim deine Portion. Und schläft auf deiner Seite.</span>`
-      : `${esc(ride)} holt dich heute um <mark>${fmtTime(dl)}</mark> ab.<span>Wer dann nicht am Treffpunkt ist, bleibt in der Klinik. Für immer.</span>`}</p>
+      : `Neuer Job: <b>${esc(R.title)}</b> bei ${esc(DEALS[k] ? DEALS[k].org : who)}.<span>${esc(ride)} holt dich heute um <mark>${fmtTime(dl)}</mark> ab. Wer dann nicht am Treffpunkt ist, bleibt in der Klinik. Für immer.</span>`}</p>
     <ol class="tl-steps"><li><b>1</b>Du brauchst ${esc(needList(R))}</li><li><b>2</b>Raus aus der Klinik, Etage für Etage</li><li><b>3</b>Pünktlich ${home ? "ins Auto" : "einsteigen"} · 📍 ${esc(place)}</li></ol>
     <div class="tl-clock"><b class="c-now">17:00</b><i class="c-bar"><i></i></i><b class="c-dl">${fmtTime(dl)}</b></div>
     <p class="tl-note">⏱ ${fmtSpan(dl)} Spielzeit ≈ ${realMin} Minuten echt</p></div>`,
@@ -119,7 +119,7 @@ function missionFlyIn(done) {
   mode = "flyin"; clearInputs();
   const ov = document.createElement("div"); ov.id = "flyin";
   const lines = [
-    home ? `Du willst einfach nur noch nach Hause.` : `${R.client.split(" · ")[0]} will dich als ${R.title}. Heute noch.`,
+    home ? `Du willst einfach nur noch nach Hause.` : `Jobangebot: ${R.title} bei ${DEALS[run.route] ? DEALS[run.route].org : R.client}. Unterschrift heute.`,
     `Du brauchst ${needList(R)}.` + (have ? ` (${have} von ${R.goals.length} hast du schon.)` : ""),
     home ? `Bis ${fmtTime(dl)} musst du bei deinem Auto sein · ${place}.` : `${ride} holt dich um ${fmtTime(dl)} ab · ${place}.`,
     `Sei pünktlich. Sonst bleibst du hier. Für immer.`];

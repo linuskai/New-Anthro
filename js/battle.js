@@ -94,32 +94,32 @@ const PLAYER_SP = { skin: SKIN[0], hair: 0x5a3a22, hairStyle: "short", coat: tru
 const EFFECT = { DIAGNOSTIK: { KRAFT: 2, HIERARCHIE: .5 }, PAPIER: { BÜROKRATIE: 2, KRAFT: .5 }, EMPATHIE: { GREMIUM: 2, HIERARCHIE: 2, BÜROKRATIE: .5 }, KOFFEIN: {} };
 /* what an assistant doctor brings to a fight: paper, knowledge, exhaustion and bad coffee */
 const MY_MOVES = [
-  { n: "ARZTBRIEF-WURF", t: "PAPIER", p: 46, pp: 15, txt: "wirft einen 14-seitigen Arztbrief. Ungelesen. Mit Tippfehlern. Mitten ins Gesicht." },
-  { n: "FACHFRAGE", t: "DIAGNOSTIK", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." },
-  { n: "AUGENRING-BLICK", t: "EMPATHIE", p: 30, pp: 8, weaken: 1, txt: "zeigt die Augenringe. 31 Stunden wach. Der Gegner fühlt sich kurz schuldig." },
-  { n: "KAFFEEPAUSE", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern." },
+  { n: "ARZTBRIEF-WURF", fx: "paper", t: "PAPIER", p: 46, pp: 15, txt: "wirft einen 14-seitigen Arztbrief. Ungelesen. Mit Tippfehlern. Mitten ins Gesicht." },
+  { n: "FACHFRAGE", fx: "quiz", t: "DIAGNOSTIK", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." },
+  { n: "AUGENRING-BLICK", fx: "rings", t: "EMPATHIE", p: 30, pp: 8, weaken: 1, txt: "zeigt die Augenringe. 31 Stunden wach. Der Gegner fühlt sich kurz schuldig." },
+  { n: "KAFFEEPAUSE", fx: "coffee", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern." },
 ];
 const FOES = {
   U: { type: "KRAFT", lvl: 52, quiz: "ortho", moves: [
-    { n: "REFLEXHAMMER", p: 22, txt: "schwingt den REFLEXHAMMER! Patellarsehne getroffen!" },
-    { n: "BIZEPS-FLEX", buff: 1, txt: "setzt BIZEPS-FLEX ein! Sein ANGRIFF steigt stark!" },
-    { n: "PROTEINWOLKE", debuff: 1, txt: "schüttelt seinen Shake. Eine PROTEINWOLKE! Deine Genauigkeit sinkt!" },
+    { n: "REFLEXHAMMER", fx: "hammer", p: 22, txt: "schwingt den REFLEXHAMMER! Patellarsehne getroffen!" },
+    { n: "BIZEPS-FLEX", fx: "flex", buff: 1, txt: "setzt BIZEPS-FLEX ein! Sein ANGRIFF steigt stark!" },
+    { n: "PROTEINWOLKE", fx: "cloud", debuff: 1, txt: "schüttelt seinen Shake. Eine PROTEINWOLKE! Deine Genauigkeit sinkt!" },
     { n: "FACHFRAGE", quiz: true, txt: "stellt dir eine orthopädische Frage!" }] },
   boss: { lvl: 70, moves: [
-    { n: "DIENSTPLAN", p: 22, txt: "zückt den DIENSTPLAN! Ostern UND Pfingsten! Und Silvester, „weil du ja eh nichts vorhast“!" },
-    { n: "NUR GANZ KURZ", p: 15, acc: 1, txt: "sagt „NUR GANZ KURZ …“! Es dauert 45 Minuten. Deine Genauigkeit sinkt!" },
-    { n: "WIR SIND FAMILIE", buff: 1, txt: "sagt „WIR SIND DOCH EINE FAMILIE“! Sein ANGRIFF steigt. Dein Gehalt nicht." },
-    { n: "ÜBERSTUNDEN-SOG", p: 18, drain: 1, txt: "saugt deine Überstunden ab! Er fühlt sich erholt. Du nicht." },
+    { n: "DIENSTPLAN", fx: "calendar", p: 22, txt: "zückt den DIENSTPLAN! Ostern UND Pfingsten! Und Silvester, „weil du ja eh nichts vorhast“!" },
+    { n: "NUR GANZ KURZ", fx: "bubbles", p: 15, acc: 1, txt: "sagt „NUR GANZ KURZ …“! Es dauert 45 Minuten. Deine Genauigkeit sinkt!" },
+    { n: "WIR SIND FAMILIE", fx: "up", buff: 1, txt: "sagt „WIR SIND DOCH EINE FAMILIE“! Sein ANGRIFF steigt. Dein Gehalt nicht." },
+    { n: "ÜBERSTUNDEN-SOG", fx: "drain", p: 18, drain: 1, txt: "saugt deine Überstunden ab! Er fühlt sich erholt. Du nicht." },
     { n: "FACHFRAGE", quiz: true, txt: "prüft dein Wissen! Vor versammelter Mannschaft!" }] },
 };
 /* every boss has a signature move, used more often once it is angry (phase 2, under half its KP) */
 const BOSS_SIG = {
-  stay: { n: "OSTERDIENST", p: 30, txt: "trägt dich für OSTERN, PFINGSTEN UND WEIHNACHTEN ein!" },
-  pharma: { n: "COMPLIANCE-AUDIT", p: 18, acc: 1, txt: "startet ein COMPLIANCE-AUDIT! Alle deine Kugelschreiber werden beschlagnahmt! Deine Genauigkeit sinkt!" },
-  consult: { n: "POWERPOINT-SALVE", p: 10, multi: 3, txt: "feuert eine POWERPOINT-SALVE ab! 84 Folien, alle mit Animation!" },
-  botox: { n: "BOTOX-STARRE", p: 15, stun: 1, txt: "setzt BOTOX-STARRE ein! Dein Gesicht bewegt sich nicht mehr. Der Rest auch nicht!" },
-  ship: { n: "SEEGANG", p: 18, acc: 1, txt: "lässt das Deck schaukeln! SEEGANG! Dir wird übel, deine Genauigkeit sinkt!" },
-  influ: { n: "SHITSTORM", p: 8, multi: 4, txt: "löst einen SHITSTORM aus! 4.000 Kommentare in Sekunden!" },
+  stay: { fx: "calendar", n: "OSTERDIENST", p: 30, txt: "trägt dich für OSTERN, PFINGSTEN UND WEIHNACHTEN ein!" },
+  pharma: { fx: "audit", n: "COMPLIANCE-AUDIT", p: 18, acc: 1, txt: "startet ein COMPLIANCE-AUDIT! Alle deine Kugelschreiber werden beschlagnahmt! Deine Genauigkeit sinkt!" },
+  consult: { fx: "slides", n: "POWERPOINT-SALVE", p: 10, multi: 3, txt: "feuert eine POWERPOINT-SALVE ab! 84 Folien, alle mit Animation!" },
+  botox: { fx: "needle", n: "BOTOX-STARRE", p: 15, stun: 1, txt: "setzt BOTOX-STARRE ein! Dein Gesicht bewegt sich nicht mehr. Der Rest auch nicht!" },
+  ship: { fx: "wave", n: "SEEGANG", p: 18, acc: 1, txt: "lässt das Deck schaukeln! SEEGANG! Dir wird übel, deine Genauigkeit sinkt!" },
+  influ: { fx: "storm", n: "SHITSTORM", p: 8, multi: 4, txt: "löst einen SHITSTORM aus! 4.000 Kommentare in Sekunden!" },
 };
 /* boss music: a driving minor bassline with an arpeggio on top, faster once the boss is angry */
 let bossMus = null;
@@ -154,9 +154,46 @@ function pokeBattle(e, done, o = {}) {
   const say = async (t, hold = 650) => { skip = false; textEl.textContent = ""; for (let i = 0; i <= t.length; i += 2) { if (skip) { textEl.textContent = t; break; } textEl.textContent = t.slice(0, i); await sleep(16); } textEl.textContent = t; await sleep(skip ? 150 : hold); };
   const hpUi = () => {
     for (const [who, v] of [["foe", S.foe], ["me", S.me]]) { const f = ov.querySelector(`.pb-box.${who} .hpfill`); f.style.width = Math.max(0, v) + "%"; f.className = "hpfill " + (v > 50 ? "" : v > 20 ? "mid" : "low"); }
-    ov.querySelector(".pb-box.me .num").textContent = Math.max(0, Math.round(S.me)) + "/100";
+    const numEl = ov.querySelector(".pb-box.me .num"), from = +numEl.dataset.v || Math.round(S.me), to = Math.max(0, Math.round(S.me)), t0 = performance.now(); numEl.dataset.v = to;
+    const tick = t => { const k = Math.min(1, (t - t0) / 600); numEl.textContent = Math.round(from + (to - from) * k) + "/100"; if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick);
   };
-  const hit = (who, dmg) => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("hit"); void mon.offsetWidth; mon.classList.add("hit"); sfx.knock(); if (who === "foe") S.foe -= dmg; else S.me -= dmg; hpUi(); };
+  // ---------- move animations: projectiles, rings, sparkles, stat arrows, all flying across the field ----------
+  const field = ov.querySelector(".pb-field");
+  const ctr = el => { const f = field.getBoundingClientRect(), r = el.getBoundingClientRect(); return [r.left - f.left + r.width / 2, r.top - f.top + r.height * .55, r.width]; };
+  const spawn = (html, x, y, cls = "") => { const d = document.createElement("div"); d.className = "pb-fx " + cls; d.innerHTML = html; d.style.left = x + "px"; d.style.top = y + "px"; field.appendChild(d); return d; };
+  const fly = (html, a, b, ms, delay = 0, arc = 60, spin = 0, size = 1) => new Promise(res => setTimeout(() => {
+    const d = spawn(html, a[0], a[1]); d.style.fontSize = 34 * size + "px";
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    d.animate([{ transform: "translate(-50%,-50%) scale(.6) rotate(0deg)", opacity: 0 }, { transform: `translate(calc(-50% + ${dx * .5}px), calc(-50% + ${dy * .5 - arc}px)) scale(1.1) rotate(${spin / 2}deg)`, opacity: 1, offset: .5 }, { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(${spin}deg)`, opacity: 1 }], { duration: ms, easing: "ease-in" }).onfinish = () => { d.remove(); res(); };
+  }, delay));
+  const burst = (html, c, n, spread, ms) => Promise.all(Array.from({ length: n }, (_, i) => new Promise(res => setTimeout(() => {
+    const d = spawn(html, c[0] + (Math.random() - .5) * spread, c[1] + (Math.random() - .5) * spread * .6); d.style.fontSize = "26px";
+    d.animate([{ transform: "translate(-50%,-50%) scale(0)", opacity: 1 }, { transform: "translate(-50%,-90%) scale(1.2)", opacity: 1, offset: .4 }, { transform: "translate(-50%,-170%) scale(.8)", opacity: 0 }], { duration: ms, easing: "ease-out" }).onfinish = () => { d.remove(); res(); };
+  }, i * 90))));
+  const arrows = (who, up) => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("statup", "statdown"); void mon.offsetWidth; mon.classList.add(up ? "statup" : "statdown"); tone(up ? 500 : 700, 0, .4, "square", .03, up ? 1000 : 300); return burst(up ? '<b class="arr up">▲</b>' : '<b class="arr down">▼</b>', ctr(mon), 6, ctr(mon)[2] * .7, 800); };
+  const flashField = color => { const d = spawn("", 0, 0, "flash"); d.style.background = color; d.animate([{ opacity: .85 }, { opacity: 0 }], { duration: 380 }).onfinish = () => d.remove(); };
+  async function fx(kind, from) {
+    if (!kind) return;
+    const A = ctr(from === "foe" ? foeMon : meMon), B = ctr(from === "foe" ? meMon : foeMon);
+    const volley = (e, n, gap, ms, arc, spin, size) => Promise.all(Array.from({ length: n }, (_, i) => fly(e, A, B, ms, i * gap, arc, spin, size)));
+    if (kind === "paper") { noise(0, .4, 3000, .8, .05); await volley("📄", 4, 110, 480, 70, 540); }
+    else if (kind === "quiz") { flashField("rgba(255,240,120,.6)"); tone(1200, 0, .08, "square", .04); await burst("❓", B, 6, B[2] * .8, 700); }
+    else if (kind === "rings") { await Promise.all([0, 1, 2].map(i => new Promise(res => setTimeout(() => { const d = spawn("", A[0], A[1] - 30, "ring"); d.animate([{ transform: "translate(-50%,-50%) scale(.3)", opacity: 1 }, { transform: `translate(calc(-50% + ${B[0] - A[0]}px), calc(-50% + ${B[1] - A[1]}px)) scale(1.6)`, opacity: .2 }], { duration: 650, easing: "ease-out" }).onfinish = () => { d.remove(); res(); }; tone(300 - i * 40, 0, .3, "sine", .04); }, i * 160)))); }
+    else if (kind === "coffee") { await burst("☕", A, 1, 0, 700); await burst("✨", A, 7, A[2] * .8, 800); }
+    else if (kind === "hammer") { await volley("🔨", 1, 0, 420, 120, 720, 1.5); flashField("rgba(255,255,255,.6)"); }
+    else if (kind === "flex") { await burst("💪", A, 3, A[2] * .6, 600); }
+    else if (kind === "cloud") { await volley("☁️", 3, 140, 650, 20, 0, 1.4); }
+    else if (kind === "calendar") { await volley("📅", 3, 140, 520, 60, 360, 1.1); }
+    else if (kind === "bubbles") { await volley("💬", 5, 100, 560, 30, 0, .9); }
+    else if (kind === "up") { await burst("🤝", A, 2, A[2] * .5, 600); }
+    else if (kind === "drain") { await Promise.all(Array.from({ length: 5 }, (_, i) => fly('<b class="orb"></b>', B, A, 600, i * 110, 40, 0, .8))); }
+    else if (kind === "audit") { await volley("⚖️", 2, 160, 520, 80, 0, 1.3); await burst("📎", B, 5, B[2] * .7, 600); }
+    else if (kind === "slides") { await volley("📊", 6, 70, 420, 50, 200, .9); }
+    else if (kind === "needle") { await volley("💉", 3, 120, 380, 10, 0, 1.1); flashField("rgba(255,180,220,.5)"); }
+    else if (kind === "wave") { const d = spawn("🌊🌊🌊", field.clientWidth + 60, B[1], "wave"); d.animate([{ transform: "translate(0,-50%)" }, { transform: `translate(${-field.clientWidth - 260}px,-50%)` }], { duration: 900, easing: "ease-in-out" }).onfinish = () => d.remove(); noise(0, .9, 500, .6, .1, "lowpass"); await sleep(800); }
+    else if (kind === "storm") { await Promise.all(["👎", "💩", "💬", "👎", "😡", "💬", "👎"].map((e, i) => fly(e, [field.clientWidth * Math.random(), -20], B, 500, i * 70, 0, 360, .9))); }
+  }
+  const hit = (who, dmg) => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("hit"); void mon.offsetWidth; mon.classList.add("hit"); sfx.knock(); if (dmg >= 25) { ov.classList.remove("shake"); void ov.offsetWidth; ov.classList.add("shake"); } if (who === "foe") S.foe -= dmg; else S.me -= dmg; hpUi(); };
   const lunge = who => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("lunge"); void mon.offsetWidth; mon.classList.add("lunge"); };
   const quiz = (pool) => new Promise(res => {
     let fresh = pool.filter((_, i) => !S.asked.has(i)); if (!fresh.length) { S.asked.clear(); fresh = pool; }
@@ -200,7 +237,7 @@ function pokeBattle(e, done, o = {}) {
   });
   async function myMove(i) {
     const m = MY_MOVES[i]; S.pp[i]--;
-    await say(`DU setzt ${m.n} ein!`, 350); lunge("me");
+    await say(`DU setzt ${m.n} ein!`, 350); lunge("me"); await fx(m.fx, "me");
     if (m.heal) { S.me = Math.min(100, S.me + m.heal); hpUi(); sfx.spa(); await say(`DU ${m.txt} KP +${m.heal}!`); return; }
     if (m.weaken) { S.foeAtk *= .85; }
     if (Math.random() > .92 * S.myAcc && !m.quiz) { await say("Die Attacke ging daneben!"); return; }
@@ -210,9 +247,9 @@ function pokeBattle(e, done, o = {}) {
     const dmg = Math.round(m.p * mult * (crit ? 1.5 : 1) * (.85 + Math.random() * .3) * .55 * (isBoss ? .8 : 1));
     hit("foe", dmg);
     if (!m.quiz) await say(`DU ${m.txt}`, 500);
-    if (m.weaken) await say(`Der ANGRIFF von ${name} sinkt!`, 450);
+    if (m.weaken) { await arrows("foe", false); await say(`Der ANGRIFF von ${name} sinkt!`, 450); }
     if (crit) await say("Volltreffer!", 500);
-    if (mult > 1) await say("Es ist sehr effektiv!", 500); else if (mult < 1) await say("Es ist nicht sehr effektiv …", 500);
+    if (mult > 1) { flashField("rgba(255,255,255,.7)"); await say("Es ist sehr effektiv!", 500); } else if (mult < 1) await say("Es ist nicht sehr effektiv …", 500);
   }
   async function useBag(k) {
     takeItem(k); const it = ITEMS[k];
@@ -243,7 +280,7 @@ function pokeBattle(e, done, o = {}) {
   async function foeTurn(again) {
     if (isBoss && !S.phase2 && S.foe <= 50) await rage();
     if (isBoss && (S.phase2 ? Math.random() < .4 : Math.random() < .15)) {
-      await say(`${name} setzt ${sig.n} ein! ${name} ${sig.txt}`, 500); lunge("foe");
+      await say(`${name} setzt ${sig.n} ein! ${name} ${sig.txt}`, 500); lunge("foe"); await fx(sig.fx, "foe");
       if (S.shield) { S.shield = false; await say("Jonas wirft sich in den Weg. Jonas ist besiegt! Respekt, Jonas."); }
       else { for (let h = 0; h < (sig.multi || 1); h++) { hit("me", Math.round(sig.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1))); await sleep(260); if (S.me <= 0) break; } if (sig.multi) await say(`${sig.multi} Treffer!`, 400); }
       if (sig.acc) S.myAcc *= .8; if (sig.stun) S.stunned = true;
@@ -252,20 +289,21 @@ function pokeBattle(e, done, o = {}) {
   }
   async function foeMove() {
     const mv = Math.random() < .25 ? foe.moves.find(m => m.quiz) : pick(foe.moves.filter(m => !m.quiz || Math.random() < .3));
-    await say(`${name} ${mv.txt}`, 450); lunge("foe");
-    if (mv.buff) { S.foeAtk *= 1.3; return; }
-    if (mv.debuff) { S.myAcc *= .8; return; }
+    await say(`${name} ${mv.txt}`, 450); lunge("foe"); await fx(mv.fx, "foe");
+    if (mv.buff) { S.foeAtk *= 1.3; await arrows("foe", true); return; }
+    if (mv.debuff) { S.myAcc *= .8; await arrows("me", false); return; }
     if (mv.quiz) { const ok = await quiz(qpool); if (ok) { await say(`Richtig! ${name} ist verwirrt. Er trifft sich selbst!`); hit("foe", 10); } else { if (S.shield) { S.shield = false; await say("Jonas wirft sich dazwischen und beantwortet sie falsch. Jonas ist besiegt!"); return; } hit("me", 22); await say("Falsch! Die Blamage tut weh. Sehr effektiv!"); } return; }
     if (S.shield) { S.shield = false; await say(`Jonas fängt den Treffer ab! Jonas ist besiegt! Er war sowieso unterbezahlt.`); return; }
     const dmg = Math.round(mv.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1) * (.85 + Math.random() * .3));
     hit("me", dmg); if (dmg > 25) await say("Ein Volltreffer!", 450);
-    if (mv.acc) { S.myAcc *= .85; }
+    if (mv.acc) { S.myAcc *= .85; await arrows("me", false); }
     if (mv.drain) { S.foe = Math.min(100, S.foe + Math.round(dmg / 2)); hpUi(); sfx.spa(); await say(`${name} erholt sich um ${Math.round(dmg / 2)} KP!`, 450); }
   }
   async function win() {
-    foeMon.classList.add("faint"); sfx.ding();
+    tone(520, 0, .5, "sawtooth", .05, 120); foeMon.classList.add("faint"); setTimeout(() => sfx.ding(), 500);
     if (isBoss) { bossMusic(false); const ko = document.createElement("div"); ko.className = "pb-ko"; ko.innerHTML = "<b>K.O.!</b><small>Du bist frei.</small>"; ov.appendChild(ko); [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .14, .3, "square", .05)); tone(1047, .6, .9, "triangle", .06); await sleep(1600); }
-    await say(`${name} wurde besiegt!`); await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
+    await say(`${name} wurde besiegt!`);
+    const exp = ov.querySelector(".pb-box.me .exp div"); if (exp) { exp.style.transition = "width 1.2s ease-out"; exp.style.width = "100%"; tone(880, 0, 1.1, "sine", .03, 1760); await sleep(1250); exp.style.transition = "none"; exp.style.width = "8%"; ov.querySelector(".pb-box.me .lv").textContent = "Lv32"; [659, 784, 1047].forEach((f, i) => tone(f, i * .12, .2, "square", .04)); await say("DU erreicht Lv32! Dein Gehalt steigt um 0 €.", 700); } await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
   async function lose() { bossMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say("DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", 900); finish(false); }
   function finish(ok, fled) { if (S.over) return; S.over = true; bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
   ov.cheat = () => { S.foe = 0; hpUi(); win(); };
@@ -276,10 +314,14 @@ function pokeBattle(e, done, o = {}) {
       vs.innerHTML = `<div class="vs-me">${ps ? `<img src="${ps}" alt="">` : "🧑‍⚕️"}<b>DU</b></div><div class="vs-mid"><small>ENDKAMPF</small><b>VS</b></div><div class="vs-foe">${fs ? `<img src="${fs}" alt="">` : esc(e.def ? e.def.av : "👔")}<b>${esc(name)}</b><small>${esc(e.def ? e.def.role : kind)}</small></div>`;
       ov.appendChild(vs); sfx.slam(); setTimeout(() => sfx.stinger(), 300); bossMusic(true, false); await sleep(2600); vs.classList.add("out"); await sleep(400); vs.remove();
     }
-    foeMon.classList.add("enter"); meMon.classList.add("enter");
+    foeMon.classList.add("enter"); ov.querySelector(".pb-plat.foe").classList.add("enter"); ov.querySelector(".pb-plat.me").classList.add("enter"); meMon.classList.add("hidden");
     await say(isBoss ? `ENDKAMPF! ${name} versperrt dir den Weg in die Freiheit!` : `Ein wilder ${kind.toUpperCase()} erscheint!`, 700);
     if (isBoss) await say(`Deine KP sind deine Energie: ${Math.round(S.me)} von 100. Wer vorher viel verloren hat, hat jetzt wenig.`, 600);
     if (isBoss) await say(`Hinter ${name} wartet ${mission().ride}. Los, DU!`, 500); else await say("Los, DU!", 400);
+    { const m = ctr(meMon); const ball = spawn('<b class="ball"></b>', -20, m[1] + 40); tone(600, 0, .25, "square", .03, 300);
+      await new Promise(res => { ball.animate([{ transform: "translate(-50%,-50%) rotate(0)" }, { transform: `translate(calc(-50% + ${(m[0] + 20) * .5}px), calc(-50% - 120px)) rotate(360deg)`, offset: .5 }, { transform: `translate(calc(-50% + ${m[0] + 20}px), calc(-50% - 40px)) rotate(720deg)` }], { duration: 650, easing: "ease-out" }).onfinish = () => { ball.remove(); res(); }; });
+      const fl = spawn("", m[0], m[1] - 40, "pop"); fl.animate([{ transform: "translate(-50%,-50%) scale(.1)", opacity: 1 }, { transform: "translate(-50%,-50%) scale(3)", opacity: 0 }], { duration: 450 }).onfinish = () => fl.remove();
+      tone(1100, 0, .15, "triangle", .05); meMon.classList.remove("hidden"); meMon.classList.add("popin"); await sleep(450); }
     showMenu(); })();
 }
 // the old reflex arena is gone: every fight is a battle now

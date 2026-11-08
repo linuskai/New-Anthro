@@ -2,6 +2,72 @@
    and a nurse who needs an IV line placed. Both cost real game time. */
 
 // ---------- the attending: three rounds, every answer costs something ----------
+/* more rounds, picked now and then instead of the classic ones */
+const OA_MORE = [[
+  { q: "„Kollege! Kurze Frage: Lieben Sie Ihren Beruf?“ Er wartet nicht auf die Antwort. „Wunderbar. Dann wird Ihnen der Samstag gefallen.“", options: [
+    opt("„Ich liebe meinen Beruf. Nicht den Samstag.“", () => say("„Das ist dasselbe.“ Er trägt dich ein. Mit Herzchen.", pen({ duties: 1 }))),
+    opt("„Ich liebe meine Familie.“", () => say("„Die Klinik IST Ihre Familie. Fragen Sie die Geschäftsführung.“", pen({ mins: 6 }))),
+    bluff("„Samstag habe ich Hochzeit.“", .35, "„Ihre eigene? … Na gut. Aber nur dieses eine Mal.“", "„Ihre? Schon wieder? Das war doch letzten Monat.“", { duties: 1 })] },
+  { q: "Er hält dir sein Handy hin. „Mein neues Boot. Finanziert durch Ihre Überstunden. Kleiner Scherz.“ Es ist kein Scherz.", options: [
+    opt("„Schönes Boot.“", () => say("„Nicht wahr? Es heißt ‚Bereitschaft‘. Wie Sie am Wochenende.“", pen({ mins: 5, duties: 1 }))),
+    opt("„Wo ist meine Kabine?“", () => say("Er lacht laut. Zu laut. Dann gibt er dir drei Briefe. „Zum Lachen gibt's Arbeit.“", pen({ tasks: ["3 Briefe (Lach-Strafe)"] }))),
+    breakFree(25, "Während er Fotos vom Bootsmotor zeigt, gehst du einfach. Er merkt es erst bei Foto 41.")] },
+  { q: "„Ich habe gehört, Sie hatten heute Pause. Wie lange?“ Er zückt einen Taschenrechner.", options: [
+    opt("„Sieben Minuten.“", () => say("„Sieben! Das sind fast zwei Prozent Ihrer Tagesarbeitszeit. Unverschämt.“ Er rechnet laut weiter.", pen({ mins: 9 }))),
+    opt("„Ich hatte keine Pause.“", () => say("„Dann sind Sie ja ausgeruht.“ Logik des Hauses.", pen({ mins: 4 }))),
+    opt("„Ich war auf Toilette.“", () => say("„Zweimal. Ich habe gezählt.“ Er notiert es. Im Ordner „Leistungsträger?“", pen({ nerves: 1 })))] },
+  { q: "„Neues Leitbild: ‚Der Mensch im Mittelpunkt‘. Sie sind ein Mensch. Also stehen Sie im Mittelpunkt. Von allem.“", options: [
+    opt("„Kann ich auch am Rand stehen?“", () => say("„Am Rand stehen die Teilzeitkräfte. Wollen Sie Teilzeit? Haha. Nein.“", pen({ mins: 5 }))),
+    opt("„Wer hat sich das ausgedacht?“", () => say("„Eine Unternehmensberatung. Für 400.000 Euro. Dafür haben wir die Kaffeemaschine gestrichen.“", pen({ mins: 4 }))),
+    opt("Applaudieren.", () => free("Er ist so gerührt, dass er vergisst, was er wollte. Du gehst rückwärts."))] },
+  { q: "„Sie sind ja jung. Sie brauchen keinen Schlaf. Schlaf ist was für Leute mit Tarifvertrag.“", options: [
+    opt("„Ich HABE einen Tarifvertrag.“", () => say("„Ja, aber nicht mit mir.“", pen({ mins: 6 }))),
+    opt("„Dann schlafe ich eben im Dienst.“", () => say("„Gerne! Im Nachtdienst. Diese Woche dreimal.“", pen({ duties: 2 }))),
+    bluff("„Der Betriebsrat hört mit.“", .5, "Er schaut sich hektisch um. Du nutzt die Sekunde.", "„Der Betriebsrat? Das ist mein Schwager.“", { mins: 8 })] },
+], [
+  { q: "„Kleine Bitte: Sie übernehmen ab morgen die Qualitätssicherung. Das ist eine Ehre. Und unbezahlt. Also doppelt Ehre.“", options: [
+    opt("„Ich fühle mich geehrt.“", () => say("„Sehr gut. Die erste Sitzung ist heute um 19 Uhr. Kurz. Drei Stunden.“", pen({ mins: 10, tasks: ["QM-Sitzung 19 Uhr"] }))),
+    opt("„Ich verzichte auf die Ehre.“", () => say("„Das geht nicht. Die Ehre hat schon zugesagt.“", pen({ tasks: ["Qualitätssicherung (Ehrenamt)"] }))),
+    opt("„Wer hat das bisher gemacht?“", () => say("„Dr. Kurz. Er ist jetzt in der Reha. Burnout. Aber sehr gut dokumentiert.“", pen({ nerves: 1 })))] },
+  { q: "„Die Patientin in Zimmer 9 ist sehr zufrieden mit Ihnen. Deshalb bekommen Sie jetzt auch Zimmer 10 bis 22.“", options: [
+    opt("„Danke, glaube ich.“", () => say("„Gern. Leistung muss sich lohnen. Mit mehr Leistung.“", pen({ tasks: ["Zi. 10–22"], mins: 4 }))),
+    opt("„Kann ich unzufriedener werden?“", () => say("„Versuchen Sie's. Dann bekommen Sie die Beschwerdestelle.“", pen({ mins: 6 }))),
+    breakFree(30, "Du rufst „Zimmer 9 klingelt!“ und rennst. Zimmer 9 hat nicht geklingelt. Egal.")] },
+  { q: "„Ich bräuchte von Ihnen einen Vortrag für die Chefarzt-Runde. Morgen. Thema: ‚Warum wir keine Überstunden haben‘.“", options: [
+    opt("„Das wird ein kurzer Vortrag.“", () => say("„Genau. Zehn Folien. Mit Grafiken. Und Ihrer Unterschrift.“", pen({ tasks: ["Vortrag „Keine Überstunden“"], mins: 5 }))),
+    opt("„Darf ich die Wahrheit sagen?“", () => say("„Natürlich! Auf Folie 1. Dann löschen wir Folie 1.“", pen({ mins: 7 }))),
+    opt("„Ich habe keine Folienvorlage.“", () => say("„Die Vorlage ist im Intranet. Seit 2015 kaputt. Bauen Sie sie neu.“", pen({ tasks: ["Folienvorlage reparieren"], mins: 4 })))] },
+  { q: "„Wir messen jetzt Ihre Effizienz. Mit dieser App.“ Sie heißt „Schritte“. Du hast heute 23.000.", options: [
+    opt("„23.000 Schritte, nicht schlecht.“", () => say("„Zu viele. Wer viel läuft, hat zu wenig Patienten pro Quadratmeter.“", pen({ mins: 6 }))),
+    opt("„Die zählt auch die Treppe zur Kantine.“", () => say("„Die Kantine ist geschlossen. Was machen Sie da?“ Verhör, 9 Minuten.", pen({ mins: 9 }))),
+    opt("Das Handy in den Wäschewagen werfen.", () => free("Die App zählt jetzt Waschgänge. Du bist plötzlich hocheffizient."))] },
+  { q: "„Die Geschäftsführung bedankt sich für Ihren Einsatz. Hier ist Ihr Geschenk.“ Ein Kugelschreiber mit Logo. Er schreibt nicht.", options: [
+    opt("„Er schreibt nicht.“", () => say("„Wie unsere Gehaltsabrechnung. Ein Kunstwerk.“", pen({ mins: 3 }))),
+    opt("„Danke, ich bin gerührt.“", () => say("„Gut. Dann unterschreiben Sie hier, dass Sie ihn erhalten haben.“ Mit welchem Stift?", pen({ mins: 5, tasks: ["Empfangsbestätigung Kuli"] }))),
+    opt("„Kann ich stattdessen Urlaub haben?“", () => say("Er lacht so laut, dass zwei Patienten aufwachen. Die wollen jetzt dich.", pen({ tasks: ["2 wache Patienten"], nerves: 1 })))] },
+], [
+  { q: "„Ihr Dienstplan für Dezember: Weihnachten, weil Sie ja keine Kinder haben. Silvester, weil Sie ja keine Freunde haben.“", options: [
+    opt("„Woher wissen Sie das?“", () => say("„Ich lese Ihre Arztbriefe. Da steht viel über Einsamkeit.“", pen({ duties: 1, nerves: 1 }))),
+    opt("„Ich habe Freunde!“", () => say("„Dann bringen Sie sie mit. Wir brauchen Leute.“", pen({ duties: 1 }))),
+    bluff("„Ich kündige.“", .45, "Er wird kreidebleich. „Machen wir doch … Ostern draus?“ Du gehst.", "„Haha. Kündigungsfrist sechs Monate. Sechs Weihnachten.“ Er lacht über seine eigene Rechnung.", { duties: 2 })] },
+  { q: "„Ein Rat von Herzen: Wer früh geht, kommt nie weit. Ich bin nie früh gegangen. Und schauen Sie, wo ich heute bin.“ Er steht unter einer kaputten Neonröhre.", options: [
+    opt("„Im Flur.“", () => say("„… Im Flur der KARRIERE.“ Er räuspert sich. „Gehen Sie. Bevor ich es mir anders überlege.“", [], 1)),
+    opt("„Wo denn?“", () => say("„Oberarzt. Seit 19 Jahren.“ Stille. Für einen Moment tut er dir leid. Für genau einen.", pen({ mins: 4 }))),
+    opt("„Inspirierend.“", () => free("Er ist so geschmeichelt, dass er dir einen schönen Abend wünscht. Zum ersten Mal seit 2006."))] },
+  { q: "„Sie wollen gehen? Bitte. Ich sage nur: Leute, die gehen, nennen wir hier ‚Verlust‘. In der Bilanz.“", options: [
+    opt("„Dann bin ich gern ein Verlust.“", () => free("„Ein ABSCHREIBUNGSFALL!“, ruft er dir nach. Klingt wie Freiheit.")),
+    opt("„Und Leute, die bleiben, sind ein Gewinn?“", () => say("„Nein. Fixkosten.“ Er geht kopfschüttelnd. Du auch.", [], 1)),
+    opt("„Ich bleibe noch fünf Minuten.“", () => say("Es werden 50. Es werden immer 50.", pen({ mins: 20 })))] },
+  { q: "„Bevor Sie gehen: Teamfoto für die Homepage. ‚Glückliche Mitarbeitende‘. Lächeln Sie.“", options: [
+    opt("Lächeln.", () => say("Der Fotograf braucht 34 Versuche. Dein Lächeln macht Überstunden.", pen({ mins: 10 }))),
+    opt("„Ich bin nicht glücklich.“", () => say("„Dann eben ‚Mitarbeitende‘. Das Glück retuschieren wir rein.“", pen({ mins: 4 }))),
+    opt("Aus dem Bild laufen.", () => free("Auf der Homepage sieht man jetzt einen verwischten Kittel. Er wird Mitarbeiter des Monats."))] },
+  { q: "„Okay, gehen Sie. Aber denken Sie dran: Die Patienten brauchen Sie. Ich brauche Sie. Die Excel braucht Sie.“ Er meint vor allem die Excel.", options: [
+    opt("„Die Excel kommt klar.“", () => free("„Die Excel kommt NIE klar!“ Er hält sie wie ein Baby. Du gehst.")),
+    opt("„Ich brauche auch mich.“", () => say("Er blinzelt. Er hat diesen Satz noch nie gehört. Er muss sich setzen. Du nutzt das.", [], 1)),
+    opt("„Dann komme ich morgen um 6.“", () => say("„5:30. Für die Excel.“", pen({ mins: 3, tasks: ["5:30 Excel"] })))] },
+]];
+const oaRound = (classic, i) => Math.random() < .55 ? pick(OA_MORE[i]) : classic;
 function oberarztDialog(e) {
   const goal = run.route && run.route !== "stay" ? mission() : null;
   const s1 = pick([
@@ -68,7 +134,7 @@ function oberarztDialog(e) {
       opt("„Ich bin ab sofort in der Industrie.“", () => say("Er wird bleich. Dann rot. Dann beigefarben, wie die Wand. „Das… schreiben Sie mir bitte als Formular.“", pen({ mins: 6 }))),
       opt("Wortlos davonschleichen, während er auf sein Klemmbrett schaut.", () => say("Du kommst drei Meter weit. „KOLLEGE?“ Du drehst dich um. Er hat es nicht mal angehoben, das Klemmbrett.", pen({ mins: 5, nerves: 1 })))] }]);
   pen({ mins: 4 }); // he was already talking when you noticed him
-  runChain(e, "Ein Oberarzt. Er hat dich gesehen. Es gibt kein Entkommen. (Schon 4 Minuten weg.)", [s1, s2, s3], score => ({
+  runChain(e, "Ein Oberarzt. Er hat dich gesehen. Es gibt kein Entkommen. (Schon 4 Minuten weg.)", [oaRound(s1, 0), oaRound(s2, 1), oaRound(s3, 2)], score => ({
     text: pick(["Er geht. Du schaust auf die Uhr. Die Uhr schaut zurück. Mitleidig.", "Er klopft dir zum Abschied auf die Schulter. Drei Aufgaben fallen heraus. Sie gehören jetzt dir.", "„Schönen Feierabend!“ ruft er. Er meint es nicht ironisch. Das ist das Schlimmste."]),
     stamps: [{ text: "Oberarzt überlebt" }] }));
 }

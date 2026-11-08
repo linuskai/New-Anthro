@@ -350,6 +350,10 @@ function makePerson(sp) {
     const sw = .11 * Math.max(1, limbR * .8);
     add(GEO.box, shoes, sw, .07, .2, 0, -.44, .03, knee); add(GEO.ball, shoes, sw * .5, .045, .07, 0, -.45, .13, knee);
     add(GEO.box, new THREE.Color(shoes).multiplyScalar(.45).getHex(), sw * 1.04, .022, .27, 0, -.485, .055, knee);
+    if (!sp.lowDetail) { // laces and a trouser crease
+      add(GEO.box, 0xe8e6e0, sw * .45, .012, .07, 0, -.402, .075, knee);
+      if (!sp.gown && !sp.robe) { add(GEO.box, shade(pants, .78), .007, .4, .006, 0, -.21, .074 * limbR, hip); add(GEO.box, shade(pants, .78), .006, .38, .006, 0, -.2, .058 * limbR, knee); }
+    }
     legs.push(hip); knees.push(knee);
   }
   add(GEO.torso, sp.shirt || 0x777777, tw / 2, .58, td / 2, 0, 1.2, 0);
@@ -374,6 +378,10 @@ function makePerson(sp) {
   if (sp.badge) { add(GEO.box, 0xffffff, .06, .085, .008, -tw * .26, 1.3, td / 2 + .03); add(GEO.box, 0x2d3f8f, .06, .018, .009, -tw * .26, 1.335, td / 2 + .031); }
   if (!sp.gown && !sp.robe && !sp.coat && !sp.scrubs) { const belt = add(GEO.cyl, 0x2a2420, tw / 2 + .006, .04, td / 2 + .006, 0, 1.0, 0); belt.userData.belt = true; add(GEO.box, 0xc0b080, .035, .03, .01, 0, 1.0, td / 2 + .01); }
   if (sp.tie) add(GEO.box, sp.tie, .045, .32, .012, 0, 1.24, td / 2 + .04);
+  if (!sp.lowDetail && !sp.ghost && !sp.shadowFig && !sp.gown && !sp.robe) { // shirt collar points and a button placket
+    for (const s of [-1, 1]) { const cl = add(GEO.box, sp.shirt || 0x777777, .06, .045, .012, s * .04, 1.5, td / 2 + .012); cl.rotation.z = s * .7; }
+    if (!sp.coat && !sp.scrubs && !sp.jacket && !sp.apron) for (let i = 0; i < 4; i++) add(GEO.ball, shade(sp.shirt || 0x777777, .7), .007, .007, .004, 0, 1.42 - i * .1, td / 2 + .012);
+  }
   if (sp.pens) for (let i = 0; i < 3; i++) add(GEO.box, [0x2d3f8f, 0xc0322a, 0x1f9d55][i], .014, .09, .014, -tw * .3 + i * .03, 1.36, td / 2 + .04);
   if (sp.apron) add(GEO.box, 0x4a5568, tw + .06, .78, .03, 0, 1.12, td / 2 + .045);
   if (sp.print) { const pm = new THREE.Mesh(GEO.plane, lambert(0xffffff, shirtPrintTex(sp.print))); pm.scale.set(tw * .8, tw * .3, 1); pm.position.set(0, 1.32, td / 2 + .02); body.add(pm); }
@@ -409,6 +417,12 @@ function makePerson(sp) {
     face.up = add(GEO.ball, lipC, .026, .007, .008, 0, -.052, .115, head); face.lo = add(GEO.ball, warm(shade(skin, .9)), .022, .008, .008, 0, -.063, .113, head);
     for (const sx of [-1, 1]) { const c = add(GEO.ball, shade(lipC, .75), .012, .006, .007, sx * .028, -.05, .111, head); c.userData.sx = sx; face.corners.push(c); }
     face.o = add(GEO.ball, 0x3a1414, .019, .024, .006, 0, -.058, .115, head); face.o.visible = false;
+    if (!sp.lowDetail) { // nostrils, chin, lashes, ear lobes, and on some a five-o'clock shadow
+      for (const sx of [-1, 1]) { add(GEO.ball, shade(skin, .5), .006, .005, .004, sx * .009, -.027, .126, head); add(GEO.ball, shade(skin, .92), .012, .014, .01, sx * .114, -.035, .004, head); }
+      add(GEO.ball, shade(skin, .97), .045, .028, .035, 0, -.098, .074, head);
+      if (["long", "bun"].includes(sp.hairStyle)) for (const sx of [-1, 1]) add(GEO.box, 0x1a1414, .028, .004, .004, sx * .041, .027, .112, head);
+      if (sp.stubble ?? (["short", "baldSides", "messy", "spiky"].includes(sp.hairStyle) && !sp.beard && (skin * 7) % 3 === 0)) { const st = add(GEO.ball, 0x2a2420, .088, .06, .05, 0, -.075, .07, head); st.material = st.material.clone(); st.material.transparent = true; st.material.opacity = .22; }
+    }
   }
   const hs = sp.hairStyle || "short", hc = sp.hair || 0x333333;
   if (["short", "messy", "long", "bun", "spiky"].includes(hs)) { add(GEO.cap, hc, .122, hs === "messy" ? .15 : .13, .127, 0, .01, -.008, head); const fr = add(GEO.ball, hc, .1, .035, .05, hs === "long" ? -.02 : .015, .088, .07, head); fr.rotation.z = hs === "long" ? .3 : -.2; for (const sx of [-1, 1]) add(GEO.ball, hc, .024, .055, .07, sx * .103, .03, -.025, head); }
@@ -441,6 +455,10 @@ function makePerson(sp) {
     add(GEO.taper, fore, .043 * limbR, .26, .043 * limbR, 0, 0, 0, el);
     add(GEO.ball, skin, .046 * Math.max(1, limbR * .8), .055, .03 * Math.max(1, limbR * .9), 0, -.3, 0, el);
     const th = add(GEO.ball, skin, .016, .03, .016, side * -.03, -.29, .022, el); th.rotation.z = side * .5;
+    if (!sp.lowDetail && !sp.ghost && !sp.shadowFig) {
+      for (let i = 0; i < 3; i++) add(GEO.taper, skin, .011, .036, .011, (i - 1) * .015, -.35, .008, el); // fingers
+      if (side === -1 && !sp.short) { add(GEO.cyl, 0x22252a, .046 * limbR, .022, .046 * limbR, 0, -.235, 0, el); add(GEO.box, 0xc8ccd0, .022, .012, .02, 0, -.235, .046 * limbR, el); } // a watch
+    }
     arms.push(sh); elbows.push(el);
   }
   if (sp.steth) { const st = new THREE.Mesh(GEO.steth, lambert(0x2b2b2b)); st.rotation.set(Math.PI / 2 - .3, 0, Math.PI * .9); st.position.set(0, 1.47, .05); body.add(st); }

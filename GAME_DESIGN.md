@@ -450,6 +450,15 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Notaufnahme:** Die Pseudo-Notfälle schlurfen mit ausgestreckten Armen wie Zombies, stöhnen und murmeln „Doktor … mein Knie … seit März …“, „Krankmeldung … für letzte Woche …“. Alle halbe Minute kommt einer dazu (bis 7).
 - **Keller:** Die Geister (Dr. Ewig) gibt es dort schon, dazu Stromausfälle und Schattenfiguren.
 
+## Version 24: Jobangebote klar, Oberärzte, Kampf-Animationen, Details
+
+- **Jobangebot klar benannt:** Missionskarten zeigen „Jobangebot · Pharmazeutika AG“, der Trailer „Dein Jobangebot für den Exit“ und „Neuer Job: Medical Advisor bei Pharmazeutika AG“, der Missions-Einflug „Jobangebot: … Unterschrift heute.“. Dazu jeweils: was du dafür brauchst, wer dich wann abholt.
+- **McKinny Consulting** statt Consultwerk GmbH.
+- **Oberärzte:** 18 neue Namen (Dr. Gleichkurz, Dr. Unabkömmlich, Dr. Kostenstelle, Dr. Hab-ich-doch-gesagt, Dr. Mitarbeitergespräch, Dr. Burnout-Resistent, Dr. Nochwas …) und 15 neue Gesprächsrunden, die zufällig statt der alten kommen: das Boot aus deinen Überstunden, die Pausen-Stoppuhr, das neue Leitbild, Qualitätssicherung als Ehrenamt, die Schritte-App, der Kugelschreiber als Dankeschön, Weihnachten weil keine Kinder, Silvester weil keine Freunde, „Leute, die gehen, nennen wir Verlust“, das Teamfoto „Glückliche Mitarbeitende“, die Excel, die dich braucht.
+- **Bodenschmutz** ohne Riesenpixel: weiche Flecken, Schuhabrieb, feiner Dreck, doppelte Auflösung, ausgeblendete Ränder.
+- **Mehr Details an Personen:** Nasenlöcher, Kinn, Ohrläppchen, Wimpern, Bartschatten, Hemdkragen, Knopfleiste, Bügelfalte, Schnürsenkel, Finger, Armbanduhr (bei Menschenmengen weggelassen, damit es flüssig bleibt).
+- **Kampf wie in den Handheld-Klassikern:** Plattformen gleiten herein, dein Team-Ball fliegt im Bogen, Blitz, du erscheinst. Jede Attacke hat eine eigene Animation: fliegende Arztbriefe, Fragezeichen-Hagel mit Blitz, violette Augenring-Wellen, Kaffee mit Funkeln, Reflexhammer, Proteinwolken, Kalender, Sprechblasen, grüne Energiekugeln beim Überstunden-Sog, Spezialattacken (Waagen und Büroklammern, Folienhagel, Spritzen, Riesenwelle, Shitstorm). Treffer blinken und wackeln, kritische Treffer schütteln den Bildschirm, Werte-Pfeile steigen rot oder fallen blau, KP zählen sichtbar herunter, der Besiegte schreit und sinkt weg, danach füllt sich die EP-Leiste: „DU erreicht Lv32! Dein Gehalt steigt um 0 €.“ Figuren wippen und atmen im Leerlauf, der Textkasten hat das blinkende ▼.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum
