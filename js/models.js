@@ -63,6 +63,15 @@ function hospitalBed(opt = {}) {
     if (opt.fullRails) { const r2 = rail.clone(); r2.position.z = L * .23; g.add(r2); }
   }
   g.userData.top = .66;
+  // bedside cabinet with a drawer, a plastic cup, tissues and the pill cup nobody took
+  if (opt.nightstand !== false) {
+    const ns = new THREE.Group(), body = 0xe6e1d2;
+    ns.add(at(rmesh(.42, .72, .42, .02, body), 0, .36, 0)); ns.add(at(boxMesh(.36, .015, .01, 0xb8b2a2), 0, .56, .215)); ns.add(at(boxMesh(.1, .02, .02, 0x8a8a8a), 0, .62, .225));
+    ns.add(at(boxMesh(.36, .3, .01, 0xd8d2c2), 0, .25, .215)); ns.add(at(boxMesh(.02, .08, .02, 0x8a8a8a), .13, .3, .225));
+    ns.add(at(mesh(GEO.cyl, lambert(0xf4f8fa), .03, .09, .03), -.1, .77, .05)); ns.add(at(boxMesh(.16, .07, .1, 0x8fb7d9), .08, .76, -.06));
+    ns.add(at(mesh(GEO.cyl, lambert(0xffffff), .022, .035, .022), .1, .74, .1)); ns.add(at(mesh(GEO.ball, lambert(0xf2c300), .008), .1, .76, .1));
+    ns.position.set(W / 2 + .3, 0, -L / 2 + .3); g.add(ns);
+  }
   return g;
 }
 

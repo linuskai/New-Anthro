@@ -89,8 +89,47 @@ function updateFloors(dt) {
     if (b && Math.hypot(b.x - player.x, b.y - player.y) < 2.2) { clearInputs(); friendDialog(b); }
   }
   // emergency department by day: more shuffling patients, groaning, arms out, looking for a doctor
+  if (L.key === "er" && run.mode === "mission" && level.queue && mode === "play" && (run.qT = (run.qT ?? 2) - dt) <= 0) {
+    run.qT = 4 + Math.random() * 4;
+    if (level.queue.some(([x, y]) => Math.hypot(x - player.x, y - player.y) < 2.4)) { setMsg(pick(QUEUE_BARKS), 2.6); tone(170 + Math.random() * 60, 0, .3, "sawtooth", .02, 120); }
+  }
   if (L.key === "er" && run.mode === "mission") {
     if ((run.zDayT = (run.zDayT ?? 25) - dt) <= 0) { run.zDayT = 30 + Math.random() * 15; if (level.enemies.filter(e => e.type === "Z" && !e.done && !e.gone).length < 7) spawnFar("Z"); }
     if (Math.random() < dt * .35) { const z = level.enemies.find(e => e.type === "Z" && !e.gone && !e.done && Math.hypot(e.x - player.x, e.y - player.y) < 6); if (z) { tone(95 + Math.random() * 25, 0, .8, "sawtooth", .02, 70); noise(0, .6, 300, 2, .025); if (Math.random() < .4) emote(z, pick(["🤕", "🦵", "🤧", "📄"])); } }
   }
+}
+
+// ---------- emergency department: the endless queue at registration, from the desk around the corner along the wall ----------
+const QUEUE_BARKS = ["„Ich war zuerst da!“", "„Seit Dienstag hier. Ich hab Zahnschmerzen. Inzwischen auch Rücken.“", "„Ist das ein Arzt? HALLO! NUR GANZ KURZ!“", "„Nummer 412. Aufgerufen wird 12.“",
+  "„Ich will nur ein Rezept. Seit 2019.“", "„Mein Hausarzt hat zu. Seit Corona.“", "„Ich hab einen Termin! … Also, so gefühlt.“", "„Wenn du vordrängelst, ruf ich die BILD.“", "„Hinten anstellen! HINTEN!“"];
+function buildQueue(lv, group) {
+  const pts = [];
+  for (let y = 3.55; y > 1.6; y -= .62) pts.push([26.4, y, 0]);                                   // up from the desk …
+  for (let x = 25.8; x > 10.4; x -= .58) if (x < 19.2 || x > 20.8) pts.push([x, 1.45, Math.PI / 2]); // … and along the north wall, leaving the lift free
+  const shirts = [0x8a6fae, 0x6a8fae, 0xae6a6a, 0x7aa07a, 0xc0a060, 0x3a4a6a, 0x9a9a9a, 0xd07a4a], pants = [0x3a4a6a, 0x2a2a2a, 0x5a5a6a, 0x6a5a4a];
+  pts.forEach(([x, y, ry], i) => {
+    const sp = { skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: rnd(["short", "messy", "long", "bun", "bald", "baldSides"]), shirt: rnd(shirts), pants: rnd(pants), lowDetail: true, noShadow: true,
+      mood: rnd(["neutral", "worried", "angry", "neutral"]), acc: rnd([undefined, undefined, "handbag", "book", "mug"]), jacket: Math.random() < .3 ? rnd([0x4a3a2a, 0x2a3a4a]) : undefined, scale: .92 + Math.random() * .14 };
+    const p = makePerson(sp); p.group.position.set((x + (Math.random() - .5) * .12) * S, 0, y * S); p.group.rotation.y = ry + (Math.random() - .5) * .5; group.add(p.group);
+    if (i % 9 === 4) group.add(at(sprite(labelTex("Nr. " + (300 + i * 7), "#fffbe6", "#1d2622"), .5, .16), x * S, 2.05, y * S));
+  });
+  // camping gear: these people have been here a while
+  const sb = rmesh(.7, .14, 1.8, .07, 0x3a6a4a); sb.position.set(14 * S, .07, 2.05 * S); sb.rotation.y = Math.PI / 2 + .1; group.add(sb);
+  const th = mesh(GEO.cyl, lambert(0x8a9a9a), .05, .3, .05); th.position.set(15.2 * S, .15, 1.9 * S); group.add(th);
+  const chair = grp(at(boxMesh(.45, .03, .4, 0x2d6fd8), 0, .4, 0), at(boxMesh(.45, .4, .03, 0x2d6fd8), 0, .62, -.2)); for (const [a, b] of [[-.2, -.18], [.2, -.18], [-.2, .18], [.2, .18]]) chair.add(at(mesh(GEO.cyl, lambert(0x333333), .012, .4, .012), a, .2, b)); chair.position.set(22 * S, 0, 1.95 * S); chair.rotation.y = Math.PI / 2; group.add(chair);
+  for (let i = 0; i < 3; i++) { const pz = boxMesh(.36, .04, .36, 0xd8c29a); pz.position.set(17.5 * S, .02 + i * .04, 1.95 * S); pz.rotation.y = i * .3; group.add(pz); }
+  // signs: where the queue ends, and the number machine
+  group.add(at(sprite(textTex(["⬅ ENDE DER SCHLANGE", "Wartezeit ab hier: ca. 2 Tage"], "#c0322a", "#fff", 512, 140, 40), 2.4, .66), 10.2 * S, 2.55, 1.6 * S));
+  group.add(at(sprite(textTex(["HIER ANSTELLEN", "Vordrängeln = Triage-Stufe 5"], "#f2b33d", "#2a1c00", 512, 140, 38), 2.2, .6), 26.4 * S, 2.6, 2.7 * S));
+  const disp = grp(at(boxMesh(.4, 1.2, .35, 0xd8261f), 0, .6, 0), at(boxMesh(.3, .04, .05, 0x111111), 0, 1.0, .18)); disp.add(at(plate(textTex(["NUMMER", "ZIEHEN", "aktuell: 12", "Ihre: 999"], "#ffffff", "#c0322a", 256, 220, 34), .32, .28), 0, .72, .18)); disp.position.set(25.3 * S, 0, 3.4 * S); group.add(disp);
+  addCollider(lv, 25.3 * S, 3.15 * S, 25.7 * S, 3.6 * S);
+  addCollider(lv, 26.05 * S, 1.2 * S, 26.75 * S, 3.85 * S);
+  addCollider(lv, 10.3 * S, 1.15 * S, 19.15 * S, 1.75 * S); addCollider(lv, 20.85 * S, 1.15 * S, 26.75 * S, 1.75 * S);
+  lv.queue = pts;
+  // more details: complaint box overflowing, the self-payer express, a TV with the waiting-time bingo
+  const cb = grp(at(boxMesh(.4, .5, .3, 0x2d3f8f), 0, 1.1, .15)); cb.add(at(plate(textTex(["BESCHWERDEN", "(voll seit 2021)"], "#2d3f8f", "#fff", 256, 110, 30), .36, .16), 0, 1.25, .305));
+  for (let i = 0; i < 9; i++) { const p = mesh(GEO.plane, lambert(0xffffff, paperTex()), .22, .3, 1); p.rotation.set(-Math.PI / 2, 0, i); p.position.set((Math.random() - .5) * .8, .012 + i * .0005, .3 + Math.random() * .5); cb.add(p); }
+  cb.position.set(16.5 * S, 0, 6.85 * S); cb.rotation.y = Math.PI; group.add(cb);
+  group.add(at(sprite(textTex(["SELBSTZAHLER-EXPRESS", "Wartezeit 2 Std. · nur 499 €", "Kartenzahlung bevorzugt"], "#111111", "#f2c300", 512, 170, 40), 2.4, .8), 29.5 * S, 2.55, 3 * S));
+  const tv = monitorMesh(textTex(["WARTEZEIT-BINGO", "Wer zuerst stirbt,", "kommt zuerst dran.", "(Scherz.) (Oder?)"], "#0b2a4a", "#ffe08a", 512, 288, 40)); tv.scale.set(1.3, .75, .06); tv.position.set(14 * S, 2.35, 6.9 * S); tv.rotation.y = Math.PI; group.add(tv);
 }

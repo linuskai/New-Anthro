@@ -297,6 +297,7 @@ function buildLevel(idx) {
     group.add(at(sprite(labelTex("TRIAGE · ANMELDUNG", "#c0322a", "#fff"), 2.2, .36), 26.9 * S, 2.7, 4.5 * S));
     group.add(at(sprite(labelTex("BEHANDLUNG 1–5", "#2b7bb9", "#fff"), 2, .32), 8 * S, 2.75, 8.5 * S));
     group.add(at(sprite(labelTex("SCHOCKRAUM", "#c0322a", "#fff"), 1.7, .3), 20.5 * S, 2.75, 8.6 * S));
+    if (run.mode === "mission") buildQueue(lv, group);
   }
   if (theme === "er") for (const [x, y] of [[15, 3], [19, 3], [23, 3], [15, 5], [19, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); grid[y][x] = "K"; } // seat rows block their tile, so paths go around
   // rooms and safe rooms
@@ -347,7 +348,7 @@ function buildLevel(idx) {
     const ch = grid[y][x], wx = (x + .5) * S, wz = (y + .5) * S, alongZ = openTile(x, y - 1) || openTile(x, y + 1);
     if (ch === "B") {
       if (idx !== 2) { const n = DIRS.find(([dx, dy]) => cell(x + dx, y + dy) === "." || cell(x + dx, y + dy) === ":"); if (n) lv.props.push({ kind: "bedhide", x: x + .5 + n[0] * .75, y: y + .5 + n[1] * .75 }); }
-      const g = idx === 2 ? stretcher() : hospitalBed({ blanket: pick([0x8fb7d9, 0xb9d3a8, 0xe8d8b8, 0xc8b8d8]) });
+      const g = idx === 2 ? stretcher() : hospitalBed({ blanket: pick([0x8fb7d9, 0xb9d3a8, 0xe8d8b8, 0xc8b8d8]), nightstand: lv.zone[y * GW + x] !== 1 });
       const pat = makePerson({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "messy", gown: true, shirt: 0x9cc6e6, noShadow: true });
       pat.group.rotation.x = -Math.PI / 2 + (idx === 2 ? 0 : .16); pat.group.position.set(0, idx === 2 ? .93 : .7, .95); pat.group.scale.setScalar(.95); g.add(pat.group);
       g.add(at(sprite(labelTex(idx === 2 ? "CT-LIEGE" : "FLURBETT " + (7 + Math.floor(r() * 20)) + " VON 23", "#7b8a85", "#fff"), 1.4, .22), 0, 1.6, 0));

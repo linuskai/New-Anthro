@@ -240,14 +240,50 @@ function curtainWindow(windowMat) {
   return g;
 }
 function ivPole() { return grp(at(mesh(GEO.pole, lambert(0xb9c1bc), 1), 0, .95, 0), at(boxMesh(.18, .28, .06, 0xd8eef8), .1, 1.75, 0), at(mesh(GEO.ball, lambert(0x444444), .1, .03, .1), 0, .03, 0)); }
+// wheelchair: tube frame, fabric seat and back, push handles, armrests, footrests, big spoked wheels with hand rims, front casters
+const WC_GEO = { tyre: new THREE.TorusGeometry(.3, .022, 8, 28), rim: new THREE.TorusGeometry(.265, .008, 6, 28), caster: new THREE.CylinderGeometry(.06, .06, .03, 14) };
 function wheelchair() {
-  const g = new THREE.Group(); g.add(at(boxMesh(.5, .06, .45, 0x2b2f33), 0, .5, 0)); g.add(at(boxMesh(.5, .5, .05, 0x2b2f33), 0, .78, -.22));
-  for (const s of [-1, 1]) { const w = mesh(GEO.wheel, lambert(0x555555), .9, .2, .9); w.rotation.z = Math.PI / 2; w.position.set(s * .3, .3, -.05); g.add(w); g.add(at(mesh(GEO.ball, lambert(0x222222), .05), s * .2, .05, .25)); }
+  const g = new THREE.Group(), tube = phong(0xa8b0b6, 80), fabric = lambert(0x23272c), black = lambert(0x151515);
+  const T = (len, x, y, z, rx = 0, rz = 0) => { const m = mesh(GEO.cyl, tube, .014, len, .014); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); g.add(m); return m; };
+  g.add(at(rmesh(.44, .045, .42, .02, fabric), 0, .5, 0));
+  const back = rmesh(.44, .44, .035, .02, fabric); back.position.set(0, .76, -.23); back.rotation.x = -.1; g.add(back);
+  for (const s of [-1, 1]) {
+    T(.66, s * .235, .73, -.25, -.1); T(.13, s * .235, 1.04, -.33, Math.PI / 2 - .3);                      // back post + push handle
+    g.add(at(mesh(GEO.cyl, black, .02, .1, .02), s * .235, 1.05, -.37).rotateX(Math.PI / 2 - .3));
+    T(.48, s * .235, .48, 0, Math.PI / 2);                                                              // seat rail
+    T(.36, s * .2, .3, .26, .35); g.add(at(rmesh(.13, .02, .12, .01, black), s * .1, .1, .38));        // front leg + footrest
+    g.add(at(rmesh(.05, .035, .34, .015, black), s * .25, .7, -.02)); T(.2, s * .25, .6, .12);           // armrest
+    const wheel = new THREE.Group(); wheel.add(new THREE.Mesh(WC_GEO.tyre, black)); const rim = new THREE.Mesh(WC_GEO.rim, tube); rim.position.z = s * .035; wheel.add(rim);
+    for (let k = 0; k < 6; k++) { const sp = mesh(GEO.cyl, tube, .004, .54, .004); sp.rotation.z = k * Math.PI / 6; wheel.add(sp); }
+    wheel.add(mesh(GEO.cyl, tube, .03, .06, .03).rotateX(Math.PI / 2));
+    wheel.rotation.y = Math.PI / 2; wheel.position.set(s * .29, .31, -.08); g.add(wheel);
+    const c = new THREE.Mesh(WC_GEO.caster, black); c.rotation.z = Math.PI / 2; c.position.set(s * .2, .06, .27); g.add(c);
+  }
   return g;
 }
 function aedBox() { const g = grp(at(boxMesh(.4, .4, .14, 0xf2f2f2), 0, 0, .07)); const p = plate(aedTex(), .34, .34); p.position.z = .145; g.add(p); return g; }
 function sanitizer() { return grp(at(boxMesh(.14, .26, .1, 0xf4f4f4), 0, 0, .05), at(boxMesh(.08, .05, .06, 0x3f8fb3), 0, -.17, .07)); }
-function fireHose() { const g = grp(at(boxMesh(.7, .8, .18, 0xc0322a), 0, 0, .09)); const p = plate(flatTex(["LÖSCHSCHLAUCH", "Prüfung: 2011"], "#c0322a", "#fff", 256, 110, 28), .6, .26); p.position.set(0, .2, .185); g.add(p); return g; }
+// fire hose cabinet (with a hose reel behind a scratched window) and an extinguisher hanging next to it
+function fireExtinguisher() {
+  const g = new THREE.Group(), red = phong(0xc8231a, 85), black = lambert(0x151515), steel = phong(0xb8bec4, 90);
+  g.add(at(boxMesh(.16, .05, .05, 0x2a2a2a), 0, .66, .025));
+  g.add(at(mesh(GEO.cyl, red, .085, .48, .085), 0, .3, .11)); g.add(at(mesh(GEO.cap, red, .085, .07, .085), 0, .54, .11));
+  g.add(at(mesh(GEO.cyl, lambert(0x7a1410), .087, .025, .087), 0, .07, .11));
+  g.add(at(mesh(GEO.cyl, steel, .025, .07, .025), 0, .63, .11));
+  const lever = boxMesh(.15, .015, .035, 0x1a1a1a); lever.position.set(.04, .68, .11); lever.rotation.z = -.25; g.add(lever); g.add(at(boxMesh(.13, .012, .03, 0x1a1a1a), .03, .65, .11));
+  const gauge = mesh(GEO.cyl, lambert(0xf4f4ef), .022, .012, .022); gauge.rotation.x = Math.PI / 2; gauge.position.set(-.035, .64, .14); g.add(gauge);
+  const hose = mesh(GEO.cyl, black, .013, .42, .013); hose.position.set(.1, .42, .14); hose.rotation.z = .12; g.add(hose); g.add(at(mesh(GEO.cyl, black, .022, .07, .022), .125, .2, .14));
+  const lab = plate(flatTex(["FEUERLÖSCHER", "ABC · 6 kg", "geprüft: 2019"], "#f4f4ef", "#c0322a", 128, 160, 18), .12, .16); lab.position.set(0, .3, .197); g.add(lab);
+  return g;
+}
+function fireHose() {
+  const g = grp(at(boxMesh(.7, .8, .18, 0xc0322a), 0, 0, .09));
+  g.add(at(boxMesh(.62, .5, .01, 0x9fb4bc), 0, -.07, .185)); const glass = g.children[g.children.length - 1]; glass.material = new THREE.MeshStandardMaterial({ color: 0xb8d0d8, transparent: true, opacity: .35, roughness: .2 });
+  const reel = new THREE.Mesh(GEO.torus, lambert(0xd8c08a)); reel.scale.set(.17, .17, .2); reel.position.set(0, -.07, .1); g.add(reel); g.add(at(mesh(GEO.cyl, lambert(0x8a8a8a), .05, .04, .05).rotateX(Math.PI / 2), 0, -.07, .12));
+  const p = plate(flatTex(["LÖSCHSCHLAUCH", "Prüfung: 2011"], "#c0322a", "#fff", 256, 110, 28), .6, .2); p.position.set(0, .28, .186); g.add(p);
+  const ex = fireExtinguisher(); ex.position.set(.6, -1.05, 0); g.add(ex);
+  return g;
+}
 function noticeBoard(lines, bg = "#fff", fg = "#1d2622") { return framed(flatTex(lines, bg, fg, 256, 180, 22), .6, .42, 0x6a6f6a); }
 function boxStack(n = 3) { const g = new THREE.Group(); for (let i = 0; i < n; i++) { const b = boxMesh(.5 + Math.random() * .2, .35, .4, pick([0xa8885a, 0x9a7a4a, 0xb89868])); b.position.set((Math.random() - .5) * .3, .18 + i * .35, .25); b.rotation.y = (Math.random() - .5) * .4; g.add(b); } return g; }
 function filingCabinet() { const g = grp(at(boxMesh(.45, 1.3, .55, 0x8a948f), 0, .65, .28)); for (let i = 0; i < 4; i++) g.add(at(boxMesh(.16, .03, .02, 0x444444), 0, .25 + i * .3, .56)); return g; }

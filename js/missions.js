@@ -242,6 +242,8 @@ function beginMission() {
 }
 function startPlaying() {
   mode = "play"; run.clockSeen = run.minutes;
+  // played upright: one friendly nudge per session to turn the phone
+  if (!document.body.classList.contains("land") && innerWidth < innerHeight && !window.__landHint) { window.__landHint = true; setTimeout(() => { if (mode !== "play") return; const h = $("hint"); h.textContent = "📱↔️ Tipp: Handy quer drehen, dann siehst du viel mehr vom Krankenhaus."; h.hidden = false; setTimeout(() => { h.hidden = true; }, 6000); }, 9000); }
   let seen = false; try { seen = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {}
   if (!seen) { setTimeout(() => { if (mode === "play") startTour(); }, 600); return; } // the first time: the guided tour
   announceObjective();

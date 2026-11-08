@@ -434,6 +434,7 @@ body.land.hudmin .mission { display: none; }
 .t-play { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #f3f8f1; color: #0b6b44; font-size: 15px; }
 .t-mode.night .t-play { color: #1b2236; }
 .t-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.t-land { margin: 0; font: 600 14px/1.3 var(--display); color: #ffe08a; } .t-land b { font-weight: 900; } body.land .t-land { display: none; }
 .t-diff { display: flex; align-items: center; gap: 8px; font: 700 13px/1 var(--display); text-transform: uppercase; letter-spacing: .1em; color: rgba(243,248,241,.75); }
 .t-diff { flex-wrap: wrap; } .t-diff button { appearance: none; cursor: pointer; background: rgba(243,248,241,.08); color: #f3f8f1; border: 1px solid rgba(243,248,241,.3); border-radius: 999px; padding: 8px 14px; font: 700 15px/1.05 var(--display); text-transform: none; letter-spacing: 0; touch-action: manipulation; text-align: left; }
 .t-diff button small { display: block; font: 600 11px/1.1 var(--display); opacity: .75; } .t-diff button[aria-checked="true"] { background: var(--amber, #f2b33d); color: #2a1c00; border-color: transparent; }
@@ -1202,6 +1203,7 @@ body:not(.land) #wp { font-size: 13px; }
           <span class="t-play" aria-hidden="true">▶</span>
         </button>
       </div>
+      <p class="t-land">📱↔️ <b>Tipp:</b> Dreh dein Handy quer. Im Querformat spielt es sich am besten.</p>
       <div class="t-bar">
         <div class="t-diff" role="radiogroup" aria-label="Schwierigkeit" id="setDiffTitle"><span>Schwierigkeit</span><button type="button" role="radio" data-diff="easy">😌 Leicht</button><button type="button" role="radio" data-diff="normal">🔥 Brutal<small>normaler Stationsalltag</small></button></div>
         <button class="t-ghost" id="btnHowTo" type="button" aria-expanded="false" aria-controls="howTo">So spielst du</button>
