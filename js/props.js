@@ -168,11 +168,42 @@ function coffeeMachine() {
 }
 function microwave() { const g = grp(at(boxMesh(.48, .28, .34, 0xe8e8e4), 0, .14, .17)); const d = plate(flatTex(["0:00"], "#1a1a1a", "#3cff8a", 128, 80, 22), .3, .2); d.position.set(-.05, .14, .345); g.add(d); return g; }
 function sideboard(w = 1.4) { const g = grp(at(boxMesh(w, .86, .55, 0xe8e2d8), 0, .43, .28), at(boxMesh(w + .04, .04, .58, 0x9aa3a0), 0, .88, .29)); for (let i = -1; i <= 1; i += 2) g.add(at(boxMesh(.12, .02, .01, 0x666666), i * w / 4, .7, .56)); return g; }
+// the on-call bed: a real metal bed, 1.2 m x 2.25 m, sagging stained mattress, a crumpled duvet, a flat pillow, a sock
+const mattressTex = () => canvasTex(256, 512, (g, w, h) => { const r = rng(44);
+  g.fillStyle = "#b9c3c8"; g.fillRect(0, 0, w, h); g.strokeStyle = "rgba(90,105,115,.35)"; g.lineWidth = 3; for (let x = 16; x < w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  for (let i = 0; i < 6; i++) { const x = r() * w, y = r() * h, rad = 20 + r() * 50, gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(${120 + r() * 40},${95 + r() * 20},50,.45)`); gr.addColorStop(.7, "rgba(140,110,60,.18)"); gr.addColorStop(1, "rgba(140,110,60,0)"); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rad, rad * .7, r() * 3, 0, 7); g.fill(); }
+}, "mattress1");
 function onCallBed() {
-  const g = new THREE.Group();
-  g.add(at(boxMesh(.9, .3, 2, 0x6f7a76), 0, .25, 0)); g.add(at(boxMesh(.86, .14, 1.96, 0x3f6f8a), 0, .47, 0));
-  for (let i = 0; i < 3; i++) { const b = boxMesh(.8, .1 + i * .03, .5, 0x9fa7c8); b.position.set((i - 1) * .05, .58, .3 + i * .22); b.rotation.set(.1 * i, .2 * (i - 1), .08); g.add(b); }
-  g.add(at(boxMesh(.55, .12, .35, 0xffffff), 0, .6, -.75));
+  const g = new THREE.Group(), metal = phong(0x8a9196, 60), W = 1.2, L = 2.25;
+  for (const [x, z] of [[-W / 2, -L / 2], [W / 2, -L / 2], [-W / 2, L / 2], [W / 2, L / 2]]) g.add(at(mesh(GEO.cyl, metal, .025, .42, .025), x, .21, z));
+  for (const sx of [-1, 1]) g.add(at(boxMesh(.04, .06, L, 0x7a8186), sx * W / 2, .38, 0));
+  for (const sz of [-1, 1]) g.add(at(boxMesh(W, .06, .04, 0x7a8186), 0, .38, sz * L / 2));
+  // headboard: tubes, one bent
+  g.add(at(mesh(GEO.cyl, metal, .022, 1.0, .022), -W / 2, .5, -L / 2)); g.add(at(mesh(GEO.cyl, metal, .022, 1.0, .022), W / 2, .5, -L / 2));
+  const top = mesh(GEO.cyl, metal, .022, W, .022); top.rotation.z = Math.PI / 2; top.position.set(0, .98, -L / 2); g.add(top);
+  for (let i = -2; i <= 2; i++) { const t = mesh(GEO.cyl, metal, .012, .5, .012); t.position.set(i * .2, .7, -L / 2); if (i === 1) t.rotation.z = .25; g.add(t); }
+  // the mattress sags in the middle (two halves tilted towards the centre)
+  const mt = lambert(0xffffff, mattressTex());
+  for (const s of [-1, 1]) { const m = rmesh(W - .06, .17, L / 2, .05, mt); m.position.set(0, .49, s * L / 4); m.rotation.x = s * .045; g.add(m); }
+  // pillow, flat and grey, with a dent
+  const pil = rmesh(.62, .1, .38, .05, 0xdcdcd4); pil.position.set(-.1, .62, -L / 2 + .3); pil.rotation.set(.12, .15, .03); g.add(pil);
+  // crumpled duvet: a few tilted lumps, kicked to the foot end, one corner over the edge
+  const duv = lambert(0x7d8fa8);
+  [[.1, .64, .25, .9, .14, .7, .2], [-.15, .66, .6, .7, .16, .55, -.3], [.2, .62, .85, .8, .12, .5, .5], [.55, .45, .7, .1, .45, .7, .1]].forEach(([x, y, z, w, h, d, ry]) => { const b = rmesh(w, h, d, .05, duv); b.position.set(x, y, z); b.rotation.set(.15, ry, x > .5 ? 0 : .1); g.add(b); });
+  // a sock, a phone with a cracked screen, an energy drink can under the bed
+  const sock = rmesh(.09, .04, .22, .02, 0x2a2a2a); sock.position.set(.35, .6, -.25); sock.rotation.y = .9; g.add(sock);
+  const ph = rmesh(.08, .012, .16, .01, 0x111111); ph.position.set(-.3, .59, -.35); ph.rotation.y = -.4; g.add(ph);
+  const can = mesh(GEO.cyl, lambert(0x2fb3a0), .033, .12, .033); can.rotation.z = Math.PI / 2; can.position.set(.2, .035, .4); g.add(can);
+  // bunk bed: tall corner posts, an upper bed with a thin mattress and a ladder; a label says who sleeps up there
+  for (const [x, z] of [[-W / 2, -L / 2], [W / 2, -L / 2], [-W / 2, L / 2], [W / 2, L / 2]]) g.add(at(mesh(GEO.cyl, metal, .025, 2.0, .025), x, 1.0, z));
+  for (const sx of [-1, 1]) g.add(at(boxMesh(.04, .06, L, 0x7a8186), sx * W / 2, 1.5, 0));
+  for (const sz of [-1, 1]) g.add(at(boxMesh(W, .06, .04, 0x7a8186), 0, 1.5, sz * L / 2));
+  g.add(at(rmesh(W - .06, .12, L - .06, .04, lambert(0xffffff, mattressTex())), 0, 1.6, 0));
+  const up = rmesh(.9, .1, .9, .05, lambert(0xa83a3a)); up.position.set(.05, 1.72, .5); up.rotation.set(.1, .4, .05); g.add(up);
+  g.add(at(rmesh(.55, .09, .34, .04, 0xdcdcd4), .1, 1.71, -L / 2 + .28));
+  for (const sx of [-1, 1]) g.add(at(boxMesh(.03, 1.0, .03, 0x7a8186), W / 2 + .02, .95, L / 2 - .25 + sx * .2));
+  for (let i = 0; i < 4; i++) g.add(at(boxMesh(.03, .03, .42, 0x7a8186), W / 2 + .02, .6 + i * .25, L / 2 - .25));
+  g.add(at(plate(textTex(["OBEN: DR. KURZ", "UNTEN: DU", "(theoretisch)"], "#fff59a", "#1d2622", 256, 150, 30), .4, .24), 0, 1.25, L / 2 + .03));
   return g;
 }
 function corkBoard() { const g = new THREE.Group(); g.add(at(boxMesh(1.25, .95, .04, 0x5a4a3a), 0, 0, .02)); const p = plate(corkTex(), 1.15, .86); p.position.z = .045; g.add(p); return g; }

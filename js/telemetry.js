@@ -24,17 +24,20 @@ addEventListener("unhandledrejection", e => { const m = String(e.reason && (e.re
 // ---------- feedback ----------
 let fbReturn = "title";
 function openFeedback() {
-  fbReturn = mode === "pause" ? "pause" : "title"; show("ovFeedback"); $("fbMsg").textContent = "";
+  fbReturn = mode === "pause" ? "pause" : "title"; show("ovFeedback"); fbNote("", "");
   if (auth && auth.email && !$("fbContact").value) $("fbContact").value = auth.email;
   setTimeout(() => $("fbText").focus(), 50);
 }
 function closeFeedback() { if (fbReturn === "pause" && run) { mode = "pause"; show("ovPause"); } else { mode = "title"; show("ovTitle"); } }
 $("btnFeedback").addEventListener("click", openFeedback); $("btnFeedbackPause").addEventListener("click", openFeedback); $("btnFbCancel").addEventListener("click", closeFeedback);
 $("btnFbSend").addEventListener("click", async () => {
-  const text = ($("fbText").value || "").trim(); if (text.length < 3) { $("fbMsg").textContent = "Ein paar Worte mehr, bitte."; return; }
-  $("fbMsg").textContent = "Sende …";
+  const text = ($("fbText").value || "").trim(); if (text.length < 3) { fbNote("Ein paar Worte mehr, bitte.", "bad"); return; }
+  fbNote("Wird gesendet …", "");
   try {
     await rpc("hx_feedback", { p_token: token, p_text: text, p_contact: ($("fbContact").value || "").trim() || null, p_meta: { ...where(), ua: navigator.userAgent.slice(0, 160), standalone: isStandalone(), v: GAME_VERSION, screen: `${innerWidth}x${innerHeight}` } });
-    $("fbText").value = ""; $("fbMsg").textContent = "Danke! Ist angekommen."; track("feedback", {}); setTimeout(closeFeedback, 1200);
-  } catch (e) { $("fbMsg").textContent = "Gerade kein Netz. Bitte später nochmal senden."; }
+    $("fbText").value = ""; fbNote("✓ Danke! Dein Vorschlag ist angekommen.", "ok"); track("feedback", {}); setTimeout(closeFeedback, 2200);
+  } catch (e) { fbNote("✗ Hat nicht geklappt: gerade kein Netz. Dein Text bleibt stehen, bitte gleich nochmal senden.", "bad"); }
 });
+
+/* the feedback result as a coloured banner: green = arrived, red = failed */
+function fbNote(text, kind) { const el = $("fbMsg"); el.textContent = text; el.className = "small fb-note" + (kind ? " " + kind : ""); el.hidden = !text; }

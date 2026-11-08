@@ -47,11 +47,12 @@ function loadFloor(idx) {
 // ---------- environment ----------
 const currentEnv = () => { const L = LEVELS[run.idx]; return ENV[L.envOn && run.flags.has("power") ? L.envOn : L.env]; };
 const cellarDark = () => LEVELS[run.idx].env === "cellar" && !run.flags.has("power");
-const inDarkness = () => currentEnv().dark || lightMul < .6;
+const inDarkness = () => currentEnv().dark || lightMul < .45;
 function applyEnv(force) {
   const env = currentEnv(), bo = blackout > 0;
   const tile = level ? level.dark[Math.floor(player.y) * GW + Math.floor(player.x)] : 0;
-  const target = bo ? .06 : (tile && !env.dark ? .32 : 1);
+  const dim = level && level.dim && level.dim.has(Math.floor(player.y) * GW + Math.floor(player.x)); // the shabby doctors' room: one lamp left
+  const target = bo ? .06 : (tile && !env.dark ? .32 : dim ? .52 : 1);
   lightMul += (target - lightMul) * (force ? 1 : .06);
   const bolt = boltT > 0 ? .9 : 0;
   const dawn = run && run.mode === "night" ? Math.max(0, Math.min(1, (run.minutes - NIGHT_DAWN) / 60)) : 0;

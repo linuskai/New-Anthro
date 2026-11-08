@@ -829,6 +829,8 @@ body.land #prompt { top: calc(50% + 14px); font-size: 14px; }
 .tl-kicker { margin: 0; font: 800 13px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: #ffe08a; }
 .tl-kicker.tl-cave { justify-self: start; font-size: 22px; letter-spacing: .12em; color: #fff; background: #c0322a; padding: 6px 12px 5px; border-radius: 6px; transform: rotate(-2deg); animation: caveIn .6s .1s both, caveBlink 1.6s 1s 3; }
 @keyframes caveIn { from { transform: rotate(-2deg) scale(2.2); opacity: 0; } } @keyframes caveBlink { 50% { background: #ff5a4a; } }
+.fb-note { margin: 0; padding: 10px 12px; border-radius: 8px; font: 700 15px/1.3 var(--display); }
+.fb-note.ok { background: #1f9d55; color: #fff; animation: pop .35s both; } .fb-note.bad { background: #c0322a; color: #fff; animation: fmBad .35s; }
 .tl-howline { margin: 0; font: 500 16px/1.35 var(--display); opacity: .92; }
 .tl-how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .tl-how li { background: rgba(255,224,138,.12); border: 1px solid rgba(255,224,138,.35); border-radius: 10px; padding: 7px 8px; font: 600 13px/1.2 var(--display); display: grid; gap: 3px; animation: pop .4s calc(.15s + var(--i, 0) * .1s) both; }

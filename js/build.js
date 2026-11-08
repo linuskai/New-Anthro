@@ -277,7 +277,7 @@ function decorateDoctorsRoom(lv, reg) {
   P(officeChair(false, 0x3f4a6a), X(4.4), 0, X(3.55), Math.PI / 2);
   const tipped = officeChair(false, 0x5a3a3a); tipped.rotation.z = Math.PI / 2 - .1; tipped.position.set(X(3.1), .3, X(2.25)); lv.group.add(tipped);
   // on-call bed against the north wall
-  const bed = onCallBed(); wallPlace(lv, bed, 2, 1, 0, -1, 0, 0, [1, 2.05]);
+  const bed = onCallBed(); wallPlace(lv, bed, 2, 1, 0, -1, 0, 0, [1.22, 2.28]);
   lv.props.push({ kind: "sofa", x: 2.5, y: 1.95, room: reg, bed: true });
   wallPlace(lv, corkBoard(), 1, 1, 0, -1, 0, 1.75);
   wallPlace(lv, binderShelf(1.6, 2.1), 3, 1, 0, -1, 0, 0, [1.6, .45]);
@@ -315,6 +315,40 @@ function decorateDoctorsRoom(lv, reg) {
   for (const [px, pz, rot] of [[2.1, 3.1, .4], [2.6, 2.8, 1.2], [3.6, 3.2, 2.2], [2.9, 1.9, .2]]) { const p = mesh(GEO.plane, lambert(0xffffff, paperTex()), .3, .42, 1); p.rotation.set(-Math.PI / 2, 0, rot); p.position.set(X(px), .012, X(pz)); lv.group.add(p); }
   const st = stethoscopeFlat(); st.position.set(X(3.7), .015, X(2.6)); lv.group.add(st);
   lv.group.add(at(mesh(GEO.ball, lambert(0xfbfaf4), .07), X(2.4), .07, X(3.3)));
+  roughUpDoctorsRoom(lv, reg);
+}
+/* the doctors' room is the oldest room in the house: darker (only one lamp still works), stained, cracked, cluttered */
+function roughUpDoctorsRoom(lv, reg) {
+  lv.dim = new Set(reg.tiles.map(([x, y]) => y * GW + x));
+  const r = rng(77), X = t => t * S, inRoom = ([x, y]) => reg.tiles.some(([a, b]) => a === Math.floor(x) && b === Math.floor(y));
+  // only one ceiling light still works in here
+  const mine = (lv.lampSpots || []).filter(inRoom); lv.lampSpots = (lv.lampSpots || []).filter(p => !inRoom(p)).concat(mine.slice(0, 1));
+  for (const [x, y] of mine.slice(1)) { lv.group.add(at(boxMesh(1.42, .052, .72, 0x3a3d3a), x * S, WALL_H - .03, y * S)); }
+  // floor: stains everywhere, a coffee spill, cracks, a muddy footprint trail
+  for (const [x, y] of reg.tiles) {
+    const d = decal(SHABBY_TEX.tiles(), S * (.8 + r() * .3), S * (.8 + r() * .3)); d.rotation.x = -Math.PI / 2; d.rotation.z = r() * 6; d.position.set((x + .5) * S, .013, (y + .5) * S); lv.group.add(d);
+    if (r() < .5) { const c = decal(SHABBY_TEX.crack(), 1.2, 1.2); c.rotation.x = -Math.PI / 2; c.rotation.z = r() * 6; c.position.set((x + .2 + r() * .6) * S, .016, (y + .2 + r() * .6) * S); lv.group.add(c); }
+  }
+  const spill = decal(canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 60); gr.addColorStop(0, "rgba(60,35,15,.75)"); gr.addColorStop(.8, "rgba(70,40,18,.5)"); gr.addColorStop(1, "rgba(70,40,18,0)"); g.fillStyle = gr; g.beginPath(); g.ellipse(64, 64, 60, 40, .5, 0, 7); g.fill(); }, "coffeeSpill"), .9, .7);
+  spill.rotation.x = -Math.PI / 2; spill.position.set(X(1.6), .017, X(2.8)); lv.group.add(spill);
+  // walls: damp, mould behind the bed, grime, peeling paint, a hole someone punched, scribbles
+  const W = [[1, 1, 0, -1, -.9, WALL_H - .6, "damp"], [2, 1, 0, -1, .9, .5, "mold"], [3, 3, 0, 1, .4, WALL_H - .8, "grime"], [1, 3, -1, 0, .5, 1.7, "peel"], [4, 2, 1, 0, -.9, .7, "mold"], [3, 1, 0, -1, -.9, WALL_H - .7, "grime"], [4, 3, 1, 0, .6, 1.9, "peel"]];
+  for (const [x, y, dx, dy, along, h, k] of W) wallPlace(lv, decal(SHABBY_TEX[k](), k === "mold" ? 1.6 : 1, k === "grime" ? 1.6 : 1.2), x, y, dx, dy, along, h).position.add(new THREE.Vector3(-dx * .013, 0, -dy * .013));
+  const hole = decal(canvasTex(128, 128, g => { g.fillStyle = "rgba(25,22,20,.95)"; g.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * 6.28, rr = 22 + (i % 3) * 9; g.lineTo(64 + Math.cos(a) * rr, 64 + Math.sin(a) * rr); } g.fill(); g.strokeStyle = "rgba(30,30,30,.6)"; g.lineWidth = 2; for (let i = 0; i < 7; i++) { const a = i * .9; g.beginPath(); g.moveTo(64 + Math.cos(a) * 30, 64 + Math.sin(a) * 30); g.lineTo(64 + Math.cos(a) * 62, 64 + Math.sin(a) * 58); g.stroke(); } }, "wallHole"), .45, .45);
+  wallPlace(lv, hole, 3, 3, 0, 1, -.6, 1.1).position.add(new THREE.Vector3(0, 0, -.013));
+  wallPlace(lv, decal(scribbleTex("Hier hat Dr. Kurz 2017 geschlafen.\nEr ist nie aufgewacht."), .95, .36), 2, 1, 0, -1, -.95, 1.45).position.add(new THREE.Vector3(0, 0, .013));
+  wallPlace(lv, decal(scribbleTex("Tage bis Feierabend: ∞"), .8, .3), 4, 3, 1, 0, -.3, 1.25).position.add(new THREE.Vector3(-.013, 0, 0));
+  // ceiling: a missing panel with a dangling one and a cable
+  lv.group.add(at(boxMesh(.62, .02, .62, 0x0b0c0c), X(3.6), WALL_H - .012, X(2.3)));
+  const pnl = boxMesh(.6, .02, .6, 0xc8c8bc); pnl.position.set(X(3.6) + .3, WALL_H - .4, X(2.3)); pnl.rotation.z = 1.0; lv.group.add(pnl);
+  lv.group.add(at(new THREE.Mesh(GEO.cable, lambert(0x2a2a2a)), X(3.5), WALL_H - .6, X(2.35)));
+  // clutter: cans, more paper, an overturned bin, a box of old files, a broken chair leg, takeaway boxes
+  for (let i = 0; i < 9; i++) { const c = mesh(GEO.cyl, lambert(pick([0x2fb3a0, 0xc0322a, 0x1d2622, 0xd8c040])), .033, .12, .033); c.rotation.set(Math.PI / 2, 0, r() * 6); c.position.set(X(1.3 + r() * 3.4), .035, X(1.6 + r() * 1.6)); lv.group.add(c); }
+  for (let i = 0; i < 10; i++) { const p = mesh(GEO.plane, lambert(0xffffff, paperTex()), .3, .42, 1); p.rotation.set(-Math.PI / 2, 0, r() * 6); p.position.set(X(1.2 + r() * 3.6), .011 + i * .0004, X(1.7 + r() * 1.6)); lv.group.add(p); }
+  const box = grp(at(boxMesh(.5, .32, .38, 0x9a7a52), 0, .16, 0), at(boxMesh(.44, .02, .3, 0xfbfaf4), 0, .33, 0)); box.add(at(plate(textTex(["AKTEN 2011", "NICHT WEGWERFEN"], "#d8c29a", "#3a2a1a", 256, 110, 28), .4, .17), 0, .17, .195)); box.position.set(X(3.9), 0, X(2.75)); box.rotation.y = .4; lv.group.add(box);
+  const bin = mesh(GEO.cyl, lambert(0x4a4f4c), .17, .4, .17); bin.rotation.z = Math.PI / 2; bin.position.set(X(2.7), .17, X(3.35)); lv.group.add(bin);
+  for (let i = 0; i < 3; i++) { const t = boxMesh(.22, .07, .22, 0xf2efe6); t.position.set(X(4.3) + i * .05, .04 + i * .07, X(2.1) + i * .03); t.rotation.y = i * .5; lv.group.add(t); }
+  const leg = mesh(GEO.cyl, lambert(0x2a2a2a), .02, .45, .02); leg.rotation.set(Math.PI / 2, 0, .7); leg.position.set(X(2.2), .02, X(2.4)); lv.group.add(leg);
 }
 
 // ---------- career routes: props on the way and the ride home ----------
