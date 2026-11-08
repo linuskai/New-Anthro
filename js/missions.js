@@ -70,6 +70,7 @@ function bossDialog(e) {
       e.cleared = true; e.done = true; e.hunting = false; run.talks++;
       e.tri.visible = false; e.label.material.map = labelTex("✓ " + B.name.toUpperCase(), "#7b8a85", "#fff"); e.label.material.needsUpdate = true;
       setExpression(e.person, "sad"); emote(e, "😵"); addScore(300, "Endgegner: " + B.name);
+      mode = "play"; player.inv = 2; clearInputs();
       showToast(B.av, "#1f9d55", B.name + " ist besiegt!", "Der Weg ist frei. " + mission().ride[0].toUpperCase() + mission().ride.slice(1) + " wartet. Lauf!", [good("Weg frei")]);
       updateHud();
     } else missionLost(B);
