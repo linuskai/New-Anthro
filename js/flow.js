@@ -215,7 +215,7 @@ function showGameOver() {
   typeof track === "function" && track("burnout", { route: run.route, idx: run.idx, minutes: Math.round(run.minutes) });
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
   $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“.`;
-  fillStats(); clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
+  fillStats(); $("endRank").textContent = "Nicht geschafft · Burnout"; clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
   $("endBest").hidden = false; $("endBest").textContent = "Mission: " + mission().name + " · Energie lädst du mit Kaffee, Donuts, Energydrinks, dem Sofa im sicheren Raum und im Treppenhaus wieder auf.";
   $("btnAgain").firstElementChild.textContent = "Nochmal versuchen"; $("btnShare").hidden = true; $("btnNightNow").hidden = false;
   mode = "over"; showGameOverCard("Burnout: Deine Energie ist auf 0 %.", "Gespräche, Extra-Arbeit, Gestank, Unfälle und Schreck haben sie leergesaugt. Tipp: Kaffee und Snacks einsammeln, Leuten mit gelbem Dreieck ausweichen, im sicheren Raum aufs Sofa.");
