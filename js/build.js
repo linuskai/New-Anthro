@@ -1,15 +1,27 @@
 /* Hospital Escape 3D · doors, stairwell, elevators, rooms and the doctors' room. Runs inside buildLevel(). */
 
-const escapeBoardTex = () => canvasTex(512, 288, (g, w, h) => {
-  g.fillStyle = "#f6f6f2"; g.fillRect(0, 0, w, h);
-  const M = `"Marker Felt","Comic Sans MS",${SF}`;
-  g.fillStyle = "#c0322a"; g.font = `800 34px ${M}`; g.fillText("MISSION CONTROL", 20, 44);
-  g.fillStyle = "#1d2622"; g.font = `600 19px ${M}`;
-  ["Heim vor 24:00 (Kim!!)", "Pharma: Zeugnis? Approbation?", "Kevin: 3 Fotos + EXCEL", "Dr. Glatt: Probetag (Gurken)", "MS Sorgenfrei: Koffer im Keller", "@dr.feierabend: Ringlicht!", "Chef am Ausgang ⚠", "Formulare = ZEIT"].forEach((l, i) => g.fillText(l, 22, 78 + i * 25));
-  g.strokeStyle = "#2d3f8f"; g.lineWidth = 3; g.beginPath(); g.moveTo(340, 150); g.lineTo(470, 100); g.stroke();
-  g.fillStyle = "#2d3f8f"; g.font = `700 20px ${M}`; g.fillText("Frist!!", 410, 92); g.fillText("nicht erwischen", 350, 196); g.fillText("⏱ 17:00", 410, 240);
-  g.fillStyle = "#1f9d55"; g.font = `800 22px ${M}`; g.fillText("Leise. Schleichen.", 300, 270);
-}, "escapeboard");
+// the whiteboard in the doctors' room shows TODAY's plan: the job, the pick-up, the exit list, the warning about the boss
+const escapeBoardTex = () => {
+  const R = run && run.mode === "mission" ? ROUTES[run.route] : null, key = "escapeboard:" + (R ? run.route : "-");
+  return canvasTex(512, 288, (g, w, h) => {
+    g.fillStyle = "#f6f6f2"; g.fillRect(0, 0, w, h);
+    const M = `"Marker Felt","Comic Sans MS",${SF}`, fit = (t, x, y, max) => { let s = 1; while (g.measureText(t).width * s > max && s > .5) s -= .05; g.save(); g.translate(x, y); g.scale(s, 1); g.fillText(t, 0, 0); g.restore(); };
+    g.fillStyle = "#c0322a"; g.font = `800 32px ${M}`; g.fillText("MISSION CONTROL", 18, 40);
+    if (!R) { g.fillStyle = "#1d2622"; g.font = `600 20px ${M}`; fit("Heute: überleben. Morgen: auch.", 20, 80, 470); return; }
+    const home = run.route === "stay", dl = fmtTime(routeDeadline(run.route)), place = floorLabel(R.floors[R.floors.length - 1]);
+    g.fillStyle = "#1d2622"; g.font = `700 21px ${M}`;
+    fit(home ? "Heute: HEIM! Kim kocht 🍝" : `Neuer Job: ${R.title} 💼`, 20, 74, 300);
+    g.fillStyle = "#2d3f8f"; g.font = `700 19px ${M}`; fit(`${home ? "Am Auto" : "Abholung"}: ${dl} · ${place}`, 20, 102, 300);
+    g.fillStyle = "#1d2622"; g.font = `700 18px ${M}`; g.fillText("Mitnehmen:", 20, 134);
+    g.font = `600 17px ${M}`;
+    R.goals.slice(0, 4).forEach((go, k) => fit(`☐ ${go.title} (${floorLabel(go.lvl)})`, 26, 160 + k * 25, 300));
+    // the side notes, scribbled
+    g.fillStyle = "#c0322a"; g.font = `800 19px ${M}`; fit(`⚠ ${R.boss.name.split(" ").slice(-1)[0]} wartet`, 340, 76, 160); g.font = `600 15px ${M}`; g.fillStyle = "#1d2622"; fit("am Ausgang!", 352, 96, 150);
+    g.strokeStyle = "#2d3f8f"; g.lineWidth = 3; g.beginPath(); g.moveTo(330, 150); g.lineTo(470, 112); g.stroke();
+    g.fillStyle = "#2d3f8f"; g.font = `700 18px ${M}`; fit("Treppenhaus = Stress", 334, 180, 170); fit("nicht erwischen!", 340, 210, 160);
+    g.fillStyle = "#1f9d55"; g.font = `800 21px ${M}`; fit("Leise. Schleichen.", 320, 268, 180);
+  }, key);
+};
 const roomFloorTex = theme => canvasTex(256, 256, (g, w, h) => {
   const base = { radio: "#454a52", cellar: "#7a7c74", derma: "#d8b48c", er: "#d8d2bc", ortho: "#d3dbe2" }[theme] || "#dcd6c4";
   g.fillStyle = base; g.fillRect(0, 0, w, h);

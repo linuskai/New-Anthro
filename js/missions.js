@@ -205,7 +205,9 @@ function storyPhone(ui) {
   const el = $("storyPhone");
   if (!ui) { el.hidden = true; el.innerHTML = ""; return; }
   el.innerHTML = phoneHtml(ui); el.hidden = false;
-  const n = ui.msgs.length; for (let i = 0; i < n; i++) setTimeout(() => { if (!el.hidden) (ui.kind === "slides" ? sfx.paper : sfx.beep)(); }, (ui.kind === "slides" ? 300 + i * 1300 : 400 + i * 1100));
+  const n = ui.msgs.length, body = el.querySelector(".ph-body");
+  // each new message scrolls into view, so nothing stays cut off at the bottom of the phone
+  for (let i = 0; i < n; i++) setTimeout(() => { if (el.hidden) return; (ui.kind === "slides" ? sfx.paper : sfx.beep)(); setTimeout(() => { if (body) body.scrollTo({ top: body.scrollHeight, behavior: "smooth" }); }, 350); }, (ui.kind === "slides" ? 300 + i * 1300 : ui.kind === "chat" || ui.kind === "insta" ? 400 + i * 1100 : 500 + i * 1600));
 }
 
 // ---------- briefing and Mission Control share one sheet ----------
