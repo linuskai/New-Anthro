@@ -110,6 +110,24 @@ const FOES = {
     { n: "STRENGER BLICK", buff: 1, txt: "setzt STRENGER BLICK ein! Du fühlst dich klein. Sein ANGRIFF steigt!" },
     { n: "FACHFRAGE", quiz: true, txt: "prüft dein Wissen!" }] },
 };
+/* every boss has a signature move, used more often once it is angry (phase 2, under half its KP) */
+const BOSS_SIG = {
+  stay: { n: "OSTERDIENST", p: 30, txt: "trägt dich für OSTERN, PFINGSTEN UND WEIHNACHTEN ein!" },
+  pharma: { n: "COMPLIANCE-AUDIT", p: 18, acc: 1, txt: "startet ein COMPLIANCE-AUDIT! Alle deine Kugelschreiber werden beschlagnahmt! Deine Genauigkeit sinkt!" },
+  consult: { n: "POWERPOINT-SALVE", p: 10, multi: 3, txt: "feuert eine POWERPOINT-SALVE ab! 84 Folien, alle mit Animation!" },
+  botox: { n: "BOTOX-STARRE", p: 15, stun: 1, txt: "setzt BOTOX-STARRE ein! Dein Gesicht bewegt sich nicht mehr. Der Rest auch nicht!" },
+  ship: { n: "SEEGANG", p: 18, acc: 1, txt: "lässt das Deck schaukeln! SEEGANG! Dir wird übel, deine Genauigkeit sinkt!" },
+  influ: { n: "SHITSTORM", p: 8, multi: 4, txt: "löst einen SHITSTORM aus! 4.000 Kommentare in Sekunden!" },
+};
+/* boss music: a driving minor bassline with an arpeggio on top, faster once the boss is angry */
+let bossMus = null;
+function bossMusic(on, fast) {
+  if (bossMus) { clearInterval(bossMus.t); bossMus = null; }
+  if (!on || !actx) return;
+  const bass = [110, 110, 131, 110, 98, 98, 117, 98, 87, 87, 104, 87, 98, 104, 117, 131], arp = [440, 523, 659, 523, 392, 494, 587, 494, 349, 440, 523, 440, 392, 466, 587, 659];
+  let i = 0; const step = fast ? 105 : 140;
+  bossMus = { t: setInterval(() => { const k = i++ % 16; tone(bass[k] * (fast ? 1.06 : 1), 0, step / 1000 * .9, "sawtooth", .03); if (k % 2 === 0) tone(arp[k] * (fast ? 1.06 : 1), 0, step / 1000 * .6, "square", .014); if (k % 4 === 0) noise(0, .06, 120, 1, .12, "lowpass"); if (k % 4 === 2) noise(0, .04, 3000, .6, .03, "highpass"); }, step) };
+}
 const BOSS_TYPE = { stay: ["HIERARCHIE", "chief"], pharma: ["BÜROKRATIE", "rules"], consult: ["GREMIUM", "rules"], botox: ["BÜROKRATIE", "hygiene"], ship: ["BÜROKRATIE", "rules"], influ: ["BÜROKRATIE", "rules"] };
 
 // ---------- the battle ----------
@@ -117,8 +135,8 @@ function pokeBattle(e, done, o = {}) {
   const isBoss = !!o.boss, foe = isBoss ? FOES.boss : FOES.U;
   const ftype = isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[0] : foe.type, qpool = QUIZ[isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[1] : foe.quiz];
   const name = (e.name || "Gegner").toUpperCase(), kind = isBoss ? (e.def ? e.def.role.split(" · ")[0] : "Endgegner") : "Orthopäde";
-  const S = { me: 100, foe: 100, foeAtk: 1, myAcc: 1, pp: MY_MOVES.map(m => m.pp), jonas: true, over: false, busy: true, asked: new Set() };
-  const ov = document.createElement("div"); ov.id = "battle";
+  const S = { me: 100, foe: 100, foeAtk: 1, myAcc: 1, pp: MY_MOVES.map(m => m.pp), jonas: true, over: false, busy: true, asked: new Set() }, sig = isBoss ? BOSS_SIG[run.route] || BOSS_SIG.stay : null;
+  const ov = document.createElement("div"); ov.id = "battle"; if (isBoss) ov.classList.add("boss");
   const fs = battleSprite(e.person.sp, false, "e" + e.name), ps = battleSprite(PLAYER_SP, true, "player");
   ov.innerHTML = `<div class="pb-field">
       <div class="pb-box foe"><b>${esc(name)}</b><span class="lv">Lv${foe.lvl}</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="ty">${esc(ftype)}</small></div>
@@ -152,7 +170,8 @@ function pokeBattle(e, done, o = {}) {
     menu.innerHTML = `<button type="button" data-m="fight">KAMPF</button><button type="button" data-m="bag">BEUTEL</button><button type="button" data-m="mates">KOLLEGEN</button><button type="button" data-m="run">FLUCHT</button>`;
   };
   const showMoves = () => {
-    menu.innerHTML = MY_MOVES.map((m, i) => `<button type="button" data-mv="${i}" ${S.pp[i] ? "" : "disabled"}><b>${m.n}</b><small>AP ${S.pp[i]}/${m.pp} · ${m.t}${m.t !== "KOFFEIN" && (EFFECT[m.t][ftype] || 1) > 1 ? " ★" : ""}</small></button>`).join("") + `<button type="button" class="back" data-m="back">◀ ZURÜCK</button>`;
+    const ult = isBoss && S.foe <= 35 && !S.ultUsed ? `<button type="button" class="ult" data-ult="1"><b>KÜNDIGUNG</b><small>EINMALIG · ENDGÜLTIG ★★★</small></button>` : "";
+    menu.innerHTML = ult + MY_MOVES.map((m, i) => `<button type="button" data-mv="${i}" ${S.pp[i] ? "" : "disabled"}><b>${m.n}</b><small>AP ${S.pp[i]}/${m.pp} · ${m.t}${m.t !== "KOFFEIN" && (EFFECT[m.t][ftype] || 1) > 1 ? " ★" : ""}</small></button>`).join("") + `<button type="button" class="back" data-m="back">◀ ZURÜCK</button>`;
   };
   const bagItems = () => [["1", "KAFFEE", 40], ["0", "ENERGYDRINK", 55], ["$", "DONUT", 20], ["6", "PROTEINSHAKE", 25], ["3", "DESINFEKTION", 0], ["f", "FAKE-TELEFONAT", 0]].filter(([k]) => hasItem(k));
   const showBag = () => {
@@ -165,7 +184,9 @@ function pokeBattle(e, done, o = {}) {
     if (b.dataset.m === "bag") return showBag();
     if (b.dataset.m === "back") return showMenu();
     S.busy = true; menu.innerHTML = "";
-    if (b.dataset.mv != null) await myMove(+b.dataset.mv);
+    if (S.stunned) { S.stunned = false; await say("DU bist starr vor Botox und kannst dich nicht bewegen!"); }
+    else if (b.dataset.ult) await ultimate();
+    else if (b.dataset.mv != null) await myMove(+b.dataset.mv);
     else if (b.dataset.it) await useBag(b.dataset.it);
     else if (b.dataset.m === "mates") await jonas();
     else if (b.dataset.m === "run") { if (await flee()) return; }
@@ -183,7 +204,7 @@ function pokeBattle(e, done, o = {}) {
     let mult = (EFFECT[m.t][ftype] || 1), crit = false;
     if (m.quiz) { await say(`DU ${m.txt} Wenn er sie nicht kann, sitzt sie.`, 300); const ok = await quiz(qpool); if (!ok) { await say("Falsch! Er lacht. Die Attacke verpufft."); return; } crit = true; }
     else crit = Math.random() < .1;
-    const dmg = Math.round(m.p * mult * (crit ? 1.5 : 1) * (.85 + Math.random() * .3) * .55);
+    const dmg = Math.round(m.p * mult * (crit ? 1.5 : 1) * (.85 + Math.random() * .3) * .55 * (isBoss ? .8 : 1));
     hit("foe", dmg);
     if (!m.quiz) await say(`DU ${m.txt}`, 500);
     if (crit) await say("Volltreffer!", 500);
@@ -204,7 +225,27 @@ function pokeBattle(e, done, o = {}) {
     if (S.fakeEscape || Math.random() < (isBoss ? .2 : .45)) { await say("Du bist entkommen!"); finish(false, true); return true; }
     await say(isBoss ? `Du kannst nicht fliehen! ${name} steht in der Tür.` : "Du kannst nicht fliehen! Er versperrt den Flur. Mit Bizeps."); return false;
   }
-  async function foeTurn() {
+  async function ultimate() {
+    S.ultUsed = true; await say("DU greifst in die Kitteltasche. Ein Umschlag. Unterschrieben.", 500);
+    const fx = document.createElement("div"); fx.className = "pb-ult"; fx.innerHTML = "<b>📝 KÜNDIGUNG!</b>"; ov.appendChild(fx); sfx.slam(); tone(220, 0, .5, "sawtooth", .06, 880);
+    ov.classList.add("shake"); await sleep(900); fx.remove(); ov.classList.remove("shake");
+    hit("foe", 48); await say(`${name} liest den Brief. Die Hände zittern. „Aber … der Dienstplan …“`, 600); await say("Ein kritischer Treffer! Es ist SEHR effektiv!", 500);
+  }
+  async function rage() {
+    S.phase2 = true; ov.classList.add("rage"); bossMusic(true, true); sfx.stinger(); ov.classList.add("shake"); setTimeout(() => ov.classList.remove("shake"), 600);
+    await say(`${name} ist wütend! Die Neonröhren flackern rot.`, 600); S.foeAtk *= 1.2; await say(`Der ANGRIFF von ${name} steigt! Jetzt wird es ernst.`, 500);
+  }
+  async function foeTurn(again) {
+    if (isBoss && !S.phase2 && S.foe <= 50) await rage();
+    if (isBoss && (S.phase2 ? Math.random() < .4 : Math.random() < .15)) {
+      await say(`${name} setzt ${sig.n} ein! ${name} ${sig.txt}`, 500); lunge("foe");
+      if (S.shield) { S.shield = false; await say("Jonas wirft sich in den Weg. Jonas ist besiegt! Respekt, Jonas."); }
+      else { for (let h = 0; h < (sig.multi || 1); h++) { hit("me", Math.round(sig.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1))); await sleep(260); if (S.me <= 0) break; } if (sig.multi) await say(`${sig.multi} Treffer!`, 400); }
+      if (sig.acc) S.myAcc *= .8; if (sig.stun) S.stunned = true;
+    } else await foeMove();
+    if (isBoss && S.phase2 && !again && S.me > 0 && Math.random() < .25) { await say(`${name} ist so wütend, dass er gleich nochmal angreift!`, 400); await foeTurn(true); }
+  }
+  async function foeMove() {
     const mv = Math.random() < .25 ? foe.moves.find(m => m.quiz) : pick(foe.moves.filter(m => !m.quiz || Math.random() < .3));
     await say(`${name} ${mv.txt}`, 450); lunge("foe");
     if (mv.buff) { S.foeAtk *= 1.3; return; }
@@ -214,12 +255,24 @@ function pokeBattle(e, done, o = {}) {
     const dmg = Math.round(mv.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1) * (.85 + Math.random() * .3));
     hit("me", dmg); if (dmg > 25) await say("Ein Volltreffer!", 450);
   }
-  async function win() { foeMon.classList.add("faint"); sfx.ding(); await say(`${name} wurde besiegt!`); await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
-  async function lose() { meMon.classList.add("faint"); await say("DU bist besiegt …"); await say("DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", 900); finish(false); }
-  function finish(ok, fled) { if (S.over) return; S.over = true; ov.remove(); fightOn = false; run.energy = Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
+  async function win() {
+    foeMon.classList.add("faint"); sfx.ding();
+    if (isBoss) { bossMusic(false); const ko = document.createElement("div"); ko.className = "pb-ko"; ko.innerHTML = "<b>K.O.!</b><small>Du bist frei.</small>"; ov.appendChild(ko); [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .14, .3, "square", .05)); tone(1047, .6, .9, "triangle", .06); await sleep(1600); }
+    await say(`${name} wurde besiegt!`); await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
+  async function lose() { bossMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say("DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", 900); finish(false); }
+  function finish(ok, fled) { if (S.over) return; S.over = true; bossMusic(false); ov.remove(); fightOn = false; run.energy = Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
   ov.cheat = () => { S.foe = 0; hpUi(); win(); };
   hpUi();
-  (async () => { foeMon.classList.add("enter"); meMon.classList.add("enter"); await say(isBoss ? `${kind.toUpperCase()} ${name} stellt sich dir in den Weg!` : `Ein wilder ${kind.toUpperCase()} erscheint!`, 700); await say("Los, DU!", 400); showMenu(); })();
+  (async () => {
+    if (isBoss) { // the versus screen: both slide in, ENDKAMPF, flash, music
+      const vs = document.createElement("div"); vs.className = "pb-vs";
+      vs.innerHTML = `<div class="vs-me">${ps ? `<img src="${ps}" alt="">` : "🧑‍⚕️"}<b>DU</b></div><div class="vs-mid"><small>ENDKAMPF</small><b>VS</b></div><div class="vs-foe">${fs ? `<img src="${fs}" alt="">` : esc(e.def ? e.def.av : "👔")}<b>${esc(name)}</b><small>${esc(e.def ? e.def.role : kind)}</small></div>`;
+      ov.appendChild(vs); sfx.slam(); setTimeout(() => sfx.stinger(), 300); bossMusic(true, false); await sleep(2600); vs.classList.add("out"); await sleep(400); vs.remove();
+    }
+    foeMon.classList.add("enter"); meMon.classList.add("enter");
+    await say(isBoss ? `ENDKAMPF! ${name} versperrt dir den Weg in die Freiheit!` : `Ein wilder ${kind.toUpperCase()} erscheint!`, 700);
+    if (isBoss) await say(`Hinter ${name} wartet ${mission().ride}. Los, DU!`, 500); else await say("Los, DU!", 400);
+    showMenu(); })();
 }
 // the old reflex arena is gone: every fight is a battle now
 function fightGame(e, done, o) { pokeBattle(e, done, o); }

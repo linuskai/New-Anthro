@@ -120,7 +120,7 @@ function findFocus() {
   for (const it of level.items) if (!it.taken) consider(it.wx, it.wy, 1.05, { type: "item", ref: it, label: "Nehmen", name: ITEMS[it.kind].name });
   if (run.route === "consult" && !run.flags.has("excel")) for (const e of level.enemies) if (e.type === "V" && !e.done && !e.gone) consider(e.x, e.y, 1.7, { type: "stampV", ref: e, label: "Excel holen", name: e.name });
   for (const e of level.enemies) if (e.type === "U" && !e.cleared) consider(e.x, e.y, 1.45, { type: "bouncer", ref: e, label: "Ansprechen", name: "Orthopäde" });
-  if (level.boss && !level.boss.cleared) consider(level.boss.x, level.boss.y, 1.6, { type: "boss", ref: level.boss, label: "Ansprechen", name: level.boss.def.name + " · Endgegner" });
+  if (level.boss && !level.boss.cleared) consider(level.boss.x, level.boss.y, 1.6, { type: "boss", ref: level.boss, label: "Kämpfen!", name: level.boss.def.name + " · Endkampf" });
   for (const p of level.props) {
     if (p.kind === "M" && p.uses < 3) consider(p.x, p.y, 1.35, { type: "machine", ref: p, label: "Automat", name: "Snackautomat" });
     if (p.kind === "L" && !run.flags.has("approbation")) consider(p.x, p.y, 1.35, { type: "locker", ref: p, label: "Öffnen", name: "Dein Spind" });

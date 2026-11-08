@@ -36,18 +36,18 @@ function trailerSlides(R) {
     <p class="tl-lead">${esc(home ? "Ohne diese Dinge brauchst du gar nicht heimkommen." : who + " will das sehen. Ohne diese Dinge kein Vertrag.")}</p>
     <ul class="tl-list">${R.goals.map((g, i) => `<li style="--i:${i}"><i>${GOAL_ICON[g.id] || "★"}</i><div><b>${esc(g.title)}</b><span>${esc(gtxt(g))}</span><small>📍 ${esc(floorLabel(g.lvl))}</small></div><span class="ck"></span></li>`).join("")}
       <li class="fin" style="--i:${n}"><i>${R.av}</i><div><b>Dann: pünktlich ${home ? "zum Auto" : "einsteigen"}</b><span>${esc(ride)} · ${fmtTime(dl)} · ${esc(place)}</span></div><span class="ck"></span></li></ul></div>`, after: listRun });
-  const B = R.boss;  const stops = fl.map((f, i) => {
+  const stops = fl.map((f, i) => {
     const L = LEVELS[f], last = i === fl.length - 1;
     const txt = o => { try { return typeof o.text === "function" ? o.text() : o.text; } catch (e) { return ""; } };
     const todo = R.goals.filter(g => g.lvl === f).map(g => `<span class="td goal"><i>${GOAL_ICON[g.id] || "★"}</i><span><b>${esc(g.title)}</b><small>${esc(txt(g))}</small></span></span>`)
       .concat(L.objectives.filter(o => o.main && !o.fin && (!o.for || o.for.includes(k))).map(o => `<span class="td goal obst"><i>🚧</i><span><b>${esc(o.title)}</b><small>${esc(txt(o))}</small></span></span>`));
-    if (last) todo.push(`<span class="td boss">${B.av} <b>${esc(B.name)}</b></span>`, `<span class="td fin">${R.av} <b>${esc(ride)}</b></span>`);
+    if (last) todo.push(`<span class="td fin">${R.av} <b>${esc(ride)}</b></span>`);
     if (!todo.length) todo.push(`<span class="td pass">nur durch</span>`);
     return `<li${last ? ' class="last"' : ""}><span class="stop">${FLOOR_ICON[L.key] || "🏥"}</span><div class="st-body"><small>${esc(L.floor)}</small><b class="st-name">${esc(floorLabel(f))}</b><div class="tds">${todo.join("")}</div></div></li>`;
   });
   S.push({ k: "Dein Weg nach draußen", html: `<div class="tl-slide s-way"><p class="tl-kicker">So kommst du raus</p><h2 class="tl-h">Etage für Etage nach unten</h2>
     <ol class="tl-line" style="--n:${fl.length}">${stops.join("")}</ol>
-    <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist. ${B.av} Am Ausgang wartet ${esc(B.name)}: reden, Formular ausfüllen oder kämpfen.</p></div>`, after: wayRun });
+    <p class="tl-note">🔒 Das Treppenhaus öffnet erst, wenn die Etage erledigt ist.</p></div>`, after: wayRun });
   S.push({ k: "Was dich aufhält", html: `<div class="tl-slide s-danger"><h2 class="tl-h">Drei Dinge halten dich auf</h2><div class="tl-threats">
     <div class="th" style="--i:0"><div class="demo d-time"><b>18:42</b><i>+12 Min</i></div><div><b>Zeit</b><p>Gespräche, Anrufe und Formulare kosten Minuten. Jeder Verlust blinkt rot an der Uhr.</p></div></div>
     <div class="th" style="--i:1"><div class="demo d-energy"><i></i></div><div><b>Energie</b><p>Stress, Schreck und Gestank saugen sie leer. 0 % = Burnout. Kaffee und Snacks laden auf.</p></div></div>

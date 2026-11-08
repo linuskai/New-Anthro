@@ -427,6 +427,14 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Konto vorbereitet:** Spieler haben ein Feld für ein späteres E-Mail-Konto, die Funktionen zum Verknüpfen und zum Übernehmen auf ein neues Gerät nach dem Login gibt es schon. Die Anmeldung selbst (E-Mail-Link) ist der nächste Schritt.
 - Die Claude-Artefakt-Bestenliste wird nicht mehr benutzt.
 
+## Version 22: Klare Geschichte, Exit-Liste, Endkampf
+
+- **Worum es geht, in einem Satz:** Heute ist dein Exit-Tag. Jemand holt dich heute Abend aus der Klinik ab. Du musst nur pünktlich und mit allem am Treffpunkt sein.
+- **Titel:** „Deine Exit-Strategie“ mit genau diesem Satz. **Auswahl:** „Wähle deine Exit-Strategie“; jede Karte zeigt, wer dich abholt, wann und wo („🚘 Die Limousine von Fr. Goldmann holt dich ab · 22:00 · Parkhaus“), das Angebot in Kurzform und die Exit-Liste.
+- **Trailer, neu sortiert (6 Karten):** 1 *Dein Exit-Tag* (wer dich will, wer dich abholt, um wie viel Uhr, drei Schritte: Exit-Liste holen, raus, pünktlich einsteigen), 2 *Das Angebot* (das bekommst du, wenn du es rausschaffst), 3 *Deine Exit-Liste* (was verlangt wird, wo es liegt; wird animiert abgehakt), 4 *Dein Weg nach draußen*, 5 *Was dich aufhält*, 6 *Deine Tricks*. Der Endgegner kommt im Trailer nicht mehr vor: Überraschung am Ende.
+- **Ein Begriff überall:** „Exit-Liste“ statt „Unter-Missionen“ (Zettel, Mission Control, Wertung, Tour).
+- **Endkampf statt Gespräch:** Am Ausgang wird nicht mehr geredet. VS-Bildschirm („ENDKAMPF“, beide fliegen rein, Blitz, Kampfmusik), Arena in Abendrot. Jeder Endgegner hat eine Spezialattacke (Osterdienst, Compliance-Audit, Powerpoint-Salve 3×, Botox-Starre setzt dich eine Runde aus, Seegang, Shitstorm 4×). Unter halber KP wird er wütend: Phase 2 mit rotem Glühen, schnellerer Musik, stärkeren Angriffen und manchmal zwei Angriffen hintereinander. Unter einem Drittel KP hast du einmal deinen Finisher: **KÜNDIGUNG** (fliegender Brief, Blitz, Bildschirmwackeln, kritischer Treffer). Sieg: großes „K.O.! Du bist frei.“ mit Fanfare. Niederlage: +15 Minuten, Revanche sobald du bereit bist. Im Spiel steht am Endgegner „Kämpfen!“.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

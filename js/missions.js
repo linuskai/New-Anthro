@@ -40,26 +40,22 @@ function spawnBoss() {
 
 // ---------- the boss ----------
 function bossDialog(e) {
-  const B = e.def, base = { sp: e.person.sp, av: B.av, color: B.color, name: B.name, role: B.role + " · Endgegner" };
-  setExpression(e.person, "angry");
-  const clear = text => {
-    e.cleared = true; e.done = true; grid[e.ty][e.tx] = "."; run.talks++;
-    const side = DIRS.find(([dx, dy]) => cell(e.tx + dx, e.ty + dy) === "#") || [1, 0];
-    e.x = e.tx + .5 + side[0] * .62; e.y = e.ty + .5 + side[1] * .62; e.tri.visible = false;
-    e.label.material.map = labelTex("✓ " + B.name.toUpperCase(), "#7b8a85", "#fff"); e.label.material.needsUpdate = true;
-    setExpression(e.person, "happy"); emote(e, pick(["🤝", "😮", "🙄"])); sfx.ding(); addScore(300, "Endgegner: " + B.name);
-    return { text, stamps: [good("Weg frei")] };
-  };
-  const again = () => { player.inv = 1.5; e.cool = 3; };
-  const chance = Math.min(.85, .4 + run.energy / 250);
-  openDialog({ ...base, text: B.line,
-    options: [
-      { label: B.talk[0], hint: Math.round(chance * 100) + " % · sonst −15 % Energie", act: () => Math.random() < chance ? clear(B.talk[1]) : (setExpression(e.person, "angry"), { text: "„Netter Versuch.“ " + B.name + " verschränkt die Arme. Es wird nicht besser. Es wird nie besser.", stamps: pen({ nerves: 1 }) }) },
-      { label: "Formular ausfüllen (kostet Zeit, klappt immer)", hint: "Bürokratie-Minispiel", act: () => ({ next: () => formGame(B.form, 2, lost => openDialog({ ...base, text: `Du füllst aus. Durchschlag gelb, Durchschlag rosa, Original für die Ablage im Keller. ${B.name} prüft jede Zeile. Mit Lineal.`, options: [{ label: "Formular überreichen", act: () => clear(`„Sauber. Stempel. Gehen Sie.“ Das hat dich ${lost} Minuten gekostet.`) }], onClose: again })) }) },
-      { label: `Kämpfen! Stethoskop gegen ${B.weapon}`, hint: "Kampf · bei Niederlage −15 % Energie", act: () => ({ next: () => fightGame(e, ok => openDialog({ ...base, text: ok ? `${B.name} sitzt auf dem Boden, das Stethoskop elegant um das Handgelenk gewickelt. „Das… steht so in keiner Dienstvereinbarung.“` : `${B.name} rückt den ${B.weapon} zurecht. „Nächstes Mal mit Termin.“`,
-        options: [{ label: ok ? "Kittel richten. Gehen." : "Aufstehen. Würde suchen.", act: () => ok ? clear("Der Weg ist frei. Hinter dir applaudiert jemand. Es ist Frau Bozkurt.") : { text: "Du stehst wieder. Irgendwie.", stamps: pen({ nerves: 1, energy: 10 }) } }], onClose: again }), { weapon: B.weapon, coat: B.coat, place: LEVELS[run.idx].short + " · ENDGEGNER", boss: true }) }) },
-      { label: "„Ich komme gleich wieder.“", act: () => ({ text: "„Ich warte. Ich habe Zeit. Sie nicht.“" }) },
-    ], onClose: again });
+  const B = e.def; setExpression(e.person, "angry"); clearInputs(); hidePopups();
+  fightGame(e, (ok, fled) => {
+    if (ok) {
+      e.cleared = true; e.done = true; grid[e.ty][e.tx] = "."; run.talks++;
+      const side = DIRS.find(([dx, dy]) => cell(e.tx + dx, e.ty + dy) === "#") || [1, 0];
+      e.x = e.tx + .5 + side[0] * .62; e.y = e.ty + .5 + side[1] * .62; e.tri.visible = false;
+      e.label.material.map = labelTex("✓ " + B.name.toUpperCase(), "#7b8a85", "#fff"); e.label.material.needsUpdate = true;
+      setExpression(e.person, "sad"); emote(e, "😵"); addScore(300, "Endgegner: " + B.name);
+      showToast(B.av, "#1f9d55", B.name + " ist besiegt!", "Der Weg ist frei. " + mission().ride[0].toUpperCase() + mission().ride.slice(1) + " wartet. Lauf!", [good("Weg frei")]);
+    } else {
+      player.inv = 3; e.cool = 4;
+      if (!fled) { run.minutes += 15; clockLoss(15, "Endkampf verloren"); }
+      showToast(B.av, "#e2483d", fled ? "Geflohen" : "Verloren", fled ? `${B.name} wartet. Und hat Zeit. Du nicht.` : `${B.name} steht wieder in der Tür. Revanche, sobald du bereit bist. Tipp: Kaffee trinken, Fachfragen nutzen, und unter einem Drittel KP: KÜNDIGUNG.`, []);
+    }
+    updateHud();
+  }, { weapon: B.weapon, coat: B.coat, place: LEVELS[run.idx].short + " · ENDKAMPF", boss: true });
 }
 
 // ---------- paperwork: the penalty that costs real game time ----------
@@ -191,7 +187,7 @@ function missionSheet(live) {
   h += `<div class="ms-clock"><div><small>${live ? "Jetzt" : "Start"}</small><b>${fmtTime(now)}</b></div><div><small>Frist</small><b>${fmtTime(dl)}</b></div><div class="${left < 45 ? "warn" : ""}"><small>Noch</small><b>${fmtSpan(left)}</b></div>${live ? `<div><small>Verloren</small><b>${fmtSpan(run.lostMin || 0)}</b></div>` : ""}</div>`;
   h += `<h3>Exit-Liste ${live ? `· ${goalsDoneCount()} von ${R.goals.length}` : ""}</h3><ul class="ms-goals">${goals}</ul>`;
   h += `<h3>Dein Weg</h3><div class="ms-floors">${floors}<i class="arr">→</i><span class="fl fin">${R.av} ${esc(R.ride)}</span></div>`;
-  h += `<div class="ms-boss"><span>${R.boss.av}</span><div><b>Endgegner: ${esc(R.boss.name)}</b><small>${esc(R.boss.role)}. Reden, Formular ausfüllen oder kämpfen.</small></div></div>`;
+  if (live && isLastFloor()) h += `<div class="ms-boss"><span>${R.boss.av}</span><div><b>Endgegner: ${esc(R.boss.name)}</b><small>${esc(R.boss.role)}. Kein Gespräch, nur ein Kampf.</small></div></div>`;
   if (live) {
     const here = objectives().filter(o => !o.isExit && !o.route && !o.boss);
     if (here.length) h += `<h3>Hindernis hier · ${esc(floorLabel(run.idx))}</h3><ul class="ms-goals">${here.map(o => `<li class="${o.done ? "done" : ""}"><span class="ck">${o.done ? "✓" : ""}</span><span><b>${esc(o.title || "")}</b> · ${esc(o.text)}</span></li>`).join("")}</ul>`;
@@ -201,7 +197,7 @@ function missionSheet(live) {
   return h;
 }
 const HOW_HTML = `<ul class="legend how">
-  <li><span class="ico">🎯</span><span><b>Ziel</b> · Heute holt dich jemand aus der Klinik ab. Hol alles von deiner Exit-Liste, komm am Endgegner vorbei und sei vor der Frist am Treffpunkt. Ein Stockwerk ist erst offen, wenn seine Aufgaben erledigt sind.</span></li>
+  <li><span class="ico">🎯</span><span><b>Ziel</b> · Heute holt dich jemand aus der Klinik ab. Hol alles von deiner Exit-Liste und sei vor der Frist am Treffpunkt. Am Ausgang wartet noch eine letzte Prüfung. Ein Stockwerk ist erst offen, wenn seine Aufgaben erledigt sind.</span></li>
   <li><span class="ico">⏱</span><span><b>Die Uhr</b> · oben links im Pager. Eine Sekunde echte Zeit ist eine halbe Minute im Spiel (auf „Entspannt“ weniger). Das gelbe Feld darunter zeigt, wie viel Zeit bis zur Frist bleibt.</span></li>
   <li><span class="ico">⌛</span><span><b>Zeit verlierst du</b> · wenn dich jemand erwischt und vollquatscht, wenn du Anrufe annimmst, bei Reanimationen und durch liegengebliebene Aufgaben (Formulare im Treppenhaus). Jeder Verlust blinkt rot an der Uhr.</span></li>
   <li><span class="ico">👀</span><span><b>Möglichst niemandem begegnen</b> · Dreieck über dem Kopf: weiß = ahnungslos, gelb = misstrauisch, rot = kommt auf dich zu. Schleichen, aus dem Sichtkegel bleiben, sichere Räume nutzen.</span></li>
