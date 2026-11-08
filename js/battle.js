@@ -138,7 +138,7 @@ function pokeBattle(e, done, o = {}) {
   const ftype = isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[0] : foe.type, qpool = QUIZ[isBoss ? (BOSS_TYPE[run.route] || BOSS_TYPE.stay)[1] : foe.quiz];
   const name = (e.name || "Gegner").toUpperCase(), kind = isBoss ? (e.def ? e.def.role.split(" · ")[0] : "Endgegner") : "Orthopäde";
   const S = { me: isBoss ? Math.max(1, Math.round(run.energy)) : 100, foe: 100, foeAtk: 1, myAcc: 1, pp: MY_MOVES.map(m => m.pp), jonas: true, over: false, busy: true, asked: new Set() }, sig = isBoss ? BOSS_SIG[run.route] || BOSS_SIG.stay : null;
-  const ov = document.createElement("div"); ov.id = "battle"; if (isBoss) ov.classList.add("boss");
+  const ov = document.createElement("div"); ov.id = "battle"; if (isBoss) ov.classList.add("boss"); typeof track === "function" && track("battle", { boss: isBoss, foe: e.name || e.type, route: run && run.route });
   const fs = battleSprite(e.person.sp, false, "e" + e.name), ps = battleSprite(PLAYER_SP, true, "player");
   ov.innerHTML = `<div class="pb-field">
       <div class="pb-box foe"><b>${esc(name)}</b><span class="lv">Lv${foe.lvl}</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="ty">${esc(ftype)}</small></div>
@@ -305,7 +305,7 @@ function pokeBattle(e, done, o = {}) {
     await say(`${name} wurde besiegt!`);
     const exp = ov.querySelector(".pb-box.me .exp div"); if (exp) { exp.style.transition = "width 1.2s ease-out"; exp.style.width = "100%"; tone(880, 0, 1.1, "sine", .03, 1760); await sleep(1250); exp.style.transition = "none"; exp.style.width = "8%"; ov.querySelector(".pb-box.me .lv").textContent = "Lv32"; [659, 784, 1047].forEach((f, i) => tone(f, i * .12, .2, "square", .04)); await say("DU erreicht Lv32! Dein Gehalt steigt um 0 €.", 700); } await say(`DU erhältst ${isBoss ? 300 : 120} EP (Überstunden, unbezahlt)!`, 900); finish(true); }
   async function lose() { bossMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say("DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", 900); finish(false); }
-  function finish(ok, fled) { if (S.over) return; S.over = true; bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
+  function finish(ok, fled) { if (S.over) return; S.over = true; typeof track === "function" && track("battle_end", { boss: isBoss, ok: !!ok, fled: !!fled, kp: Math.round(S.me) }); bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
   ov.cheat = () => { S.foe = 0; hpUi(); win(); };
   hpUi();
   (async () => {

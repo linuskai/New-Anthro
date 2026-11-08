@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Hospital Escape">
 <meta name="theme-color" content="#0b1513">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;800&family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap">
@@ -987,6 +990,13 @@ body:not(.land) #wp { font-size: 13px; }
 .pb-mon.statdown img { animation: statDown .8s; } @keyframes statDown { 50% { filter: drop-shadow(0 0 10px #2a6fd8) brightness(.8); } }
 .pb-plat.enter.foe { animation: pbInR .7s ease-out; } .pb-plat.enter.me { animation: pbInL .7s ease-out; }
 .pb-text { position: relative; } .pb-text::after { content: "▼"; position: absolute; right: 12px; bottom: 6px; font-size: 11px; color: #d03030; animation: blink .7s steps(2) infinite; }
+/* account, feedback, install guide */
+.acct-me { margin: 0; font: 600 15px/1.3 var(--display); }
+#ovFeedback textarea, #ovFeedback input { width: 100%; box-sizing: border-box; font: 500 16px/1.35 var(--display); padding: 10px; border-radius: 8px; border: 2px solid #9aa3a0; background: #fff; color: #1d2622; resize: vertical; }
+.inst-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: s; }
+.inst-steps li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: center; background: #fff; border-radius: 10px; padding: 10px; font: 600 16px/1.3 var(--display); box-shadow: inset 0 0 0 1px #d8dcd6; }
+.inst-steps li::before { content: counter(s); width: 30px; height: 30px; border-radius: 50%; background: #1d2622; color: #fff; display: grid; place-items: center; font: 900 15px/1 var(--display); }
+.inst-steps .ic { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 5px; border-radius: 6px; background: #e3e6e0; font-size: 16px; vertical-align: -6px; }
 /* the mission flies in: black, scanlines, typewriter, self-destruct */
 #flyin { position: absolute; inset: 0; z-index: 9; background: #050807; color: #e8f2ea; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) max(18px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 16px) max(18px, env(safe-area-inset-left, 0px)); box-sizing: border-box; overflow: hidden; transition: opacity .4s; }
 #flyin.gone { opacity: 0; }
@@ -1140,6 +1150,8 @@ body:not(.land) #wp { font-size: 13px; }
         <button class="t-ghost" id="btnBoard" type="button">🏆 Bestenliste</button>
         <button class="t-ghost" id="btnGuide" type="button">🎒 Items</button>
         <button class="t-ghost" id="profChip" type="button">🧑‍⚕️ Profil</button>
+        <button class="t-ghost" id="btnFeedback" type="button">💡 Vorschlag</button>
+        <button class="t-ghost" id="btnInstall" type="button" hidden>📲 Als App</button>
         <button class="t-ghost snd" id="btnSoundTitle" type="button" aria-label="Ton an oder aus">🔊</button>
       </div>
       <div class="t-howto" id="howTo" hidden>
@@ -1199,6 +1211,15 @@ body:not(.land) #wp { font-size: 13px; }
         <label for="profName"><b>Dein Spielername</b><small>Kein Konto nötig. Dieser Name steht in der Bestenliste.</small></label>
         <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
         <div class="av-row" id="profAvs"></div>
+        <details class="code-box acct" id="acctBox"><summary>📧 Konto mit E-Mail (optional)</summary>
+          <p class="small" id="acctInfo">Mit Konto hängen Spielstand und Bestzeiten an deiner E-Mail: auf jedem Gerät anmelden, weiterspielen. Kein Passwort, nur ein Code per E-Mail.</p>
+          <div id="acctOut">
+            <div class="prof-row"><input id="acctEmail" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de"><button class="btn" id="btnAcctSend" type="button"><span>Code senden</span><span>✉️</span></button></div>
+            <div class="prof-row" id="acctCodeRow" hidden><input id="acctCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code aus der E-Mail"><button class="btn" id="btnAcctVerify" type="button"><span>Anmelden</span><span>↵</span></button></div>
+          </div>
+          <div id="acctIn" hidden><p class="acct-me">✓ Angemeldet als <b id="acctMail"></b></p><button class="btn ghost" id="btnAcctOut" type="button"><span>Abmelden</span><span>↩</span></button></div>
+          <p class="small" id="acctMsg" aria-live="polite"></p>
+        </details>
         <details class="code-box"><summary>📲 Auf ein anderes Gerät mitnehmen</summary>
           <p class="small">Dein Fortschritt hängt an diesem Gerät. Mit deinem Geräte-Code spielst du auf einem anderen Handy oder Computer weiter. Gib ihn niemandem: Wer den Code hat, spielt als du. Ein Konto mit E-Mail kommt später dazu.</p>
           <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
@@ -1225,6 +1246,26 @@ body:not(.land) #wp { font-size: 13px; }
     </div>
   </section>
 
+  <section class="overlay" id="ovFeedback" hidden>
+    <div class="card sheet">
+      <div class="eyebrow">💡 Verbesserungsvorschlag</div>
+      <h2>Was können wir besser machen?</h2>
+      <p class="small">Fehler, Ideen, Lob, Kritik. Alles landet direkt beim Entwickler. Danke!</p>
+      <textarea id="fbText" maxlength="2000" rows="6" placeholder="Zum Beispiel: Auf dem iPhone im Querformat …"></textarea>
+      <input id="fbContact" maxlength="120" autocomplete="email" placeholder="E-Mail für Rückfragen (optional)">
+      <p class="small" id="fbMsg" aria-live="polite"></p>
+      <div class="mc-btns"><button class="btn ghost" id="btnFbCancel" type="button"><span>Abbrechen</span><span>✕</span></button><button class="btn" id="btnFbSend" type="button"><span>Senden</span><span>➤</span></button></div>
+    </div>
+  </section>
+  <section class="overlay" id="ovInstall" hidden>
+    <div class="card sheet install">
+      <div class="eyebrow">📲 Am besten als App spielen</div>
+      <h2>Auf den Home-Bildschirm</h2>
+      <p class="small">Dann startet Hospital Escape im Vollbild, ohne Browserleisten, mit eigenem Icon. Kostet nichts, dauert 10 Sekunden.</p>
+      <ol class="inst-steps" id="instSteps"></ol>
+      <div class="mc-btns"><button class="btn ghost" id="btnInstLater" type="button"><span>Erst mal im Browser</span><span>→</span></button><button class="btn" id="btnInstGo" type="button"><span>Verstanden</span><span>✓</span></button></div>
+    </div>
+  </section>
   <section class="overlay" id="ovPause" hidden>
     <div class="card dark">
       <div class="eyebrow">Pause · Pager auf lautlos</div>
@@ -1243,6 +1284,7 @@ body:not(.land) #wp { font-size: 13px; }
       <button class="btn ghost" id="btnPlan" type="button"><span>Mission Control</span><span>🎯</span></button>
       <button class="btn ghost" id="btnTour" type="button"><span>Tour: So geht's</span><span>👆</span></button>
       <button class="btn ghost" id="btnGuidePause" type="button"><span>Ausrüstung erklärt</span><span>🎒</span></button>
+      <button class="btn ghost" id="btnFeedbackPause" type="button"><span>Verbesserung vorschlagen</span><span>💡</span></button>
       <button class="btn ghost" id="btnQuit" type="button"><span>Schicht abbrechen</span><span>✕</span></button>
     </div>
   </section>
@@ -1299,6 +1341,9 @@ body:not(.land) #wp { font-size: 13px; }
 <script src="js/missions.js"></script>
 <script src="js/trailer.js"></script>
 <script src="js/social.js"></script>
+<script src="js/account.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/pwa.js"></script>
 <script src="js/flow.js"></script>
 </body>
 </html>

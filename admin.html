@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hospital Escape · Statistik</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+/* Owner-only stats: who plays, how long, missions, errors, feedback. Light and dark. */
+:root { --bg: #f4f4ef; --card: #fff; --ink: #1d2622; --mute: #5a6a62; --line: #d8dcd6; --acc: #0f6b4f; --warn: #c0322a; --gold: #f2b33d; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0b1513; --card: #15211d; --ink: #e8f2ea; --mute: #9fb2a8; --line: #26332d; --acc: #3fbf8f; --warn: #ff7a6e; } }
+* { box-sizing: border-box; } body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
+h1 { margin: 0; font-size: 19px; } h2 { margin: 22px 0 8px; font-size: 16px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+main { padding: 0 16px 40px; max-width: 1100px; margin: auto; }
+button, input { font: inherit; } button { cursor: pointer; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 8px 12px; }
+button.pri { background: var(--acc); color: #fff; border-color: var(--acc); }
+input { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+.login { max-width: 420px; margin: 40px auto; display: grid; gap: 10px; background: var(--card); padding: 18px; border-radius: 12px; border: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .msg { color: var(--mute); font-size: 14px; min-height: 1.2em; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 14px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; } .kpi b { display: block; font-size: 24px; } .kpi span { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+.kpi.alert b { color: var(--warn); }
+.bars { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; align-items: end; height: 140px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 10px 26px; position: relative; }
+.bar { position: relative; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; } .bar i { display: block; background: var(--acc); border-radius: 3px 3px 0 0; min-height: 2px; } .bar i.np { background: var(--gold); margin-top: 2px; border-radius: 0; }
+.bar small { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--mute); white-space: nowrap; } .bar em { position: absolute; top: -2px; left: 50%; transform: translate(-50%, -100%); font-size: 10px; font-style: normal; color: var(--mute); }
+.legend { font-size: 12px; color: var(--mute); margin-top: 4px; } .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 4px 0 10px; }
+.tbl { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; } .tbl th { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
+.tbl td.n { text-align: right; font-variant-numeric: tabular-nums; } .wrap { overflow-x: auto; }
+.fb { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .fb.done { opacity: .5; } .fb p { margin: 0 0 4px; white-space: pre-wrap; } .fb small { color: var(--mute); }
+.err { color: var(--warn); font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
+.muted { color: var(--mute); }
+</style>
+</head>
+<body>
+<header><h1>🏥 Hospital Escape · Statistik</h1><div><span class="muted" id="who"></span> <button id="btnReload" hidden>Aktualisieren</button> <button id="btnLogout" hidden>Abmelden</button></div></header>
+<main>
+  <section class="login" id="login">
+    <b>Anmelden</b>
+    <span class="msg">Mit deiner E-Mail (Code per E-Mail) oder mit dem Admin-Schlüssel.</span>
+    <div class="row"><input id="email" type="email" placeholder="E-Mail" autocomplete="email"><button id="btnSend">Code senden</button></div>
+    <div class="row"><input id="code" inputmode="numeric" placeholder="Code aus der E-Mail" autocomplete="one-time-code"><button id="btnVerify" class="pri">Anmelden</button></div>
+    <div class="row"><input id="key" type="password" placeholder="Admin-Schlüssel" autocomplete="off"><button id="btnKey" class="pri">Öffnen</button></div>
+    <span class="msg" id="msg"></span>
+  </section>
+  <section id="dash" hidden></section>
+</main>
+<script>
+const SB = { url: "https://fmgkjtvohxczcexsvrlz.supabase.co", key: "sb_publishable_nY_jMQ22Xx37IrbnYBXSaA_ccsHkjOc" };
+const $ = id => document.getElementById(id), esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ls = { get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+let sess = ls.get("he-admin-auth"), akey = ls.get("he-admin-key");
+async function authCall(path, body, bearer) {
+  const r = await fetch(`${SB.url}/auth/v1/${path}`, { method: "POST", headers: { apikey: SB.key, "Content-Type": "application/json", ...(bearer ? { Authorization: "Bearer " + bearer } : {}) }, body: JSON.stringify(body || {}) });
+  const t = await r.text(), j = t ? JSON.parse(t) : {}; if (!r.ok) throw new Error(j.msg || j.error_description || j.message || r.status); return j;
+}
+async function bearer() {
+  if (!sess) return null;
+  if (Date.now() > sess.exp - 60000) { try { const s = await authCall("token?grant_type=refresh_token", { refresh_token: sess.refresh }); sess = { token: s.access_token, refresh: s.refresh_token, exp: Date.now() + s.expires_in * 1000, email: sess.email }; ls.set("he-admin-auth", sess); } catch (e) { return null; } }
+  return sess.token;
+}
+async function rpc(fn, args) {
+  const b = await bearer(), r = await fetch(`${SB.url}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: SB.key, "Content-Type": "application/json", ...(b ? { Authorization: "Bearer " + b } : {}) }, body: JSON.stringify(args) });
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200)); const t = await r.text(); return t ? JSON.parse(t) : null;
+}
+const withKey = a => akey ? { ...a, p_key: akey } : a;
+$("btnSend").onclick = async () => { try { await authCall("otp?redirect_to=" + encodeURIComponent(location.href.split("#")[0]), { email: $("email").value.trim(), create_user: false }); $("msg").textContent = "Code bzw. Link ist unterwegs."; } catch (e) { $("msg").textContent = "Fehler: " + e.message; } };
+$("btnVerify").onclick = async () => { try { const s = await authCall("verify", { type: "email", email: $("email").value.trim(), token: $("code").value.trim() }); sess = { token: s.access_token, refresh: s.refresh_token, exp: Date.now() + s.expires_in * 1000, email: s.user && s.user.email }; ls.set("he-admin-auth", sess); load(); } catch (e) { $("msg").textContent = "Code falsch oder abgelaufen."; } };
+$("btnKey").onclick = () => { akey = $("key").value.trim(); ls.set("he-admin-key", akey); load(); };
+$("btnLogout").onclick = () => { sess = null; akey = null; ls.del("he-admin-auth"); ls.del("he-admin-key"); location.reload(); };
+$("btnReload").onclick = () => load();
+if (/access_token=/.test(location.hash)) { const h = new URLSearchParams(location.hash.slice(1)); sess = { token: h.get("access_token"), refresh: h.get("refresh_token"), exp: Date.now() + (+h.get("expires_in") || 3600) * 1000, email: "" }; ls.set("he-admin-auth", sess); history.replaceState(null, "", location.pathname); }
+
+const ROUTE = { stay: "🏠 Einfach heim", pharma: "💊 Pharma", consult: "📊 Beratung", botox: "💉 Ästhetik", ship: "🚢 Kreuzfahrt", influ: "🤳 Medfluencer" };
+const ago = t => { const s = (Date.now() - new Date(t)) / 1000; return s < 90 ? "gerade" : s < 3600 ? Math.round(s / 60) + " min" : s < 86400 ? Math.round(s / 3600) + " h" : Math.round(s / 86400) + " T"; };
+const dev = ua => /iphone/i.test(ua) ? "iPhone" : /ipad/i.test(ua) ? "iPad" : /android/i.test(ua) ? "Android" : /mac/i.test(ua) ? "Mac" : /windows/i.test(ua) ? "Windows" : "?";
+async function load() {
+  try {
+    let d; try { d = await rpc("hx_admin_stats", withKey({})); } catch (e) { if (akey) d = await rpc("hx_admin_stats", {}); else throw e; }
+    $("login").hidden = true; $("dash").hidden = false; $("btnReload").hidden = $("btnLogout").hidden = false; $("who").textContent = sess && sess.email ? sess.email : "Admin";
+    render(d);
+  } catch (e) { $("login").hidden = false; $("dash").hidden = true; $("msg").textContent = sess || akey ? "Kein Zugriff: " + e.message : ""; }
+}
+function render(d) {
+  const t = d.totals, max = Math.max(1, ...d.per_day.map(x => x.sessions)), maxNp = Math.max(1, ...d.per_day.map(x => x.new_players));
+  let h = `<div class="kpis">${[["Spieler gesamt", t.players], ["mit Konto", t.accounts], ["gerade aktiv", t.active_now], ["Spieler 7 Tage", t.players_7d], ["Sitzungen 24 h", t.sessions_24h], ["Sitzungen gesamt", t.sessions], ["Spielzeit gesamt", t.playtime_h + " h"], ["Ø Sitzung", t.avg_session_min + " min"], ["als App gestartet", t.pwa_share + " %"], ["Fehler 24 h", t.errors_24h, t.errors_24h > 0], ["offene Vorschläge", t.feedback_open, t.feedback_open > 0]].map(([l, v, a]) => `<div class="kpi${a ? " alert" : ""}"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("")}</div>`;
+  h += `<h2>Letzte 14 Tage</h2><div class="bars">${d.per_day.map(x => `<div class="bar" title="${x.day}: ${x.sessions} Sitzungen, ${x.new_players} neue Spieler, ${x.minutes} min"><em>${x.sessions || ""}</em><i style="height:${x.sessions / max * 100}%"></i><i class="np" style="height:${x.new_players / maxNp * 30}%"></i><small>${x.day.slice(8)}.${x.day.slice(5, 7)}</small></div>`).join("")}</div><div class="legend"><i style="background:var(--acc)"></i>Sitzungen <i style="background:var(--gold)"></i>neue Spieler</div>`;
+  h += `<h2>Missionen</h2><div class="wrap"><table class="tbl"><tr><th>Mission</th><th>Gestartet</th><th>Geschafft</th><th>Zu spät</th><th>Endkampf verloren</th><th>Burnout</th><th>Quote</th></tr>${d.missions.map(m => `<tr><td>${esc(ROUTE[m.route] || m.route)}</td><td class="n">${m.starts}</td><td class="n">${m.wins}</td><td class="n">${m.late}</td><td class="n">${m.lost_boss}</td><td class="n">${m.burnout}</td><td class="n">${m.starts ? Math.round(m.wins / m.starts * 100) + " %" : "–"}</td></tr>`).join("") || `<tr><td colspan="7" class="muted">Noch keine Daten</td></tr>`}</table></div>`;
+  h += `<p class="muted">Nachtdienst: ${d.nights.starts} gestartet · ${d.nights.survived} überlebt · ${d.nights.found} gefunden</p>`;
+  h += `<h2>Fehler</h2><div class="wrap"><table class="tbl"><tr><th>Meldung</th><th>Ort</th><th>Anzahl</th><th>Zuletzt</th></tr>${d.errors.map(e => `<tr><td class="err">${esc(e.msg)}</td><td class="err">${esc(e.at)}</td><td class="n">${e.n}</td><td>${ago(e.last)}</td></tr>`).join("") || `<tr><td colspan="4" class="muted">Keine Fehler. 🎉</td></tr>`}</table></div>`;
+  h += `<h2>Verbesserungsvorschläge</h2>${d.feedback.map(f => `<div class="fb${f.done ? " done" : ""}"><div><p>${esc(f.text)}</p><small>${esc(f.name || "Dr. Anonym")}${f.contact ? " · " + esc(f.contact) : ""} · ${ago(f.created_at)}${f.meta && f.meta.route ? " · " + esc(f.meta.route) : ""}${f.meta && f.meta.ua ? " · " + dev(f.meta.ua) : ""}</small></div><button data-fb="${f.id}">${f.done ? "↺" : "✓ erledigt"}</button></div>`).join("") || `<p class="muted">Noch keine.</p>`}`;
+  h += `<h2>Letzte Sitzungen</h2><div class="wrap"><table class="tbl"><tr><th>Wer</th><th>Gerät</th><th>App</th><th>Dauer</th><th>Missionen</th><th>Zuletzt</th></tr>${d.recent.map(s => `<tr><td>${esc(s.name || "Dr. Anonym")}${s.email ? `<br><small class="muted">${esc(s.email)}</small>` : ""}</td><td>${dev(s.ua || "")} <small class="muted">${esc(s.screen || "")}</small></td><td>${s.standalone ? "✓" : ""}</td><td class="n">${Math.round(s.seconds / 60)} min</td><td>${esc((s.missions || "").split(", ").map(r => ROUTE[r] || r).join(", "))}</td><td>${ago(s.last_seen)}</td></tr>`).join("")}</table></div>`;
+  h += `<h2>Konten</h2><div class="wrap"><table class="tbl"><tr><th>Name</th><th>E-Mail</th><th>Seit</th></tr>${d.accounts.map(a => `<tr><td>${esc(a.name || "–")}</td><td>${esc(a.email || "")}</td><td>${new Date(a.created_at).toLocaleDateString("de-DE")}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">Noch keine Konten.</td></tr>`}</table></div>`;
+  $("dash").innerHTML = h;
+}
+$("dash").addEventListener("click", async e => { const b = e.target.closest("[data-fb]"); if (!b) return; try { await rpc("hx_admin_feedback_done", withKey({ p_id: +b.dataset.fb })); } catch (er) { try { await rpc("hx_admin_feedback_done", { p_id: +b.dataset.fb }); } catch (e2) {} } load(); });
+if (sess || akey) load();
+setInterval(() => { if (!$("dash").hidden && !document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>

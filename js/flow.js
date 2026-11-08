@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
@@ -7,7 +7,7 @@ function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", 
 let story = null, ceilT = 0, titleT = 0, fxOff = false;
 let lastMode = "mission", lastRoute = "stay", lastPlace = "ward";
 function startStory(m, route, place) {
-  m = m === "night" ? "night" : "mission"; lastMode = m; if (route) lastRoute = route; if (place) lastPlace = place;
+  m = m === "night" ? "night" : "mission"; lastMode = m; if (m === "night") typeof track === "function" && track("night_start", { place }); if (route) lastRoute = route; if (place) lastPlace = place;
   initAudio(); hidePopups(); show(null); clearInputs();
   newRun(m, lastRoute, lastPlace); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
   mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? (nightER() ? STORY_NIGHT_ER : STORY_NIGHT) : STORY_OPEN.concat(mission().story) };
@@ -122,6 +122,7 @@ function showIntro(bonus) {
 $("btnGo").addEventListener("click", () => { initAudio(); show(null); mode = "play"; run.clockSeen = run.minutes; trackObjectives(); announceObjective(); });
 function nextFloor() {
   if (document.getElementById("form") || mode !== "play" && mode !== "dialog") return;
+  typeof track === "function" && track("floor", { route: run.route, from: run.idx });
   if (run.mode === "mission" && isLastFloor()) { finale(); return; }
   endCall(); hidePopups(); clearInputs();
   const n = run.tasks.length;
@@ -183,11 +184,13 @@ function showGameOver() {
   const L = LEVELS[run.idx];
   run.duties.push("N");
   if (run.mode === "night") {
+    typeof track === "function" && track("night_lost", { place: run.place, tasks: run.nightDone, found: run.found || 0 });
     $("endEyebrow").textContent = nightPlace() + " · " + fmtTime(run.minutes); $("endTitle").textContent = (run.found || 0) >= 3 ? "Gefunden" : "Eingeschlafen";
     $("endText").textContent = (run.found || 0) >= 3 ? `Um ${fmtTime(run.minutes)} haben sie dich zum dritten Mal gefunden. Du bist jetzt einer von ihnen. Du schlurfst über den Flur. Deine Augen leuchten rot. Morgen früh fragt der Frühdienst: „Ruhige Nacht?“ ${run.nightDone} Pager-Aufgaben erledigt.` : `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
     fillStats(); $("endRank").textContent = (run.found || 0) >= 3 ? "Neuer Schlafwandler" : "Eingeschlafen"; $("stOver").textContent = "Nachtdienst bis " + fmtTime(run.minutes); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
     mode = "over"; show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50); return;
   }
+  typeof track === "function" && track("burnout", { route: run.route, idx: run.idx, minutes: Math.round(run.minutes) });
   $("endEyebrow").textContent = "Pager · " + fmtTime(run.minutes); $("endTitle").textContent = run.mode === "night" ? "Eingeschlafen" : "Burnout";
   $("endText").textContent = `Zusammengebrochen in ${L.name} um ${fmtTime(run.minutes)}. Die Energie ist bei 0 %. Du bleibst gleich zum Nachtdienst. Die Personalabteilung nennt das „Flexibilität“. Tipp: Schleichen, sichere Räume nutzen und Leuten mit gelbem Dreieck aus dem Blick gehen.`;
   fillStats(); clearCheckpoint(); $("endScore").hidden = true; $("endTicker").hidden = false; $("endTicker").innerHTML = "<b>EILMELDUNG</b><span>Klinikum St. Sparen meldet Rekord: 100 % Dienstplanabdeckung. Der Arzt dazu: „…“ (schläft)</span>";
@@ -202,7 +205,7 @@ function showNightEnd() {
   mode = "win"; clearInputs(); hidePopups(); endCall();
   let best = null; try { best = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
-  submitNight(run.place, run.nightDone);
+  submitNight(run.place, run.nightDone); typeof track === "function" && track("night_win", { place: run.place, tasks: run.nightDone });
   $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
   $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
@@ -220,7 +223,7 @@ function showEndScreen(key, n) {
   const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
   $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
-  submitScore(key, sc.total, run.minutes, sc.rank);
+  submitScore(key, sc.total, run.minutes, sc.rank); typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
   setMsg("Pager aus.", 0); sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 

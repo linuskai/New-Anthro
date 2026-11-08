@@ -79,7 +79,7 @@ function bossDialog(e) {
 /* losing the final battle ends the run */
 function missionLost(B) {
   if (run.routeFailed) return;
-  run.routeFailed = run.route; const R = mission();
+  run.routeFailed = run.route; const R = mission(); typeof track === "function" && track("mission_lost", { route: run.route, boss: B.name, energy: Math.round(run.energy) });
   hidePopups(); clearInputs(); endCall(); mode = "over";
   $("endEyebrow").textContent = `${R.av} ${R.name} · Nicht geschafft`; $("endTitle").textContent = "Game over";
   $("endText").textContent = `${B.name} hat gewonnen. ${R.ride[0].toUpperCase() + R.ride.slice(1)} fährt ohne dich. Du stehst im ${floorLabel(run.idx).toLowerCase()} und hältst deine Exit-Liste in der Hand. Morgen um 7:00 ist Frühbesprechung. Tipp: Mit mehr Energie gehst du stärker in den Endkampf. Spar sie dir auf.`;
@@ -238,7 +238,7 @@ const HOW_HTML = `<ul class="legend how">
   <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, du übernimmst den Nachtdienst.</span></li></ul>`;
 function beginMission() {
   initAudio(); show(null); blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
-  missionFlyIn(startPlaying);
+  typeof track === "function" && track("mission_start", { route: run.route }); missionFlyIn(startPlaying);
 }
 function startPlaying() {
   mode = "play"; run.clockSeen = run.minutes;
@@ -264,7 +264,7 @@ $("btnMC").addEventListener("click", openMC);
 // ---------- failing ----------
 function missionFailed() {
   if (run.routeFailed) return;
-  run.routeFailed = run.route; const R = mission();
+  run.routeFailed = run.route; const R = mission(); typeof track === "function" && track("mission_fail", { route: run.route, minutes: Math.round(run.minutes) });
   hidePopups(); clearInputs(); endCall(); mode = "over";
   $("endEyebrow").textContent = `${R.av} ${R.name} · ${fmtTime(run.minutes)}`; $("endTitle").textContent = "Zu spät";
   $("endText").textContent = R.failText;

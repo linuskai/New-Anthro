@@ -1,0 +1,18 @@
+{
+  "name": "Hospital Escape",
+  "short_name": "Hosp. Escape",
+  "description": "Satirisches Schleichspiel: Heute ist dein Exit-Tag. Raus aus dem Klinikum St. Sparen.",
+  "lang": "de",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0b1513",
+  "theme_color": "#0b1513",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
