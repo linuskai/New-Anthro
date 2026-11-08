@@ -418,6 +418,15 @@ Nebenmissionen am Whiteboard (das Whiteboard öffnet jetzt Mission Control), Pos
 - **Dermatologie:** Auf dem polierten Holzboden liegen Gurkenscheiben und Kortison-Tuben (mit Cremeklecks). Wer drüberläuft oder rennt, rutscht aus: kurzer Kontrollverlust, Geräusch (lockt Leute an), −12 % Energie und ein Spruch („Die Gurkenscheibe hatte Vorfahrt“). Wer schleicht, steigt sicher drüber und bekommt einen Hinweis. Jede Stelle erwischt dich nur einmal. Auch die alten Pfützen erkennen jetzt das Schleichen über den Stick.
 - **Gastro-Giftgas:** Die Wolken sind giftig. Wer drin steht, verliert gut dreimal so schnell Energie wie vorher, der Bildschirm wird rot und pulsiert, ein rotes Warnlicht kreist über das Bild, ein Banner blinkt („☣ GIFTGAS · RAUS HIER ODER LÜFTUNG AN“), ein Alarm piept. Unter der Decke blinken rote Warnleuchten, ein Schild hängt am Eingang. Alles aus, sobald die Lüftung läuft.
 
+## Version 21: Datenbank (Supabase), ohne Konto
+
+- **Für alle, ohne Anmeldung:** Name und Avatar, Bestwerte pro Mission, Nachtdienst-Ergebnisse (Station und ZNA) und der gespeicherte Missionsstand liegen in einer Supabase-Datenbank. Die Bestenliste ist für alle gleich, mit eigenen Tabs für beide Nachtdienste.
+- **Geräte-Code:** Jedes Gerät bekommt einen geheimen Code. In der Bestenliste unter „Auf ein anderes Gerät mitnehmen“ kann man ihn kopieren und auf einem anderen Gerät eingeben, dann geht es dort mit allem weiter.
+- **Sicher:** In der Datenbank steht nur ein Hash des Codes. Die Tabellen sind für Besucher gesperrt, alles läuft über vier geprüfte Funktionen. Namen werden gesäubert, Punkte und Zeiten begrenzt, es zählt immer der beste Wert.
+- **Offline** läuft alles wie vorher aus dem Browser und wird nachgereicht.
+- **Konto vorbereitet:** Spieler haben ein Feld für ein späteres E-Mail-Konto, die Funktionen zum Verknüpfen und zum Übernehmen auf ein neues Gerät nach dem Login gibt es schon. Die Anmeldung selbst (E-Mail-Link) ist der nächste Schritt.
+- Die Claude-Artefakt-Bestenliste wird nicht mehr benutzt.
+
 ## Ideen für später
 
 - Stimmen und Musik, Radio im Bereitschaftsraum

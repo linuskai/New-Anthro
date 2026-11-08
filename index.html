@@ -546,9 +546,11 @@ body.land.hudmin .mission { display: none; }
 .ticker b { font: 900 12px/1 var(--display); letter-spacing: .2em; color: #ffe08a; }
 .endscore .sc-k { font: 700 11px/1 var(--display) !important; letter-spacing: .14em; text-transform: uppercase; }
 .prof { display: grid; gap: 6px; background: #fff; border-radius: 8px; padding: 10px; } .prof label b { display: block; font: 800 15px/1 var(--display); text-transform: uppercase; } .prof label small { font: 500 13px/1.2 var(--display); opacity: .75; }
+.code-box summary { cursor: pointer; font: 800 14px/1.2 var(--display); text-transform: uppercase; letter-spacing: .04em; padding: 4px 0; } .code-box { display: grid; gap: 6px; } .code-box[open] { gap: 8px; }
+.code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; } .code-row code { font: 600 14px/1.2 var(--mono); background: #eef1ee; border-radius: 6px; padding: 8px; word-break: break-all; color: #1d2622; } .code-row .btn { font-size: 14px; padding: 8px 10px; }
 .prof-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; } .prof-row input { font: 600 18px/1 var(--display); padding: 10px; border-radius: 6px; border: 2px solid #9aa3a0; min-width: 0; background: #fff; color: #1d2622; } .prof-row .btn { font-size: 15px; padding: 10px 12px; gap: 8px; }
 .av-row { display: flex; flex-wrap: wrap; gap: 4px; } .av-pick { appearance: none; border: 2px solid transparent; background: #eef1ee; border-radius: 8px; font-size: 22px; width: 40px; height: 40px; cursor: pointer; } .av-pick.on { border-color: var(--sign); background: #e6f3ec; }
-.b-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; } .b-tabs button { appearance: none; border: 0; background: #e2e6e2; color: #1d2622; border-radius: 7px; padding: 6px 2px; font-size: 20px; cursor: pointer; display: grid; gap: 2px; justify-items: center; }
+.b-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; } .b-tabs button { appearance: none; border: 0; background: #e2e6e2; color: #1d2622; border-radius: 7px; padding: 6px 2px; font-size: 20px; cursor: pointer; display: grid; gap: 2px; justify-items: center; }
 .b-tabs button span { font: 700 10px/1 var(--display); text-transform: uppercase; letter-spacing: .04em; } .b-tabs button.on { background: #1d2622; color: #fff; }
 .b-sort { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .b-sort button { appearance: none; border: 2px solid #1d2622; background: transparent; color: #1d2622; border-radius: 6px; padding: 7px; font: 800 13px/1 var(--display); text-transform: uppercase; cursor: pointer; } .b-sort button.on { background: #1d2622; color: #fff; }
 .b-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
@@ -1101,9 +1103,15 @@ body:not(.land) #wp { font-size: 13px; }
       <div class="eyebrow">🏆 Bestenliste · Klinikum St. Sparen</div>
       <h2>Wer flieht am besten?</h2>
       <div class="prof">
-        <label for="profName"><b>Dein Spielername</b><small>Dein Konto ist dein Claude-Login. Der Name hier steht in der Bestenliste.</small></label>
+        <label for="profName"><b>Dein Spielername</b><small>Kein Konto nötig. Dieser Name steht in der Bestenliste.</small></label>
         <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
         <div class="av-row" id="profAvs"></div>
+        <details class="code-box"><summary>📲 Auf ein anderes Gerät mitnehmen</summary>
+          <p class="small">Dein Fortschritt hängt an diesem Gerät. Mit deinem Geräte-Code spielst du auf einem anderen Handy oder Computer weiter. Gib ihn niemandem: Wer den Code hat, spielt als du. Ein Konto mit E-Mail kommt später dazu.</p>
+          <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
+          <div class="prof-row"><input id="codeIn" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code von deinem anderen Gerät"><button class="btn" id="btnCodeUse" type="button"><span>Übernehmen</span><span>↵</span></button></div>
+          <p class="small" id="codeMsg" aria-live="polite"></p>
+        </details>
       </div>
       <div class="b-tabs" id="boardTabs"></div>
       <div class="b-sort" id="boardSort"><button type="button" data-s="score" class="on">Meiste Punkte</button><button type="button" data-s="time">Schnellste Flucht</button></div>

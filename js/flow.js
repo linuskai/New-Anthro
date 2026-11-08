@@ -202,6 +202,7 @@ function showNightEnd() {
   mode = "win"; clearInputs(); hidePopups(); endCall();
   let best = null; try { best = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
+  submitNight(run.place, run.nightDone);
   $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
   $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
