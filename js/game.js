@@ -342,6 +342,7 @@ function initAudio() {
       for (const f of [55, 55.7, 82.4]) { const o = actx.createOscillator(); o.type = "sine"; o.frequency.value = f; o.connect(droneGain); o.start(); }
     }
     if (actx.resume) actx.resume();
+    if (typeof unlockPlayback === "function") unlockPlayback();
   } catch (e) { actx = null; }
 }
 function tone(freq, start, dur, type = "square", vol = .05, slideTo) {

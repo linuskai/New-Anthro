@@ -275,7 +275,7 @@ bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", app
 bindSet("setHires", "hires"); $("setHires").addEventListener("change", () => { applyRes(); resize(); });
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
 // sound on/off from the HUD and the title (the pause menu has the same switch)
-function syncSound() { const on = !!settings.sound; for (const id of ["btnSound", "btnSoundTitle"]) { $(id).textContent = on ? "🔊" : "🔇"; $(id).setAttribute("aria-pressed", String(!on)); } $("setSound").checked = on; if (master) master.gain.value = on ? 1 : 0; }
+function syncSound() { const on = !!settings.sound; for (const id of ["btnSound", "btnSoundTitle"]) { $(id).textContent = on ? "🔊" : "🔇"; $(id).setAttribute("aria-pressed", String(!on)); } $("setSound").checked = on; if (master) master.gain.value = on ? 1 : 0; if (actx && typeof unlockPlayback === "function") unlockPlayback(); }
 for (const id of ["btnSound", "btnSoundTitle"]) $(id).addEventListener("click", ev => { ev.stopPropagation(); settings.sound = !settings.sound; saveSettings(); initAudio(); syncSound(); if (settings.sound) sfx.ding(); });
 $("setSound").addEventListener("change", syncSound); syncSound();
 const lookSel = $("setLook"); lookSel.value = settings.look; lookSel.addEventListener("change", () => { settings.look = lookSel.value; saveSettings(); });
@@ -469,6 +469,7 @@ function render(time, dt) {
   }
   for (const l of ceilLights) l.intensity += ((l.userData.on ? ceilPower * .95 : 0) - l.intensity) * Math.min(1, dt * 5);
   if (near) { lampLight.position.set((near.x + .5) * S, WALL_H - .4, (near.y + .5) * S); lampLight.color.setHex(near.tint); lampLight.intensity = near.on ? (near.creepy ? 1.2 : .9) : 0; } else lampLight.intensity = 0;
+  if (typeof updateMusic === "function") updateMusic(dt);
   if (humGain) {
     const L = LEVELS[run.idx], live = mode === "play" || mode === "story";
     humGain.gain.setTargetAtTime(near && near.on && live ? .022 * (1 - nd / 3.4) : 0, actx.currentTime, .03);
