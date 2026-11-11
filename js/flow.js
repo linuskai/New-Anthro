@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall", "ovAccount", "ovWelcome"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 

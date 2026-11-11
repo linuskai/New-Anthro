@@ -82,7 +82,8 @@ function refreshTitle() {
   if (b) { b.hidden = !(d && ROUTES[d.route]); if (!b.hidden) b.querySelector("small").textContent = `${ROUTES[d.route].av} ${ROUTES[d.route].name} · ${floorLabel(d.idx)} · ${fmtTime(d.minutes)} Uhr`; }
   const recs = loadRecords(), done = ROUTE_ORDER.filter(k => recs[k]), top = done.reduce((a, k) => Math.max(a, recs[k].score), 0);
   $("bestLine").hidden = !done.length; $("bestLine").textContent = `${done.length} von ${ROUTE_ORDER.length} Missionen geschafft · bestes Ergebnis ${euro(top)}`;
-  $("profChip").textContent = `${profile.av} ${displayName()}`;
+  const signed = typeof auth !== "undefined" && !!auth, chip = $("profChip");
+  chip.innerHTML = signed ? `${esc(profile.av)} ${esc(displayName())} <i class="pc-ok">✓</i>` : `👤 Gast · <b>Anmelden</b>`; chip.classList.toggle("guest", !signed);
 }
 $("btnContinue").addEventListener("click", resumeCheckpoint);
 
@@ -92,10 +93,8 @@ const isNightTab = k => k.startsWith("night_");
 const fmtCode = t => t.match(/.{1,8}/g).join("-").toUpperCase();
 async function openBoard(from) {
   boardReturn = from || mode; mode = "board"; show("ovBoard"); $("ovBoard").scrollTop = 0;
-  $("profName").value = profile.name; $("profName").placeholder = "Dr. Anonym";
-  $("profAvs").innerHTML = AVATARS.map(a => `<button type="button" class="av-pick${a === profile.av ? " on" : ""}" data-a="${a}">${a}</button>`).join("");
+  $("boardMe").textContent = `${profile.av} ${displayName()}${typeof auth !== "undefined" && auth ? " ✓" : " · Gast"}`;
   $("boardTabs").innerHTML = ROUTE_ORDER.map(k => [k, ROUTES[k].av, ROUTES[k].name]).concat(BOARD_NIGHT).map(([k, av, n]) => `<button type="button" class="${k === boardTab ? "on" : ""}" data-k="${k}">${av}<span>${esc(n)}</span></button>`).join("");
-  $("devCode").textContent = fmtCode(token); $("codeMsg").textContent = "";
   boardRows = null; renderBoard(); loadBoard();
 }
 async function loadBoard() {
@@ -127,7 +126,7 @@ $("btnProfSave").addEventListener("click", async () => {
   profile.name = $("profName").value.trim().slice(0, 24); store.set(PROF_KEY, profile); refreshTitle();
   $("btnProfSave").lastElementChild.textContent = "…";
   try { await rpc("hx_sync", { p_token: token, p_name: profile.name, p_avatar: profile.av }); $("btnProfSave").lastElementChild.textContent = "✓"; } catch (e) { $("btnProfSave").lastElementChild.textContent = "📴"; }
-  setTimeout(() => { $("btnProfSave").lastElementChild.textContent = "💾"; }, 1400); loadBoard();
+  setTimeout(() => { $("btnProfSave").lastElementChild.textContent = "💾"; }, 1400); renderAcct();
 });
 $("btnCodeCopy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(fmtCode(token)); $("codeMsg").textContent = "Kopiert. Gut aufheben: Wer den Code hat, spielt als du."; } catch (e) { prompt("Dein Geräte-Code:", fmtCode(token)); }
@@ -137,12 +136,13 @@ $("btnCodeUse").addEventListener("click", async () => {
   if (!/^[0-9a-f]{32}$/.test(raw)) { $("codeMsg").textContent = "Das ist kein gültiger Code (32 Zeichen, 0–9 und A–F)."; return; }
   if (raw === token) { $("codeMsg").textContent = "Das ist schon der Code dieses Geräts."; return; }
   token = raw; store.set(TOKEN_KEY, token); store.del(PROF_KEY); profile = { name: "", av: "🧑‍⚕️" }; $("codeIn").value = ""; $("codeMsg").textContent = "Lade deinen Spielstand …";
-  await syncCloud(); await openBoard(boardReturn); document.querySelector(".code-box").open = true;
+  await syncCloud(); openAccount(acctReturn); document.querySelector("#ovAccount details.code-box").open = true;
   $("codeMsg").textContent = online ? "Übernommen. Dein Fortschritt ist jetzt auf diesem Gerät." : "Code gespeichert. Sobald Netz da ist, wird synchronisiert.";
 });
 $("btnBoardClose").addEventListener("click", () => { if (boardReturn === "win" || boardReturn === "over") { mode = boardReturn; show("ovEnd"); } else { mode = "title"; show("ovTitle"); refreshTitle(); } });
 $("btnBoard").addEventListener("click", () => openBoard("title"));
-$("profChip").addEventListener("click", () => openBoard("title"));
+$("profChip").addEventListener("click", () => openAccount("title"));
+$("btnBoardMe").addEventListener("click", () => openAccount("board"));
 $("btnEndBoard").addEventListener("click", () => { boardTab = run && run.mode === "night" ? (run.place === "er" ? "night_er" : "night_ward") : lastRoute; openBoard(mode); });
 
 // ---------- sharing ----------

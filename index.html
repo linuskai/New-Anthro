@@ -1052,6 +1052,83 @@ body:not(.land) #wp { font-size: 13px; }
 /* account, feedback, install guide */
 .acct-me { margin: 0; font: 600 15px/1.3 var(--display); }
 #ovFeedback textarea, #ovFeedback input { width: 100%; box-sizing: border-box; font: 500 16px/1.35 var(--display); padding: 10px; border-radius: 8px; border: 2px solid #9aa3a0; background: #fff; color: #1d2622; resize: vertical; }
+/* install guide: a realistic phone per step (on purpose NOT in the game's style) */
+.inst-demo { display: grid; justify-items: center; cursor: pointer; }
+.inst-step { display: grid; justify-items: center; gap: 8px; animation: pop .35s both; }
+.inst-num { font: 800 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #c0322a; }
+.inst-cap { margin: 0; max-width: 360px; text-align: center; font: 700 17px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1d2622; min-height: 2.6em; }
+.inst-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.inst-prev, .inst-next { appearance: none; border: 0; border-radius: 999px; background: #1d2622; color: #fff; font: 700 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 10px 16px; cursor: pointer; touch-action: manipulation; }
+.inst-prev { width: 42px; padding: 10px 0; font-size: 20px; } .inst-prev:disabled { opacity: .25; } .inst-next { background: #007aff; }
+.inst-dots { display: flex; gap: 6px; } .inst-dots i { width: 8px; height: 8px; border-radius: 50%; background: #c8ccc6; } .inst-dots i.done { background: #8a9a94; } .inst-dots i.on { background: #007aff; width: 20px; border-radius: 4px; }
+.pm-phone { --pw: 220px; width: var(--pw); height: calc(var(--pw) * 2.05); border-radius: 34px; background: #0b0b0c; padding: 9px; box-sizing: border-box; box-shadow: 0 0 0 2px #3a3a3c, 0 14px 34px rgba(0,0,0,.35); position: relative; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+.pm-phone.android { border-radius: 22px; }
+.pm-notch { position: absolute; left: 50%; top: 13px; transform: translateX(-50%); width: 68px; height: 19px; border-radius: 12px; background: #000; z-index: 5; }
+.pm-phone.android .pm-notch { width: 10px; height: 10px; border-radius: 50%; top: 15px; }
+.pm-screen { position: relative; width: 100%; height: 100%; border-radius: 26px; overflow: hidden; background: #f2f2f7; color: #1c1c1e; font-size: 11px; }
+.pm-phone.android .pm-screen { border-radius: 15px; background: #fff; }
+.pm-status { display: flex; justify-content: space-between; padding: 9px 18px 0; font-size: 10px; height: 22px; box-sizing: border-box; } .pm-status b { font-weight: 700; } .pm-status span { font-size: 8px; letter-spacing: 1px; }
+.pm-page { position: absolute; inset: 22px 0 0; background: linear-gradient(180deg, #2b3a35, #0e1513); color: #f3f8f1; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; }
+.pm-page .pm-sign { background: #0f8a4a; border-radius: 6px; padding: 3px 8px; font-size: 16px; } .pm-page b { font: 900 22px/.9 Impact, "Arial Narrow", sans-serif; letter-spacing: .02em; } .pm-page b i { font-style: normal; color: #6fe39b; } .pm-page span { font-size: 9px; opacity: .8; }
+.pm-safbar { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(249,249,249,.96); border-top: 1px solid #d1d1d6; padding: 6px 10px 14px; display: grid; gap: 6px; }
+.pm-url { background: #e3e3e8; border-radius: 9px; padding: 6px 8px; text-align: center; font-size: 10px; color: #3a3a3c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-tools { display: flex; justify-content: space-between; align-items: center; color: #007aff; font-size: 20px; padding: 0 4px; } .pm-tools > span { position: relative; display: grid; place-items: center; min-width: 26px; height: 26px; }
+.pm-safbar.s26 { border-radius: 22px; left: 8px; right: 8px; bottom: 8px; padding: 6px 8px; border: 0; box-shadow: 0 4px 14px rgba(0,0,0,.18); } .pm-safbar.s26 .pm-tools { gap: 6px; color: #1c1c1e; } .pm-safbar.s26 .pm-url { flex: 1; background: transparent; }
+.pm-hot { position: relative; z-index: 3; } .pm-hot.row { display: block; background: #e8f1ff !important; font-weight: 700; color: #007aff; } .pm-hot.add { font-weight: 800; color: #007aff; }
+.pm-hot.pill { background: #1a73e8; color: #fff !important; border-radius: 999px; padding: 6px 12px; }
+.pm-tap { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 6; }
+.pm-ring { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #ff3b30; box-sizing: border-box; animation: pmRing 1.2s ease-out infinite; }
+.pm-ring.big { left: 50%; top: 22px; margin-left: -28px; width: 56px; height: 56px; border-radius: 16px; }
+.pm-spot { position: absolute; left: -19px; top: -19px; width: 38px; height: 38px; border-radius: 50%; border: 3px solid #ff3b30; background: rgba(255,59,48,.16); box-sizing: border-box; }
+.pm-tap.down .pm-arrow { top: -58px; left: -14px; animation-name: pmTapDown; } @keyframes pmTapDown { 0%, 100% { transform: translate(0, -6px); } 45% { transform: translate(0, 2px) scale(.92); } }
+.pm-arrow { position: absolute; left: -2px; top: 10px; font-size: 26px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); animation: pmTap 1.2s ease-in-out infinite; }
+@keyframes pmRing { 0% { transform: scale(.7); opacity: 1; } 80%, 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes pmTap { 0%, 100% { transform: translate(0, 6px); } 45% { transform: translate(0, -2px) scale(.92); } }
+.pm-dim { position: absolute; inset: 0; background: rgba(0,0,0,.32); z-index: 2; }
+.pm-sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 74px; background: #f2f2f7; border-radius: 14px 14px 0 0; z-index: 3; padding: 10px 8px; display: grid; gap: 8px; align-content: start; animation: pmUp .4s both; }
+@keyframes pmUp { from { transform: translateY(40%); opacity: 0; } }
+.pm-sheet-head { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 10px; padding: 7px; } .pm-sheet-head b { display: block; font-size: 11px; } .pm-sheet-head small { color: #8e8e93; font-size: 9px; } .pm-sheet-head i { margin-left: auto; font-style: normal; color: #8e8e93; }
+.pm-appicon { width: 30px; height: 30px; border-radius: 8px; background: #0f8a4a; display: grid; place-items: center; overflow: hidden; flex: none; } .pm-appicon img { width: 100%; height: 100%; object-fit: cover; }
+.pm-apps { display: flex; justify-content: space-between; padding: 0 2px; } .pm-apps span { display: grid; justify-items: center; gap: 3px; font-size: 8px; color: #3a3a3c; } .pm-apps i { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-style: normal; font-size: 16px; }
+.pm-list { background: #fff; border-radius: 10px; overflow: visible; } .pm-list > div { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e5e5ea; font-size: 11px; position: relative; } .pm-list > div:last-child { border-bottom: 0; }
+.pm-list em { font-style: normal; display: grid; place-items: center; } .pm-list .pm-hot.row { display: flex; } .pm-list .pm-tap { left: 70%; }
+.pm-add { position: absolute; inset: 22px 0 0; background: #f2f2f7; display: grid; gap: 10px; align-content: start; padding: 8px 10px; animation: pmUp .4s both; }
+.pm-add-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #007aff; padding: 4px 0; } .pm-add-head b { color: #1c1c1e; font-size: 10.5px; } .pm-add-head .pm-hot { position: relative; }
+.pm-add-card { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 10px; padding: 9px; } .pm-add-card .pm-appicon { width: 44px; height: 44px; border-radius: 11px; } .pm-add-card b { display: block; font-size: 12px; } .pm-add-card small { color: #8e8e93; font-size: 9px; }
+.pm-add-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 10px; padding: 9px; font-size: 11px; }
+.pm-switch { width: 30px; height: 18px; border-radius: 9px; background: #34c759; position: relative; } .pm-switch::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+.pm-add p { margin: 0; font-size: 9px; color: #8e8e93; line-height: 1.35; }
+.pm-home { position: absolute; inset: 22px 0 0; background: linear-gradient(160deg, #3a5a8a, #7a4a8a 55%, #c86a5a); padding: 16px 12px; animation: pop .4s both; }
+.pm-home.and { background: linear-gradient(170deg, #0f5a4a, #2b3a5a); }
+.pm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 6px; } .pm-grid > span { display: grid; justify-items: center; gap: 3px; color: #fff; font-size: 7.5px; position: relative; }
+.pm-grid i { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.88); display: grid; place-items: center; font-style: normal; font-size: 18px; }
+.pm-new .pm-appicon { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 0 2px #fff; }
+.pm-dock { position: absolute; left: 10px; right: 10px; bottom: 12px; background: rgba(255,255,255,.3); border-radius: 18px; display: flex; justify-content: space-around; padding: 7px; } .pm-dock i { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,.88); display: grid; place-items: center; font-style: normal; font-size: 16px; }
+.pm-menu { position: absolute; right: 10px; bottom: 58px; width: 150px; background: rgba(250,250,252,.98); border-radius: 14px; z-index: 3; overflow: visible; box-shadow: 0 8px 24px rgba(0,0,0,.25); animation: pop .3s both; } .pm-menu > div { padding: 8px 10px; border-bottom: 1px solid #e5e5ea; font-size: 11px; position: relative; } .pm-menu .pm-hot.row { display: inline-block; padding: 2px 6px; border-radius: 6px; }
+.pm-chrome { position: absolute; left: 0; right: 0; top: 22px; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #fff; z-index: 1; border-bottom: 1px solid #e0e0e0; font-size: 13px; color: #3c4043; } .pm-chrome .pm-url { flex: 1; background: #f1f3f4; border-radius: 16px; } .pm-chrome > span { position: relative; display: grid; place-items: center; min-width: 22px; }
+.pm-phone.android .pm-page { inset: 58px 0 0; }
+.pm-cmenu { position: absolute; right: 6px; top: 26px; width: 150px; background: #fff; border-radius: 8px; z-index: 3; box-shadow: 0 6px 20px rgba(0,0,0,.3); padding: 4px 0; animation: pop .3s both; } .pm-cmenu > div { padding: 8px 12px; font-size: 11px; color: #202124; position: relative; } .pm-cmenu .pm-hot.row { color: #1a73e8; background: #e8f0fe !important; }
+.pm-dialog { position: absolute; left: 12px; right: 12px; bottom: 30px; background: #fff; border-radius: 20px; z-index: 3; padding: 14px; display: grid; gap: 8px; justify-items: start; animation: pmUp .35s both; } .pm-dialog b { font-size: 13px; } .pm-dialog > span { font-size: 11px; } .pm-dialog small { display: block; color: #5f6368; font-size: 9px; }
+.pm-dlg-btns { justify-self: end; display: flex; gap: 12px; align-items: center; font-size: 11px; color: #1a73e8; }
+.pm-inapp { position: absolute; left: 10px; right: 10px; bottom: 16px; background: #fff; border-radius: 12px; display: grid; z-index: 3; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,.3); } .pm-inapp span { padding: 9px; text-align: center; font-size: 11px; border-bottom: 1px solid #e5e5ea; } .pm-inapp span:first-child { color: #007aff; font-weight: 700; background: #e8f1ff; }
+body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; } body.land .install h2 { font-size: 22px; } body.land .inst-cap { font-size: 16px; } body.land .inst-step { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 16px; align-items: center; } body.land .inst-num { grid-column: 2; align-self: end; } body.land .pm-phone { grid-row: 1 / 3; } body.land .inst-cap { text-align: left; align-self: start; }
+/* welcome: guest or account */
+#ovWelcome { display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, #1d3a32, #070b0a 75%); padding: 20px; }
+#ovWelcome[hidden] { display: none; }
+.welcome { width: min(100%, 460px); display: grid; gap: 12px; color: #f3f8f1; text-align: center; }
+.wl-sign { justify-self: center; font-size: 30px; background: #0f8a4a; border: 3px solid #f3f8f1; border-radius: 10px; padding: 6px 14px; box-shadow: 0 0 30px rgba(60,255,140,.35); }
+.welcome h2 { margin: 0; font: 900 clamp(30px, 8vw, 44px)/1 var(--display); text-transform: uppercase; } .wl-lead { margin: 0; font: 600 17px/1.3 var(--display); opacity: .85; }
+.wl-opt { appearance: none; border: 0; cursor: pointer; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 12px; align-items: center; text-align: left; padding: 14px; border-radius: 14px; touch-action: manipulation; }
+.wl-opt b { display: block; font: 900 19px/1.1 var(--display); } .wl-opt small { display: block; margin-top: 4px; font: 500 14px/1.3 var(--display); opacity: .85; }
+.wl-ico { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.wl-guest { background: var(--amber, #f2b33d); color: #2a1c00; } .wl-guest .wl-ico { background: #2a1c00; color: #f2b33d; }
+.wl-acct { background: rgba(243,248,241,.1); color: #f3f8f1; box-shadow: inset 0 0 0 2px rgba(243,248,241,.35); } .wl-acct .wl-ico { background: rgba(243,248,241,.15); }
+.wl-note { margin: 0; font: 500 13px/1.35 var(--display); opacity: .65; }
+/* account page + profile chip */
+#ovAccount .acct-h { margin: 0 0 4px; font: 900 18px/1.1 var(--display); color: #1d2622; } #ovAccount .code-box.acct { background: #fff; border-radius: 12px; padding: 12px; box-shadow: inset 0 0 0 2px #f2b33d; }
+#ovAccount.signed .code-box.acct { box-shadow: inset 0 0 0 2px #1f9d55; }
+#profChip.guest { background: rgba(242,179,61,.18); box-shadow: inset 0 0 0 2px #f2b33d; color: #ffe08a; } #profChip .pc-ok { font-style: normal; color: #6fe39b; }
+.b-me { appearance: none; width: 100%; border: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border-radius: 10px; padding: 10px 12px; font: 800 16px/1.2 var(--display); color: #1d2622; box-shadow: inset 0 0 0 1px #d8dcd6; } .b-me small { font: 600 12px/1.2 var(--display); color: #2b7bb9; }
 .inst-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: s; }
 .inst-steps li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: center; background: #fff; border-radius: 10px; padding: 10px; font: 600 16px/1.3 var(--display); box-shadow: inset 0 0 0 1px #d8dcd6; }
 .inst-steps li::before { content: counter(s); width: 30px; height: 30px; border-radius: 50%; background: #1d2622; color: #fff; display: grid; place-items: center; font: 900 15px/1 var(--display); }
@@ -1268,26 +1345,7 @@ body:not(.land) #wp { font-size: 13px; }
     <div class="card sheet">
       <div class="eyebrow">🏆 Bestenliste · Klinikum St. Sparen</div>
       <h2>Wer flieht am besten?</h2>
-      <div class="prof">
-        <label for="profName"><b>Dein Spielername</b><small>Kein Konto nötig. Dieser Name steht in der Bestenliste.</small></label>
-        <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
-        <div class="av-row" id="profAvs"></div>
-        <details class="code-box acct" id="acctBox"><summary>📧 Konto mit E-Mail (optional)</summary>
-          <p class="small" id="acctInfo">Mit Konto hängen Spielstand und Bestzeiten an deiner E-Mail: auf jedem Gerät anmelden, weiterspielen. Kein Passwort, nur ein Code per E-Mail.</p>
-          <div id="acctOut">
-            <div class="prof-row"><input id="acctEmail" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de"><button class="btn" id="btnAcctSend" type="button"><span>Code senden</span><span>✉️</span></button></div>
-            <div class="prof-row" id="acctCodeRow" hidden><input id="acctCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code aus der E-Mail"><button class="btn" id="btnAcctVerify" type="button"><span>Anmelden</span><span>↵</span></button></div>
-          </div>
-          <div id="acctIn" hidden><p class="acct-me">✓ Angemeldet als <b id="acctMail"></b></p><button class="btn ghost" id="btnAcctOut" type="button"><span>Abmelden</span><span>↩</span></button></div>
-          <p class="small" id="acctMsg" aria-live="polite"></p>
-        </details>
-        <details class="code-box"><summary>📲 Auf ein anderes Gerät mitnehmen</summary>
-          <p class="small">Dein Fortschritt hängt an diesem Gerät. Mit deinem Geräte-Code spielst du auf einem anderen Handy oder Computer weiter. Gib ihn niemandem: Wer den Code hat, spielt als du. Ein Konto mit E-Mail kommt später dazu.</p>
-          <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
-          <div class="prof-row"><input id="codeIn" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code von deinem anderen Gerät"><button class="btn" id="btnCodeUse" type="button"><span>Übernehmen</span><span>↵</span></button></div>
-          <p class="small" id="codeMsg" aria-live="polite"></p>
-        </details>
-      </div>
+      <button type="button" class="b-me" id="btnBoardMe"><span id="boardMe">🧑‍⚕️ Dr. Anonym</span><small>Name, Avatar &amp; Konto ändern ›</small></button>
       <div class="b-tabs" id="boardTabs"></div>
       <div class="b-sort" id="boardSort"><button type="button" data-s="score" class="on">Meiste Punkte</button><button type="button" data-s="time">Schnellste Flucht</button></div>
       <ol class="b-list" id="boardList"></ol>
@@ -1318,12 +1376,54 @@ body:not(.land) #wp { font-size: 13px; }
       <div class="mc-btns"><button class="btn ghost" id="btnFbCancel" type="button"><span>Abbrechen</span><span>✕</span></button><button class="btn" id="btnFbSend" type="button"><span>Senden</span><span>➤</span></button></div>
     </div>
   </section>
+  <section class="overlay" id="ovAccount" hidden>
+    <div class="card sheet">
+      <div class="eyebrow">👤 Profil &amp; Konto</div>
+      <h2 id="acctTitle">Du spielst als Gast</h2>
+      <p class="small" id="acctLead">Dein Fortschritt liegt nur auf diesem Gerät. Mit einem Konto ist er sicher und auf jedem Gerät da.</p>
+      <div class="prof">
+        <label for="profName"><b>Dein Spielername</b><small>Kein Konto nötig. Dieser Name steht in der Bestenliste.</small></label>
+        <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
+        <div class="av-row" id="profAvs"></div>
+        <div class="code-box acct open" id="acctBox"><h3 class="acct-h" id="acctHead">📧 Konto mit E-Mail</h3>
+          <p class="small" id="acctInfo">Mit Konto hängen Spielstand und Bestzeiten an deiner E-Mail: auf jedem Gerät anmelden, weiterspielen. Kein Passwort, nur ein Code per E-Mail.</p>
+          <div id="acctOut">
+            <div class="prof-row"><input id="acctEmail" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de"><button class="btn" id="btnAcctSend" type="button"><span>Code senden</span><span>✉️</span></button></div>
+            <div class="prof-row" id="acctCodeRow" hidden><input id="acctCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code aus der E-Mail"><button class="btn" id="btnAcctVerify" type="button"><span>Anmelden</span><span>↵</span></button></div>
+          </div>
+          <div id="acctIn" hidden><p class="acct-me">✓ Angemeldet als <b id="acctMail"></b></p><button class="btn ghost" id="btnAcctOut" type="button"><span>Abmelden</span><span>↩</span></button></div>
+          <p class="small fb-note" id="acctMsg" aria-live="polite" hidden></p>
+        </div>
+        <details class="code-box"><summary>🔑 Ohne Konto: Geräte-Code</summary>
+          <p class="small">Ohne Konto hängt dein Fortschritt an diesem Gerät. Mit dem Geräte-Code nimmst du ihn auf ein anderes Gerät mit. Gib ihn niemandem: Wer den Code hat, spielt als du. Einfacher geht es mit einem Konto.</p>
+          <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
+          <div class="prof-row"><input id="codeIn" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code von deinem anderen Gerät"><button class="btn" id="btnCodeUse" type="button"><span>Übernehmen</span><span>↵</span></button></div>
+          <p class="small" id="codeMsg" aria-live="polite"></p>
+        </details>
+      </div>
+      <button class="btn ghost" id="btnAcctClose" type="button"><span>Zurück</span><span>←</span></button>
+    </div>
+  </section>
+  <section class="overlay" id="ovWelcome" hidden>
+    <div class="welcome">
+      <div class="wl-sign" aria-hidden="true">🏥🏃</div>
+      <div class="eyebrow">Klinikum St. Sparen · Personaleingang</div>
+      <h2>Willkommen zum Dienst</h2>
+      <p class="wl-lead">Wie willst du spielen?</p>
+      <button type="button" class="wl-opt wl-guest" id="btnWelGuest"><span class="wl-ico">▶</span><span><b>Als Gast spielen</b><small>Sofort los, ohne Anmeldung. Dein Fortschritt bleibt auf diesem Gerät. Ein Konto kannst du jederzeit später anlegen.</small></span></button>
+      <button type="button" class="wl-opt wl-acct" id="btnWelAcct"><span class="wl-ico">📧</span><span><b>Anmelden oder Konto erstellen</b><small>Nur E-Mail, kein Passwort. Spielstand und Bestzeiten sind sicher und auf jedem Gerät da.</small></span></button>
+      <p class="wl-back" id="welBack" hidden></p>
+      <p class="wl-note">Schon mal gespielt, zum Beispiel im Browser? Dann melde dich an: Dein Stand ist sofort wieder da.</p>
+    </div>
+  </section>
   <section class="overlay" id="ovInstall" hidden>
     <div class="card sheet install">
       <div class="eyebrow">📲 Am besten als App spielen</div>
-      <h2>Auf den Home-Bildschirm</h2>
-      <p class="small">Dann startet Hospital Escape im Vollbild, ohne Browserleisten, mit eigenem Icon. Kostet nichts, dauert 10 Sekunden.</p>
-      <ol class="inst-steps" id="instSteps"></ol>
+      <h2>So kommt das Spiel auf deinen Home-Bildschirm</h2>
+      <p class="small">Dann startet Hospital Escape im Vollbild, ohne Browserleisten, mit eigenem Icon. Kostet nichts, dauert 10 Sekunden. Tipp einfach nach, was das Handy unten zeigt:</p>
+      <div class="inst-demo" id="instDemo"></div>
+      <div class="inst-nav"><button type="button" class="inst-prev" id="btnInstPrev" aria-label="Schritt zurück">‹</button><div class="inst-dots" id="instDots"></div><button type="button" class="inst-next" id="btnInstNext">Nächster Schritt ›</button></div>
+      <ol class="inst-steps" id="instSteps" hidden></ol>
       <div class="mc-btns"><button class="btn ghost" id="btnInstLater" type="button"><span>Erst mal im Browser</span><span>→</span></button><button class="btn" id="btnInstGo" type="button"><span>Verstanden</span><span>✓</span></button></div>
     </div>
   </section>
@@ -1345,6 +1445,7 @@ body:not(.land) #wp { font-size: 13px; }
       <button class="btn ghost" id="btnPlan" type="button"><span>Mission Control</span><span>🎯</span></button>
       <button class="btn ghost" id="btnTour" type="button"><span>Tour: So geht's</span><span>👆</span></button>
       <button class="btn ghost" id="btnGuidePause" type="button"><span>Ausrüstung erklärt</span><span>🎒</span></button>
+      <button class="btn ghost" id="btnAcctPause" type="button"><span>Profil &amp; Konto</span><span>👤</span></button>
       <button class="btn ghost" id="btnFeedbackPause" type="button"><span>Verbesserung vorschlagen</span><span>💡</span></button>
       <button class="btn ghost" id="btnQuit" type="button"><span>Schicht abbrechen</span><span>✕</span></button>
     </div>

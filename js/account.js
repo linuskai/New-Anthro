@@ -34,31 +34,65 @@ async function afterLogin() {
 function renderAcct() {
   const on = !!auth;
   $("acctOut").hidden = on; $("acctIn").hidden = !on; if (on) $("acctMail").textContent = auth.email || "dein Konto";
-  if (on) $("acctInfo").textContent = "Spielstand, Bestzeiten und Name hängen an deinem Konto. Auf einem anderen Gerät einfach mit derselben E-Mail anmelden.";
+  $("acctInfo").textContent = on ? "Spielstand, Bestzeiten und Name hängen an deinem Konto. Auf einem anderen Gerät einfach mit derselben E-Mail anmelden." : "Kein Passwort: Du bekommst einen 6-stelligen Code per E-Mail. Neu? Dann wird dein Konto dabei automatisch angelegt, und dein bisheriger Fortschritt kommt mit.";
+  $("acctHead").textContent = on ? "✓ Konto verbunden" : "📧 Anmelden oder Konto erstellen";
+  $("acctTitle").textContent = on ? `Hallo, ${displayName()}` : "Du spielst als Gast";
+  $("acctLead").textContent = on ? "Du bist angemeldet. Dein Fortschritt ist sicher und auf jedem Gerät da." : "Dein Fortschritt liegt nur auf diesem Gerät. Mit einem Konto ist er sicher und auf jedem Gerät da.";
+  $("ovAccount").classList.toggle("signed", on);
+  if (typeof refreshTitle === "function") refreshTitle();
 }
+const acctNote = (t, kind) => { const el = $("acctMsg"); el.textContent = t; el.className = "small fb-note" + (kind ? " " + kind : ""); el.hidden = !t; };
+// the profile & account page: name, avatar, account by e-mail, and the device code for people without an account
+let acctReturn = "title";
+function openAccount(from, focusMail) {
+  acctReturn = from || mode; mode = "account"; show("ovAccount"); $("ovAccount").scrollTop = 0;
+  $("profName").value = profile.name; $("profName").placeholder = "Dr. Anonym";
+  $("profAvs").innerHTML = AVATARS.map(a => `<button type="button" class="av-pick${a === profile.av ? " on" : ""}" data-a="${a}">${a}</button>`).join("");
+  $("devCode").textContent = fmtCode(token); $("codeMsg").textContent = ""; acctNote("");
+  renderAcct(); if (focusMail && !auth) setTimeout(() => $("acctEmail").focus(), 250);
+}
+function closeAccount() {
+  if (acctReturn === "board") return openBoard(boardReturn);
+  if (acctReturn === "pause" && run) { mode = "pause"; show("ovPause"); return; }
+  mode = "title"; show("ovTitle"); refreshTitle();
+}
+$("btnAcctClose").addEventListener("click", closeAccount);
+$("btnAcctPause").addEventListener("click", () => openAccount("pause"));
+
+// first start: guest or account? Shown once; a device that already has progress or an account is simply recognised
+const WELCOME_KEY = "hospital-escape-welcome";
+function maybeWelcome() {
+  if (store.get(WELCOME_KEY) || mode !== "title") return false;
+  const known = !!auth || !!store.get(SAVE_KEY) || Object.keys(loadRecords() || {}).length > 0 || !!(profile && profile.name);
+  if (known) { store.set(WELCOME_KEY, { at: Date.now(), known: true }); return false; }
+  mode = "welcome"; show("ovWelcome"); track("welcome", {}); return true;
+}
+function leaveWelcome(how) { store.set(WELCOME_KEY, { at: Date.now(), how }); track("welcome_choice", { how }); }
+$("btnWelGuest").addEventListener("click", () => { leaveWelcome("guest"); mode = "title"; show("ovTitle"); refreshTitle(); sfx.tick(); });
+$("btnWelAcct").addEventListener("click", () => { leaveWelcome("account"); openAccount("title", true); });
 $("btnAcctSend").addEventListener("click", async () => {
   const email = ($("acctEmail").value || "").trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("acctMsg").textContent = "Bitte eine gültige E-Mail-Adresse eingeben."; return; }
-  $("acctMsg").textContent = "Sende Code …";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { acctNote("Bitte eine gültige E-Mail-Adresse eingeben.", "bad"); return; }
+  acctNote("Sende Code …");
   try {
     await authCall("otp?redirect_to=" + encodeURIComponent(location.origin + location.pathname), { email, create_user: true });
     $("acctCodeRow").hidden = false; $("acctCode").focus();
-    $("acctMsg").textContent = `Wir haben dir eine E-Mail an ${email} geschickt. Gib den Code ein (oder tippe in der E-Mail auf den Link). Auch im Spam-Ordner nachsehen.`;
-  } catch (e) { $("acctMsg").textContent = "Das hat nicht geklappt: " + e.message + ". Später nochmal versuchen."; }
+    acctNote(`✓ E-Mail an ${email} ist unterwegs. Gib den 6-stelligen Code ein. Nichts da? Auch im Spam-Ordner nachsehen.`, "ok");
+  } catch (e) { acctNote("✗ Das hat nicht geklappt: " + e.message + ". Später nochmal versuchen.", "bad"); }
 });
 $("btnAcctVerify").addEventListener("click", async () => {
   const email = ($("acctEmail").value || "").trim().toLowerCase(), code = ($("acctCode").value || "").replace(/\D/g, "");
-  if (code.length < 6) { $("acctMsg").textContent = "Der Code hat 6 Ziffern."; return; }
-  $("acctMsg").textContent = "Prüfe …";
-  try { saveAuth(await authCall("verify", { type: "email", email, token: code }), email); await afterLogin(); $("acctMsg").textContent = "Angemeldet. Dein Fortschritt ist jetzt an dein Konto gebunden."; }
-  catch (e) { $("acctMsg").textContent = "Code falsch oder abgelaufen. Neuen Code anfordern?"; }
+  if (code.length < 6) { acctNote("Der Code hat 6 Ziffern.", "bad"); return; }
+  acctNote("Prüfe …");
+  try { saveAuth(await authCall("verify", { type: "email", email, token: code }), email); await afterLogin(); acctNote("✓ Angemeldet. Dein Fortschritt ist jetzt sicher in deinem Konto.", "ok"); }
+  catch (e) { acctNote("✗ Code falsch oder abgelaufen. Neuen Code anfordern?", "bad"); }
 });
 $("btnAcctOut").addEventListener("click", async () => {
   try { const tok = await authToken(); if (tok) await authCall("logout", {}, tok); } catch (e) {}
   auth = null; store.del(AUTH_KEY);
   token = newToken(); store.set(TOKEN_KEY, token); // this device starts fresh; the account keeps its progress
   store.del(SAVE_KEY); store.del(REC_KEY); store.del("hospital-escape-night-board"); profile = { name: "", av: "🧑‍⚕️" }; store.del(PROF_KEY);
-  renderAcct(); $("acctMsg").textContent = "Abgemeldet. Mit derselben E-Mail kommst du jederzeit zurück."; refreshTitle(); openBoard(boardReturn);
+  openAccount(acctReturn); acctNote("Abgemeldet. Mit derselben E-Mail kommst du jederzeit zurück.", "ok");
 });
 // coming back from the link in the e-mail: #access_token=…&refresh_token=…
 (async () => {
