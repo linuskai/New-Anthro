@@ -244,11 +244,23 @@ function updatePlayer(dt) {
   if (player.stun > 0) { player.stun -= dt; return; }
   if (player.fallT > 0 && !(player.slip > 0)) { player.moveMag = 0; return; } // on the floor after slipping
   const sneaking = moving && (player.sneak || (ptr.move && mag < .55));
-  const sprinting = (player.sprint || keys.has("shift")) && moving && run.energy > 10 && !sneaking;
+  // stamina ("Puste"): running uses it up in about 5 s, it comes back while walking and faster standing still.
+  // Empty = out of breath: no running until it is back at 35 %, and you walk a bit slower. Coffee: no tiring for a while.
+  if (run.stamina == null) run.stamina = 100;
+  const wantRun = (player.sprint || keys.has("shift")) && moving && !sneaking;
+  if (player.winded && run.stamina >= 35) { player.winded = false; setMsg("Wieder Luft. Rennen geht wieder.", 2); }
+  const sprinting = wantRun && run.energy > 10 && !player.winded;
+  if (wantRun && player.winded && !player.windedMsg) { player.windedMsg = true; setMsg("Außer Puste! Erst durchatmen, dann rennen. Kaffee hilft.", 2.5, true); }
+  if (!wantRun) player.windedMsg = false;
+  const caffeine = player.coffee > 0;
+  if (sprinting && !caffeine) { run.stamina = Math.max(0, run.stamina - dt * 20); if (run.stamina <= 0) { player.winded = true; sfx.tired ? sfx.tired() : tone(180, 0, .5, "sine", .05, 120); } }
+  else run.stamina = Math.min(100, run.stamina + dt * (caffeine ? 40 : moving ? 7 : 16));
   let mult = sneaking ? .5 : 1;
-  if (player.coffee > 0) mult *= 1.3;
-  if (sprinting) mult *= 1.6;
+  if (caffeine) mult *= 1.12;
+  if (sprinting) mult *= 1.4;
+  if (player.winded) mult *= .82;
   if (run.energy <= 15) mult *= .75;
+  updateStamina();
   player.moveMag = moving ? (sneaking ? .5 : sprinting ? 1.8 : 1) : .3;
   let vx, vy;
   if (player.slip > 0) { player.slip -= dt; vx = player.slipDir[0] * PLAYER_SPEED * 1.5 * dt; vy = player.slipDir[1] * PLAYER_SPEED * 1.5 * dt; player.yaw += dt * 3; }
@@ -261,12 +273,17 @@ function updatePlayer(dt) {
     if (msg.text !== lk) setMsg(lk, 3, true);
   }
   // running tires you but never knocks you out by itself; conversations, tasks and scares do
-  if (sprinting) run.energy = Math.max(Math.min(run.energy, 8), run.energy - dt * 4);
+  if (sprinting) run.energy = Math.max(Math.min(run.energy, 8), run.energy - dt * 1.5);
   else if (playerSafe() && !moving && run.energy < 60) run.energy = Math.min(60, run.energy + dt * 2.5); // a breather in a safe room
   if (sprinting) { player.noiseT -= dt; if (player.noiseT <= 0) { player.noiseT = .5; makeNoise(4.5, .35); } }
   if (moving || player.slip > 0) { const prev = player.bob; player.bob += dt * 9 * mult; if (!sneaking && Math.floor(prev / Math.PI) !== Math.floor(player.bob / Math.PI)) sfx.step(); }
   level.visited[Math.floor(player.y) * GW + Math.floor(player.x)] = 1;
   if (inDarkness() && player.lampOn) player.lamp = Math.max(0, player.lamp - dt * (LEVELS[run.idx].env === "radio" ? .9 : run.mode === "night" ? .22 : .6));
+}
+function updateStamina() {
+  const b = $("btnSprint"), v = Math.round(run.stamina);
+  if (b._st === v + (player.winded ? "w" : "")) return; b._st = v + (player.winded ? "w" : "");
+  b.style.setProperty("--st", v + "%"); b.classList.toggle("winded", !!player.winded); b.classList.toggle("caf", player.coffee > 0);
 }
 function makeNoise(radius, amount) {
   for (const e of level.enemies) if (!e.done && !e.static && !TYPES[e.type].ghost && Math.hypot(e.x - player.x, e.y - player.y) < radius) {
@@ -907,7 +924,7 @@ function updateBuffs() {
   if (player.noroT > 0) B.push(["😷", "Alle halten Abstand", player.noroT, player.noroT / 15, "noro"]);
   if (player.phoneT > 0) B.push(["📱", "Telefonat: Personal dreht ab", player.phoneT, player.phoneT / 10, "phone"]);
   if (player.civil) B.push(["🥼", "Ohne Kittel: Personal erkennt dich nicht", null, null, null]);
-  if (player.coffee > 0) B.push(["☕", "Koffein: schneller", player.coffee, player.coffee / 8, "coffee"]);
+  if (player.coffee > 0) B.push(["☕", "Koffein: keine Ermüdung", player.coffee, player.coffee / 20, "coffee"]);
   if (player.airplane > 0) B.push(["✈️", "Keine Anrufe", player.airplane, player.airplane / 60, null]);
   if (lure && lure.t > 0) B.push(["📢", "Alle sind abgelenkt", lure.t, Math.min(1, lure.t / 12), null]);
   if (nerdLure && nerdLure.t > 0) B.push(["📕", "Nerds lesen", nerdLure.t, Math.min(1, nerdLure.t / 16), null]);

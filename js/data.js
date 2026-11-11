@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · game data (levels, people, items, dialogue content). Shared globals, loaded before world/level/game. */
 const S = 3, WALL_H = 3.2, EYE = 1.62, SHIFT_END = 17 * 60;
-const PLAYER_R = .22, PLAYER_SPEED = 2.15;
+const PLAYER_R = .22, PLAYER_SPEED = 1.85;
 
 const rnd = a => a[Math.floor(Math.random() * a.length)];
 const pick = rnd;
@@ -182,7 +182,7 @@ const ITEMS = {
   p: { emoji: "✏️", name: "Kugelschreiber", cat: "Ablenken", dur: "8 s", where: "Start", desc: "In Blickrichtung werfen: Es klackt da hinten, alle in der Nähe gehen nachsehen." },
   "5": { emoji: "📢", name: "Durchsage-Mikro", cat: "Ablenken", dur: "12 s", where: "Innere, Notaufnahme", desc: "„Gratis Kuchen in der Cafeteria!“ Alle auf dem Stockwerk rennen hin." },
   "7": { emoji: "📕", name: "Seltener Fallbericht", cat: "Ablenken", dur: "16 s", where: "Innere", desc: "Hinlegen: Alle Internisten-Nerds bleiben lesend daran kleben." },
-  "1": { emoji: "☕", name: "Kaffee", cat: "Energie", dur: "sofort + 8 s", where: "überall", desc: "+35 % Energie und 8 Sekunden schneller." },
+  "1": { emoji: "☕", name: "Kaffee", cat: "Energie", dur: "sofort + 20 s", where: "überall", desc: "+35 % Energie, Puste sofort voll, und 20 Sekunden lang wirst du beim Rennen nicht müde. Etwas schneller bist du auch." },
   "0": { emoji: "🥫", name: "Energydrink", cat: "Energie", dur: "sofort", where: "Snackautomat, Räume", desc: "+55 % Energie." },
   "$": { emoji: "🍩", name: "Donut", cat: "Energie", dur: "sofort", where: "Snackautomat, Räume", desc: "+30 % Energie. Vom Pharmavertreter. Ethisch fragwürdig." },
   "6": { emoji: "🥤", name: "Proteinshake", cat: "Energie", dur: "sofort", where: "Orthopädie (Kraftraum)", desc: "+25 % Energie. Oder einem Orthopäden geben: Er lässt dich sofort durch (auch mitten im Kampf)." },

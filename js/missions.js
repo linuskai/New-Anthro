@@ -283,6 +283,7 @@ function missionFailed() {
 const TOUR = [
   { el: "moveBase", t: "Laufen", d: "Daumen hier aufsetzen und ziehen. Nur ein bisschen ziehen = schleichen (leise, schwer zu bemerken).", g: "drag" },
   { el: "touch", rect: () => ({ left: innerWidth * .5, top: innerHeight * .35, width: innerWidth * .4, height: innerHeight * .25 }), t: "Umsehen", d: "Überall sonst wischen, um dich umzusehen.", g: "swipe" },
+  { el: "btnSprint", t: "Rennen", d: "Gedrückt halten = rennen. Der grüne Ring ist deine Puste: Nach etwa 5 Sekunden bist du außer Atem und musst erst verschnaufen. Kaffee füllt die Puste und du wirst 20 Sekunden lang nicht müde.", g: "tap" },
   { el: "btnAct", t: "Aktion", d: "Benutzen: Türen, Gegenstände, Leute ansprechen. Der Knopf zeigt, was gerade geht.", g: "tap" },
   { el: "inv", t: "Deine Tricks", d: "🥼 Kittel aus = Personal erkennt dich nicht. ✏️ Kuli werfen = Ablenkung. 📱 Fake-Telefonat = Personal dreht ab. 😷 Noro-Maske = alle halten Abstand. Antippen zum Benutzen.", g: "tap" },
   { el: "hudClock", t: "Die Uhr", d: "Die Spielzeit läuft. Jeder Zeitverlust (Gespräche, Anrufe, Extra-Arbeit) blinkt hier rot.", g: "none" },

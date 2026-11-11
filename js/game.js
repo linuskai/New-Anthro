@@ -296,7 +296,7 @@ function farthestTile() {
 function useItem(k) {
   const def = ITEMS[k]; let st = [], line = "";
   switch (k) {
-    case "1": takeItem(k); player.coffee = 8; st = gain({ energy: 35 }).concat([good("8 s schneller")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
+    case "1": takeItem(k); player.coffee = 20; run.stamina = 100; player.winded = false; st = gain({ energy: 35 }).concat([good("Puste voll · 20 s ohne Ermüdung")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
     case "0": takeItem(k); st = gain({ energy: 55 }); line = "Schmeckt nach Gummibärchen und Reue."; break;
     case "$": takeItem(k); st = gain({ energy: 30 }); line = "Vom Pharmavertreter. Ethisch fragwürdig, aber lecker."; break;
     case "+": takeItem(k); st = gain({ energy: 75 }); line = "Dr. Glatts Wundercreme. Du glänzt. Innerlich auch."; break;

@@ -123,6 +123,9 @@ body.lowE #lowEFx { animation: lowPulse 1.4s ease-in-out infinite; } @keyframes 
 #btnSneak.on { background: rgba(166,227,143,.45); border-color: var(--lcd); }
 #btnSprint { width: 64px; height: 64px; grid-column: 1; grid-row: 2; }
 #btnSprint.on { background: rgba(242,179,61,.5); border-color: var(--amber); }
+#btnSprint { --st: 100%; background-image: conic-gradient(rgba(111,207,151,.55) var(--st), rgba(255,255,255,.06) 0); }
+#btnSprint.winded { --stc: #e2483d; background-image: conic-gradient(rgba(226,72,61,.6) var(--st), rgba(255,255,255,.06) 0); animation: eBlink .8s steps(2) infinite; }
+#btnSprint.caf { background-image: conic-gradient(rgba(242,179,61,.7) 100%, transparent 0); }
 #btnAct { width: 86px; height: 86px; font-size: 15px; grid-column: 2; grid-row: 2; }
 #btnAct.ready { background: rgba(242,179,61,.9); color: #2a1c00; border-color: #ffe2a3; }
 #btnAct .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(166,227,143,.6); }
