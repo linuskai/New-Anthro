@@ -61,7 +61,9 @@ function saveCheckpoint() {
   if (!run || run.mode !== "mission" || run.routeFailed) return;
   const r = run, data = { v: 13, route: r.route, step: r.step, idx: r.idx, minutes: r.minutes, nerves: r.nerves, energy: r.energy, flags: [...r.flags], picked: [...r.picked], inv: r.inv,
     duties: r.duties, tasks: r.tasks, tasksTotal: r.tasksTotal, talks: r.talks, callsAcc: r.callsAcc, callsDec: r.callsDec, lives: r.lives, scoreLog: r.scoreLog || [], testi: r.testi || 0, spa: r.spa, lostMin: r.lostMin || 0,
-    spotted: r.spotted ? [...r.spotted] : [], at: Date.now() };
+    spotted: r.spotted ? [...r.spotted] : [], at: Date.now(), gone: r.gone || [],
+    // where you stand: a resumed game continues right here instead of at the start of the floor
+    pos: level && (mode === "play" || mode === "pause" || mode === "dialog") ? { idx: r.idx, x: +player.x.toFixed(2), y: +player.y.toFixed(2), yaw: +player.yaw.toFixed(3), stamina: r.stamina } : (store.get(SAVE_KEY) || {}).pos || null };
   store.set(SAVE_KEY, data);
   clearTimeout(saveT); saveT = setTimeout(() => rpc("hx_save", { p_token: token, p_data: data }).catch(() => {}), 1500);
 }
@@ -72,9 +74,22 @@ function resumeCheckpoint() {
   newRun("mission", d.route);
   Object.assign(run, { step: d.step, idx: d.idx, minutes: d.minutes, nerves: d.nerves, energy: d.energy, flags: new Set(d.flags), picked: new Set(d.picked), inv: d.inv, duties: d.duties, tasks: d.tasks, tasksTotal: d.tasksTotal,
     talks: d.talks, callsAcc: d.callsAcc, callsDec: d.callsDec, lives: d.lives, scoreLog: d.scoreLog, testi: d.testi, spa: d.spa, lostMin: d.lostMin, spotted: new Set(d.spotted) });
+  run.gone = d.gone || [];
   loadFloor(run.idx); run.clockSeen = run.minutes; renderInv();
-  missionFlyIn(() => showIntro(`Gespeicherter Stand: ${mission().av} ${mission().name}, ${fmtTime(run.minutes)} Uhr. Frist ${fmtTime(routeDeadline(run.route))}.`));
+  for (const it of level.items) if (run.gone.includes(run.idx + ":" + Math.floor(it.x) + "," + Math.floor(it.y))) { it.taken = true; it.mesh.visible = false; }
+  const at = d.pos && d.pos.idx === run.idx && !blockedAt(d.pos.x, d.pos.y) ? d.pos : null;
+  if (at) { player.x = at.x; player.y = at.y; player.yaw = at.yaw; if (at.stamina != null) run.stamina = at.stamina; }
+  missionFlyIn(() => showIntro(`Gespeicherter Stand: ${mission().av} ${mission().name}, ${fmtTime(run.minutes)} Uhr${at ? ", genau da, wo du aufgehört hast" : ""}. Frist ${fmtTime(routeDeadline(run.route))}.`));
 }
+// autosave while playing a mission: every 15 s, when the pause menu opens, and when the app goes to the background
+let autoSaveT = 0;
+function autoSave(dt) {
+  if (!run || run.mode !== "mission" || run.routeFailed || mode !== "play") return;
+  if ((autoSaveT += dt) >= 15) { autoSaveT = 0; saveCheckpoint(); }
+}
+const saveNow = () => { if (run && run.mode === "mission" && !run.routeFailed && (mode === "play" || mode === "pause" || mode === "dialog")) saveCheckpoint(); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+addEventListener("pagehide", saveNow);
 
 // ---------- title screen ----------
 function refreshTitle() {

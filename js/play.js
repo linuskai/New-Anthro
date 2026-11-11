@@ -513,6 +513,7 @@ function updateHazards(dt) {
 }
 function pickupItem(it) {
   it.taken = true; it.mesh.visible = false; sfx.pick();
+  (run.gone || (run.gone = [])).push(run.idx + ":" + Math.floor(it.x) + "," + Math.floor(it.y)); // so a resumed floor does not hand it out twice
   const def = ITEMS[it.kind]; run.picked.add(it.kind);
   if (def.mission) { run.flags.add(def.mission); showToast(def.emoji, "#f2b33d", def.name, it.kind === "&" ? "„…war stets bemüht…“ Hm. Reicht für die Industrie." : "Eingepackt.", [good("In der Tasche")]); }
   else { addItem(it.kind); showToast(def.emoji, "#f3f8f1", def.name, def.desc + ". Unten im Inventar antippen.", [good("Eingepackt")]); }
@@ -709,7 +710,7 @@ function update(dt) {
   zoneMsgT -= dt;
   if (inDark && !run.wasDark) { sfx.stinger(); if (zoneMsgT <= 0) { setMsg(pick(["Hier hat das Controlling die Beleuchtung gestrichen.", "Dieser Gang ist seit dem Sparprogramm 2019 unbeleuchtet.", "Irgendwo tropft etwas. Hoffentlich Wasser.", "Stromsparmodus. Patientenorientiert."]), 3, true); zoneMsgT = 8; } }
   run.wasDark = inDark;
-  updateScares(dt); updateStorm(dt); updateSpook(dt); updateFloors(dt);
+  updateScares(dt); updateStorm(dt); updateSpook(dt); updateFloors(dt); autoSave(dt);
   applyEnv();
   if (mode !== "play") return;
   if (level.exit && exitOpen() && Math.floor(player.x) === level.exit[0] && Math.floor(player.y) === level.exit[1]) { nextFloor(); return; }

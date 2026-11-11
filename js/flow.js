@@ -250,14 +250,14 @@ function showEndScreen(key, n) {
 }
 
 // ---------- pause & settings ----------
-function pause() { if (mode !== "play") return; mode = "pause"; clearInputs(); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
+function pause() { if (mode !== "play") return; saveCheckpoint(); mode = "pause"; clearInputs(); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
 function resume() { if (mode !== "pause") return; show(null); mode = "play"; }
 $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
 $("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 50); });
 $("btnGuidePause").addEventListener("click", () => showItemGuide(null));
 $("btnGuide").addEventListener("click", () => showItemGuide(null));
-$("btnQuit").addEventListener("click", () => { hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
+$("btnQuit").addEventListener("click", () => { saveNow(); hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
 $("mission").addEventListener("click", () => { if (!$("mission").classList.contains("open")) { freshNote(); sfx.tick(); } else if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
 if (settings.hudmin) document.body.classList.add("hudmin"); // landscape only (the portrait HUD is compact anyway)
