@@ -1124,6 +1124,17 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 .wl-guest { background: var(--amber, #f2b33d); color: #2a1c00; } .wl-guest .wl-ico { background: #2a1c00; color: #f2b33d; }
 .wl-acct { background: rgba(243,248,241,.1); color: #f3f8f1; box-shadow: inset 0 0 0 2px rgba(243,248,241,.35); } .wl-acct .wl-ico { background: rgba(243,248,241,.15); }
 .wl-note { margin: 0; font: 500 13px/1.35 var(--display); opacity: .65; }
+.wl-step { display: none; gap: 12px; } #welBox[data-step="choose"] .wl-step[data-s="choose"], #welBox[data-step="email"] .wl-step[data-s="email"], #welBox[data-step="signed"] .wl-step[data-s="signed"] { display: grid; animation: pop .3s both; }
+.wl-input { width: 100%; box-sizing: border-box; font: 700 20px/1.2 var(--display); padding: 14px 16px; border-radius: 12px; border: 2px solid rgba(243,248,241,.35); background: rgba(0,0,0,.35); color: #fff; text-align: center; }
+.wl-input:focus { outline: none; border-color: #f2b33d; } .wl-code { font: 800 32px/1 var(--mono); letter-spacing: .4em; }
+.wl-cta { width: 100%; grid-template-columns: 1fr; justify-items: center; text-align: center; } #acctMailStep, #acctCodeRow { display: grid; gap: 12px; } #acctMailStep[hidden], #acctCodeRow[hidden] { display: none; } .wl-cta b { font-size: 20px; }
+.wl-link { appearance: none; background: none; border: 0; color: #9fd8ff; font: 700 15px/1.2 var(--display); padding: 8px; cursor: pointer; justify-self: center; } .wl-out { color: #ff9c90; }
+#ovWelcome .fb-note { text-align: left; }
+#ovAccount { display: grid; place-items: center; background: radial-gradient(circle at 50% 30%, #1d3a32, #070b0a 75%); padding: 20px; overflow-y: auto; } #ovAccount[hidden] { display: none; }
+.wl-prof { text-align: left; } .wl-prof h2, .wl-prof .eyebrow { text-align: center; }
+.wl-card { background: rgba(243,248,241,.08); border-radius: 14px; padding: 12px; display: grid; gap: 8px; box-shadow: inset 0 0 0 1px rgba(243,248,241,.18); }
+.wl-card label b { display: block; font: 800 16px/1.2 var(--display); } .wl-card label small, .wl-card .small { opacity: .75; font-size: 13px; } .wl-card summary { font: 700 15px/1.2 var(--display); cursor: pointer; }
+.wl-card input { background: rgba(0,0,0,.35); color: #fff; border: 1px solid rgba(243,248,241,.3); } .wl-card .btn.ghost { color: #f3f8f1; border-color: rgba(243,248,241,.5); } .wl-card code { color: #ffe08a; }
 /* account page + profile chip */
 #ovAccount .acct-h { margin: 0 0 4px; font: 900 18px/1.1 var(--display); color: #1d2622; } #ovAccount .code-box.acct { background: #fff; border-radius: 12px; padding: 12px; box-shadow: inset 0 0 0 2px #f2b33d; }
 #ovAccount.signed .code-box.acct { box-shadow: inset 0 0 0 2px #1f9d55; }
@@ -1377,43 +1388,63 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
     </div>
   </section>
   <section class="overlay" id="ovAccount" hidden>
-    <div class="card sheet">
-      <div class="eyebrow">👤 Profil &amp; Konto</div>
-      <h2 id="acctTitle">Du spielst als Gast</h2>
-      <p class="small" id="acctLead">Dein Fortschritt liegt nur auf diesem Gerät. Mit einem Konto ist er sicher und auf jedem Gerät da.</p>
-      <div class="prof">
-        <label for="profName"><b>Dein Spielername</b><small>Kein Konto nötig. Dieser Name steht in der Bestenliste.</small></label>
+    <div class="welcome wl-prof">
+      <div class="eyebrow">👤 Dein Profil</div>
+      <h2>Name &amp; Avatar</h2>
+      <div class="wl-card">
+        <label for="profName"><b>Dein Spielername</b><small>So stehst du in der Bestenliste.</small></label>
         <div class="prof-row"><input id="profName" maxlength="24" autocomplete="nickname" placeholder="Dr. Anonym"><button class="btn" id="btnProfSave" type="button"><span>Speichern</span><span>💾</span></button></div>
         <div class="av-row" id="profAvs"></div>
-        <div class="code-box acct open" id="acctBox"><h3 class="acct-h" id="acctHead">📧 Konto mit E-Mail</h3>
-          <p class="small" id="acctInfo">Mit Konto hängen Spielstand und Bestzeiten an deiner E-Mail: auf jedem Gerät anmelden, weiterspielen. Kein Passwort, nur ein Code per E-Mail.</p>
-          <div id="acctOut">
-            <div class="prof-row"><input id="acctEmail" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de"><button class="btn" id="btnAcctSend" type="button"><span>Code senden</span><span>✉️</span></button></div>
-            <div class="prof-row" id="acctCodeRow" hidden><input id="acctCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Code aus der E-Mail"><button class="btn" id="btnAcctVerify" type="button"><span>Anmelden</span><span>↵</span></button></div>
-          </div>
-          <div id="acctIn" hidden><p class="acct-me">✓ Angemeldet als <b id="acctMail"></b></p><button class="btn ghost" id="btnAcctOut" type="button"><span>Abmelden</span><span>↩</span></button></div>
-          <p class="small fb-note" id="acctMsg" aria-live="polite" hidden></p>
-        </div>
-        <details class="code-box"><summary>🔑 Ohne Konto: Geräte-Code</summary>
-          <p class="small">Ohne Konto hängt dein Fortschritt an diesem Gerät. Mit dem Geräte-Code nimmst du ihn auf ein anderes Gerät mit. Gib ihn niemandem: Wer den Code hat, spielt als du. Einfacher geht es mit einem Konto.</p>
-          <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
-          <div class="prof-row"><input id="codeIn" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code von deinem anderen Gerät"><button class="btn" id="btnCodeUse" type="button"><span>Übernehmen</span><span>↵</span></button></div>
-          <p class="small" id="codeMsg" aria-live="polite"></p>
-        </details>
       </div>
-      <button class="btn ghost" id="btnAcctClose" type="button"><span>Zurück</span><span>←</span></button>
+      <details class="wl-card code-box"><summary>🔑 Ohne Konto aufs andere Gerät: Geräte-Code</summary>
+        <p class="small">Ohne Konto hängt dein Fortschritt an diesem Gerät. Mit dem Geräte-Code nimmst du ihn mit. Gib ihn niemandem: Wer den Code hat, spielt als du. Einfacher geht es mit einem Konto.</p>
+        <div class="code-row"><code id="devCode"></code><button class="btn ghost" id="btnCodeCopy" type="button"><span>Kopieren</span><span>📋</span></button></div>
+        <div class="prof-row"><input id="codeIn" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code von deinem anderen Gerät"><button class="btn" id="btnCodeUse" type="button"><span>Übernehmen</span><span>↵</span></button></div>
+        <p class="small" id="codeMsg" aria-live="polite"></p>
+      </details>
+      <button type="button" class="wl-link" id="btnAcctClose">‹ Zurück</button>
     </div>
   </section>
   <section class="overlay" id="ovWelcome" hidden>
-    <div class="welcome">
+    <div class="welcome" data-step="choose" id="welBox">
       <div class="wl-sign" aria-hidden="true">🏥🏃</div>
       <div class="eyebrow">Klinikum St. Sparen · Personaleingang</div>
-      <h2>Willkommen zum Dienst</h2>
-      <p class="wl-lead">Wie willst du spielen?</p>
-      <button type="button" class="wl-opt wl-guest" id="btnWelGuest"><span class="wl-ico">▶</span><span><b>Als Gast spielen</b><small>Sofort los, ohne Anmeldung. Dein Fortschritt bleibt auf diesem Gerät. Ein Konto kannst du jederzeit später anlegen.</small></span></button>
-      <button type="button" class="wl-opt wl-acct" id="btnWelAcct"><span class="wl-ico">📧</span><span><b>Anmelden oder Konto erstellen</b><small>Nur E-Mail, kein Passwort. Spielstand und Bestzeiten sind sicher und auf jedem Gerät da.</small></span></button>
-      <p class="wl-back" id="welBack" hidden></p>
-      <p class="wl-note">Schon mal gespielt, zum Beispiel im Browser? Dann melde dich an: Dein Stand ist sofort wieder da.</p>
+      <!-- 1 choose -->
+      <div class="wl-step" data-s="choose">
+        <h2 id="welTitle">Willkommen zum Dienst</h2>
+        <p class="wl-lead" id="welLead">Wie willst du spielen?</p>
+        <button type="button" class="wl-opt wl-guest" id="btnWelGuest"><span class="wl-ico">▶</span><span><b id="welGuestT">Als Gast spielen</b><small>Sofort los, ohne Anmeldung. Dein Fortschritt bleibt auf diesem Gerät. Ein Konto kannst du jederzeit später anlegen.</small></span></button>
+        <button type="button" class="wl-opt wl-acct" id="btnWelAcct"><span class="wl-ico">📧</span><span><b>Anmelden oder Konto erstellen</b><small>Mit deiner E-Mail. Spielstand und Bestzeiten sind sicher und auf jedem Gerät da.</small></span></button>
+        <p class="wl-note">Schon mal gespielt, zum Beispiel im Browser? Dann melde dich an: Dein Stand ist sofort wieder da.</p>
+        <button type="button" class="wl-link" id="btnWelProf">👤 Name &amp; Avatar ändern</button>
+      </div>
+      <!-- 2 e-mail, then code -->
+      <div class="wl-step" data-s="email">
+        <h2>Anmelden oder registrieren</h2>
+        <div id="acctOut">
+          <div id="acctMailStep">
+            <p class="wl-lead">Gib deine E-Mail ein. Wir schicken dir einen 6-stelligen Code. Noch kein Konto? Dann wird es dabei automatisch angelegt.</p>
+            <input class="wl-input" id="acctEmail" type="email" inputmode="email" autocomplete="email" placeholder="deine@email.de">
+            <button type="button" class="wl-opt wl-guest wl-cta" id="btnAcctSend"><b>Code senden ✉️</b></button>
+          </div>
+          <div id="acctCodeRow" hidden>
+            <p class="wl-lead">Code eingeben, den wir an <b id="acctSentTo"></b> geschickt haben. Nichts da? Auch im Spam-Ordner nachsehen.</p>
+            <input class="wl-input wl-code" id="acctCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+            <button type="button" class="wl-opt wl-guest wl-cta" id="btnAcctVerify"><b>Anmelden ✓</b></button>
+            <button type="button" class="wl-link" id="btnAcctOther">Andere E-Mail oder neuen Code anfordern</button>
+          </div>
+        </div>
+        <p class="small fb-note" id="acctMsg" aria-live="polite" hidden></p>
+        <button type="button" class="wl-link" id="btnWelBack">‹ Zurück</button>
+      </div>
+      <!-- 3 signed in -->
+      <div class="wl-step" data-s="signed">
+        <h2 id="acctTitle">Du bist angemeldet</h2>
+        <div id="acctIn"><p class="wl-lead">✓ Angemeldet als <b id="acctMail"></b>. Dein Fortschritt ist sicher und auf jedem Gerät da, auf dem du dich mit dieser E-Mail anmeldest.</p></div>
+        <button type="button" class="wl-opt wl-guest wl-cta" id="btnWelPlay"><b>Weiter zum Spiel ▶</b></button>
+        <button type="button" class="wl-link" id="btnWelProf2">👤 Name &amp; Avatar ändern</button>
+        <button type="button" class="wl-link wl-out" id="btnAcctOut">Abmelden</button>
+      </div>
     </div>
   </section>
   <section class="overlay" id="ovInstall" hidden>

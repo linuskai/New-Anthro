@@ -141,8 +141,8 @@ $("btnCodeUse").addEventListener("click", async () => {
 });
 $("btnBoardClose").addEventListener("click", () => { if (boardReturn === "win" || boardReturn === "over") { mode = boardReturn; show("ovEnd"); } else { mode = "title"; show("ovTitle"); refreshTitle(); } });
 $("btnBoard").addEventListener("click", () => openBoard("title"));
-$("profChip").addEventListener("click", () => openAccount("title"));
-$("btnBoardMe").addEventListener("click", () => openAccount("board"));
+$("profChip").addEventListener("click", () => openWelcome("title"));
+$("btnBoardMe").addEventListener("click", () => auth ? openAccount("board") : openWelcome("board"));
 $("btnEndBoard").addEventListener("click", () => { boardTab = run && run.mode === "night" ? (run.place === "er" ? "night_er" : "night_ward") : lastRoute; openBoard(mode); });
 
 // ---------- sharing ----------
