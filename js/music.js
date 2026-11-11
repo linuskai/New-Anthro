@@ -41,16 +41,16 @@ function musicTick() {
   const k = MUS.step++ % 16, c = MUS.chase, t = MUS.tension;
   if (c > .05) { // the chase: pumping bass, heartbeat on 1 and 3, staccato strings, hats when it gets close
     const bass = [55, 55, 65.4, 55, 49, 49, 58.3, 49][k % 8];
-    tone(bass, 0, .11, "sawtooth", .035 * c);
-    if (k % 4 === 0) { tone(62, 0, .14, "sine", .12 * c, 38); }
-    if (k % 4 === 1) tone(58, 0, .1, "sine", .06 * c, 40);
-    if (k % 2 === 0) tone([440, 466, 523, 466, 440, 415, 392, 415][(k >> 1) % 8], 0, .07, "square", .012 * c);
-    if (c > .5) noise(0, .03, 7000, .8, .025 * c, "highpass");
-    if (k === 15 && c > .7) tone(880, 0, .3, "sawtooth", .015, 1320);
+    tone(bass, 0, .11, "sawtooth", .018 * c);
+    if (k % 4 === 0) { tone(62, 0, .14, "sine", .07 * c, 38); }
+    if (k % 4 === 1) tone(58, 0, .1, "sine", .035 * c, 40);
+    if (k % 2 === 0) tone([440, 466, 523, 466, 440, 415, 392, 415][(k >> 1) % 8], 0, .07, "square", .006 * c);
+    if (c > .5) noise(0, .03, 7000, .8, .012 * c, "highpass");
+    if (k === 15 && c > .7) tone(880, 0, .3, "sawtooth", .008, 1320);
   }
   if (t > .05 && k % 4 === 0) { // the clock: a tick every beat, a heartbeat that speeds up when it gets tight
-    tone(2200, 0, .025, "square", .018 * t);
-    if (t > .5 || k % 8 === 0) { tone(70, .0, .12, "sine", .09 * t, 45); tone(62, .16, .12, "sine", .06 * t, 42); }
+    tone(2200, 0, .025, "square", .01 * t);
+    if (t > .5 || k % 8 === 0) { tone(70, .0, .12, "sine", .055 * t, 45); tone(62, .16, .12, "sine", .035 * t, 42); }
   }
 }
 function updateMusic(dt) {
@@ -68,8 +68,19 @@ function updateMusic(dt) {
   if (live && run.mode === "mission" && !run.routeFailed) { const left = routeDeadline(run.route) - run.minutes; tension = left < 30 ? Math.min(1, (30 - left) / 25 + .35) : 0; }
   if (live && run.mode === "night" && run.task) { const left = run.task.deadline - run.minutes; if (left < 20) tension = Math.max(tension, (20 - left) / 20); }
   MUS.tension += (tension - MUS.tension) * Math.min(1, dt * 1.5);
-  musicPad(live && settings.sound ? .012 + MUS.chase * .006 : 0);
+  musicPad(live && settings.sound ? .005 + MUS.chase * .003 : 0);
   const want = MUS.chase > .05 || MUS.tension > .05, period = MUS.chase > .6 || MUS.tension > .7 ? 110 : 140;
   if (want && (!MUS.t || MUS.period !== period)) { clearInterval(MUS.t); MUS.period = period; MUS.t = setInterval(musicTick, period); }
   else if (!want && MUS.t) { clearInterval(MUS.t); MUS.t = null; MUS.step = 0; }
+}
+
+// ---------- a little fanfare when something is done: small for a floor task, big for an item from your exit list ----------
+function successJingle(kind) {
+  if (!actx || !settings.sound) return;
+  if (MUS.pad) { MUS.pad.gain.setTargetAtTime(0, actx.currentTime, .1); } // the uneasy pad steps aside for a moment
+  const big = kind === "big", notes = big ? [523, 659, 784, 1047] : [659, 784, 988];
+  notes.forEach((f, i) => { tone(f, i * .1, .22, "triangle", .05); tone(f / 2, i * .1, .22, "square", .012); });
+  const end = notes.length * .1;
+  if (big) { [1047, 1319, 1568].forEach(f => tone(f, end, .9, "triangle", .035)); tone(523, end, .9, "sine", .05); noise(end, .5, 6000, .6, .015, "highpass"); }
+  else tone(1319, end, .45, "triangle", .03);
 }

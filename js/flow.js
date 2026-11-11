@@ -107,6 +107,7 @@ function trackObjectives() {
     const k = run.idx + ":" + o.id;
     if (o.done && !run.objDone.has(k)) {
       run.objDone.add(k); changed = true;
+      if (typeof successJingle === "function") successJingle(o.route ? "big" : "small");
       if (o.main) missionCard("Mission erfüllt", o.title || o.text, "", true);
       else { missionCard("Nebenjob erledigt", o.title || o.text, "+10 Energie", true); run.energy = Math.min(100, run.energy + 10); }
     }
@@ -246,7 +247,7 @@ function showEndScreen(key, n) {
   $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
   submitScore(key, sc.total, run.minutes, sc.rank); typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
-  setMsg("Pager aus.", 0); sfx.floor(); show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  setMsg("Pager aus.", 0); sfx.floor(); if (typeof successJingle === "function") { successJingle("big"); setTimeout(() => successJingle("big"), 900); } show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
 // ---------- pause & settings ----------
