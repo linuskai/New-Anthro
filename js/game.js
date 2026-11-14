@@ -15,8 +15,6 @@ function newRun(m = "mission", route = "stay", place = "ward") {
   /* there is only one meter now: energy. "Nerves" in older content are 20 % steps of it. */
   Object.defineProperty(run, "nerves", { get() { return Math.ceil(run.energy / 20); }, set(v) { run.energy = Math.max(0, Math.min(100, v * 20)); }, configurable: true });
   if (m === "mission") run.idx = ROUTES[route].floors[0];
-  if (m === "mission" && window.__daily && typeof dayKey === "function") { run.daily = dayKey(); run.energy = 80; } // the daily shift: tighter, more tired
-  window.__daily = false;
   if (m === "night") Object.assign(run, { place, idx: LEVELS.findIndex(l => l.key === (place === "er" ? "nightER" : "night")), minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
 const mission = () => ROUTES[run.route || "stay"];

@@ -1,6 +1,5 @@
-/* Hospital Escape 3D · music that reacts to the game: a quiet, uneasy pad while you sneak, a driving chase loop
-   (bass, heartbeat, staccato strings) as soon as someone is after you, a ticking clock and a racing heart when the
-   deadline is close. Plus: sound on the iPhone even with the silent switch on (the game is meant to be heard). */
+/* Hospital Escape 3D · sound that reacts to the game: no background music; a very quiet submarine alarm when someone
+   is after you, a ticking clock and a slow heartbeat when the deadline is close. Plus: sound on the iPhone even with the silent switch on (the game is meant to be heard). */
 
 // ---------- iPhone: play through the silent switch ----------
 // Safari 17+: the Audio Session API. Older iOS: a silent looping <audio> element puts the page in "playback" mode,
@@ -36,29 +35,9 @@ function musicPad(on) {
   }
   MUS.pad.gain.setTargetAtTime(on, actx.currentTime, 1.2);
 }
-// a low string instrument: sawtooth through a soft low-pass, slow attack, for the dramatic chase score
-function cello(f, t, dur, vol, cutoff = 900) {
-  if (!actx) return;
-  const t0 = actx.currentTime + t, o = actx.createOscillator(), o2 = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
-  o.type = o2.type = "sawtooth"; o.frequency.value = f; o2.frequency.value = f; o2.detune.value = 9;
-  lp.type = "lowpass"; lp.frequency.value = cutoff; lp.Q.value = .7;
-  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + Math.min(.25, dur * .35)); g.gain.setValueAtTime(vol, t0 + dur * .7); g.gain.linearRampToValueAtTime(0, t0 + dur);
-  o.connect(lp); o2.connect(lp); lp.connect(g).connect(master); o.start(t0); o2.start(t0); o.stop(t0 + dur + .05); o2.stop(t0 + dur + .05);
-}
-const timpani = (t, vol) => { tone(72, t, .9, "sine", vol, 48); noise(t, .35, 180, 1.2, vol * .5, "lowpass"); };
-// the chase: slow and heavy instead of hectic. A cello ostinato in A minor, timpani on the downbeat, a string chord swelling over each bar.
-// The closer they are, the louder and the higher the strings climb. Four bars: Am, F, Dm, E.
-const CHASE_BARS = [[110, 130.8, 164.8], [87.3, 110, 130.8], [73.4, 87.3, 110], [82.4, 103.8, 123.5]];
 function musicTick() {
   if (!actx || !settings.sound || !run || typeof fightOn !== "undefined" && fightOn || bossMus) return;
-  const mv = settings.mus ?? .7, k = MUS.step++ % 16, bar = Math.floor((MUS.step - 1) / 16) % 4, c = MUS.chase * mv, t = MUS.tension * mv, ch = CHASE_BARS[bar];
-  if (c > .05) {
-    if (k === 0) { timpani(0, .09 * c); ch.forEach((f, i) => cello(f * 2, 0, 2.3, (.012 + i * .002) * c, 700 + c * 900)); }
-    if (k === 8 && c > .45) timpani(0, .06 * c);
-    if (k % 4 === 0) cello(ch[0] / 2, 0, .5, .03 * c, 420);          // the low pulse on every beat
-    if (k % 4 === 2 && c > .3) cello(ch[0] / 2, 0, .25, .018 * c, 420); // and an off-beat push when it gets close
-    if (k === 12 && c > .7) cello(ch[2] * 2, 0, .6, .012 * c, 1600);    // a rising string cry when they are right behind you
-  }
+  const mv = settings.mus ?? .7, k = MUS.step++ % 16, t = MUS.tension * mv;
   if (t > .05 && k % 4 === 0) { // the deadline: a soft clock and a slow heartbeat
     tone(1800, 0, .02, "sine", .012 * t);
     if (k % 8 === 0 || t > .6) { tone(66, 0, .14, "sine", .05 * t, 44); tone(60, .18, .14, "sine", .03 * t, 42); }
@@ -80,9 +59,45 @@ function updateMusic(dt) {
   if (live && run.mode === "night" && run.task) { const left = run.task.deadline - run.minutes; if (left < 20) tension = Math.max(tension, (20 - left) / 20); }
   MUS.tension += (tension - MUS.tension) * Math.min(1, dt * 1.5);
   musicPad(0); // no background music: only danger gets music
-  const want = MUS.chase > .05 || MUS.tension > .05, period = MUS.chase > .65 ? 150 : 175;
+  // spotted: no chase music any more, only a very quiet submarine dive alarm from far away, every few seconds while they are after you
+  MUS.alarmT = (MUS.alarmT || 0) - dt;
+  if (live && chase > .25 && MUS.alarmT <= 0 && !(typeof fightOn !== "undefined" && fightOn) && !bossMus) { subAlarm(); MUS.alarmT = 4.5; }
+  const want = MUS.tension > .05, period = 175;
   if (want && (!MUS.t || MUS.period !== period)) { clearInterval(MUS.t); MUS.period = period; MUS.t = setInterval(musicTick, period); }
   else if (!want && MUS.t) { clearInterval(MUS.t); MUS.t = null; MUS.step = 0; }
+}
+
+// the dive klaxon of an old submarine: "aa-OOO-gah", twice, muffled as if through a steel hull. Deliberately very quiet.
+function subAlarm() {
+  if (!actx || !settings.sound) return;
+  const mv = settings.mus ?? .7; if (mv < .05) return;
+  try {
+    const out = actx.createBiquadFilter(); out.type = "lowpass"; out.frequency.value = 900; out.Q.value = 2; out.connect(master);
+    for (const at of [0, .85]) {
+      const t0 = actx.currentTime + at, g = actx.createGain(); g.connect(out);
+      g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.022 * mv, t0 + .08); g.gain.setValueAtTime(.022 * mv, t0 + .5); g.gain.exponentialRampToValueAtTime(.0001, t0 + .7);
+      for (const [type, mul] of [["sawtooth", 1], ["square", .5]]) {
+        const o = actx.createOscillator(); o.type = type; o.frequency.setValueAtTime(150 * mul, t0); o.frequency.exponentialRampToValueAtTime(330 * mul, t0 + .45); o.frequency.setValueAtTime(330 * mul, t0 + .7);
+        o.connect(g); o.start(t0); o.stop(t0 + .75);
+      }
+    }
+  } catch (e) {}
+}
+
+// an old door: the latch, then a slow, uneven creak of dry hinges (a sawtooth that sticks and slips), then the door settles
+function doorCreak() {
+  if (!actx) return;
+  noise(0, .05, 2500, 1, .06); tone(1200, 0, .03, "square", .01);
+  try {
+    const t0 = actx.currentTime + .06, dur = .55 + Math.random() * .35, o = actx.createOscillator(), f = actx.createBiquadFilter(), g = actx.createGain();
+    o.type = "sawtooth"; f.type = "bandpass"; f.Q.value = 6; f.frequency.value = 1100;
+    let fr = 70 + Math.random() * 30; o.frequency.setValueAtTime(fr, t0);
+    const n = 14, amp = new Float32Array(n);
+    for (let i = 0; i < n; i++) { fr = Math.max(45, Math.min(160, fr + (Math.random() - .45) * 35)); o.frequency.linearRampToValueAtTime(fr, t0 + dur * (i + 1) / n); amp[i] = (.35 + Math.random() * .65) * .05 * Math.sin(Math.PI * (i + .5) / n); }
+    g.gain.setValueAtTime(.0001, t0); g.gain.setValueCurveAtTime(amp, t0 + .01, dur);
+    o.connect(f).connect(g).connect(master); o.start(t0); o.stop(t0 + dur + .05);
+  } catch (e) {}
+  noise(.06, .5, 400, 2, .012);
 }
 
 // ---------- a little fanfare when something is done: small for a floor task, big for an item from your exit list ----------
@@ -121,7 +136,7 @@ Object.assign(sfx, {
   energyUp: () => { [523, 659, 784].forEach((f, i) => tone(f, i * .06, .14, "triangle", .04)); },
   energyDown: () => { tone(330, 0, .18, "square", .035, 220); tone(220, .12, .22, "square", .03, 150); },
   // door: a click of the handle, then a creak
-  door: () => { noise(0, .05, 2500, 1, .08); tone(210, .05, .35, "sawtooth", .012, 150); noise(.05, .3, 600, 3, .04); },
+  door: doorCreak,
   useItem: k => {
     const s = {
       "1": () => { noise(0, .35, 1800, 2, .05); tone(180, .3, .2, "sine", .04, 120); },                 // coffee: slurp, gulp

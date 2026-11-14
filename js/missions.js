@@ -2,7 +2,7 @@
    the paperwork penalty and a clock that shows every lost minute. */
 
 const goalsDoneCount = () => mission().goals.filter(goalDone).length;
-const routeDeadline = k => ROUTES[k] ? ROUTES[k].deadline - (typeof run !== "undefined" && run && run.daily && run.route === k ? 30 : 0) : 0; // the daily shift is 30 minutes tighter
+const routeDeadline = k => ROUTES[k] ? ROUTES[k].deadline : 0;
 const fmtSpan = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60); return h ? `${h} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`; };
 const lineMinutes = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m - SHIFT_END; };
 

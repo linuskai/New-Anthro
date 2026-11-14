@@ -49,11 +49,6 @@ function submitScore(k) {
   const r = loadRecords()[k || lastRoute]; if (!r) return;
   rpc("hx_submit", { p_token: token, p_mission: k || lastRoute, p_score: Math.round(r.score), p_minutes: Math.round(r.minutes), p_rank: r.rank || "" }).catch(() => {});
 }
-function submitDaily(score, minutes, rank) { // today's shift gets its own board; one entry per player and day, the best counts
-  const k = run.daily, all = store.get("hospital-escape-daily") || {};
-  if (!(all[k] >= score)) { all[k] = Math.round(score); store.set("hospital-escape-daily", all); }
-  rpc("hx_submit", { p_token: token, p_mission: k, p_score: Math.round(score), p_minutes: Math.round(minutes), p_rank: rank || "" }).catch(() => {});
-}
 function submitNight(place, tasks) {
   const k = place === "er" ? "night_er" : "night_ward", n = nightRecords();
   if (!(n[k] >= tasks)) { n[k] = tasks; store.set("hospital-escape-night-board", n); }
@@ -66,7 +61,7 @@ function saveCheckpoint() {
   if (!run || run.mode !== "mission" || run.routeFailed) return;
   const r = run, data = { v: 13, route: r.route, step: r.step, idx: r.idx, minutes: r.minutes, nerves: r.nerves, energy: r.energy, flags: [...r.flags], picked: [...r.picked], inv: r.inv,
     duties: r.duties, tasks: r.tasks, tasksTotal: r.tasksTotal, talks: r.talks, callsAcc: r.callsAcc, callsDec: r.callsDec, lives: r.lives, scoreLog: r.scoreLog || [], testi: r.testi || 0, spa: r.spa, lostMin: r.lostMin || 0,
-    spotted: r.spotted ? [...r.spotted] : [], at: Date.now(), gone: r.gone || [], daily: r.daily || null,
+    spotted: r.spotted ? [...r.spotted] : [], at: Date.now(), gone: r.gone || [],
     // where you stand: a resumed game continues right here instead of at the start of the floor
     pos: level && (mode === "play" || mode === "pause" || mode === "dialog") ? { idx: r.idx, x: +player.x.toFixed(2), y: +player.y.toFixed(2), yaw: +player.yaw.toFixed(3), stamina: r.stamina } : (store.get(SAVE_KEY) || {}).pos || null };
   store.set(SAVE_KEY, data);
@@ -79,7 +74,7 @@ function resumeCheckpoint() {
   newRun("mission", d.route);
   Object.assign(run, { step: d.step, idx: d.idx, minutes: d.minutes, nerves: d.nerves, energy: d.energy, flags: new Set(d.flags), picked: new Set(d.picked), inv: d.inv, duties: d.duties, tasks: d.tasks, tasksTotal: d.tasksTotal,
     talks: d.talks, callsAcc: d.callsAcc, callsDec: d.callsDec, lives: d.lives, scoreLog: d.scoreLog, testi: d.testi, spa: d.spa, lostMin: d.lostMin, spotted: new Set(d.spotted) });
-  run.gone = d.gone || []; if (d.daily) run.daily = d.daily;
+  run.gone = d.gone || [];
   loadFloor(run.idx); run.clockSeen = run.minutes; renderInv();
   for (const it of level.items) if (run.gone.includes(run.idx + ":" + Math.floor(it.x) + "," + Math.floor(it.y))) { it.taken = true; it.mesh.visible = false; }
   const at = d.pos && d.pos.idx === run.idx && !blockedAt(d.pos.x, d.pos.y) ? d.pos : null;
@@ -98,7 +93,6 @@ addEventListener("pagehide", saveNow);
 
 // ---------- title screen ----------
 function refreshTitle() {
-  if (typeof refreshDaily === "function") refreshDaily();
   const d = store.get(SAVE_KEY), b = $("btnContinue");
   if (b) { b.hidden = !(d && ROUTES[d.route]); if (!b.hidden) b.querySelector("small").textContent = `${ROUTES[d.route].av} ${ROUTES[d.route].name} · ${floorLabel(d.idx)} · ${fmtTime(d.minutes)} Uhr`; }
   const recs = loadRecords(), done = ROUTE_ORDER.filter(k => recs[k]), top = done.reduce((a, k) => Math.max(a, recs[k].score), 0);
@@ -115,13 +109,13 @@ const fmtCode = t => t.match(/.{1,8}/g).join("-").toUpperCase();
 async function openBoard(from) {
   boardReturn = from || mode; mode = "board"; show("ovBoard"); $("ovBoard").scrollTop = 0;
   $("boardMe").textContent = `${profile.av} ${displayName()}${typeof auth !== "undefined" && auth ? " ✓" : " · Gast"}`;
-  $("boardTabs").innerHTML = [["daily", "📅", "Tagesschicht"]].concat(ROUTE_ORDER.map(k => [k, ROUTES[k].av, ROUTES[k].name]), BOARD_NIGHT).map(([k, av, n]) => `<button type="button" class="${k === boardTab ? "on" : ""}" data-k="${k}">${av}<span>${esc(n)}</span></button>`).join("");
+  $("boardTabs").innerHTML = ROUTE_ORDER.map(k => [k, ROUTES[k].av, ROUTES[k].name]).concat(BOARD_NIGHT).map(([k, av, n]) => `<button type="button" class="${k === boardTab ? "on" : ""}" data-k="${k}">${av}<span>${esc(n)}</span></button>`).join("");
   boardRows = null; renderBoard(); loadBoard();
 }
 async function loadBoard() {
-  const k = boardTab === "daily" ? dayKey() : boardTab, s = isNightTab(k) ? "score" : boardSort;
+  const k = boardTab, s = isNightTab(k) ? "score" : boardSort;
   try { boardRows = await rpc("hx_board", { p_mission: k, p_sort: s === "time" ? "time" : "score", p_token: token }); } catch (e) { boardRows = null; online = false; }
-  if (k === boardTab || (boardTab === "daily" && k === dayKey())) renderBoard();
+  if (k === boardTab) renderBoard();
 }
 function renderBoard() {
   const k = boardTab, night = isNightTab(k);
@@ -131,10 +125,9 @@ function renderBoard() {
   let rows = boardRows ? boardRows.map(r => ({ ...r })) : [];
   if (!boardRows) {
     if (night) { const v = nightRecords()[k]; if (v != null) rows = [{ pos: 1, name: profile.name, avatar: profile.av, score: v, minutes: 0, me: true }]; }
-    else if (k === "daily") { const r = (store.get("hospital-escape-daily") || {})[dayKey()]; if (r) rows = [{ pos: 1, name: profile.name, avatar: profile.av, score: r, minutes: 0, me: true }]; }
     else { const r = loadRecords()[k]; if (r) rows = [{ pos: 1, name: profile.name, avatar: profile.av, ...r, me: true }]; }
   }
-  const label = night ? BOARD_NIGHT.find(b => b[0] === k)[2] : k === "daily" ? "die heutige Tagesschicht (" + ROUTES[dailyRoute()].name + ")" : ROUTES[k].name;
+  const label = night ? BOARD_NIGHT.find(b => b[0] === k)[2] : ROUTES[k].name;
   $("boardList").innerHTML = rows.length ? rows.map(r => {
     const val = night ? `${r.score} Aufgaben` : boardSort === "score" ? euro(r.score) : fmtTime(r.minutes);
     const sub = night ? "Nachtdienst überlebt" : (r.rank ? "Rang " + esc(r.rank) + " · " : "") + (boardSort === "score" ? "Feierabend " + fmtTime(r.minutes) : euro(r.score));

@@ -233,7 +233,7 @@ function updatePlayer(dt) {
   }
   const [f, s] = moveInput();
   const mag = Math.min(1, Math.hypot(f, s)), moving = mag > .08;
-  if (moving && !ptr.look && !locked) player.pitch *= 1 - Math.min(1, dt * 1.5);
+  if (moving && !ptr.look && !locked) player.pitch += (-.1 - player.pitch) * Math.min(1, dt * 1.5); // while walking the view settles a little below the horizon, where you look when you walk
   player.moveMag = 0;
   if (player.channel) {
     if (moving) { player.channel = null; setMsg("Abgebrochen. Stillhalten.", 2); }

@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · statistics and feedback: a session heartbeat with play time, game events (missions, nights, battles),
    every script error with where it happened, and improvement suggestions. Sent to Supabase in small batches. */
-const GAME_VERSION = "33";
+const GAME_VERSION = "34";
 const SESSION = (crypto.randomUUID && crypto.randomUUID()) || "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches));
 let tq = [], playSec = 0, lastVis = performance.now(), errCount = 0;

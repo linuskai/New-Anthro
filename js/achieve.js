@@ -1,6 +1,5 @@
-/* Hospital Escape 3D · achievements and the daily shift.
-   Achievements listen to the events the game already reports for the statistics (track), so nothing else needs to know about them.
-   The daily shift ("Tagesschicht"): the same mission for everyone today, 30 minutes less time, 80 % energy, its own leaderboard. */
+/* Hospital Escape 3D · achievements.
+   Achievements listen to the events the game already reports for the statistics (track), so nothing else needs to know about them. */
 
 const ACH_KEY = "hospital-escape-achievements";
 const ACHIEVEMENTS = [
@@ -18,7 +17,6 @@ const ACHIEVEMENTS = [
   { id: "night", ico: "🌅", n: "Überlebt bis 7:30", d: "Einen Nachtdienst überstanden." },
   { id: "burnout", ico: "🫠", n: "Gelebte Realität", d: "Einen Burnout gehabt. Im Spiel. Hoffentlich nur im Spiel." },
   { id: "late", ico: "🚕", n: "Zu spät, aber mit Stil", d: "Die Abholung verpasst." },
-  { id: "daily", ico: "📅", n: "Tagesschicht", d: "Eine Tagesschicht geschafft." },
   { id: "share", ico: "📸", n: "Medfluencer", d: "Ein Ergebnis geteilt." },
 ];
 const achState = () => store.get(ACH_KEY) || { got: {}, n: {} };
@@ -42,7 +40,6 @@ track = function (k, d = {}) {
       if (run && run.spotted && run.spotted.size === 0) unlock("ninja");
       if (run && routeDeadline(d.route) - d.minutes > 120) unlock("early");
       if (d.rank === "S") unlock("rankS");
-      if (run && run.daily) unlock("daily");
     }
     if (k === "battle_end" && d.ok) unlock(d.boss ? "boss" : "ortho");
     if (k === "stair" && !d.lost) { if (achCount("stairClean") >= 5) unlock("stairs"); if (d.kind === "pw") unlock("pw"); }
@@ -58,16 +55,4 @@ function renderAchievements() {
   const s = achState(), got = ACHIEVEMENTS.filter(a => s.got[a.id]).length, el = $("achList"); if (!el) return;
   $("achHead").textContent = `🏆 Erfolge · ${got} von ${ACHIEVEMENTS.length}`;
   el.innerHTML = ACHIEVEMENTS.map(a => `<li class="${s.got[a.id] ? "got" : ""}" title="${esc(a.d)}"><span>${s.got[a.id] ? a.ico : "🔒"}</span><b>${esc(a.n)}</b><small>${esc(a.d)}</small></li>`).join("");
-}
-
-// ---------- the daily shift ----------
-const dayIndex = () => { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); };
-const dayKey = (i = dayIndex()) => "day_" + [...String(i)].map(c => "abcdefghij"[+c]).join(""); // the database wants letters only
-const dailyRoute = () => ROUTE_ORDER[(dayIndex() * 7 + 3) % ROUTE_ORDER.length];
-function startDaily() {
-  window.__daily = true; initAudio(); startStory("mission", dailyRoute());
-}
-function refreshDaily() {
-  const b = $("btnDaily"); if (!b) return; const R = ROUTES[dailyRoute()], best = (store.get("hospital-escape-daily") || {})[dayKey()];
-  b.querySelector("small").textContent = `Heute: ${R.av} ${R.title} · 30 Min. weniger Zeit, 80 % Energie${best ? " · dein Bestes: " + euro(best) : ""}`;
 }

@@ -619,8 +619,8 @@ const fpHand = new THREE.Group();
   beam.position.z = -.185; beam.renderOrder = 2; fl.add(beam); fpHand.userData.beam = beam;
   fpHand.userData.fl = fl;
   }
-/* held low on the right, pointing a little up and inwards so the beam crosses the middle of the view */
-fpHand.position.set(.13, -.2, -.34); fpHand.rotation.set(.2, .14, .14); fpHand.scale.setScalar(1.25); fpHand.visible = false; camera.add(fpHand);
+/* held low on the right, pointing a little down and inwards: the beam lights the floor a few metres ahead, not the ceiling */
+fpHand.position.set(.13, -.2, -.34); fpHand.rotation.set(-.03, .14, .14); fpHand.scale.setScalar(1.25); fpHand.visible = false; camera.add(fpHand);
 { // the spotlight sits in the lens and shines along the same axis as the model and the visible beam
   fpHand.updateMatrix(); const fl = fpHand.userData.fl; fl.updateMatrix();
   const m = new THREE.Matrix4().multiplyMatrices(fpHand.matrix, fl.matrix), lensP = new THREE.Vector3(0, 0, -.19).applyMatrix4(m);

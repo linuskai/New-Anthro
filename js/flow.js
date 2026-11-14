@@ -248,7 +248,7 @@ function showEndScreen(key, n) {
   const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
   $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
-  submitScore(key, sc.total, run.minutes, sc.rank); if (run.daily) { submitDaily(sc.total, run.minutes, sc.rank); lastDaily = true; } else lastDaily = false; typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
+  submitScore(key, sc.total, run.minutes, sc.rank); typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
   setMsg("Pager aus.", 0); sfx.floor(); if (typeof successJingle === "function") { successJingle("big"); setTimeout(() => successJingle("big"), 900); } show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
@@ -292,15 +292,13 @@ function setDiff(v) {
 $("setDiff").addEventListener("change", () => setDiff($("setDiff").value));
 $("setDiffTitle").addEventListener("click", ev => { const b = ev.target.closest("[data-diff]"); if (b) { setDiff(b.dataset.diff); sfx.tick(); } });
 setDiff(settings.diff);
-let lastDaily = false;
-$("btnStart").addEventListener("click", () => { lastDaily = false; initAudio(); showSelect(); });
-$("btnDaily").addEventListener("click", () => { lastDaily = true; startDaily(); });
+$("btnStart").addEventListener("click", () => { initAudio(); showSelect(); });
 let legalReturn = "title";
 function openLegal() { legalReturn = mode; mode = "legal"; show("ovLegal"); $("ovLegal").scrollTop = 0; }
 $("btnLegal").addEventListener("click", openLegal); $("btnLegal2").addEventListener("click", openLegal);
 $("btnLegalClose").addEventListener("click", () => { if (legalReturn === "account") openAccount(acctReturn); else { mode = "title"; show("ovTitle"); refreshTitle(); } });
 $("btnNight").addEventListener("click", () => { initAudio(); showNightSelect(); });
-$("btnAgain").addEventListener("click", () => { if (lastDaily && lastMode === "mission") { startDaily(); return; } startStory(lastMode); });
+$("btnAgain").addEventListener("click", () => startStory(lastMode));
 $("btnEndMenu").addEventListener("click", () => { hidePopups(); newRun(); loadFloor(0); if (lastMode === "mission") showSelect(); else { mode = "title"; show("ovTitle"); } });
 $("btnNightNow").addEventListener("click", () => startStory("night"));
 
