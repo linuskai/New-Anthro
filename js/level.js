@@ -524,8 +524,8 @@ function buildLevel(idx) {
   const lineGeo = new THREE.PlaneGeometry(.2, 1); lineGeo.rotateX(-Math.PI / 2); lv.perGeo.push(lineGeo);
   lv.navi = new THREE.InstancedMesh(lineGeo, lv.naviMat, 90); lv.navi.count = 0; lv.navi.frustumCulled = false; group.add(lv.navi);
   const chev = new THREE.Shape(); chev.moveTo(-.12, -.07); chev.lineTo(0, .07); chev.lineTo(.12, -.07); chev.lineTo(.05, -.07); chev.lineTo(0, -.025); chev.lineTo(-.05, -.07); chev.closePath();
-  const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2); chevGeo.scale(2.1, 1, 2.1); lv.perGeo.push(chevGeo);
-  lv.chevMat = new THREE.MeshBasicMaterial({ color: 0x00d65a, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }); lv.perMat.push(lv.chevMat);
+  const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2); chevGeo.scale(1.5, 1, 1.5); lv.perGeo.push(chevGeo);
+  lv.chevMat = new THREE.MeshBasicMaterial({ color: 0x3fd98a, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }); lv.perMat.push(lv.chevMat);
   lv.chev = new THREE.InstancedMesh(chevGeo, lv.chevMat, 60); lv.chev.count = 0; lv.chev.frustumCulled = false; group.add(lv.chev);
 
   lv.startYaw = 0;
