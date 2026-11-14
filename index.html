@@ -1202,6 +1202,74 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 .card.legal { max-width: 620px; text-align: left; } .card.legal h3 { margin: 16px 0 6px; font: 900 16px/1.2 var(--display); } .card.legal ul { padding-left: 18px; } .card.legal li { margin: 6px 0; font-size: 14px; line-height: 1.4; } .card.legal p { font-size: 14px; line-height: 1.45; }
 .legal-draft { display: inline-block; background: #e2483d; color: #fff; font-weight: 800; border-radius: 6px; padding: 2px 8px; font-size: 12px !important; }
 .t-legal { font-size: 11px; opacity: .7; }
+/* v35: battles. A framed command box with a cursor (the way the old handheld role-playing games did it), sharper figures, one arena per opponent */
+.pb-mon img { image-rendering: auto; filter: drop-shadow(0 6px 0 rgba(0,0,0,.28)) drop-shadow(0 0 1px rgba(0,0,0,.6)); }
+.pb-plat::after { content: ""; position: absolute; inset: 22% 18%; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.38), rgba(0,0,0,0) 70%); }
+#battle.arena-gym .pb-plat.foe::after { inset: auto; border-radius: 3px; }
+.pb-bottom { background: #1c2430; gap: 6px; padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 4px solid #0c1016; }
+.pb-text, .pb-menu { background: #fbfaf2; border: 3px solid #1c2430; border-radius: 4px; box-shadow: inset 0 0 0 3px #fbfaf2, inset 0 0 0 5px #6f8f86, 0 3px 0 rgba(0,0,0,.35); outline: none; }
+.pb-text { font: 400 23px/1.12 "VT323", var(--mono); letter-spacing: .01em; padding: 12px 16px; color: #1c2430; }
+.pb-text::after { color: #1c2430; right: 14px; bottom: 9px; }
+.pb-menu { padding: 8px 8px 8px 10px; gap: 0 6px; align-content: center; }
+.pb-menu button, .pb-menu [data-m="fight"], .pb-menu [data-m="bag"], .pb-menu [data-m="mates"], .pb-menu [data-m="run"] { background: none; border: 0; border-radius: 3px; font: 400 25px/1 "VT323", var(--mono); letter-spacing: .03em; color: #1c2430; padding: 7px 6px 7px 24px; min-height: 40px; }
+.pb-menu button b { font-weight: 400; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb-menu button::before { content: "▶"; left: 5px; font-size: 13px; opacity: .18; } .pb-menu button:hover::before, .pb-menu button:focus-visible::before, .pb-menu button:active::before { opacity: 1; }
+.pb-menu button:active, .pb-menu button:focus-visible { background: #dfe9e2; outline: none; }
+.pb-menu button small { font: 400 15px/1 "VT323", var(--mono); opacity: .65; margin-top: 1px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb-menu button:disabled { opacity: .35; } .pb-menu .back { min-height: 30px; padding: 4px; font-size: 20px; border-top: 2px dotted #9fb3aa; border-radius: 0; margin-top: 3px; } .pb-menu .back::before { display: none; }
+.pb-menu button.ult { color: #7a2a00; border: 2px solid #7a2a00; margin-bottom: 4px; }
+.pb-box { font-family: "VT323", var(--mono); background: #fbfaf2; border: 3px solid #1c2430; border-radius: 4px 14px 4px 14px; box-shadow: inset 0 0 0 2px #fbfaf2, inset 0 0 0 4px #6f8f86, 4px 4px 0 rgba(0,0,0,.3); padding: 8px 12px 9px; }
+.pb-box b { font: 400 22px/1 "VT323", var(--mono); letter-spacing: .03em; } .pb-box .lv, .pb-box .num { font: 400 19px/1 "VT323", var(--mono); } .pb-box .ty { font: 400 14px/1 "VT323", var(--mono); color: #7a3a8a; }
+.pb-box .hpbar { height: 9px; border: 2px solid #1c2430; border-radius: 5px; background: #cfd6d0; overflow: hidden; } .pb-box .hpfill { height: 100%; transition: width .6s ease-out; }
+.pb-quiz { font-family: "VT323", var(--mono); background: #fbfaf2; border: 3px solid #1c2430; border-radius: 4px; box-shadow: inset 0 0 0 3px #fbfaf2, inset 0 0 0 5px #6f8f86, 0 10px 40px rgba(0,0,0,.5); padding: 16px; }
+.pb-quiz b { font: 400 23px/1.1 "VT323", var(--mono); } .pb-quiz button { font: 400 21px/1.1 "VT323", var(--mono); border-width: 2px; border-radius: 3px; }
+/* arenas: where you meet them */
+#battle.arena-boss .pb-field::before { position: absolute; left: 0; right: 0; top: 30%; text-align: center; font-size: 26px; letter-spacing: 6px; white-space: nowrap; opacity: .6; }
+#battle.arena-boss .pb-plat.foe::before { position: absolute; left: -6%; top: -250%; transform: translateX(-100%) rotate(-3deg); font: 900 10px/1 var(--display); letter-spacing: .12em; padding: 4px 8px; white-space: nowrap; border-radius: 3px; box-shadow: 2px 2px 0 rgba(0,0,0,.4); }
+#battle.arena-chief .pb-field { background: linear-gradient(180deg, #2a1f4a 0%, #7a3a5a 28%, #f0a060 46%, #3a3d42 47%, #26282c 100%); }
+#battle.arena-chief .pb-field::before { content: "🚗 ━ 🅿️ ━ 🚙 ━ 🅿️ ━ 🚗"; } #battle.arena-chief .pb-plat.foe::before { content: "RESERVIERT · CHEFARZT · AUCH NACHTS"; color: #fff; background: #1f3f8a; }
+#battle.arena-chief .pb-field::after { background: repeating-linear-gradient(100deg, rgba(255,255,255,.12) 0 3px, transparent 3px 90px); }
+#battle.arena-office .pb-field { background: linear-gradient(180deg, #c9cfd6 0%, #e4e7ea 30%, #f1f2f0 46%, #8a8f96 47%, #6c7178 100%); }
+#battle.arena-office .pb-field::before { content: "🗄️ 🗄️ 🗂️ 🗄️ 📎 🗄️ 🗄️"; } #battle.arena-office .pb-plat.foe::before { content: "ABLAGE § 1 BIS § 4.117"; color: #fff; background: #2d3f8f; }
+#battle.arena-office .pb-plat { background: radial-gradient(ellipse at center, #9aa0a8 0%, #7c828a 60%, rgba(100,105,112,0) 72%); }
+#battle.arena-strike .pb-field { background: linear-gradient(180deg, #5a1a14 0%, #a8322a 30%, #e07a4a 46%, #4a4038 47%, #2e2824 100%); }
+#battle.arena-strike .pb-field::before { content: "🚩 ✊ 📣 🚩 ✊ 📣 🚩"; } #battle.arena-strike .pb-plat.foe::before { content: "WIR BLEIBEN HIER · DU AUCH"; color: #c0322a; background: #fff; }
+#battle.arena-steril .pb-field { background: linear-gradient(180deg, #d8f0f0 0%, #f4fbfb 30%, #ffffff 46%, #bfdfe0 47%, #9fcfd2 100%); }
+#battle.arena-steril .pb-field::before { content: "🧴 ━ 🧼 ━ 🧴 ━ 🧼 ━ 🧴"; opacity: .8; } #battle.arena-steril .pb-plat.foe::before { content: "NICHT ANFASSEN · NICHTS · NIE"; color: #fff; background: #1f7a8c; }
+#battle.arena-steril .pb-field::after { opacity: 1; background: repeating-linear-gradient(90deg, rgba(31,122,140,.16) 0 2px, transparent 2px 46px), repeating-linear-gradient(0deg, rgba(31,122,140,.16) 0 2px, transparent 2px 46px); }
+#battle.arena-steril .pb-plat { background: radial-gradient(ellipse at center, #e8f6f6 0%, #a8d4d6 60%, rgba(150,200,204,0) 72%); }
+#battle.arena-gate .pb-field { background: linear-gradient(180deg, #24304a 0%, #6a5a6a 28%, #e8a868 46%, #54504a 47%, #38342e 100%); }
+#battle.arena-gate .pb-field::before { content: "🚧 ━━━━━━━━ 🛑 ━━━━━━━━ 🚧"; opacity: .85; } #battle.arena-gate .pb-plat.foe::before { content: "PFORTE · BESETZT SEIT 1979"; color: #ffe08a; background: #6a4a2a; }
+#battle.arena-server .pb-field { background: linear-gradient(180deg, #05080a 0%, #0c1a14 30%, #123324 46%, #080c0a 47%, #030504 100%); }
+#battle.arena-server .pb-field::before { content: "🔒 ▮▮▯ 🔒 ▮▯▯ 🔒 ▮▮▮ 🔒"; color: #3dff8a; opacity: .7; text-shadow: 0 0 8px #3dff8a; } #battle.arena-server .pb-plat.foe::before { content: "█████ · GESCHWÄRZT · █████"; color: #fff; background: #111; }
+#battle.arena-server .pb-field::after { opacity: 1; background: repeating-linear-gradient(90deg, rgba(61,255,138,.10) 0 1px, transparent 1px 22px); }
+#battle.arena-server .pb-plat { background: radial-gradient(ellipse at center, #1f5a3c 0%, #123324 60%, rgba(18,51,36,0) 72%); }
+#battle.arena-server .pb-mon.foe img { filter: drop-shadow(0 0 6px #3dff8a) contrast(1.1); }
+@media (max-width: 520px) { .pb-menu { padding: 6px 6px 6px 8px; } .pb-text { min-height: 66px; font-size: 21px; } .pb-menu button { font-size: 23px; } }
+@media (orientation: landscape) and (max-height: 520px) { .pb-text { font-size: 20px; padding: 8px 12px; } .pb-menu button { font-size: 21px; min-height: 32px; padding: 4px 6px 4px 22px; } .pb-menu button small { font-size: 13px; } .pb-box b { font-size: 19px; } }
+.st-rule { margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; background: #fff3c4; color: #5a4300; font: 700 13px/1.3 var(--display); letter-spacing: .02em; }
+.st-say { font-size: 15px; line-height: 1.35; }
+#battle { overflow: hidden; max-width: 100vw; } .pb-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } .pb-menu { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .pb-menu button { min-width: 0; }
+.pb-box { max-width: 92vw; } .pb-box b { display: inline-block; max-width: calc(100% - 52px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+#battle.boss .pb-text { border-color: #1c2430; }
+@media (max-width: 520px) { .pb-bottom { grid-template-columns: minmax(0, 1fr); } }
+@media (orientation: landscape) and (max-height: 520px) { #battle.arena-boss .pb-plat.foe::before { top: -150%; } #battle.arena-boss .pb-field::before { top: 22%; } }
+/* v35: you are free */
+#freeFx { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; transition: opacity 1.2s; } #freeFx.out { opacity: 0; }
+#freeFx .ff-mid { position: absolute; left: 0; right: 0; top: 9%; display: grid; justify-items: center; gap: 4px; }
+#freeFx .ff-title { font: 900 italic clamp(46px, 15vw, 120px)/.95 var(--display); letter-spacing: .01em; color: #ffe27a; text-shadow: 0 4px 0 #c0322a, 0 8px 0 #7a1410, 0 0 40px rgba(255,200,80,.9); transform: rotate(-4deg); animation: ffSlam .7s 1.05s cubic-bezier(.2,1.7,.4,1) both, ffWob 1.6s 1.8s ease-in-out infinite; }
+#freeFx .ff-stars { display: flex; gap: 10px; } #freeFx .ff-stars i, .ef-stars i { font-style: normal; font-size: clamp(40px, 12vw, 80px); line-height: 1; color: rgba(255,255,255,.22); -webkit-text-stroke: 2px rgba(0,0,0,.35); animation: ffStar .5s cubic-bezier(.2,1.8,.4,1) both; }
+#freeFx .ff-stars i.on, .ef-stars i.on { color: #ffd23a; text-shadow: 0 0 22px #ffb300, 0 3px 0 #a86a00; }
+#freeFx .ff-sub { font: 700 clamp(14px, 4vw, 22px)/1.2 var(--display); color: #fff; background: rgba(0,0,0,.55); padding: 4px 12px; border-radius: 99px; margin-top: 10px; animation: ffSub .6s 4.6s both; }
+#freeFx .ff-conf i { position: absolute; top: -20px; width: 9px; height: 15px; border-radius: 2px; animation: ffFall linear both; }
+#freeFx .ff-birds { position: absolute; top: 46%; left: -30%; font-size: 30px; white-space: nowrap; animation: ffBirds 9s 2s linear both; }
+@keyframes ffSlam { from { transform: scale(5) rotate(-18deg); opacity: 0; } } @keyframes ffWob { 50% { transform: rotate(-2deg) scale(1.05); } }
+@keyframes ffStar { from { transform: scale(0) rotate(-180deg); opacity: 0; } } @keyframes ffSub { from { opacity: 0; transform: translateY(12px); } }
+@keyframes ffFall { to { top: 110%; transform: rotate(900deg) translateX(40px); } } @keyframes ffBirds { to { left: 120%; top: 12%; } }
+.end-free { display: grid; justify-items: center; gap: 2px; margin: -4px 0 10px; padding: 10px; border-radius: 14px; background: linear-gradient(135deg, #1f9d55, #0f6a3a); color: #fff; }
+.end-free[hidden] { display: none; } .end-free b { font: 900 italic 30px/1 var(--display); color: #ffe27a; text-shadow: 0 3px 0 #0a3a20; letter-spacing: .02em; } .end-free small { font: 600 13px/1.25 var(--display); opacity: .9; text-align: center; }
+.ef-stars { display: flex; gap: 6px; } .ef-stars i { font-size: 40px; }
+@media (orientation: landscape) and (max-height: 520px) { #freeFx .ff-mid { top: 3%; } #freeFx .ff-title { font-size: clamp(40px, 16vh, 80px); } #freeFx .ff-stars i { font-size: clamp(30px, 11vh, 56px); } }
 </style>
 </head>
 <body>
@@ -1556,6 +1624,7 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
   <section class="overlay" id="ovEnd" hidden>
     <div class="card">
       <div class="end-over" id="endOver" hidden><b>GAME OVER</b><span id="endOverWhy"></span><small id="endOverHow"></small></div>
+      <div class="end-free" id="endFree" hidden></div>
       <div class="eyebrow" id="endEyebrow">Pager</div>
       <h2 id="endTitle">Burnout</h2>
       <span class="rank" id="endRank"></span>
@@ -1596,6 +1665,7 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 <script src="js/talks2.js"></script>
 <script src="js/talks3.js"></script>
 <script src="js/talks4.js"></script>
+<script src="js/talks5.js"></script>
 <script src="js/floors.js"></script>
 <script src="js/stairs.js"></script>
 <script src="js/ward.js"></script>

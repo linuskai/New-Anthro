@@ -554,12 +554,14 @@ function buildLevel(idx) {
   // stink fog (gastro): drifting green-brown clouds, gone once the ventilation runs
   lv.clouds = [];
   if (lv.stink.length) {
-    const tex = stinkTex();
-    for (const [x, y] of lv.stink) for (let k = 0; k < 2; k++) {
-      const sp = sprite(tex, 2.6 + r() * 1.2, 1.8 + r() * .8); sp.material = sp.material.clone(); sp.material.opacity = .55; sp.material.depthWrite = false; lv.perMat.push(sp.material);
-      sp.position.set((x + .2 + r() * .6) * S, .7 + k * .9 + r() * .3, (y + .2 + r() * .6) * S); group.add(sp); dyn(sp);
-      lv.clouds.push({ s: sp, bx: sp.position.x, bz: sp.position.z, by: sp.position.y, p: r() * 6 });
+    // three layers per cell: a wide carpet creeping over the floor, thick billows at chest height, thin wisps under the ceiling
+    const tex = [stinkTex(0), stinkTex(1), stinkTex(2)], LAY = [[3.8, 1.5, .4, .8], [3, 2.4, 1.15, .62], [2.4, 1.7, 2, .34]];
+    lv.stink.forEach(([x, y], ci) => { for (let k = 0; k < 3; k++) {
+      const [sw, sh, sy, so] = LAY[k], sp = sprite(tex[(ci + k) % 3], sw + r() * .8, sh + r() * .5); sp.material = sp.material.clone(); sp.material.opacity = so; sp.material.depthWrite = false; sp.material.rotation = r() * 6.28; lv.perMat.push(sp.material);
+      sp.position.set((x + .2 + r() * .6) * S, sy + r() * .25, (y + .2 + r() * .6) * S); group.add(sp); dyn(sp);
+      lv.clouds.push({ s: sp, bx: sp.position.x, bz: sp.position.z, by: sp.position.y, p: r() * 6, o: so, rs: (r() - .5) * .25, sx: sp.scale.x, sy: sp.scale.y });
     }
+    if (ci % 2 === 0) { const gl = sprite(glowTex("rgba(170,230,70,1)"), 3.4, 3.4); gl.material = gl.material.clone(); gl.material.blending = THREE.AdditiveBlending; gl.material.depthWrite = false; gl.material.opacity = .16; lv.perMat.push(gl.material); gl.position.set((x + .5) * S, .5, (y + .5) * S); group.add(gl); dyn(gl); lv.clouds.push({ s: gl, bx: gl.position.x, bz: gl.position.z, by: .5, p: r() * 6, o: .16, rs: 0, sx: 3.4, sy: 3.4, glow: true }); } });
     lv.stinkSet = new Set(lv.stink.map(([x, y]) => x + "," + y));
     // toxic: red warning beacons under the ceiling and a hazard sign, until the ventilation runs
     lv.beacons = [];

@@ -152,3 +152,31 @@ Object.assign(sfx, {
     if (s) s(); else { tone(660, 0, .1, "triangle", .04); tone(990, .08, .14, "triangle", .04); }
   },
 });
+
+// ---------- you are free: timpani roll, a brass fanfare that takes itself very seriously, one "ding" per star, then a jaunty tune for the drive into the sunset ----------
+let driveMus = null;
+function brass(f, t, dur, vol) { const v = vol * (settings.mus ?? .7) * 1.4; tone(f, t, dur, "sawtooth", v); tone(f * 1.006, t, dur, "sawtooth", v * .6); tone(f / 2, t, dur, "square", v * .35); }
+function freedomFanfare(stars = 3) {
+  if (!actx || !settings.sound) return;
+  for (let i = 0; i < 14; i++) { tone(98, i * .07, .09, "sine", .03 + i * .006, 80); noise(i * .07, .06, 160, 1, .02 + i * .004, "lowpass"); }       // timpani roll, swelling
+  const T = 1.05; // the fanfare: ta-ta-ta TAAA, ta-ta-ta TAAAAA
+  [[392, 0, .13], [392, .15, .13], [392, .3, .13], [523.3, .45, .55], [392, 1.1, .13], [523.3, 1.25, .13], [659.3, 1.4, .13], [784, 1.55, 1.5]].forEach(([f, t, d]) => brass(f, T + t, d, .035));
+  [523.3, 659.3, 784, 1046.5].forEach(f => tone(f, T + 1.55, 1.9, "triangle", .028));                                                                     // the chord under the last note
+  noise(T + .45, .5, 7000, .5, .03, "highpass"); noise(T + 1.55, 1.6, 7000, .5, .05, "highpass");                                                            // cymbals
+  for (let i = 0; i < 3; i++) { const on = i < stars; tone(on ? 1318.5 * Math.pow(1.122, i) : 220, 2 + i * .45, on ? .5 : .25, on ? "triangle" : "square", on ? .06 : .02); if (on) tone(2637 * Math.pow(1.122, i), 2 + i * .45, .3, "sine", .03); }
+  setTimeout(() => driveMusic(true), 3900);
+}
+// the drive: C major, far too cheerful, a whistled melody over an oom-pah bass
+const DRIVE_CH = [[130.8, [523.3, 659.3, 784]], [98, [493.9, 587.3, 784]], [110, [523.3, 659.3, 880]], [87.3, [523.3, 698.5, 880]]];
+const DRIVE_LEAD = [[784, 0, 659.3, 0, 784, 0, 1046.5, 0, 880, 0, 784, 0, 659.3, 0, 784, 0], [587.3, 0, 784, 0, 987.8, 0, 784, 0, 880, 784, 698.5, 0, 587.3, 0, 0, 0], [659.3, 0, 880, 0, 1046.5, 0, 880, 0, 1174.7, 0, 1046.5, 0, 880, 0, 659.3, 0], [698.5, 0, 880, 0, 1046.5, 0, 1318.5, 0, 1174.7, 1046.5, 880, 0, 1046.5, 0, 0, 0]];
+function driveMusic(on) {
+  if (driveMus) { clearInterval(driveMus); driveMus = null; }
+  if (!on || !actx || !settings.sound || mode !== "outro") return;
+  let i = 0;
+  driveMus = setInterval(() => { const v = settings.mus ?? .7, k = i % 16, bar = Math.floor(i / 16) % 4; i++; if (v < .05) return; if (mode !== "outro") { driveMusic(false); return; }
+    const [root, ch] = DRIVE_CH[bar], lead = DRIVE_LEAD[bar][k];
+    if (k % 4 === 0) tone(root, 0, .16, "triangle", .08 * v); if (k % 4 === 2) { tone(root * 1.5, 0, .1, "triangle", .05 * v); ch.forEach(f => tone(f / 2, 0, .08, "square", .008 * v)); }
+    if (lead) { tone(lead, 0, .2, "sine", .05 * v); tone(lead * 2, 0, .12, "sine", .012 * v); }                                // whistling
+    if (k % 4 === 0) tone(110, 0, .1, "sine", .08 * v, 45); if (k % 4 === 2) noise(0, .05, 2400, .8, .03 * v); if (k % 2 === 1) noise(0, .02, 9000, .6, .01 * v, "highpass");
+  }, 140);
+}

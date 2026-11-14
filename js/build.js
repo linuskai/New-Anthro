@@ -378,7 +378,7 @@ function routeModel(obj) {
     g.add(at(mesh(GEO.cyl, lambert(0x2a2a2a), .05, .07, .05), -.1, .86, .25)); g.add(at(mesh(GEO.ball, lambert(0xc0322a), .045), -.1, .95, .25)); g.add(at(boxMesh(.18, .02, .12, 0x2d3f8f), .15, .83, .25));
     g.add(at(plate(textTex(["STEMPEL", "nur mit Formular"], "#2d3f8f", "#fff", 256, 110, 30), .5, .21), 0, 1.4, .02));
   } else if (obj === "poster") {
-    g.add(at(plate(textTex(["BIZEPS DES MONATS", "Dr. Kreuzband · 52 cm", "„Leg day is a myth“"], "#2a5f8a", "#fff", 256, 200, 30), .8, .62), 0, 1.6, .02));
+    g.add(at(plate(textTex(["BIZEPS DES MONATS", "Dr. Kreuzer · 52 cm", "„Leg day is a myth“"], "#2a5f8a", "#fff", 256, 200, 30), .8, .62), 0, 1.6, .02));
   } else if (["binder", "lanyard", "ringlight", "lunchbox", "helmet"].includes(obj)) {
     // a small shelf with the thing on it
     g.add(at(rmesh(.7, .04, .32, .015, 0x8a6a4a), 0, 1.0, .17)); for (const sx of [-1, 1]) g.add(at(boxMesh(.03, .2, .25, 0x5a4a3a), sx * .3, .9, .14));

@@ -136,12 +136,16 @@ function modernMonitor(map, w = .56) {
 
 // ---------- ER ambulance, gastro ventilation switch, textures ----------
 const curtainTex = () => canvasTex(128, 128, (g, w, h) => { g.fillStyle = "#cfe3ea"; g.fillRect(0, 0, w, h); g.fillStyle = "#9cc3d2"; for (let x = 0; x < w; x += 16) g.fillRect(x, 0, 6, h); g.fillStyle = "rgba(255,255,255,.5)"; g.fillRect(0, 0, w, 10); g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(0, h - 14, w, 14); }, "curtain");
-const stinkTex = () => canvasTex(128, 96, (g, w, h) => {
-  const r = rng(3);
-  for (let i = 0; i < 9; i++) { const x = 20 + r() * 88, y = 30 + r() * 40, rad = 18 + r() * 22, gr = g.createRadialGradient(x, y, 0, x, y, rad); const c = r() < .5 ? "120,140,60" : "110,95,50"; gr.addColorStop(0, `rgba(${c},.55)`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
-  g.strokeStyle = "rgba(90,110,40,.7)"; g.lineWidth = 3; g.lineCap = "round";
-  for (const x0 of [40, 64, 88]) { g.beginPath(); for (let y = 70; y > 14; y -= 4) g.lineTo(x0 + Math.sin(y * .25) * 5, y); g.stroke(); }
-}, "stink");
+/* toxic gas: soft, lumpy billows built from many overlapping blobs, three different shapes so the cloud never repeats visibly */
+const stinkTex = (v = 0) => canvasTex(256, 256, (g, w, h) => {
+  const r = rng(3 + v * 7);
+  for (let i = 0; i < 26; i++) {
+    const a = r() * 6.28, d = Math.pow(r(), .7) * 78, x = 128 + Math.cos(a) * d, y = 128 + Math.sin(a) * d * .8, rad = 26 + r() * 44, gr = g.createRadialGradient(x, y, 0, x, y, rad);
+    const c = pick(["150,190,60", "118,150,48", "170,170,60", "96,120,52", "128,112,56"]), al = .1 + r() * .16;
+    gr.addColorStop(0, `rgba(${c},${al})`); gr.addColorStop(.55, `rgba(${c},${al * .55})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  }
+  for (let i = 0; i < 7; i++) { const x = 70 + r() * 116, y = 80 + r() * 96, rad = 10 + r() * 16, gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, "rgba(215,240,120,.2)"); gr.addColorStop(1, "rgba(215,240,120,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } // sickly bright cores
+}, "stink" + v);
 function ambulanceModel() {
   const g = new THREE.Group(), white = new THREE.MeshStandardMaterial({ color: 0xf4f4ef, roughness: .35, metalness: .1 });
   g.add(at(rmesh(1.9, 1.75, 1.9, .12, white), 0, 1.25, -.45));

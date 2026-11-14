@@ -189,7 +189,7 @@ const getBest = () => { try { const v = parseFloat(localStorage.getItem(BEST_KEY
 const setBest = v => { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} };
 /* losing is loud: a big GAME OVER with the reason first, then the stats card with the same reason on top */
 function endOverBanner(reason, why) {
-  const b = $("endOver"); b.hidden = !reason;
+  const b = $("endOver"); b.hidden = !reason; $("endFree").hidden = true;
   if (reason) { $("endOverWhy").textContent = reason; $("endOverHow").textContent = why || ""; }
 }
 function showGameOverCard(reason, why) {
@@ -242,14 +242,15 @@ function showEndScreen(key, n) {
   const E = ENDINGS[key], R = ROUTES[key];
   mode = "win"; clearInputs(); hidePopups(); endCall(); clearCheckpoint();
   endOverBanner(); $("endEyebrow").textContent = E.eyebrow + " · " + fmtTime(run.minutes); $("endTitle").textContent = E.title;
-  $("endText").textContent = E.text;
+  $("endText").textContent = E.text + (typeof FREE_SUB !== "undefined" && FREE_SUB[key] ? " Kleingedrucktes: " + FREE_SUB[key] : "");
   $("endTicker").hidden = false; $("endTicker").innerHTML = `<b>EILMELDUNG</b><span>${esc(R.ticker)}</span>`;
   fillStats(key);
   const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
+  { const n = { S: 3, A: 3, B: 2 }[sc.rank] || 1, f = $("endFree"); f.hidden = false; f.innerHTML = `<div class="ef-stars">${[0, 1, 2].map(i => `<i class="${i < n ? "on" : ""}" style="animation-delay:${.3 + i * .35}s">★</i>`).join("")}</div><b>DU BIST FREI!</b><small>${n === 3 ? "Drei Sterne. Das Controlling hat Tränen in den Augen." : n === 2 ? "Zwei Sterne. Für den dritten: schneller raus, weniger auffallen." : "Ein Stern. Raus ist raus."}</small>`; }
   $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
   submitScore(key, sc.total, run.minutes, sc.rank); typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
-  setMsg("Pager aus.", 0); sfx.floor(); if (typeof successJingle === "function") { successJingle("big"); setTimeout(() => successJingle("big"), 900); } show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
+  setMsg("Pager aus.", 0); sfx.floor(); if (typeof successJingle === "function") successJingle("big"); show("ovEnd"); $("ovEnd").scrollTop = 0; setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
 // ---------- pause & settings ----------
@@ -475,7 +476,8 @@ function render(time, dt) {
   }
   if (level.clouds && level.clouds.length) {
     const vent = run.flags.has("vent");
-    for (const c of level.clouds) { c.p += dt * .4; c.s.position.set(c.bx + Math.sin(c.p) * .5, c.by + Math.sin(c.p * 1.3) * .15, c.bz + Math.cos(c.p * .8) * .5); c.s.material.opacity += ((vent ? 0 : .55) - c.s.material.opacity) * Math.min(1, dt * .8); c.s.visible = c.s.material.opacity > .01; }
+    for (const c of level.clouds) { c.p += dt * .4; c.s.position.set(c.bx + Math.sin(c.p) * .5, c.by + Math.sin(c.p * 1.3) * .15, c.bz + Math.cos(c.p * .8) * .5); c.s.material.opacity += ((vent ? 0 : c.o * (c.glow ? .7 + Math.sin(c.p * 3) * .3 : 1)) - c.s.material.opacity) * Math.min(1, dt * .8); c.s.visible = c.s.material.opacity > .01;
+      c.s.material.rotation += dt * c.rs; const br = 1 + Math.sin(c.p * 1.7) * .08; c.s.scale.set(c.sx * br, c.sy * (2 - br), 1); }
     if (level.ventFan) level.ventFan.rotation.z += dt * (vent ? 14 : 0);
     for (const b of level.beacons || []) { const on = !vent && Math.sin(time * 9 + b.p) > 0; b.mat.color.setHex(on ? 0xff2a1a : 0x3a0e0a); }
     if (level.gasSign) level.gasSign.visible = !vent;

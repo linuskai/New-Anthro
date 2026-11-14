@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🏋️ Orthopäden-Kämpfe neu: eigene Attacken, Fitness-Arena, Kampfmusik", "🔊 Geräusche statt Hintergrundmusik: knarrende Türen, leiser Alarm, wenn man dich entdeckt", "🏆 Erfolge sammeln (im Profil)", "📸 Ergebnis als Bild teilen", "💾 Speichern genau da, wo du aufhörst"];
+const NEWS = ["⚔️ Jeder Endgegner hat eigene Attacken, eigene Arena und eigene Witze", "🧥 Kitteltasche im Kampf: Kaffee, Donut & Co. füllen KP auf", "🪜 Treppenhaus: Richtig ist jetzt, was die Klinik hören will", "🎺 Mission geschafft: Fanfare, Sterne und die Fahrt in die Sonne", "💬 Neue Gespräche mit Kolleginnen und Kollegen"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

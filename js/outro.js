@@ -10,6 +10,19 @@ const OUTRO_TEXT = {
   nightER: ["07:30 · Übergabe · Notaufnahme", "Die Schiebetür geht auf. Sonnenlicht. Der Frühdienst schaut in die leere Wartehalle: „Na? Ruhige Nacht gehabt?“ Die Wartenummer-Anzeige zeigt 000. Hinter der Anmeldung winkt Schwester Hildegard. Niemand sonst sieht sie."],
   night: ["07:30 · Übergabe", "Die Sonne geht auf. Der Frühdienst kommt: „Na? Ruhige Nacht gehabt?“ Du sagst nichts. Oben am Fenster winkt Schwester Hildegard. Niemand sonst sieht sie."],
 };
+/* the mission is won: the fine print under the big banner, and the signs along the road to happiness */
+const FREE_SUB = { stay: "… bis Montag, 7:00 Uhr.", pharma: "Dein Pager heißt jetzt „Teams“.", botox: "Privatpatienten haben deine Handynummer.", consult: "80-Stunden-Woche. Aber mit Meilen.", ship: "Auf See bist DU der Hintergrunddienst.", influ: "Dein neuer Chefarzt ist der Algorithmus." };
+const FREE_SIGNS = [["FREIHEIT 300 m", "#1f9d55"], ["AB HIER KEIN PAGER-EMPFANG", "#1f3f8a"], ["GLÜCK ➜ GERADEAUS", "#e2483d"], ["ÜBERSTUNDEN: AUSFAHRT GESPERRT", "#f2b33d"], ["SIE VERLASSEN DEN DIENSTPLAN", "#1f3f8a"], ["FEIERABEND ∞ km", "#1f9d55"], ["BITTE NICHT UMDREHEN", "#e2483d"]];
+const sunFaceTex = () => canvasTex(256, 256, (g, w) => {
+  const gr = g.createRadialGradient(128, 128, 20, 128, 128, 120); gr.addColorStop(0, "#fff7c0"); gr.addColorStop(.7, "#ffd23a"); gr.addColorStop(1, "#ff9a1a");
+  g.fillStyle = gr; g.beginPath(); g.arc(128, 128, 118, 0, 7); g.fill();
+  g.fillStyle = "#1d1d1d"; rr(g, 52, 92, 66, 38, 14); g.fill(); rr(g, 138, 92, 66, 38, 14); g.fill(); g.fillRect(112, 100, 32, 8);   // sunglasses, of course
+  g.fillStyle = "rgba(255,255,255,.35)"; g.fillRect(62, 98, 18, 8); g.fillRect(148, 98, 18, 8);
+  g.strokeStyle = "#7a3a00"; g.lineWidth = 9; g.lineCap = "round"; g.beginPath(); g.arc(128, 142, 52, .25, Math.PI - .25); g.stroke();              // a very wide grin
+  g.fillStyle = "rgba(255,120,90,.5)"; g.beginPath(); g.arc(58, 158, 16, 0, 7); g.fill(); g.beginPath(); g.arc(198, 158, 16, 0, 7); g.fill();
+}, "sunface");
+const sunRayTex = () => canvasTex(256, 256, (g, w) => { g.translate(128, 128); for (let i = 0; i < 16; i++) { g.rotate(Math.PI / 8); const gr = g.createLinearGradient(0, 0, 0, -128); gr.addColorStop(0, "rgba(255,230,140,.9)"); gr.addColorStop(1, "rgba(255,200,90,0)"); g.fillStyle = gr; g.beginPath(); g.moveTo(-12, 0); g.lineTo(12, 0); g.lineTo(3, -128); g.lineTo(-3, -128); g.fill(); } }, "sunrays");
+const rainbowTex = () => canvasTex(512, 256, (g, w, h) => { const cols = ["#e2483d", "#f28a2d", "#f2d03d", "#3db85a", "#3d8af2", "#6a4ad8", "#b04ad8"]; g.lineWidth = 13; cols.forEach((c, i) => { g.strokeStyle = c; g.globalAlpha = .8; g.beginPath(); g.arc(w / 2, h, 236 - i * 13, Math.PI, 0); g.stroke(); }); }, "rainbow");
 let outro = null;
 const skyTex = dawn => canvasTex(16, 256, (g, w, h) => {
   const gr = g.createLinearGradient(0, 0, 0, h);
@@ -70,7 +83,13 @@ function buildOutro(kind) {
   sc.add(at(sprite(labelTex("KLINIKUM ST. SPAREN", "#1f3f8a", "#fff"), 22, 3.6), -6, 28.5, -25));
   sc.add(at(sprite(labelTex("P2 · PERSONAL", "#2d3f8f", "#fff"), 7, 1.2), 18, 11, -12.5));
   if (dawn) { const sunD = sprite(glowTex("rgba(255,230,160,1)"), 40, 40); sunD.material.blending = THREE.AdditiveBlending; sunD.position.set(-30, 8, 170); sc.add(sunD); }
-  else { const sunD = sprite(glowTex("rgba(255,160,90,1)"), 50, 50); sunD.material.blending = THREE.AdditiveBlending; sunD.position.set(10, 6, 200); sc.add(sunD); }
+  else { const sunD = sprite(glowTex("rgba(255,160,90,1)"), 90, 90); sunD.material.blending = THREE.AdditiveBlending; sunD.material.fog = false; sunD.position.set(1.6, 12, 300); sc.add(sunD);
+    // the road leads straight into a grinning sun with sunglasses, under a rainbow, past signs that promise everything
+    const rays = sprite(sunRayTex(), 120, 120); rays.material.blending = THREE.AdditiveBlending; rays.material.fog = false; rays.material.depthWrite = false; rays.position.set(1.6, 13, 298); sc.add(rays); sc.userData.rays = rays;
+    const face = sprite(sunFaceTex(), 34, 34); face.material.fog = false; face.position.set(1.6, 13, 296); sc.add(face); sc.userData.face = face;
+    const bow = new THREE.Mesh(GEO.plane, new THREE.MeshBasicMaterial({ map: rainbowTex(), transparent: true, depthWrite: false, fog: false, toneMapped: false, side: THREE.DoubleSide })); bow.scale.set(150, 75, 1); bow.position.set(1.6, 37, 240); bow.rotation.y = Math.PI; sc.add(bow); sc.userData.bow = bow;
+    FREE_SIGNS.forEach(([t, c], i) => { const s = i % 2 ? -1 : 1, z = 24 + i * 22; sc.add(at(mesh(GEO.cyl, phong(0x8a8f93, 60), .05, 2.6, .05), s * 4.9, 1.3, z)); const sg = sprite(labelTex(t, c, "#fff"), 5.2, 1); sg.position.set(s * 4.9, 3, z); sc.add(sg); });
+    const beg = sprite(labelTex("BITTE BLEIB! WIR HABEN KUCHEN", "#ffffff", "#c0322a"), 16, 3); beg.position.set(-6, 22, -25); sc.add(beg); }
   if (kind === "ship") { const ship = new THREE.Group(); ship.add(at(boxMesh(60, 8, 12, 0xf2f2f2), 0, 4, 0)); ship.add(at(boxMesh(40, 6, 10, 0xffffff), -4, 11, 0)); ship.add(at(boxMesh(4, 6, 4, 0x1f7a8c), 8, 17, 0)); ship.add(at(sprite(labelTex("MS SORGENFREI", "#1f7a8c", "#fff"), 18, 3), 0, 22, 0)); ship.position.set(14, 0, 150); ship.rotation.y = .9; ship.scale.setScalar(1.3); sc.add(ship); }
   // trees
   for (let i = 0; i < 40; i++) { const s = i % 2 ? 1 : -1, z = 10 + i * 8, x = s * (9 + Math.random() * 14); sc.add(at(mesh(GEO.cyl, lambert(0x4a3a2a), .25, 2.4, .25), x, 1.2, z)); sc.add(at(mesh(GEO.leaf, lambert(dawn ? 0x4a7a4a : 0x2f4a3a), 4.2), x, 3.6, z)); }
@@ -80,7 +99,7 @@ function buildOutro(kind) {
   veh.rotation.y = 0; dyn(veh); sc.add(veh);
   mergeStatic(sc, []); // ~400 static meshes → a few dozen draw calls
   const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .1, 500);
-  return { sc, cam, veh, t: 0, kind, dur: 9.5 };
+  return { sc, cam, veh, t: 0, kind, dur: dawn ? 9.5 : 14 };
 }
 function playOutro(kind, done) {
   mode = "outro"; clearInputs(); hidePopups();
@@ -89,11 +108,11 @@ function playOutro(kind, done) {
   $("story").hidden = false; document.body.classList.add("cine");
   $("storyTime").textContent = where; $("storyText").textContent = ""; $("btnStoryNext").textContent = "Weiter"; $("btnSkip").hidden = true;
   outro.full = line; outro.shown = 0;
-  if (kind === "night") { sfx.ding(); setTimeout(() => sfx.spa(), 600); } else { sfx.car(); setTimeout(() => sfx.floor(), 500); }
+  if (kind === "night") { sfx.ding(); setTimeout(() => sfx.spa(), 600); } else { sfx.car(); freeBanner(kind); }
 }
 function endOutro() {
   if (!outro) return;
-  const d = outro.done; outro = null;
+  const d = outro.done; outro = null; const ff = $("freeFx"); if (ff) ff.remove(); if (typeof driveMusic === "function") driveMusic(false);
   $("story").hidden = true; $("btnSkip").hidden = false; document.body.classList.remove("cine");
   if (d) d();
 }
@@ -110,5 +129,19 @@ function updateOutro(dt) {
   cam.position.set(9 - k * 7, 3 + k * .4, 14 + Math.min(z, 18) * .6);
   cam.lookAt(v.position.x * (1 - k * .5), 2.2 - k * .9, v.position.z + 4 * k - 14 * (1 - k));
   cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
+  if (o.sc.userData.rays) { o.sc.userData.rays.material.rotation += dt * .25; const b = 1 + Math.sin(t * 3) * .04; o.sc.userData.face.scale.set(34 * b, 34 * b, 1); o.sc.userData.face.material.rotation = Math.sin(t * 1.3) * .08;
+    if (t > 6) { const u = Math.min(1, (t - 6) / 5); cam.position.y += u * 5; cam.position.x += (1.6 - cam.position.x) * u; cam.lookAt(1.6, 2 + u * 8, v.position.z + 30 + u * 60); cam.updateProjectionMatrix(); } } // the camera rises and looks into the sun
   if (t > o.dur) endOutro();
+}
+
+/* "DU BIST FREI!": banner, stars for the rank, confetti and far too much brass, laid over the drive into the sunset */
+function freeBanner(kind) {
+  const old = $("freeFx"); if (old) old.remove();
+  let stars = 1; try { stars = { S: 3, A: 3, B: 2 }[scoreBreakdown(kind).rank] || 1; } catch (e) {}
+  const d = document.createElement("div"); d.id = "freeFx";
+  const conf = Array.from({ length: 46 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${["#e2483d", "#f2b33d", "#3db85a", "#3d8af2", "#b04ad8", "#fff"][i % 6]};animation-delay:${(1.2 + Math.random() * 3).toFixed(2)}s;animation-duration:${(2.6 + Math.random() * 2.4).toFixed(2)}s;transform:rotate(${Math.random() * 360}deg)"></i>`).join("");
+  d.innerHTML = `<div class="ff-conf">${conf}</div><div class="ff-mid"><div class="ff-stars">${[0, 1, 2].map(i => `<i class="${i < stars ? "on" : ""}" style="animation-delay:${2 + i * .45}s">★</i>`).join("")}</div><b class="ff-title">DU BIST FREI!</b><small class="ff-sub">${esc(FREE_SUB[kind] || FREE_SUB.stay)}</small></div><div class="ff-birds">🕊️　🕊️　　🕊️</div>`;
+  document.body.appendChild(d);
+  if (typeof freedomFanfare === "function") freedomFanfare(stars);
+  setTimeout(() => d.classList.add("out"), 9500);
 }
