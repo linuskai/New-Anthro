@@ -64,7 +64,7 @@ function openDialog(d) {
   const url = portraitFor(d.sp), ph = $("dlgPhoto");
   ph.innerHTML = url ? `<img src="${url}" alt="">` : `<span id="dlgAvatar">${esc(d.av || "?")}</span>`;
   $("dlgName").textContent = d.name; $("dlgRole").textContent = d.role || "";
-  typeText(d.text); setTalker(d.sp, d.text); $("dlgStamps").innerHTML = "";
+  typeText(d.text); setTalker(d.sp, d.text); if (typeof blabla === "function") blabla(d.text); $("dlgStamps").innerHTML = "";
   const box = $("dlgOpts"); box.innerHTML = "";
   d.options.forEach((o, i) => {
     const [cls, ico] = optIcon(o, i);

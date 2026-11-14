@@ -68,7 +68,7 @@ function updateMusic(dt) {
   if (live && run.mode === "mission" && !run.routeFailed) { const left = routeDeadline(run.route) - run.minutes; tension = left < 30 ? Math.min(1, (30 - left) / 25 + .35) : 0; }
   if (live && run.mode === "night" && run.task) { const left = run.task.deadline - run.minutes; if (left < 20) tension = Math.max(tension, (20 - left) / 20); }
   MUS.tension += (tension - MUS.tension) * Math.min(1, dt * 1.5);
-  musicPad(live && settings.sound ? .005 + MUS.chase * .003 : 0);
+  musicPad(0); // no background music: only danger gets music
   const want = MUS.chase > .05 || MUS.tension > .05, period = MUS.chase > .6 || MUS.tension > .7 ? 110 : 140;
   if (want && (!MUS.t || MUS.period !== period)) { clearInterval(MUS.t); MUS.period = period; MUS.t = setInterval(musicTick, period); }
   else if (!want && MUS.t) { clearInterval(MUS.t); MUS.t = null; MUS.step = 0; }
@@ -84,3 +84,45 @@ function successJingle(kind) {
   if (big) { [1047, 1319, 1568].forEach(f => tone(f, end, .9, "triangle", .035)); tone(523, end, .9, "sine", .05); noise(end, .5, 6000, .6, .015, "highpass"); }
   else tone(1319, end, .45, "triangle", .03);
 }
+
+// ---------- sound effects for actions (no background music any more; music only when you are in danger) ----------
+// a muted trombone "wah-wah-wah" while someone talks at you: the sound of every meeting you ever sat through
+function wahWah(n = 5, base = 200, vol = .05, delay = 0) {
+  if (!actx || !settings.sound) return;
+  const t0 = actx.currentTime + delay;
+  for (let i = 0; i < n; i++) {
+    const t = t0 + i * .17 + Math.random() * .03, f = base * (.85 + Math.random() * .35), d = .13 + Math.random() * .06;
+    const o = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(f * 1.06, t); o.frequency.linearRampToValueAtTime(f * .92, t + d);
+    lp.type = "lowpass"; lp.Q.value = 6; lp.frequency.setValueAtTime(350, t); lp.frequency.linearRampToValueAtTime(1300, t + d * .4); lp.frequency.linearRampToValueAtTime(420, t + d);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .025); g.gain.setValueAtTime(vol, t + d * .7); g.gain.linearRampToValueAtTime(0, t + d);
+    o.connect(lp).connect(g).connect(master); o.start(t); o.stop(t + d + .02);
+  }
+}
+let lastBlabla = 0;
+function blabla(text) {
+  const now = performance.now(); if (now - lastBlabla < 600) return; lastBlabla = now;
+  wahWah(Math.max(3, Math.min(9, Math.round((text || "").length / 22))), 170 + Math.random() * 70);
+}
+Object.assign(sfx, {
+  // the hospital PA: ding-dong, then a muffled announcement voice
+  pa: () => { tone(784, 0, .5, "sine", .06); tone(622, .45, .8, "sine", .06); noise(.9, 1.6, 900, 2, .012); wahWah(7, 150, .03, 1.0); },
+  energyUp: () => { [523, 659, 784].forEach((f, i) => tone(f, i * .06, .14, "triangle", .04)); },
+  energyDown: () => { tone(330, 0, .18, "square", .035, 220); tone(220, .12, .22, "square", .03, 150); },
+  // door: a click of the handle, then a creak
+  door: () => { noise(0, .05, 2500, 1, .08); tone(210, .05, .35, "sawtooth", .012, 150); noise(.05, .3, 600, 3, .04); },
+  useItem: k => {
+    const s = {
+      "1": () => { noise(0, .35, 1800, 2, .05); tone(180, .3, .2, "sine", .04, 120); },                 // coffee: slurp, gulp
+      "0": () => { noise(0, .12, 5000, .6, .07, "highpass"); noise(.1, .5, 3000, 1, .03); },              // energy drink: tssss
+      "$": () => { tone(160, 0, .12, "sine", .05); tone(140, .15, .12, "sine", .05); },                  // donut: nom nom
+      "+": () => { [880, 1175, 1568].forEach((f, i) => tone(f, i * .07, .3, "sine", .03)); },            // cream: shimmer
+      "2": () => { noise(0, .25, 2500, 1.2, .05); tone(400, .1, .2, "triangle", .03, 600); },            // clipboard: paper flip
+      c: () => { noise(0, .3, 1200, .8, .05); },                                                          // coat: rustle
+      m: () => { tone(300, 0, .06, "square", .04); noise(.05, .2, 4000, 1, .03); },                     // mask: snap
+      f: () => { [0, .25].forEach(t => { tone(1320, t, .12, "square", .03); tone(1650, t + .06, .12, "square", .03); }); }, // fake call: ring ring
+      p: () => { noise(0, .25, 3000, .7, .04); tone(1800, .35, .05, "square", .04); },                  // pen: whoosh, clack
+    }[k];
+    if (s) s(); else { tone(660, 0, .1, "triangle", .04); tone(990, .08, .14, "triangle", .04); }
+  },
+});

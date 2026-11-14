@@ -81,7 +81,7 @@ const SPOOKS = [
   { k: "clock", w: 1, run() { run.glitchT = 1.4; tone(55, 0, 1.3, "sawtooth", .04, 40); spookFx(); setTimeout(() => mode === "play" && spookSay("clock"), 1500); return true; } },
   { k: "pa", w: 2, run() {
     tone(392, 0, .5, "sine", .05, 370); tone(311, .5, .9, "sine", .05, 280);
-    showToast("📢", "#3a1210", "Durchsage · Lautsprecher knackt", "„" + pick(CREEPY_ANNOUNCE) + "“", []);
+    sfx.pa && sfx.pa(); showToast("📢", "#3a1210", "Durchsage · Lautsprecher knackt", "„" + pick(CREEPY_ANNOUNCE) + "“", []);
     return true; } },
 ];
 function updateSpook(dt) {

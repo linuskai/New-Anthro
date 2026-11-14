@@ -474,7 +474,7 @@ function render(time, dt) {
   if (humGain) {
     const L = LEVELS[run.idx], live = mode === "play" || mode === "story";
     humGain.gain.setTargetAtTime(near && near.on && live ? .022 * (1 - nd / 3.4) : 0, actx.currentTime, .03);
-    droneGain.gain.setTargetAtTime(live && (L.env === "cellar" || L.env === "radio" || lightMul < .6) ? (blackout > 0 ? .07 : .03) : 0, actx.currentTime, .4);
+    droneGain.gain.setTargetAtTime(live && blackout > 0 ? .05 : 0, actx.currentTime, .4);
   }
   const k = Math.min(1, dt * 6);
   for (const e of level.enemies) {

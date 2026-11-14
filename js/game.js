@@ -237,14 +237,14 @@ function pen(o) {
   if (nt) run.tasksTotal += nt;
   if (mins) { run.minutes += mins; st.push({ text: "+" + mins + " Min" }); }
   const drain = (o.nerves || 0) * 15 + (o.energy || 0) + nt * 4;
-  if (drain) { run.energy = Math.max(0, run.energy - drain); st.push({ text: "−" + drain + " % Energie" }); energyHit(); }
+  if (drain) { run.energy = Math.max(0, run.energy - drain); st.push({ text: "−" + drain + " % Energie" }); energyHit(); if (sfx.energyDown) setTimeout(sfx.energyDown, 250); }
   if (o.duties) for (let i = 0; i < o.duties; i++) st.push({ text: addDuty(o.dutyCode) });
   return st;
 }
 function gain(o) {
   const st = [];
   const up = (o.nerves || 0) * 15 + (o.energy || 0);
-  if (up) { const before = run.energy; run.energy = Math.min(100, run.energy + up); if (run.energy > before) st.push({ text: "+" + Math.round(run.energy - before) + " % Energie", good: true }); }
+  if (up) { const before = run.energy; run.energy = Math.min(100, run.energy + up); if (run.energy > before) { st.push({ text: "+" + Math.round(run.energy - before) + " % Energie", good: true }); if (sfx.energyUp) setTimeout(sfx.energyUp, 250); } }
   if (o.text) st.push({ text: o.text, good: true });
   return st;
 }
@@ -295,6 +295,7 @@ function farthestTile() {
 }
 function useItem(k) {
   const def = ITEMS[k]; let st = [], line = "";
+  if (sfx.useItem) sfx.useItem(k);
   switch (k) {
     case "1": takeItem(k); player.coffee = 20; run.stamina = 100; player.winded = false; st = gain({ energy: 35 }).concat([good("Puste voll · 20 s ohne Ermüdung")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
     case "0": takeItem(k); st = gain({ energy: 55 }); line = "Schmeckt nach Gummibärchen und Reue."; break;
