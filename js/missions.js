@@ -2,7 +2,7 @@
    the paperwork penalty and a clock that shows every lost minute. */
 
 const goalsDoneCount = () => mission().goals.filter(goalDone).length;
-const routeDeadline = k => ROUTES[k] ? ROUTES[k].deadline : 0;
+const routeDeadline = k => ROUTES[k] ? ROUTES[k].deadline - (typeof run !== "undefined" && run && run.daily && run.route === k ? 30 : 0) : 0; // the daily shift is 30 minutes tighter
 const fmtSpan = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60); return h ? `${h} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`; };
 const lineMinutes = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m - SHIFT_END; };
 
@@ -240,7 +240,7 @@ const HOW_HTML = `<ul class="legend how">
   <li><span class="ico">✗</span><span><b>Scheitern</b> · Frist verpasst: Der Job ist weg. Energie bei 0 %: Burnout, GAME OVER. Endkampf verloren: GAME OVER.</span></li></ul>`;
 function beginMission() {
   initAudio(); show(null); blackout = 0; run.clockSeen = run.minutes; updateHud(); trackObjectives(); saveCheckpoint();
-  typeof track === "function" && track("mission_start", { route: run.route }); missionFlyIn(startPlaying);
+  typeof track === "function" && track("mission_start", { route: run.route, quick: !!run.quick }); store.set("hospital-escape-seen-" + run.route, 1); missionFlyIn(startPlaying);
 }
 function startPlaying() {
   mode = "play"; run.clockSeen = run.minutes;

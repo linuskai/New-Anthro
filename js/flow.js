@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall", "ovAccount", "ovWelcome"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall", "ovAccount", "ovWelcome", "ovLegal"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
@@ -12,6 +12,7 @@ function startStory(m, route, place) {
   newRun(m, lastRoute, lastPlace); loadFloor(run.idx); $("hudClock").textContent = fmtTime(m === "night" ? NIGHT_START - 2 : -20);
   mode = "story"; story = { i: -1, shown: 0, full: "", t: 0, yaw0: player.yaw, lines: m === "night" ? (nightER() ? STORY_NIGHT_ER : STORY_NIGHT) : STORY_OPEN.concat(mission().story) };
   $("story").hidden = false; document.body.classList.add("cine");
+  if (m === "mission" && store.get("hospital-escape-seen-" + lastRoute)) { run.quick = true; story.i = story.lines.length; endStory(); return; }
   storyNext();
   setTimeout(() => $("btnStoryNext").focus({ preventScroll: true }), 50);
 }
@@ -40,6 +41,7 @@ function endStory() {
   story = null; $("story").hidden = true; storyPhone(null); $("storyCount").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
   if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Pager-Aufgaben erledigen · ${nightSafe()} ist sicher · Hildegard nie aus den Augen lassen`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
+  if (run.quick) { beginMission(); return; } // played before: the fly-in says it all
   showBrief(false);
 }
 $("btnStoryNext").addEventListener("click", () => { if (mode === "outro") { if (outro && outro.shown < outro.full.length) { outro.shown = outro.full.length; $("storyText").textContent = outro.full; } else endOutro(); } else storyNext(); });
@@ -246,7 +248,7 @@ function showEndScreen(key, n) {
   const sc = renderScore(key); run.final = sc; $("endRank").textContent = "Rang " + sc.rank + " · " + sc.rankName;
   $("endBest").hidden = false; $("endBest").textContent = `Geschafft um ${fmtTime(run.minutes)}, Frist war ${fmtTime(routeDeadline(key))}. Verlorene Zeit: ${fmtSpan(run.lostMin || 0)}.`;
   $("btnAgain").firstElementChild.textContent = "Nochmal spielen"; $("btnShare").hidden = false; $("btnNightNow").hidden = true;
-  submitScore(key, sc.total, run.minutes, sc.rank); typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
+  submitScore(key, sc.total, run.minutes, sc.rank); if (run.daily) { submitDaily(sc.total, run.minutes, sc.rank); lastDaily = true; } else lastDaily = false; typeof track === "function" && track("mission_win", { route: key, minutes: Math.round(run.minutes), score: sc.total, rank: sc.rank });
   setMsg("Pager aus.", 0); sfx.floor(); if (typeof successJingle === "function") { successJingle("big"); setTimeout(() => successJingle("big"), 900); } show("ovEnd"); setTimeout(() => $("btnAgain").focus({ preventScroll: true }), 50);
 }
 
@@ -274,9 +276,10 @@ function applyShadows() {
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
 bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
 bindSet("setHires", "hires"); $("setHires").addEventListener("change", () => { applyRes(); resize(); });
+bindSet("setVol", "vol", "value", Number); bindSet("setMus", "mus", "value", Number); $("setVol").addEventListener("input", syncSound); $("setVol").addEventListener("change", () => sfx.ding && sfx.ding());
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
 // sound on/off from the HUD and the title (the pause menu has the same switch)
-function syncSound() { const on = !!settings.sound; for (const id of ["btnSound", "btnSoundTitle"]) { $(id).textContent = on ? "🔊" : "🔇"; $(id).setAttribute("aria-pressed", String(!on)); } $("setSound").checked = on; if (master) master.gain.value = on ? 1 : 0; if (actx && typeof unlockPlayback === "function") unlockPlayback(); }
+function syncSound() { const on = !!settings.sound; for (const id of ["btnSound", "btnSoundTitle"]) { $(id).textContent = on ? "🔊" : "🔇"; $(id).setAttribute("aria-pressed", String(!on)); } $("setSound").checked = on; if (master) master.gain.value = on ? (settings.vol ?? .9) : 0; if (actx && typeof unlockPlayback === "function") unlockPlayback(); }
 for (const id of ["btnSound", "btnSoundTitle"]) $(id).addEventListener("click", ev => { ev.stopPropagation(); settings.sound = !settings.sound; saveSettings(); initAudio(); syncSound(); if (settings.sound) sfx.ding(); });
 $("setSound").addEventListener("change", syncSound); syncSound();
 const lookSel = $("setLook"); lookSel.value = settings.look; lookSel.addEventListener("change", () => { settings.look = lookSel.value; saveSettings(); });
@@ -289,9 +292,15 @@ function setDiff(v) {
 $("setDiff").addEventListener("change", () => setDiff($("setDiff").value));
 $("setDiffTitle").addEventListener("click", ev => { const b = ev.target.closest("[data-diff]"); if (b) { setDiff(b.dataset.diff); sfx.tick(); } });
 setDiff(settings.diff);
-$("btnStart").addEventListener("click", () => { initAudio(); showSelect(); });
+let lastDaily = false;
+$("btnStart").addEventListener("click", () => { lastDaily = false; initAudio(); showSelect(); });
+$("btnDaily").addEventListener("click", () => { lastDaily = true; startDaily(); });
+let legalReturn = "title";
+function openLegal() { legalReturn = mode; mode = "legal"; show("ovLegal"); $("ovLegal").scrollTop = 0; }
+$("btnLegal").addEventListener("click", openLegal); $("btnLegal2").addEventListener("click", openLegal);
+$("btnLegalClose").addEventListener("click", () => { if (legalReturn === "account") openAccount(acctReturn); else { mode = "title"; show("ovTitle"); refreshTitle(); } });
 $("btnNight").addEventListener("click", () => { initAudio(); showNightSelect(); });
-$("btnAgain").addEventListener("click", () => startStory(lastMode));
+$("btnAgain").addEventListener("click", () => { if (lastDaily && lastMode === "mission") { startDaily(); return; } startStory(lastMode); });
 $("btnEndMenu").addEventListener("click", () => { hidePopups(); newRun(); loadFloor(0); if (lastMode === "mission") showSelect(); else { mode = "title"; show("ovTitle"); } });
 $("btnNightNow").addEventListener("click", () => startStory("night"));
 
@@ -432,8 +441,20 @@ function friendNeeds(f) {
     default: return f.talked === 0;
   }
 }
+const GFX = { t: 0, n: 0, step: 0 };
+function autoGraphics(dt) {
+  if (mode !== "play" || settings.gfxAuto === false || GFX.step >= 2) return;
+  GFX.t += dt; GFX.n++;
+  if (GFX.t < 6) return;
+  const fps = GFX.n / GFX.t; GFX.t = 0; GFX.n = 0;
+  if (fps >= 27) { GFX.step = 2; return; } // fast enough: leave it alone
+  if (GFX.step === 0 && settings.hires) { settings.hires = false; $("setHires").checked = false; applyRes(); resize(); setMsg("Grafik auf „Leicht“ gestellt, damit es flüssiger läuft. Ändern im Pausenmenü.", 4); }
+  else if (settings.shadows) { settings.shadows = false; $("setShadows").checked = false; applyShadows(); setMsg("Schatten aus, damit es flüssiger läuft.", 3); GFX.step = 2; }
+  GFX.step++; saveSettings(); typeof track === "function" && track("gfx_auto", { fps: Math.round(fps) });
+}
 function render(time, dt) {
   if (!level) return;
+  autoGraphics(dt);
   const bob = settings.bob && mode === "play" ? Math.sin(player.bob) * (player.moveMag === .5 ? .025 : .05) : 0, shake = player.stun > 0 ? (Math.random() - .5) * .06 : 0;
   const crouch = mode === "play" && player.moveMag === .5 ? .18 : 0;
   camera.position.set(player.x * S + shake, EYE + bob - crouch - (player.hidden ? .7 : 0), player.y * S);

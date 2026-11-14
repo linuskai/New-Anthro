@@ -51,7 +51,7 @@ const timpani = (t, vol) => { tone(72, t, .9, "sine", vol, 48); noise(t, .35, 18
 const CHASE_BARS = [[110, 130.8, 164.8], [87.3, 110, 130.8], [73.4, 87.3, 110], [82.4, 103.8, 123.5]];
 function musicTick() {
   if (!actx || !settings.sound || !run || typeof fightOn !== "undefined" && fightOn || bossMus) return;
-  const k = MUS.step++ % 16, bar = Math.floor((MUS.step - 1) / 16) % 4, c = MUS.chase, t = MUS.tension, ch = CHASE_BARS[bar];
+  const mv = settings.mus ?? .7, k = MUS.step++ % 16, bar = Math.floor((MUS.step - 1) / 16) % 4, c = MUS.chase * mv, t = MUS.tension * mv, ch = CHASE_BARS[bar];
   if (c > .05) {
     if (k === 0) { timpani(0, .09 * c); ch.forEach((f, i) => cello(f * 2, 0, 2.3, (.012 + i * .002) * c, 700 + c * 900)); }
     if (k === 8 && c > .45) timpani(0, .06 * c);

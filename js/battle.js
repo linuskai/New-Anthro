@@ -158,7 +158,7 @@ function bossMusic(on, fast) {
   if (!on || !actx) return;
   const bass = [110, 110, 131, 110, 98, 98, 117, 98, 87, 87, 104, 87, 98, 104, 117, 131], arp = [440, 523, 659, 523, 392, 494, 587, 494, 349, 440, 523, 440, 392, 466, 587, 659];
   let i = 0; const step = fast ? 105 : 140;
-  bossMus = { t: setInterval(() => { const k = i++ % 16; tone(bass[k] * (fast ? 1.06 : 1), 0, step / 1000 * .9, "sawtooth", .03); if (k % 2 === 0) tone(arp[k] * (fast ? 1.06 : 1), 0, step / 1000 * .6, "square", .014); if (k % 4 === 0) noise(0, .06, 120, 1, .12, "lowpass"); if (k % 4 === 2) noise(0, .04, 3000, .6, .03, "highpass"); }, step) };
+  bossMus = { t: setInterval(() => { const k = i++ % 16; if ((settings.mus ?? .7) < .05) return; tone(bass[k] * (fast ? 1.06 : 1), 0, step / 1000 * .9, "sawtooth", .03); if (k % 2 === 0) tone(arp[k] * (fast ? 1.06 : 1), 0, step / 1000 * .6, "square", .014); if (k % 4 === 0) noise(0, .06, 120, 1, .12, "lowpass"); if (k % 4 === 2) noise(0, .04, 3000, .6, .03, "highpass"); }, step) };
 }
 /* the orthopaedist's battle music: a cheesy gym groove, four on the floor, slap bass, brass stabs */
 let gymMus = null;
@@ -166,7 +166,7 @@ function gymMusic(on) {
   if (gymMus) { clearInterval(gymMus); gymMus = null; }
   if (!on || !actx) return;
   const bass = [82.4, 0, 82.4, 98, 0, 82.4, 110, 98, 73.4, 0, 73.4, 87.3, 0, 73.4, 98, 87.3]; let i = 0;
-  gymMus = setInterval(() => { const k = i++ % 16, bar = Math.floor(i / 16) % 4;
+  gymMus = setInterval(() => { const k = i++ % 16, bar = Math.floor(i / 16) % 4; if ((settings.mus ?? .7) < .05) return;
     if (k % 4 === 0) { tone(110, 0, .12, "sine", .1, 45); }
     if (k % 8 === 4) noise(0, .09, 1800, .9, .06);
     if (bass[k]) tone(bass[k] * (bar === 3 ? 1.122 : 1), 0, .1, "square", .022);

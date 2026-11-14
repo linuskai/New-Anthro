@@ -78,7 +78,7 @@ function openAccount(from) {
   acctReturn = from || mode; mode = "account"; show("ovAccount"); $("ovAccount").scrollTop = 0;
   $("profName").value = profile.name; $("profName").placeholder = "Dr. Anonym";
   $("profAvs").innerHTML = AVATARS.map(a => `<button type="button" class="av-pick${a === profile.av ? " on" : ""}" data-a="${a}">${a}</button>`).join("");
-  $("devCode").textContent = fmtCode(token); $("codeMsg").textContent = "";
+  $("devCode").textContent = fmtCode(token); $("codeMsg").textContent = ""; renderAchievements();
 }
 function closeAccount() {
   if (acctReturn === "welcome") { mode = "welcome"; show("ovWelcome"); renderAcct(); return; }

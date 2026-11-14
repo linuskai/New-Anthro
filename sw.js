@@ -1,5 +1,5 @@
 /* Hospital Escape: network first (always the newest version when online), cache as fallback for offline play. */
-const CACHE = "hospital-escape-v30";
+const CACHE = "hospital-escape-v33";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {

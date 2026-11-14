@@ -108,3 +108,14 @@ setTimeout(() => {
   }
   if (typeof maybeWelcome === "function") maybeWelcome();
 }, 1600);
+
+// ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
+const NEWS = ["🏋️ Orthopäden-Kämpfe neu: eigene Attacken, Fitness-Arena, Kampfmusik", "🔊 Geräusche statt Hintergrundmusik, Musik nur bei Gefahr", "🏆 Erfolge sammeln und die Tagesschicht", "📸 Ergebnis als Bild teilen", "💾 Speichern genau da, wo du aufhörst"];
+function showNews() {
+  const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
+  if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;
+  const d = document.createElement("div"); d.className = "news-card";
+  d.innerHTML = `<b>Neu in Version ${esc(GAME_VERSION)}</b><ul>${NEWS.map(n => `<li>${esc(n)}</li>`).join("")}</ul><button type="button">Weiter</button>`;
+  document.body.appendChild(d); d.querySelector("button").addEventListener("click", () => d.remove()); setTimeout(() => d.isConnected && d.remove(), 15000);
+}
+setTimeout(() => { if (mode === "title") showNews(); else store.set("hospital-escape-news", store.get("hospital-escape-news") || GAME_VERSION); }, 2600);

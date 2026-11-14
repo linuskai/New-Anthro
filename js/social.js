@@ -49,6 +49,11 @@ function submitScore(k) {
   const r = loadRecords()[k || lastRoute]; if (!r) return;
   rpc("hx_submit", { p_token: token, p_mission: k || lastRoute, p_score: Math.round(r.score), p_minutes: Math.round(r.minutes), p_rank: r.rank || "" }).catch(() => {});
 }
+function submitDaily(score, minutes, rank) { // today's shift gets its own board; one entry per player and day, the best counts
+  const k = run.daily, all = store.get("hospital-escape-daily") || {};
+  if (!(all[k] >= score)) { all[k] = Math.round(score); store.set("hospital-escape-daily", all); }
+  rpc("hx_submit", { p_token: token, p_mission: k, p_score: Math.round(score), p_minutes: Math.round(minutes), p_rank: rank || "" }).catch(() => {});
+}
 function submitNight(place, tasks) {
   const k = place === "er" ? "night_er" : "night_ward", n = nightRecords();
   if (!(n[k] >= tasks)) { n[k] = tasks; store.set("hospital-escape-night-board", n); }
@@ -61,7 +66,7 @@ function saveCheckpoint() {
   if (!run || run.mode !== "mission" || run.routeFailed) return;
   const r = run, data = { v: 13, route: r.route, step: r.step, idx: r.idx, minutes: r.minutes, nerves: r.nerves, energy: r.energy, flags: [...r.flags], picked: [...r.picked], inv: r.inv,
     duties: r.duties, tasks: r.tasks, tasksTotal: r.tasksTotal, talks: r.talks, callsAcc: r.callsAcc, callsDec: r.callsDec, lives: r.lives, scoreLog: r.scoreLog || [], testi: r.testi || 0, spa: r.spa, lostMin: r.lostMin || 0,
-    spotted: r.spotted ? [...r.spotted] : [], at: Date.now(), gone: r.gone || [],
+    spotted: r.spotted ? [...r.spotted] : [], at: Date.now(), gone: r.gone || [], daily: r.daily || null,
     // where you stand: a resumed game continues right here instead of at the start of the floor
     pos: level && (mode === "play" || mode === "pause" || mode === "dialog") ? { idx: r.idx, x: +player.x.toFixed(2), y: +player.y.toFixed(2), yaw: +player.yaw.toFixed(3), stamina: r.stamina } : (store.get(SAVE_KEY) || {}).pos || null };
   store.set(SAVE_KEY, data);
@@ -74,7 +79,7 @@ function resumeCheckpoint() {
   newRun("mission", d.route);
   Object.assign(run, { step: d.step, idx: d.idx, minutes: d.minutes, nerves: d.nerves, energy: d.energy, flags: new Set(d.flags), picked: new Set(d.picked), inv: d.inv, duties: d.duties, tasks: d.tasks, tasksTotal: d.tasksTotal,
     talks: d.talks, callsAcc: d.callsAcc, callsDec: d.callsDec, lives: d.lives, scoreLog: d.scoreLog, testi: d.testi, spa: d.spa, lostMin: d.lostMin, spotted: new Set(d.spotted) });
-  run.gone = d.gone || [];
+  run.gone = d.gone || []; if (d.daily) run.daily = d.daily;
   loadFloor(run.idx); run.clockSeen = run.minutes; renderInv();
   for (const it of level.items) if (run.gone.includes(run.idx + ":" + Math.floor(it.x) + "," + Math.floor(it.y))) { it.taken = true; it.mesh.visible = false; }
   const at = d.pos && d.pos.idx === run.idx && !blockedAt(d.pos.x, d.pos.y) ? d.pos : null;
@@ -93,6 +98,7 @@ addEventListener("pagehide", saveNow);
 
 // ---------- title screen ----------
 function refreshTitle() {
+  if (typeof refreshDaily === "function") refreshDaily();
   const d = store.get(SAVE_KEY), b = $("btnContinue");
   if (b) { b.hidden = !(d && ROUTES[d.route]); if (!b.hidden) b.querySelector("small").textContent = `${ROUTES[d.route].av} ${ROUTES[d.route].name} · ${floorLabel(d.idx)} · ${fmtTime(d.minutes)} Uhr`; }
   const recs = loadRecords(), done = ROUTE_ORDER.filter(k => recs[k]), top = done.reduce((a, k) => Math.max(a, recs[k].score), 0);
@@ -109,13 +115,13 @@ const fmtCode = t => t.match(/.{1,8}/g).join("-").toUpperCase();
 async function openBoard(from) {
   boardReturn = from || mode; mode = "board"; show("ovBoard"); $("ovBoard").scrollTop = 0;
   $("boardMe").textContent = `${profile.av} ${displayName()}${typeof auth !== "undefined" && auth ? " ✓" : " · Gast"}`;
-  $("boardTabs").innerHTML = ROUTE_ORDER.map(k => [k, ROUTES[k].av, ROUTES[k].name]).concat(BOARD_NIGHT).map(([k, av, n]) => `<button type="button" class="${k === boardTab ? "on" : ""}" data-k="${k}">${av}<span>${esc(n)}</span></button>`).join("");
+  $("boardTabs").innerHTML = [["daily", "📅", "Tagesschicht"]].concat(ROUTE_ORDER.map(k => [k, ROUTES[k].av, ROUTES[k].name]), BOARD_NIGHT).map(([k, av, n]) => `<button type="button" class="${k === boardTab ? "on" : ""}" data-k="${k}">${av}<span>${esc(n)}</span></button>`).join("");
   boardRows = null; renderBoard(); loadBoard();
 }
 async function loadBoard() {
-  const k = boardTab, s = isNightTab(k) ? "score" : boardSort;
+  const k = boardTab === "daily" ? dayKey() : boardTab, s = isNightTab(k) ? "score" : boardSort;
   try { boardRows = await rpc("hx_board", { p_mission: k, p_sort: s === "time" ? "time" : "score", p_token: token }); } catch (e) { boardRows = null; online = false; }
-  if (k === boardTab) renderBoard();
+  if (k === boardTab || (boardTab === "daily" && k === dayKey())) renderBoard();
 }
 function renderBoard() {
   const k = boardTab, night = isNightTab(k);
@@ -125,9 +131,10 @@ function renderBoard() {
   let rows = boardRows ? boardRows.map(r => ({ ...r })) : [];
   if (!boardRows) {
     if (night) { const v = nightRecords()[k]; if (v != null) rows = [{ pos: 1, name: profile.name, avatar: profile.av, score: v, minutes: 0, me: true }]; }
+    else if (k === "daily") { const r = (store.get("hospital-escape-daily") || {})[dayKey()]; if (r) rows = [{ pos: 1, name: profile.name, avatar: profile.av, score: r, minutes: 0, me: true }]; }
     else { const r = loadRecords()[k]; if (r) rows = [{ pos: 1, name: profile.name, avatar: profile.av, ...r, me: true }]; }
   }
-  const label = night ? BOARD_NIGHT.find(b => b[0] === k)[2] : ROUTES[k].name;
+  const label = night ? BOARD_NIGHT.find(b => b[0] === k)[2] : k === "daily" ? "die heutige Tagesschicht (" + ROUTES[dailyRoute()].name + ")" : ROUTES[k].name;
   $("boardList").innerHTML = rows.length ? rows.map(r => {
     const val = night ? `${r.score} Aufgaben` : boardSort === "score" ? euro(r.score) : fmtTime(r.minutes);
     const sub = night ? "Nachtdienst überlebt" : (r.rank ? "Rang " + esc(r.rank) + " · " : "") + (boardSort === "score" ? "Feierabend " + fmtTime(r.minutes) : euro(r.score));
@@ -165,8 +172,29 @@ async function shareRun() {
   const R = mission(), sc = run.final || scoreBreakdown(run.route);
   const text = `🏥🏃 Hospital Escape: Ich bin als ${R.title} aus dem Klinikum St. Sparen entkommen. Feierabend um ${fmtTime(run.minutes)} (Frist ${fmtTime(routeDeadline(run.route))}), ${euro(sc.total)} DRG-Erlös, Rang ${sc.rank} „${sc.rankName}“. Schaffst du das schneller?`;
   const url = window.top === window ? location.href.split("#")[0] : "https://hospital-escape.vercel.app";
+  // first choice: the result card as a picture (WhatsApp, Instagram, …), then text, then the clipboard
+  try { const file = await shareCard(R, sc); if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: text + " " + url }); track("share", { img: 1 }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
   try { if (navigator.share) { await navigator.share({ title: "Hospital Escape", text, url }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
   try { await navigator.clipboard.writeText(text + " " + url); $("btnShare").firstElementChild.textContent = "Kopiert ✓"; setTimeout(() => { $("btnShare").firstElementChild.textContent = "Ergebnis teilen"; }, 1800); }
   catch (e) { prompt("Zum Teilen kopieren:", text + " " + url); }
 }
 $("btnShare").addEventListener("click", shareRun);
+/* the result card: 1080 x 1350, the green exit sign, the job you escaped to, time, rank, a cynical line, the link */
+async function shareCard(R, sc) {
+  const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, "#0e2a22"); bg.addColorStop(1, "#05100c"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "rgba(255,255,255,.05)"; g.lineWidth = 2; for (let y = 0; y < H; y += 60) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const F = (w, s) => `${w} ${s}px "Barlow Condensed", "Arial Narrow", Impact, sans-serif`;
+  g.fillStyle = "#0f8a4a"; g.fillRect(80, 90, 260, 150); g.strokeStyle = "#f3f8f1"; g.lineWidth = 8; g.strokeRect(80, 90, 260, 150);
+  g.font = "96px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("🏃🚪", 210, 168);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.fillStyle = "#f3f8f1"; g.font = F(900, 120); g.fillText("HOSPITAL", 80, 400); g.fillStyle = "#6fe39b"; g.fillText("ESCAPE", 80, 510);
+  g.fillStyle = "#ffe08a"; g.font = F(800, 44); g.fillText(run.route === "stay" ? "ICH BIN ENTKOMMEN · EINFACH NACH HAUSE" : "ICH BIN ENTKOMMEN · NEUER JOB:", 80, 610);
+  g.fillStyle = "#fff"; g.font = F(900, run.route === "stay" ? 84 : 92); g.fillText(run.route === "stay" ? "Feierabend!" : R.title, 80, 710);
+  const box = (x, y, w, label, val) => { g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(x, y, w, 170); g.fillStyle = "#9fd8b8"; g.font = F(700, 34); g.fillText(label, x + 30, y + 55); g.fillStyle = "#fff"; g.font = F(900, 72); g.fillText(val, x + 30, y + 135); };
+  box(80, 780, 440, "RAUS UM", fmtTime(run.minutes)); box(560, 780, 440, "FRIST", fmtTime(routeDeadline(run.route)));
+  box(80, 980, 440, "RANG", sc.rank); box(560, 980, 440, "DRG-ERLÖS", euro(sc.total).replace(/\s?€/, " €"));
+  g.fillStyle = "#f2b33d"; g.font = F(800, 40); g.fillText("„" + sc.rankName + "“", 80, 1215);
+  g.fillStyle = "rgba(243,248,241,.7)"; g.font = F(600, 36); g.fillText("Schaffst du das schneller? hospital-escape.vercel.app", 80, 1285);
+  const blob = await new Promise(r => c.toBlob(r, "image/png")); return blob ? new File([blob], "hospital-escape.png", { type: "image/png" }) : null;
+}

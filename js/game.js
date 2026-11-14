@@ -15,6 +15,8 @@ function newRun(m = "mission", route = "stay", place = "ward") {
   /* there is only one meter now: energy. "Nerves" in older content are 20 % steps of it. */
   Object.defineProperty(run, "nerves", { get() { return Math.ceil(run.energy / 20); }, set(v) { run.energy = Math.max(0, Math.min(100, v * 20)); }, configurable: true });
   if (m === "mission") run.idx = ROUTES[route].floors[0];
+  if (m === "mission" && window.__daily && typeof dayKey === "function") { run.daily = dayKey(); run.energy = 80; } // the daily shift: tighter, more tired
+  window.__daily = false;
   if (m === "night") Object.assign(run, { place, idx: LEVELS.findIndex(l => l.key === (place === "er" ? "nightER" : "night")), minutes: NIGHT_START, nightDone: 0, nightFail: 0, hour: -1, task: null, taskT: 12, horrorT: 40, hildeSeen: 0, nightBlackouts: false, zT: null });
 }
 const mission = () => ROUTES[run.route || "stay"];
@@ -297,7 +299,7 @@ function useItem(k) {
   const def = ITEMS[k]; let st = [], line = "";
   if (sfx.useItem) sfx.useItem(k);
   switch (k) {
-    case "1": takeItem(k); player.coffee = 20; run.stamina = 100; player.winded = false; st = gain({ energy: 35 }).concat([good("Puste voll · 20 s ohne Ermüdung")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
+    case "1": takeItem(k); if (typeof achCount === "function" && achCount("coffee") >= 10) unlock("coffee"); player.coffee = 20; run.stamina = 100; player.winded = false; st = gain({ energy: 35 }).concat([good("Puste voll · 20 s ohne Ermüdung")]); line = "Lauwarm. Aus der Stationsküche. Gehört eigentlich Schwester Gertrud."; break;
     case "0": takeItem(k); st = gain({ energy: 55 }); line = "Schmeckt nach Gummibärchen und Reue."; break;
     case "$": takeItem(k); st = gain({ energy: 30 }); line = "Vom Pharmavertreter. Ethisch fragwürdig, aber lecker."; break;
     case "+": takeItem(k); st = gain({ energy: 75 }); line = "Dr. Glatts Wundercreme. Du glänzt. Innerlich auch."; break;
@@ -334,7 +336,7 @@ function initAudio() {
   try {
     if (!actx) {
       actx = new (window.AudioContext || window.webkitAudioContext)();
-      master = actx.createGain(); master.gain.value = settings.sound ? 1 : 0; master.connect(actx.destination);
+      master = actx.createGain(); master.gain.value = settings.sound ? (settings.vol ?? .9) : 0; master.connect(actx.destination);
       noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const hum = actx.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 100;
       const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;

@@ -61,7 +61,7 @@ const bfsNextEnemy = (sx, sy, gx, gy) => { if (sx === gx && sy === gy) return nu
 
 // ---------- settings ----------
 const SET_KEY = "hospital-escape-3d-settings-v6";
-const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe", navi: true, diff: "easy", shadows: true, hires: true };
+const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe", navi: true, diff: "easy", shadows: true, hires: true, vol: .9, mus: .7 };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || "{}")); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
 
