@@ -991,6 +991,21 @@ body:not(.land) #wp { font-size: 13px; }
 /* the item tip points sideways at the right-hand column */
 #itemTip.side::after { bottom: auto; top: calc(var(--ay, 50%) - 7px); left: auto; right: -7px; border: 7px solid transparent; border-right: 0; border-left-color: #f2b33d; }
 /* ---------- the boss battle: versus screen, dusk arena, rage phase, the resignation finisher, K.O. ---------- */
+/* the gym arena for the orthopaedists: rubber floor, mirror wall, dumbbell rack, motivational poster */
+#battle.arena-gym .pb-field { background: linear-gradient(180deg, #3a4a5a 0%, #5a6a7a 30%, #8a9aa8 46%, #2a2e33 47%, #1d2024 100%); }
+#battle.arena-gym .pb-field::before { content: "🏋️ ━━ 💪 ━━ 🏋️ ━━ 🥤 ━━ 🏋️"; position: absolute; left: 0; right: 0; top: 33%; text-align: center; font-size: 22px; letter-spacing: 4px; opacity: .55; white-space: nowrap; filter: grayscale(.3); }
+#battle.arena-gym .pb-field::after { background: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 60px), repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 60px); }
+#battle.arena-gym .pb-plat { background: radial-gradient(ellipse at center, #4a525a 0%, #3a4048 60%, rgba(40,44,50,0) 72%); }
+#battle.arena-gym .pb-plat.foe::after { content: "NO PAIN · NO GAIN · NO FEIERABEND"; position: absolute; left: -8%; top: -230%; transform: translateX(-100%) rotate(-3deg); font: 900 10px/1 var(--display); letter-spacing: .12em; color: #ffe08a; background: #c0322a; padding: 4px 8px; white-space: nowrap; border-radius: 3px; opacity: .85; }
+/* idle breathing, floating damage numbers, move call-out banner */
+.pb-mon img { animation: monIdle 2.4s ease-in-out infinite; transform-origin: 50% 100%; } .pb-mon.me img { animation-delay: -1.2s; }
+@keyframes monIdle { 50% { transform: scaleY(1.025) scaleX(.99); } }
+.pb-fx.dmg b { font: 900 26px/1 var(--display); color: #fff; -webkit-text-stroke: 2px #c0322a; text-shadow: 0 3px 0 #7a1410; white-space: nowrap; }
+.pb-fx.dmg.big b { font-size: 38px; color: #ffe08a; } .pb-fx.dmg.heal b { color: #b8ffcc; -webkit-text-stroke: 2px #1f9d55; text-shadow: 0 3px 0 #0f5a30; }
+.pb-call { position: absolute; left: 0; right: 0; top: 40%; z-index: 9; display: grid; place-items: center; pointer-events: none; animation: callIn 1.2s ease-out forwards; }
+.pb-call b { font: 900 clamp(22px, 7vw, 40px)/1 var(--display); letter-spacing: .04em; color: #fff; background: linear-gradient(90deg, transparent, #1d6fd8 15%, #1d6fd8 85%, transparent); padding: 10px 40px; text-shadow: 3px 3px 0 #0a2a5a; transform: skewX(-12deg); }
+.pb-call.foe b { background: linear-gradient(90deg, transparent, #c0322a 15%, #c0322a 85%, transparent); text-shadow: 3px 3px 0 #5a0a0a; }
+@keyframes callIn { 0% { transform: translateX(-110%); opacity: 0; } 18% { transform: translateX(0); opacity: 1; } 80% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(110%); opacity: 0; } }
 #battle.boss .pb-field { background: linear-gradient(180deg, #2a1a3a 0%, #6a2a3a 30%, #c8604a 46%, #3a2a2a 47%, #241c1c 100%); }
 #battle.boss .pb-field::after { opacity: .5; }
 #battle.boss .pb-plat { background: radial-gradient(ellipse at center, #8a5a4a 0%, #5a3a32 60%, rgba(60,40,36,0) 72%); }

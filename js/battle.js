@@ -104,12 +104,23 @@ const MOVE_POOL = [
   { n: "PJLER VORSCHICKEN", fx: "pj", t: "EMPATHIE", p: 34, pp: 4, txt: "schickt den PJler vor. Er hat 0 € und eine Frage. Die Frage ist sehr lang." },
   { n: "„DAS IST NICHT MEIN PATIENT“", fx: "bubbles", t: "STREIK", p: 42, pp: 5, txt: "sagt den verbotenen Satz. Die Station hält den Atem an. Kritische Verwirrung beim Gegner!" },
 ];
+/* against an orthopaedist the management moves make no sense: here you fight with internal medicine */
+const ORTHO_POOL = [
+  { n: "MRT-BEFUND VORLESEN", fx: "scan", t: "DIAGNOSTIK", p: 48, pp: 5, txt: "liest seinen MRT-Befund vor: „Degenerative Veränderungen, altersentsprechend.“ Altersentsprechend! Er ist 38!" },
+  { n: "LEG-DAY ANSPRECHEN", fx: "legs", t: "EMPATHIE", p: 36, pp: 6, weaken: 1, txt: "fragt nach seinem letzten Leg-Day. Er schaut auf seine Waden. Lange Stille. Sein Angriff sinkt." },
+  { n: "LEBERWERTE ZEIGEN", fx: "lab", t: "DIAGNOSTIK", p: 54, pp: 3, txt: "zeigt ihm seine Leberwerte vom Betriebsarzt. GGT 340. Er wird blass. Unter der Bräune." },
+  { n: "INTERNISTISCHES KONSIL", fx: "paper", t: "PAPIER", p: 34, pp: 6, txt: "schickt ein internistisches Konsil. Drei Seiten Freitext, keine Stichpunkte. Er muss es lesen. Ganz." },
+  { n: "RÖNTGEN VERKEHRT HERUM", fx: "xray", t: "EMPATHIE", p: 40, pp: 4, txt: "hängt sein Röntgenbild verkehrt herum auf. Er merkt es nicht. Die ganze Station schon." },
+  { n: "„ERST MAL KONSERVATIV“", fx: "pill", t: "DIAGNOSTIK", p: 46, pp: 4, txt: "schlägt konservative Therapie vor. Physio statt OP. Er muss sich an der Hantelbank festhalten." },
+  { n: "SHAKE VERSTECKEN", fx: "hide", t: "EMPATHIE", p: 20, pp: 3, weaken: 1, txt: "versteckt seinen Proteinshake im Medikamentenkühlschrank. Er sucht. Er zittert. Sein Angriff sinkt." },
+  { n: "EKG KLEBEN", fx: "ekg", t: "DIAGNOSTIK", p: 42, pp: 4, txt: "klebt ihm ein EKG. Auf die Brustbehaarung. Und reißt es wieder ab. Sinusrhythmus. Mit Schrei." },
+];
 const MOVE_FIX = [
   { n: "FACHFRAGE", fx: "quiz", t: "DIAGNOSTIK", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." },
   { n: "KAFFEEPAUSE", fx: "coffee", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern. Mit Haut drauf." },
 ];
 const BOSS_BIG = { n: "BETRIEBSRAT ANRUFEN", fx: "phone", t: "STREIK", p: 62, pp: 1, txt: "ruft den BETRIEBSRAT an. Es klingelt. Und klingelt. Jemand geht ran! Der Gegner wird blass." };
-const pickMoves = boss => { const pool = MOVE_POOL.slice().sort(() => Math.random() - .5); return [MOVE_FIX[0], ...(boss ? [BOSS_BIG, pool[0]] : pool.slice(0, 2)), MOVE_FIX[1]]; };
+const pickMoves = boss => { const pool = (boss ? MOVE_POOL : ORTHO_POOL).slice().sort(() => Math.random() - .5); return [MOVE_FIX[0], ...(boss ? [BOSS_BIG, pool[0]] : pool.slice(0, 2)), MOVE_FIX[1]]; };
 const FOES = {
   U: { type: "KRAFT", lvl: 52, quiz: "ortho", moves: [
     { n: "REFLEXHAMMER", fx: "hammer", p: 22, txt: "schwingt den REFLEXHAMMER! Patellarsehne getroffen! Dein Bein tritt von selbst. Sehr peinlich." },
@@ -117,6 +128,10 @@ const FOES = {
     { n: "PROTEINWOLKE", fx: "cloud", debuff: 1, txt: "schüttelt seinen Shake ohne Deckel. Eine PROTEINWOLKE! Deine Genauigkeit sinkt!" },
     { n: "„IST DOCH NUR EIN KNIE“", fx: "bubbles", p: 18, txt: "sagt „Ist doch nur ein Knie, das macht die Innere!“ Du bekommst drei Konsile. Es tut weh." },
     { n: "OP-PLAN GEÄNDERT", fx: "calendar", p: 20, txt: "ändert den OP-PLAN! Dein Patient ist jetzt um 22:00 dran. Mit dir als Assistenz." },
+    { n: "BANKDRÜCKEN-ANEKDOTE", fx: "bubbles", p: 16, txt: "erzählt von seinem Bankdrücken. 140 Kilo. Dreimal. Mit Videobeweis. Du verlierst den Lebenswillen." },
+    { n: "PRÄVENTIVER GIPS", fx: "cast", p: 10, stun: 1, txt: "legt dir einen GIPS an. Präventiv. „Sicher ist sicher.“ Du setzt eine Runde aus!" },
+    { n: "SCHRAUBEN-SALVE", fx: "screws", p: 7, multi: 3, txt: "wirft mit Titanschrauben. Übrig vom letzten Knie. Und vom vorletzten." },
+    { n: "HIGH FIVE", fx: "hand", p: 24, txt: "gibt dir ein HIGH FIVE. Mit voller Kraft. Deine Hand ist jetzt ein Fall für die Handchirurgie." },
     { n: "FACHFRAGE", quiz: true, txt: "stellt dir eine orthopädische Frage! Mit Blickkontakt!" }] },
   boss: { lvl: 70, moves: [
     { n: "DIENSTPLAN", fx: "calendar", p: 22, txt: "zückt den DIENSTPLAN! Ostern UND Pfingsten! Und Silvester, „weil du ja eh nichts vorhast“!" },
@@ -145,6 +160,20 @@ function bossMusic(on, fast) {
   let i = 0; const step = fast ? 105 : 140;
   bossMus = { t: setInterval(() => { const k = i++ % 16; tone(bass[k] * (fast ? 1.06 : 1), 0, step / 1000 * .9, "sawtooth", .03); if (k % 2 === 0) tone(arp[k] * (fast ? 1.06 : 1), 0, step / 1000 * .6, "square", .014); if (k % 4 === 0) noise(0, .06, 120, 1, .12, "lowpass"); if (k % 4 === 2) noise(0, .04, 3000, .6, .03, "highpass"); }, step) };
 }
+/* the orthopaedist's battle music: a cheesy gym groove, four on the floor, slap bass, brass stabs */
+let gymMus = null;
+function gymMusic(on) {
+  if (gymMus) { clearInterval(gymMus); gymMus = null; }
+  if (!on || !actx) return;
+  const bass = [82.4, 0, 82.4, 98, 0, 82.4, 110, 98, 73.4, 0, 73.4, 87.3, 0, 73.4, 98, 87.3]; let i = 0;
+  gymMus = setInterval(() => { const k = i++ % 16, bar = Math.floor(i / 16) % 4;
+    if (k % 4 === 0) { tone(110, 0, .12, "sine", .1, 45); }
+    if (k % 8 === 4) noise(0, .09, 1800, .9, .06);
+    if (bass[k]) tone(bass[k] * (bar === 3 ? 1.122 : 1), 0, .1, "square", .022);
+    if (k % 2 === 1) noise(0, .02, 8000, .7, .012, "highpass");
+    if ((k === 0 || k === 3 || k === 6) && bar % 2 === 0) { tone(330, 0, .12, "sawtooth", .018); tone(415, 0, .12, "sawtooth", .014); tone(494, 0, .12, "sawtooth", .012); }
+  }, 125);
+}
 const BOSS_TYPE = { stay: ["HIERARCHIE", "chief"], pharma: ["BÜROKRATIE", "rules"], consult: ["GREMIUM", "rules"], botox: ["BÜROKRATIE", "hygiene"], ship: ["BÜROKRATIE", "rules"], influ: ["BÜROKRATIE", "rules"] };
 
 // ---------- the battle ----------
@@ -163,7 +192,8 @@ function pokeBattle(e, done, o = {}) {
       <div class="pb-box me"><b>DU</b><span class="lv">Lv31</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="num">100/100</small><div class="exp"><div></div></div></div>
     </div>
     <div class="pb-bottom"><div class="pb-text"></div><div class="pb-menu"></div></div>`;
-  document.body.appendChild(ov); mode = "dialog"; fightOn = true; clearInputs();
+  ov.classList.add(isBoss ? "arena-boss" : "arena-gym");
+  document.body.appendChild(ov); mode = "dialog"; fightOn = true; clearInputs(); if (!isBoss) gymMusic(true);
   const textEl = ov.querySelector(".pb-text"), menu = ov.querySelector(".pb-menu"), foeMon = ov.querySelector(".pb-mon.foe"), meMon = ov.querySelector(".pb-mon.me");
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   let skip = false; ov.querySelector(".pb-text").addEventListener("pointerdown", () => { skip = true; });
@@ -192,7 +222,17 @@ function pokeBattle(e, done, o = {}) {
     if (!kind) return;
     const A = ctr(from === "foe" ? foeMon : meMon), B = ctr(from === "foe" ? meMon : foeMon);
     const volley = (e, n, gap, ms, arc, spin, size) => Promise.all(Array.from({ length: n }, (_, i) => fly(e, A, B, ms, i * gap, arc, spin, size)));
-    if (kind === "law") { flashField("rgba(255,255,255,.6)"); await volley("§", 5, 90, 460, 60, 0, 1.6); tone(330, 0, .3, "square", .04, 660); }
+    if (kind === "scan") { flashField("rgba(120,180,255,.5)"); await burst("🩻", B, 1, 0, 600); await burst("📉", B, 4, B[2] * .7, 600); }
+    else if (kind === "legs") { await burst("🦵", B, 2, B[2] * .5, 500); await burst("🐔", B, 3, B[2] * .8, 700); }
+    else if (kind === "lab") { await volley("🧪", 2, 140, 480, 60, 360, 1.2); flashField("rgba(255,230,120,.5)"); await burst("📈", B, 3, B[2] * .6, 500); }
+    else if (kind === "xray") { await volley("🩻", 1, 0, 520, 50, 540, 1.6); await burst("🙃", B, 3, B[2] * .6, 600); }
+    else if (kind === "pill") { await volley("💊", 4, 90, 420, 70, 360, 1); await burst("🧘", B, 1, 0, 600); }
+    else if (kind === "hide") { await burst("🥤", B, 1, 0, 400); await volley("🧊", 3, 100, 450, 40, 0, 1); await burst("😰", B, 3, B[2] * .6, 500); }
+    else if (kind === "ekg") { tone(990, 0, .1, "sine", .04); tone(990, .3, .1, "sine", .04); await volley("📈", 2, 120, 450, 30, 0, 1.2); await burst("😱", B, 1, 0, 500); }
+    else if (kind === "cast") { await volley("🦴", 1, 0, 500, 60, 360, 1.4); await burst("🧱", B, 4, B[2] * .5, 600); }
+    else if (kind === "screws") { await volley("🔩", 3, 90, 380, 40, 720, 1); }
+    else if (kind === "hand") { await volley("✋", 1, 0, 380, 30, 0, 2); flashField("rgba(255,255,255,.7)"); }
+    else if (kind === "law") { flashField("rgba(255,255,255,.6)"); await volley("§", 5, 90, 460, 60, 0, 1.6); tone(330, 0, .3, "square", .04, 660); }
     else if (kind === "shield") { await burst("🛡️", A, 1, 0, 700); await burst("🕗", A, 4, A[2] * .6, 600); }
     else if (kind === "pj") { await volley("🥺", 1, 0, 600, 40, 0, 1.6); await burst("❓", B, 5, B[2] * .7, 600); }
     else if (kind === "phone") { tone(880, 0, .12, "square", .04); tone(880, .25, .12, "square", .04); await volley("📞", 1, 0, 600, 90, 0, 1.6); await burst("✊", B, 5, B[2] * .8, 700); }
@@ -214,7 +254,9 @@ function pokeBattle(e, done, o = {}) {
     else if (kind === "wave") { const d = spawn("🌊🌊🌊", field.clientWidth + 60, B[1], "wave"); d.animate([{ transform: "translate(0,-50%)" }, { transform: `translate(${-field.clientWidth - 260}px,-50%)` }], { duration: 900, easing: "ease-in-out" }).onfinish = () => d.remove(); noise(0, .9, 500, .6, .1, "lowpass"); await sleep(800); }
     else if (kind === "storm") { await Promise.all(["👎", "💩", "💬", "👎", "😡", "💬", "👎"].map((e, i) => fly(e, [field.clientWidth * Math.random(), -20], B, 500, i * 70, 0, 360, .9))); }
   }
-  const hit = (who, dmg) => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("hit"); void mon.offsetWidth; mon.classList.add("hit"); sfx.knock(); if (dmg >= 25) { ov.classList.remove("shake"); void ov.offsetWidth; ov.classList.add("shake"); } if (who === "foe") S.foe -= dmg; else S.me -= dmg; hpUi(); };
+  const pop = (who, txt, cls) => { const c = ctr(who === "foe" ? foeMon : meMon); const d = spawn(`<b>${txt}</b>`, c[0] + (Math.random() - .5) * 30, c[1] - 30, "dmg " + (cls || "")); d.animate([{ transform: "translate(-50%,-50%) scale(.6)", opacity: 0 }, { transform: "translate(-50%,-80%) scale(1.25)", opacity: 1, offset: .2 }, { transform: "translate(-50%,-260%) scale(1)", opacity: 0 }], { duration: 1100, easing: "ease-out" }).onfinish = () => d.remove(); };
+  const callout = (txt, foeSide) => { const d = document.createElement("div"); d.className = "pb-call" + (foeSide ? " foe" : ""); d.innerHTML = `<b>${esc(txt)}</b>`; ov.appendChild(d); setTimeout(() => d.remove(), 1200); };
+  const hit = (who, dmg) => { if (dmg > 0) pop(who, "−" + dmg, dmg >= 25 ? "big" : ""); const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("hit"); void mon.offsetWidth; mon.classList.add("hit"); sfx.knock(); if (dmg >= 25) { ov.classList.remove("shake"); void ov.offsetWidth; ov.classList.add("shake"); } if (who === "foe") S.foe -= dmg; else S.me -= dmg; hpUi(); };
   const lunge = who => { const mon = who === "foe" ? foeMon : meMon; mon.classList.remove("lunge"); void mon.offsetWidth; mon.classList.add("lunge"); };
   const quiz = (pool) => new Promise(res => {
     let fresh = pool.filter((_, i) => !S.asked.has(i)); if (!fresh.length) { S.asked.clear(); fresh = pool; }
@@ -244,7 +286,7 @@ function pokeBattle(e, done, o = {}) {
     if (b.dataset.m === "bag") return showBag();
     if (b.dataset.m === "back") return showMenu();
     S.busy = true; menu.innerHTML = "";
-    if (S.stunned) { S.stunned = false; await say("DU bist starr vor Botox und kannst dich nicht bewegen!"); }
+    if (S.stunned) { S.stunned = false; await say(isBoss ? "DU bist starr vor Botox und kannst dich nicht bewegen!" : "DU steckst im Gips und kannst dich nicht bewegen! Er macht ein Foto für Instagram."); }
     else if (b.dataset.ult) await ultimate();
     else if (b.dataset.mv != null) await myMove(+b.dataset.mv);
     else if (b.dataset.it) await useBag(b.dataset.it);
@@ -258,8 +300,8 @@ function pokeBattle(e, done, o = {}) {
   });
   async function myMove(i) {
     const m = MOVES[i]; S.pp[i]--;
-    await say(`DU setzt ${m.n} ein!`, 350); lunge("me"); await fx(m.fx, "me");
-    if (m.heal) { S.me = Math.min(100, S.me + m.heal); hpUi(); sfx.spa(); await say(`DU ${m.txt} KP +${m.heal}!`); return; }
+    callout(m.n, false); await say(`DU setzt ${m.n} ein!`, 350); lunge("me"); await fx(m.fx, "me");
+    if (m.heal) { S.me = Math.min(100, S.me + m.heal); hpUi(); pop("me", "+" + m.heal, "heal"); sfx.spa(); await say(`DU ${m.txt} KP +${m.heal}!`); return; }
     if (m.weaken) { S.foeAtk *= .85; }
     if (m.guard) { S.guard = true; }
     if (Math.random() > .92 * S.myAcc && !m.quiz) { await say("Die Attacke ging daneben!"); return; }
@@ -311,24 +353,26 @@ function pokeBattle(e, done, o = {}) {
   }
   async function foeMove() {
     const mv = Math.random() < .25 ? foe.moves.find(m => m.quiz) : pick(foe.moves.filter(m => !m.quiz || Math.random() < .3));
-    await say(`${name} ${mv.txt}`, 450); lunge("foe"); await fx(mv.fx, "foe");
+    callout(mv.n, true); await say(`${name} ${mv.txt}`, 450); lunge("foe"); await fx(mv.fx, "foe");
     if (mv.buff) { S.foeAtk *= 1.3; await arrows("foe", true); return; }
     if (mv.debuff) { S.myAcc *= .8; await arrows("me", false); return; }
     if (mv.quiz) { const ok = await quiz(qpool); if (ok) { await say(`Richtig! ${name} ist verwirrt. Er trifft sich selbst!`); hit("foe", 10); } else { if (S.shield) { S.shield = false; await say("Jonas wirft sich dazwischen und beantwortet sie falsch. Jonas ist besiegt!"); return; } hit("me", 22); await say("Falsch! Die Blamage tut weh. Sehr effektiv!"); } return; }
     if (S.shield) { S.shield = false; await say(`Jonas fängt den Treffer ab! Jonas ist besiegt! Er war sowieso unterbezahlt.`); return; }
     if (mv.zero) { await say(pick(["Es ist nicht sehr effektiv …", "Es ist überhaupt nicht effektiv. Wie immer.", "Du fühlst dich wertgeschätzt. Für 0,3 Sekunden."]), 600); return; }
+    if (mv.stun) S.stunned = true;
+    if (mv.multi) { for (let h = 0; h < mv.multi; h++) { hit("me", Math.round(mv.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1))); await sleep(240); if (S.me <= 0) break; } await say(`${mv.multi} Treffer!`, 400); return; }
     const dmg = Math.round(mv.p * (S.guard ? .5 : 1) * S.foeAtk * (settings.diff === "easy" ? .75 : 1) * (.85 + Math.random() * .3));
     hit("me", dmg); if (S.guard) { S.guard = false; await say("Dienst nach Vorschrift: Die Hälfte prallt ab. Der Rest ist nicht dein Problem.", 450); } else if (dmg > 25) await say("Ein Volltreffer!", 450);
     if (mv.acc) { S.myAcc *= .85; await arrows("me", false); }
     if (mv.drain) { S.foe = Math.min(100, S.foe + Math.round(dmg / 2)); hpUi(); sfx.spa(); await say(`${name} erholt sich um ${Math.round(dmg / 2)} KP!`, 450); }
   }
   async function win() {
-    tone(520, 0, .5, "sawtooth", .05, 120); foeMon.classList.add("faint"); setTimeout(() => sfx.ding(), 500);
+    gymMusic(false); tone(520, 0, .5, "sawtooth", .05, 120); foeMon.classList.add("faint"); setTimeout(() => sfx.ding(), 500);
     if (isBoss) { bossMusic(false); const ko = document.createElement("div"); ko.className = "pb-ko"; ko.innerHTML = "<b>K.O.!</b><small>Du bist frei.</small>"; ov.appendChild(ko); [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .14, .3, "square", .05)); tone(1047, .6, .9, "triangle", .06); await sleep(1600); }
     await say(`${name} wurde besiegt!`);
     const exp = ov.querySelector(".pb-box.me .exp div"); if (exp) { exp.style.transition = "width 1.2s ease-out"; exp.style.width = "100%"; tone(880, 0, 1.1, "sine", .03, 1760); await sleep(1250); exp.style.transition = "none"; exp.style.width = "8%"; ov.querySelector(".pb-box.me .lv").textContent = "Lv32"; [659, 784, 1047].forEach((f, i) => tone(f, i * .12, .2, "square", .04)); await say("DU erreicht Lv32! Dein Gehalt steigt um 0 €.", 700); } await say(`DU erhältst ${isBoss ? 300 : 120} EP! Sie werden als Überstunden erfasst. Und verfallen am 31. März.`, 900); finish(true); }
-  async function lose() { bossMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say(pick(["DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", "DU wirst ins Arztzimmer getragen. Dort wartet schon der nächste Dienst.", "DU bist besiegt. Die Personalabteilung nennt das „Lernerfahrung“."]), 900); finish(false); }
-  function finish(ok, fled) { if (S.over) return; S.over = true; typeof track === "function" && track("battle_end", { boss: isBoss, ok: !!ok, fled: !!fled, kp: Math.round(S.me) }); bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
+  async function lose() { bossMusic(false); gymMusic(false); meMon.classList.add("faint"); await say("DU bist besiegt …"); await say(pick(["DU hast alles Geld fallen gelassen. Du hattest keins. Er nimmt deinen Kugelschreiber.", "DU wirst ins Arztzimmer getragen. Dort wartet schon der nächste Dienst.", "DU bist besiegt. Die Personalabteilung nennt das „Lernerfahrung“."]), 900); finish(false); }
+  function finish(ok, fled) { if (S.over) return; S.over = true; gymMusic(false); typeof track === "function" && track("battle_end", { boss: isBoss, ok: !!ok, fled: !!fled, kp: Math.round(S.me) }); bossMusic(false); ov.remove(); fightOn = false; run.energy = isBoss ? (ok ? Math.max(1, Math.round(S.me)) : 0) : Math.max(1, run.energy - (ok ? 5 : fled ? 8 : 10)); energyHit(); done(ok, fled); }
   ov.cheat = () => { S.foe = 0; hpUi(); win(); };
   hpUi();
   (async () => {

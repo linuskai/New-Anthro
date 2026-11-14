@@ -36,21 +36,32 @@ function musicPad(on) {
   }
   MUS.pad.gain.setTargetAtTime(on, actx.currentTime, 1.2);
 }
+// a low string instrument: sawtooth through a soft low-pass, slow attack, for the dramatic chase score
+function cello(f, t, dur, vol, cutoff = 900) {
+  if (!actx) return;
+  const t0 = actx.currentTime + t, o = actx.createOscillator(), o2 = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
+  o.type = o2.type = "sawtooth"; o.frequency.value = f; o2.frequency.value = f; o2.detune.value = 9;
+  lp.type = "lowpass"; lp.frequency.value = cutoff; lp.Q.value = .7;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + Math.min(.25, dur * .35)); g.gain.setValueAtTime(vol, t0 + dur * .7); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  o.connect(lp); o2.connect(lp); lp.connect(g).connect(master); o.start(t0); o2.start(t0); o.stop(t0 + dur + .05); o2.stop(t0 + dur + .05);
+}
+const timpani = (t, vol) => { tone(72, t, .9, "sine", vol, 48); noise(t, .35, 180, 1.2, vol * .5, "lowpass"); };
+// the chase: slow and heavy instead of hectic. A cello ostinato in A minor, timpani on the downbeat, a string chord swelling over each bar.
+// The closer they are, the louder and the higher the strings climb. Four bars: Am, F, Dm, E.
+const CHASE_BARS = [[110, 130.8, 164.8], [87.3, 110, 130.8], [73.4, 87.3, 110], [82.4, 103.8, 123.5]];
 function musicTick() {
   if (!actx || !settings.sound || !run || typeof fightOn !== "undefined" && fightOn || bossMus) return;
-  const k = MUS.step++ % 16, c = MUS.chase, t = MUS.tension;
-  if (c > .05) { // the chase: pumping bass, heartbeat on 1 and 3, staccato strings, hats when it gets close
-    const bass = [55, 55, 65.4, 55, 49, 49, 58.3, 49][k % 8];
-    tone(bass, 0, .11, "sawtooth", .018 * c);
-    if (k % 4 === 0) { tone(62, 0, .14, "sine", .07 * c, 38); }
-    if (k % 4 === 1) tone(58, 0, .1, "sine", .035 * c, 40);
-    if (k % 2 === 0) tone([440, 466, 523, 466, 440, 415, 392, 415][(k >> 1) % 8], 0, .07, "square", .006 * c);
-    if (c > .5) noise(0, .03, 7000, .8, .012 * c, "highpass");
-    if (k === 15 && c > .7) tone(880, 0, .3, "sawtooth", .008, 1320);
+  const k = MUS.step++ % 16, bar = Math.floor((MUS.step - 1) / 16) % 4, c = MUS.chase, t = MUS.tension, ch = CHASE_BARS[bar];
+  if (c > .05) {
+    if (k === 0) { timpani(0, .09 * c); ch.forEach((f, i) => cello(f * 2, 0, 2.3, (.012 + i * .002) * c, 700 + c * 900)); }
+    if (k === 8 && c > .45) timpani(0, .06 * c);
+    if (k % 4 === 0) cello(ch[0] / 2, 0, .5, .03 * c, 420);          // the low pulse on every beat
+    if (k % 4 === 2 && c > .3) cello(ch[0] / 2, 0, .25, .018 * c, 420); // and an off-beat push when it gets close
+    if (k === 12 && c > .7) cello(ch[2] * 2, 0, .6, .012 * c, 1600);    // a rising string cry when they are right behind you
   }
-  if (t > .05 && k % 4 === 0) { // the clock: a tick every beat, a heartbeat that speeds up when it gets tight
-    tone(2200, 0, .025, "square", .01 * t);
-    if (t > .5 || k % 8 === 0) { tone(70, .0, .12, "sine", .055 * t, 45); tone(62, .16, .12, "sine", .035 * t, 42); }
+  if (t > .05 && k % 4 === 0) { // the deadline: a soft clock and a slow heartbeat
+    tone(1800, 0, .02, "sine", .012 * t);
+    if (k % 8 === 0 || t > .6) { tone(66, 0, .14, "sine", .05 * t, 44); tone(60, .18, .14, "sine", .03 * t, 42); }
   }
 }
 function updateMusic(dt) {
@@ -69,7 +80,7 @@ function updateMusic(dt) {
   if (live && run.mode === "night" && run.task) { const left = run.task.deadline - run.minutes; if (left < 20) tension = Math.max(tension, (20 - left) / 20); }
   MUS.tension += (tension - MUS.tension) * Math.min(1, dt * 1.5);
   musicPad(0); // no background music: only danger gets music
-  const want = MUS.chase > .05 || MUS.tension > .05, period = MUS.chase > .6 || MUS.tension > .7 ? 110 : 140;
+  const want = MUS.chase > .05 || MUS.tension > .05, period = MUS.chase > .65 ? 150 : 175;
   if (want && (!MUS.t || MUS.period !== period)) { clearInterval(MUS.t); MUS.period = period; MUS.t = setInterval(musicTick, period); }
   else if (!want && MUS.t) { clearInterval(MUS.t); MUS.t = null; MUS.step = 0; }
 }
