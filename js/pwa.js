@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🖼️ Grafik in vier Stufen: passt sich dem Gerät an oder von Hand wählbar (bis „Top“)", "🧱 Feinere Wände und Böden: Fliesen, Fugen, Kratzer, Glanz, Pfützen", "💡 Lichtschein und Lichtkegel an den Lampen, weichere Schatten", "🧴 Items und Figuren mit mehr Details", "⚙️ Einstellungen neu sortiert, jetzt auch vom Startbildschirm"];
+const NEWS = ["🚑 Nachtdienst Notaufnahme viel größer: Wartehalle, Notfall-CT, Gipsraum, Ausnüchterung, Röntgen", "👀 Die Wartenden schauen dir nach. Manche wachen auf", "🚪 Verstecken geht nicht mehr ewig: Erst klopft es, dann dreht sich ein Schlüssel", "📟 Zweimal ablehnen, und die Nachtschwester kommt dich holen", "🖼️ Grafik in vier Stufen, einstellbar unter Einstellungen → Grafik"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

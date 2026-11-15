@@ -69,6 +69,7 @@ function buildLevel(idx) {
     else if (ch === "q") { lv.transports.push({ x: x + .5, y: y + .5, car: true }); clear(); }
     else if (TYPES[ch]) { pending.push([ch, x, y]); if (ch !== "U") clear(); }
     else if (FRIENDS[ch]) { lv.friends.push({ kind: ch, x: x + .5, y: y + .5, talked: 0 }); clear(); }
+    else if (ch === "m") { /* the scanner, built further down; not the mask that happens to share the letter */ }
     else if (ITEMS[ch]) { lv.items.push({ kind: ch, x, y, taken: false }); clear(); }
     else if (ch === "x") { lv.papers.push({ x: x + .5 + (r() < .5 ? -.3 : .3), y: y + .5 + (r() < .5 ? -.3 : .3), taken: false }); clear(); }
   }
@@ -202,7 +203,7 @@ function buildLevel(idx) {
   const windowMat = new THREE.MeshBasicMaterial({ map: nightTex(), color: 0x8a9ab0 }); lv.perMat.push(windowMat); lv.windowMat = windowMat;
   const plates = { cellar: ["Pathologie", "Archiv 1987–1994", "Kühlraum", "Heizung", "Technik", "Bettenlager"], radio: ["CT", "MRT", "Befundung", "Röntgen 2 (defekt)", "Dunkelkammer", "Kontrastmittel"],
     derma: ["Sauna", "Ruheraum", "Cremeraum", "Praxis Dr. Glatt", "Lounge", "Botox (privat)"], ortho: ["Kraftraum", "Gipsraum", "Umkleide", "Sprechstunde", "Röntgen-Demo", "Hammer-Ausgabe"],
-    er: ["Schockraum", "Gips", "Isolation", "Personalraum", "Wartezimmer 2", "Kaffee (leer)"] }[theme] || ["3 Betten", "2 Betten", "Arztzimmer", "Umkleide", "Isolierung!", "Stationsküche", "Lager", "Besprechung"];
+    er: ["Schockraum", "Gips", "Isolation", "Personalraum", "Wartezimmer 2", "Kaffee (leer)"] }[L.plates ? "-" : theme] || L.plates || ["3 Betten", "2 Betten", "Arztzimmer", "Umkleide", "Isolierung!", "Stationsküche", "Lager", "Besprechung"];
   let roomNo = 1;
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
     const ch = grid[y][x];
@@ -314,6 +315,7 @@ function buildLevel(idx) {
     if (run.mode === "mission") buildQueue(lv, group);
   }
   if (theme === "er") for (const [x, y] of [[15, 3], [19, 3], [23, 3], [15, 5], [19, 5]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); grid[y][x] = "K"; } // seat rows block their tile, so paths go around
+  if (L.key === "nightER") decorNightER(lv, group, r);
   // rooms and safe rooms
   decorateShabby(lv, theme, r);
   for (const rg of lv.rooms) decorateRoom(lv, rg, theme, r);
@@ -391,7 +393,7 @@ function buildLevel(idx) {
     else if (ch === "m") {
       const ring = mesh(GEO.mrt, lambert(0xe8ecef), 1); ring.position.set(wx, 1.35, wz); ring.rotation.y = Math.PI / 2; group.add(ring);
       group.add(at(boxMesh(.7, .5, 2.6, 0xd8dde2), wx, .5, wz));
-      group.add(at(sprite(labelTex("MRT · 3 TESLA · KEIN METALL!", "#7a0f0f", "#fff"), 2.2, .3), wx, 2.8, wz));
+      group.add(at(sprite(labelTex(L.key === "nightER" ? "NOTFALL-CT · LÄUFT SEIT 2019" : "MRT · 3 TESLA · KEIN METALL!", "#7a0f0f", "#fff"), 2.2, .3), wx, 2.8, wz));
       lv.mrt = [x + .5, y + .5];
     } else if (ch === "W") {
       const g = spaLounger();

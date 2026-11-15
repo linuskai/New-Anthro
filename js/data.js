@@ -474,9 +474,10 @@ LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nac
   map: ["###################################", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "#::::#::::#::::#::x:#::::#::::#:9:#", "#::::#::::#::$:#::::#::::#::::#:::#", "##d####d####d####d####d####d####d##", "#........w....o.....N...Q.........#", "#..###d#####d###..##############..#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_S___#:::::#..#:::::#:w::::#..#", "#..#_____#:::::#..#::3::#::::::#..#", "#E.#__1__#::1::#.N#:::::#::9:::#..^", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_____#::::M#..#::x::#::::w:#Q.#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#############..###d#####d####..#", "#.....u....Q................w.....#", "##d####d####d####d####d####d####d##", "#::::#::::#:Q::#::::#::::#::x:#:::#", "#::$:#::::#::::#::::#::::#::::#:1:#", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "###################################"] });
 LEVELS.push({ key: "nightER", short: "ZNA · NACHTDIENST", name: "Zentrale Notaufnahme · Nachtdienst", floor: "EG", room: 0, env: "night", final: true, night: true,
   safeNames: [["PERSONALRAUM", "Die Tür klemmt. Gut so."]],
-  tip: "Die Notaufnahme bei Nacht: Wartehalle, Behandlungskabinen mit Vorhängen, der Schockraum. Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Lass dich von niemandem finden, bis um 07:30 die Ablösung kommt.",
+  plates: ["Notfall-CT", "Schockraum", "Personalraum", "Gipsraum", "Ausnüchterung", "Lager", "Röntgen", "Kinder-Notfall", "Angehörige"],
+  tip: "Die Notaufnahme bei Nacht: Liegendanfahrt, Wartehalle, sechs Kabinen, Schockraum, Notfall-CT, Gipsraum, Ausnüchterung. Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Manche wachen auf. Im Personalraum bist du sicher, aber nicht lange: Wer sich zu lange versteckt, wird geholt.",
   objectives: [], exitText: "", lock: "Der Ausgang ist nachts verriegelt. Ablösung um 07:30.",
-  map: ["####################^############", "#.......#.....................S.#", "#.%..%..#.......................#", "#.......#.......................#", "#.......#.....Q...........TT....#", "#...x...#...............Q...N...#", "#.......#.3.....................#", "#.......####..########..######.##", "#.........Q.....................#", "#.||#||#||#||#||####d######d###.#", "#.:5#::#::#::#::#::::::::#1___#.#", "#.B:#B:#B:#B:#B:#:x::Y:::#___0#.#", "#.#############################.#", "#.....x....................w....#", "########M#######t#######L######E#", "#################################"] });
+  map: ["####################^####################", "#.......#......................#::::::::#", "#.%..%..#......................#:::m::::#", "#.......#......................#::::::::#", "#.......#.....Q.........TT.....#::::T:::#", "#...x...#.................N....###d######", "#.......#.3....Q................S.......#", "#.......####..########..########........#", "#..........Q............................#", "#.||#||#||#||#||#||####d#####d####d####.#", "#.:5#::#::#::#::#::#::::::::#___1#::::#.#", "#.B:#B:#B:#B:#B:#B:#:x::Y::B#___0#:Y:T#.#", "#.#####################################.#", "#.....x..........Q.........w............#", "#.###d####d#####..####d#####d######d###.#", "#.#::::::#:::::#..#:::::::#:::::#:::::#.#", "#.#:B::B:#:L:9:#..#::Y::x:#:B:::#:T:::#.#", "#.##############..#####################.#", "#.......x..............Q................#", "########M#######M#######L##############E#", "#########################################"] });
 const MISSION_LEVELS = 8; // legacy (night mode stats)
 const NIGHT_START = 300, NIGHT_END = 870, NIGHT_DAWN = 810; // 22:00 … 07:30 handover, first light at 06:30
 const STORY_NIGHT = [
@@ -490,7 +491,7 @@ const STORY_NIGHT_ER = [
   ["22:01", "Die Wartenummer-Anzeige springt auf 999. Dann auf 000. Die Schiebetür geht auf. Niemand kommt herein. Regel Nummer eins: Lass dich nicht finden. Wer dich findet, will etwas. Dreimal gefunden, und du kommst hier nie wieder raus. Überlebe bis 07:30."],
 ];
 const NIGHT_HOURS_ER = [
-  ["22:00", "Übergabe", "Der Pager schickt dich in die Kabinen. Erledige die Aufgaben, bevor die Zeit abläuft."],
+  ["22:00", "Übergabe", "Der Pager schickt dich durchs Haus: Schockraum, CT, Gips, Ausnüchterung. Im Personalraum ist es sicher. Aber wer sich dort zu lange versteckt, bekommt Besuch."],
   ["23:00", "Wartehalle", "Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Sie schlurfen Richtung Anmeldung."],
   ["00:00", "Geisterstunde", "Die Schiebetür öffnet sich von allein. Draußen ist niemand. Drinnen jetzt schon: Dr. Ewig aus dem Keller."],
   ["01:00", "Triage nach Hildegard", "Am Ende der Wartehalle: eine Schwesternhaube. Sie sortiert nach Dringlichkeit. Sie bewegt sich nur, wenn du NICHT hinsiehst."],
@@ -508,12 +509,23 @@ const NIGHT_TASKS_ER = [
 ];
 /* night shift wording that depends on where you spend it */
 const nightER = () => !!(run && run.place === "er");
-const nightRoom = r => (nightER() ? "Kabine " : "Zi. ") + r;
+const nightRoom = r => /^\d/.test(String(r)) ? (nightER() ? "Kabine " : "Zi. ") + r : String(r);
+/* what the pager wants in which room of the emergency department */
+const NIGHT_TASKS_ROOM = {
+  "Notfall-CT": ["Das CT fährt von allein. Jemand liegt drin. Laut Anmeldung seit 2019", "CT-Befund abholen. Er lautet: „Klinisch korrelieren“", "Das Kontrastmittel ist alle. Der Patient liegt schon in der Röhre", "Der Radiologe befundet von zu Hause. Er will, dass du die Maus bewegst"],
+  "Schockraum": ["Monitor zeigt Asystolie (Elektrode ab)", "Betrunkener singt im Schockraum. In Dur", "Polytrauma angekündigt. Es ist ein Zeh", "Der Defibrillator piept. Er will ein Software-Update. Jetzt"],
+  "Gipsraum": ["Der Gips juckt. Seit vier Wochen. Jetzt hat er Zeit", "will den Gips in einer anderen Farbe. Zum Outfit", "hat sich selbst eingegipst. Zu Übungszwecken. Komplett"],
+  "Ausnüchterung": ["will nach Hause. Weiß nicht, wo das ist", "ist Rollstuhl gefahren. Ohne Führerschein. Mit Mitfahrer", "singt. Alle Strophen. Auch die erfundenen", "hält dich für seinen Anwalt. Er hat viele Fragen"],
+  "Lager": ["Die Infusionen sind alle. Es waren nie welche da", "Jemand hat sich im Lager eingeschlossen. Freiwillig. Es ist die Nachtschwester von 2021", "Inventur. Um drei Uhr. „Das Controlling will Zahlen“"],
+  "Röntgen": ["Das Röntgenbild hängt verkehrt herum. Oder der Patient", "will die Strahlen sehen, bevor er zustimmt", "Hand geröntgt, Fuß gemeint. Er merkt es erst jetzt"],
+  "Kinder-Notfall": ["Kind hat eine Murmel verschluckt. Der Vater will sie zurück", "Fieber 37,9 °C. Die Großeltern sind auch da. Alle vier", "Das Kind ist kerngesund. Die Mutter hat gegoogelt"],
+  "Angehörige": ["Familie Kowalski hat nur drei Fragen. Pro Person", "wollen den Chef sprechen. Um drei Uhr. Persönlich", "haben eine Excel-Tabelle dabei. Mit Diagramm"],
+};
 const nightSafe = () => nightER() ? "Personalraum" : "Arztzimmer", nightSafeTo = () => nightER() ? "in den Personalraum" : "ins Arztzimmer", nightSafeIn = () => nightER() ? "im Personalraum" : "im Arztzimmer";
 const nightPlace = () => nightER() ? "Notaufnahme" : "Station 5B";
 const nightHours = () => nightER() ? NIGHT_HOURS_ER : NIGHT_HOURS;
 const NIGHT_HOURS = [
-  ["22:00", "Übergabe", "Der Pager schickt dich in die Zimmer. Erledige die Aufgaben, bevor die Zeit abläuft."],
+  ["22:00", "Übergabe", "Der Pager schickt dich in die Zimmer. Im Arztzimmer ist es sicher. Aber wer sich dort zu lange versteckt, bekommt Besuch."],
   ["23:00", "Schlafenszeit", "Die Patienten schlafen. Einige davon im Stehen. Auf dem Flur. Mit roten Augen."],
   ["00:00", "Geisterstunde", "Die Wanduhr schlägt zwölf. Sie hat keine Glocke. Dr. Ewig ist aus dem Keller hochgekommen."],
   ["01:00", "Schwester Hildegard", "Am Ende des Flurs: eine Schwesternhaube. Sie bewegt sich nur, wenn du NICHT hinsiehst."],

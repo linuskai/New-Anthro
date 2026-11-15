@@ -133,3 +133,26 @@ function buildQueue(lv, group) {
   group.add(at(sprite(textTex(["SELBSTZAHLER-EXPRESS", "Wartezeit 2 Std. · nur 499 €", "Kartenzahlung bevorzugt"], "#111111", "#f2c300", 512, 170, 40), 2.4, .8), 29.5 * S, 2.55, 3 * S));
   const tv = monitorMesh(textTex(["WARTEZEIT-BINGO", "Wer zuerst stirbt,", "kommt zuerst dran.", "(Scherz.) (Oder?)"], "#0b2a4a", "#ffe08a", 512, 288, 40)); tv.scale.set(1.3, .75, .06); tv.position.set(14 * S, 2.35, 6.9 * S); tv.rotation.y = Math.PI; group.add(tv);
 }
+
+/* the emergency department at night: ambulance bay, waiting hall with rows of chairs, triage, treatment bays, CT.
+   The people waiting have fallen asleep on their feet. Their heads follow you. Now and then one of them wakes up. */
+function decorNightER(lv, group, r) {
+  const sign = (t, bg, x, y, w = 2.2, h = .34, wy = 2.72) => group.add(at(sprite(labelTex(t, bg, "#fff"), w, h), x * S, wy, y * S));
+  sign("LIEGENDANFAHRT", "#c0322a", 4.5, 1.2); sign("WARTEHALLE · BITTE NUMMER ZIEHEN", "#2b7bb9", 14, 1.2, 3.2, .36);
+  sign("TRIAGE · ANMELDUNG", "#c0322a", 25, 4.9); sign("BEHANDLUNG 1–6", "#2b7bb9", 9.5, 8.6, 2, .32); sign("NOTFALL-CT ➜", "#7a0f0f", 31.5, 6.9, 1.8, .3);
+  group.add(at(sprite(textTex(["WARTEZEIT AKTUELL", "14 Std. 20 Min.", "(Tendenz: ja)"], "#111", "#ff5a3a", 512, 200, 54), 2.6, 1.0), 20.5 * S, 2.45, 1.25 * S));
+  lv.numBoard = at(sprite(textTex(["NUMMER", "999"], "#0a0a0a", "#3dff8a", 256, 160, 64), 1.5, .95), 27.5 * S, 2.4, 1.25 * S); group.add(dyn(lv.numBoard));
+  group.add(at(sprite(textTex(["Aggression gegen", "Personal wird", "zur Kenntnis genommen."], "#f6f6ef", "#1d2622", 384, 200, 36), 1.5, .8), 10.2 * S, 1.9, 1.25 * S));
+  for (const [x, y] of [[11, 2], [15, 2], [19, 2], [11, 4], [17, 4], [28, 2], [20, 6], [26, 6]]) if (grid[y] && grid[y][x] === ".") { const row = chairRow(4, 0xc0322a); row.rotation.y = y === 6 ? 0 : Math.PI; row.position.set((x + .5) * S, 0, (y + .5) * S); group.add(row); grid[y][x] = "K"; }
+  // number dispenser, a toppled wheelchair, a drip stand nobody claims
+  group.add(at(boxMesh(.35, 1.1, .35, 0xc0322a), 9.6 * S, .55, 3.5 * S)); group.add(at(sprite(labelTex("NUMMERN", "#fff", "#c0322a"), .7, .14), 9.6 * S, 1.25, 3.5 * S));
+  if (typeof wheelchair === "function") { const wc = wheelchair(); wc.position.set(22.5 * S, 0, 3.4 * S); wc.rotation.set(0, 1.1, 0); group.add(wc); }
+  // the sleepers: standing in the hall, eyes open, red. They are decoration. Mostly.
+  lv.watchers = [];
+  const shirts = [0x8a6fae, 0x6a8fae, 0xae6a6a, 0x7aa07a, 0xc0a060, 0x3a4a6a], spots = [[13, 3], [17, 3], [21, 3], [14, 5], [19, 5], [23, 5], [27, 3], [29, 5], [12, 6]];
+  for (const [x, y] of spots) { if (grid[y][x] !== ".") continue;
+    const sp = { skin: rnd([0xc9d0c4, 0xd8d0c4, 0xbfc8bc]), hair: rnd(HAIR), hairStyle: rnd(["short", "messy", "long", "bald"]), shirt: rnd(shirts), pants: rnd([0x3a4a6a, 0x2a2a2a, 0x5a5a6a]), lowDetail: true, glowEyes: true, mood: "tired", acc: rnd([undefined, "handbag", "mug"]), scale: .92 + r() * .14 };
+    const p = makePerson(sp); p.group.position.set((x + .3 + r() * .4) * S, 0, (y + .3 + r() * .4) * S); p.group.rotation.y = r() * 6.28; group.add(dyn(p.group));
+    lv.watchers.push({ p, x: p.group.position.x / S, y: p.group.position.z / S });
+  }
+}

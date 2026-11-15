@@ -823,7 +823,7 @@ function spawnFar(type) {
 function nightHour(h) {
   const [time, title, text] = nightHours()[h];
   missionCard(time, title, text); if (h >= 2) sfx.stinger();
-  if (h === 1 || h === 4 || h === 6) { spawnFar("Q"); spawnFar("Q"); }
+  if (h === 1 || h === 4 || h === 6) { if (!wakeWatcher()) spawnFar("Q"); if (!wakeWatcher()) spawnFar("Q"); }
   if (h === 2) spawnFar("g");
   if (h === 3) { const e = spawnFar("J"); if (e) { e.tri.material = TRI_MAT.spot; level.hilde = e; } }
   if (h === 4) { run.nightBlackouts = true; run.nextBlackout = 8; }
@@ -833,18 +833,31 @@ function nightHour(h) {
   if (h === 8) { level.hildeFast = true; spawnFar("Q"); }
   if (h === 9) { level.dawnRush = true; sfx.ding(); }
 }
+/* one of the people asleep in the waiting hall wakes up: the decoration becomes a sleepwalker that looks for you */
+function wakeWatcher() {
+  const ws = level.watchers; if (!ws || !ws.length) return false;
+  ws.sort((a, b) => Math.hypot(b.x - player.x, b.y - player.y) - Math.hypot(a.x - player.x, a.y - player.y));
+  const w = ws.shift(); w.p.group.visible = false; if (w.p.group.parent) w.p.group.parent.remove(w.p.group);
+  const e = spawnEnemy(level, "Q", w.x, w.y); e.label.visible = false; sfx.whisper && sfx.whisper();
+  setMsg("In der Wartehalle steht jemand auf. „Nummer 312?“ Niemand hat aufgerufen.", 4, true); return true;
+}
 function newTask() {
   const doors = level.doors.filter(d => !d.safe && d.num); if (!doors.length) return;
   const d = pick(doors), inner = DIRS.map(([dx, dy]) => [d.x + dx, d.y + dy]).find(([x, y]) => level.zone[y * GW + x] === 2 && !solidMove(cell(x, y)));
   if (!inner) { run.taskT = 3; return; }
-  if (run.hour >= 1 && !run.rea && Math.random() < .15) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
+  if (run.hour >= 1 && !run.rea && Math.random() < (nightER() ? .25 : .15)) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
   // the pager asks first: you may accept the job or palm it off (with consequences)
-  const t = { x: inner[0], y: inner[1], room: d.num, text: pick(nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS) };
+  const named = LEVELS[run.idx].plates && d.plate, t = { x: inner[0], y: inner[1], room: named ? d.plate : d.num, text: pick(named && NIGHT_TASKS_ROOM[d.plate] || (nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS)) };
   run.taskT = 9999; sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440);
   startCall({ from: "Pager · " + nightRoom(t.room), sub: nightPlace(), av: "📟", text: t.text + ". 72 Minuten.",
-    onAccept: () => { run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
+    onAccept: () => { run.declineRow = 0; run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
     onDecline: () => {
-      run.taskT = 20 + Math.random() * 15; run.nightDeclined = (run.nightDeclined || 0) + 1;
+      run.taskT = 20 + Math.random() * 15; run.nightDeclined = (run.nightDeclined || 0) + 1; run.declineRow = (run.declineRow || 0) + 1;
+      if (run.declineRow >= 2) { // twice in a row: now somebody comes to fetch you in person
+        run.declineRow = 0; const h = spawnFar("N");
+        if (h) { h.hunter = true; h.huntT = 50; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; }
+        showToast("🙅", "#e2483d", "Zweimal abgelehnt", "„Arzt nicht erreichbar.“ Die Nachtschwester kommt dich holen. Persönlich. Sie hat einen Schlüssel für jede Tür.", pen({ nerves: 1 })); sfx.stinger(); updateHud(); checkDeath(); return;
+      }
       if (Math.random() < .55) showToast("🙅", "#a6e38f", "Abgelehnt", pick(["Schwester Ayşe übernimmt. Ihr Seufzer kommt durch den Pager. In HD.", "Der Pager schweigt beleidigt. " + nightRoom(t.room) + " klingelt jetzt bei der Notaufnahme.", "Du tippst „Bin in REA“. Du bist auf dem Sofa. Niemand prüft das. Noch."]), [good("Ruhe")]);
       else showToast("🙅", "#e2483d", "Abgelehnt", pick([nightRoom(t.room) + " klingelt jetzt alle 30 Sekunden. Bis 7 Uhr.", "Die Stationsleitung notiert: „Arzt nicht erreichbar.“ Mit Datum. Und Uhrzeit. Und Smiley.", "Hildegard hat es gehört. Sie lächelt. Das ist schlimmer."]), pen({ nerves: 1 }));
       updateHud(); checkDeath();
@@ -877,15 +890,39 @@ function nightCaught(e) {
   updateHud();
 }
 function nightHorror() {
-  const opts = ["phone", "steps", "whisper"]; const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
+  const opts = ["phone", "steps", "whisper"]; if (nightER()) opts.push("er", "er"); const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
   if (far.length) opts.push("slam", "slam");
   const k = pick(opts);
-  if (k === "phone") { sfx.ring(); setMsg("Irgendwo klingelt ein Telefon. In einem leeren Zimmer.", 3.5, true); }
+  if (k === "er") { const v = pick([
+      ["pa", "Durchsage: „Nummer 312, bitte.“ Nummer 312 steht hinter dir. Glaubst du."], ["door", "Die Schiebetür geht auf. Kalte Luft. Niemand kommt herein. Sie geht nicht wieder zu."],
+      ["step", "Ein Rollstuhl rollt allein durch den Flur. Er bremst vor dir. Er wartet."], ["ring", "Das rote Telefon im Schockraum klingelt. Es ist seit 2016 nicht angeschlossen."],
+      ["pa", "Durchsage: „Der Fahrer des Rettungswagens wird gebeten, seinen Patienten wieder mitzunehmen.“"], ["whisper", "Alle Wartenden drehen gleichzeitig den Kopf. Zu dir."]]);
+    if (v[0] === "pa") sfx.pa(); else if (v[0] === "door") { noise(0, 1.2, 500, .8, .05); tone(180, 0, 1.1, "sine", .02, 140); } else if (v[0] === "step") { for (let i = 0; i < 5; i++) setTimeout(() => noise(0, .08, 900, 3, .03), i * 300); } else if (v[0] === "ring") sfx.ring(); else sfx.whisper();
+    setMsg(v[1], 4.5, true); }
+  else if (k === "phone") { sfx.ring(); setMsg("Irgendwo klingelt ein Telefon. In einem leeren Zimmer.", 3.5, true); }
   else if (k === "steps") { for (let i = 0; i < 4; i++) setTimeout(() => sfx.step(), i * 420); setMsg("Schritte. Hinter dir. Du drehst dich um. Nichts.", 3.5, true); }
   else if (k === "whisper") { sfx.whisper(); blackout = Math.max(blackout, 1.2); setMsg("… hat da jemand deinen Namen geflüstert?", 3.5, true); }
   else { const d = pick(far); setDoor(d, false, true); sfx.slam(); setMsg("Eine Tür knallt zu. Niemand ist da.", 3.5, true); }
 }
+/* nobody hides in the safe room all night: first a knock, then a key in the lock, then you are found */
+function updateCamping(dt) {
+  if (run.minutes >= NIGHT_END) return;
+  const k = settings.diff === "easy" ? 1.4 : 1;
+  if (playerSafe()) run.campT = (run.campT || 0) + dt; else { run.campT = Math.max(0, (run.campT || 0) - dt * 2); if (run.campT < 10) run.campW = 0; }
+  const t = run.campT / k, w = run.campW || 0;
+  if (t > 35 && w < 1) { run.campW = 1; for (let i = 0; i < 3; i++) setTimeout(() => sfx.knock(), i * 260); setMsg("Es klopft. Dreimal. „Herr Doktor? Sind Sie da drin?“ Du atmest nicht.", 4.5, true); }
+  else if (t > 52 && w < 2) { run.campW = 2; noise(0, .25, 3200, 3, .06); noise(.35, .2, 2600, 3, .06); tone(900, .6, .05, "square", .03); setMsg("Ein Schlüssel im Schloss. Sie hat einen Generalschlüssel. Raus hier!", 4.5, true); sfx.stinger(); }
+  else if (t > 66 && w < 3) { run.campT = 22 * k; run.campW = 0; if (typeof sfx.door === "function") sfx.door();
+    const e = spawnFar("N"); if (e) { e.name = "Nachtschwester"; nightCaught(e); setTimeout(() => setMsg(nightSafe() + ": gefunden. Hier schläft niemand eine ganze Nacht. Schon gar kein Arzt.", 4.5, true), 1600); } }
+}
 function updateNight(dt) {
+  updateCamping(dt);
+  if (level.watchers && level.watchers.length) for (const w of level.watchers) { // their heads, and the rest, turn after you. Slowly.
+    const g = w.p.group, want = Math.atan2(player.x - w.x, player.y - w.y); let d = want - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); g.rotation.y += d * Math.min(1, dt * .9); }
+  if (nightER() && (run.ctT = (run.ctT ?? 50) - dt) <= 0) { run.ctT = 70 + Math.random() * 50; // the CT starts on its own
+    tone(55, 0, 3.2, "sawtooth", .03, 110); tone(110, .4, 2.8, "sine", .03, 220); noise(.2, 3, 700, 1.5, .02); blackout = Math.max(blackout, .5);
+    setMsg(pick(["Das Notfall-CT fährt an. Niemand hat etwas angemeldet. Zum ersten Mal seit 2019 tut es etwas ohne Formular.", "Im CT brennt Licht. Die Liege fährt rein. Und wieder raus. Leer. Diesmal.", "Das CT summt. Auf dem Monitor: ein Befund. Für dich. „Klinisch korrelieren.“"]), 5, true);
+    if (level.numBoard) { const n = pick(["000", "312", "666", "999", "0,5", "∞"]); level.numBoard.material.map = textTex(["NUMMER", n], "#0a0a0a", "#3dff8a", 256, 160, 64); level.numBoard.material.needsUpdate = true; } }
   const h = Math.floor((run.minutes - NIGHT_START) / 60);
   // 07:30: the morning shift arrives. You win once you make it to the handover in the doctors' room.
   if (run.minutes >= NIGHT_END) { if (playerSafe()) { nightWin(); return; } if ((run.handT = (run.handT || 0) - dt) <= 0) { run.handT = 5; setMsg(`07:30! Die Ablösung ist da. Ab ${nightSafeTo()} zur Übergabe!`, 4, true); sfx.beep(); } }
