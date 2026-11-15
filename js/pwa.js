@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🚨 Nachtdienst: Heute stirbt niemand. Jede Reanimation ist Pflicht", "🕊️ Dafür lassen dich alle in Ruhe, solange du einen Notfall behandelst", "🛏️ Bei Pager-Aufgaben wartet jetzt wirklich ein Patient im Raum", "🚑 Notaufnahme: Schockraum größer mit zwei Türen, neue Putzkammer als Abkürzung", "🏷️ Keine doppelten Namen mehr"];
+const NEWS = ["💬 Nachtdienst: Wer dich findet, erzählt dir jetzt auch, warum er dich gesucht hat", "📢 Durchsagen stehen jetzt lesbar auf dem Bildschirm", "🕊️ Nach einem Notfall hast du länger Ruhe", "🚨 Reanimationen sind Pflicht: Heute stirbt niemand"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

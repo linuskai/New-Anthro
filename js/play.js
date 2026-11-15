@@ -646,7 +646,7 @@ function finishCpr() {
   const ok = cpr.score >= (settings.diff === "easy" ? 8 : 10); cpr = null; $("cpr").hidden = true; mode = "play";
   if (!ok && run.mode === "night") { // nobody else is coming: again, until the pulse is back
     showToast("🫀", "#e2483d", "Kein Puls. Nochmal!", "Der Rhythmus war eher Techno als Bee Gees. Niemand sonst ist da. Drück weiter.", pen({ energy: 6 })); updateHud(); if (run.energy > 0) setTimeout(() => { if (run && run.rea && mode === "play") startCpr(); }, 1300); return; }
-  if (run.mode === "night") run.truceT = 6;
+  if (run.mode === "night") run.truceT = 10;
   if (LEVELS[run.idx].reaScript) run.flags.add("rea3");
   clearRea(); naviT = 0;
   if (ok) { run.lives++; showToast("💓", "#1f9d55", "ROSC!", "Puls ist zurück. Der Patient fragt als Erstes, wann er heim darf.", gain({ nerves: 1, energy: 15, text: "Leben gerettet" }).concat(pen({ mins: 10 }))); }
@@ -892,7 +892,7 @@ function newTask() {
     } });
 }
 function completeTask() {
-  if (run.task.mesh) level.group.remove(run.task.mesh); run.truceT = 6;
+  if (run.task.mesh) level.group.remove(run.task.mesh); run.truceT = 10;
   run.nightDone++; run.task = null; run.taskT = 30 + Math.random() * 18; sfx.ding();
   // what a finished job is worth: energy, a stretch of undisturbed rest in the safe room, and every third one makes them forget they found you once
   run.campT = Math.min(run.campT || 0, 0) - 40; run.campW = 0;
@@ -907,6 +907,30 @@ function failTask() {
   setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
   showToast("⏰", "#c0322a", "Zu spät · " + nightRoom(room), pick([nightRoom(room) + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
   updateHud(); checkDeath();
+}
+/* found: they did not look for you all night for nothing. A short talk about the emergency that is none. It changes nothing; that is the point. */
+const NIGHT_PA = ["„Der Besitzer des weißen Kittels in der Kantine wird gebeten, ihn abzuholen. Er bewegt sich.“", "„Achtung: Die Nachtruhe beginnt um 22 Uhr. Für Patienten. Für alle anderen: nie.“", "„Der diensthabende Arzt bitte auf alle Stationen. Gleichzeitig.“",
+  "„Es wurde ein Feierabend gefunden. Er kann an der Pforte abgeholt werden. Gültig bis 2011.“", "„Das Licht im Flur 3 wurde aus Kostengründen durch Ihre Vorstellungskraft ersetzt.“", "„Schwester Hildegard bitte NICHT an die Information. Sie ist schon da.“", "„Wir bitten um Verständnis.“ (Mehr kam nicht.)"];
+const FOUND_TALKS = {
+  Q: [["„Herr Doktor … ich kann nicht schlafen.“ Er schlafwandelt. Er schläft gerade.", ["„Sie schlafen doch.“", "„Ach so.“ Er schläft weiter. Im Stehen. Vor dir."], ["„Zählen Sie Schäfchen.“", "Er zählt. Laut. Bei 4.000 ist Frühdienst."], ["„Ich auch nicht.“", "Ihr schweigt gemeinsam. Es ist der schönste Moment der Nacht."]],
+    ["„Mein Bettnachbar atmet.“", ["„Das ist gut.“", "„Aber so LAUT.“ Er macht es vor. Es ist wirklich laut."], ["„Soll er aufhören?“", "Er überlegt lange. „Nur nachts.“"], ["Ohrstöpsel versprechen", "Du hast keine. Du versprichst sie trotzdem. Lieferzeit laut Einkauf: 2031."]],
+    ["„Wann ist eigentlich Visite?“ Es ist drei Uhr.", ["„Jetzt.“", "Du machst Visite. Um drei. Für einen. „Endlich nimmt sich mal jemand Zeit.“"], ["„Um sieben.“", "„Dann warte ich hier.“ Er wartet. Direkt hinter dir."], ["„Die war gestern.“", "Er nickt. „Dachte ich mir. Ich war nicht da. Ich war hier.“"]],
+    ["„Ich wollte nur sagen: Das Essen war kalt.“ Das Essen war vor neun Stunden.", ["„Das tut mir leid.“", "„Es war Eis.“ Er wollte es nur gesagt haben."], ["„Ich gebe es weiter.“", "An wen? Du überlegst. Es gibt niemanden. Du nickst trotzdem."], ["„Meins auch.“", "Er legt dir die Hand auf die Schulter. Sie ist auch kalt."]]],
+  Z: [["„Ich hab das seit 2019. Aber HEUTE Nacht dachte ich: Jetzt reicht's.“", ["„Was genau haben Sie?“", "Er weiß es nicht mehr. Aber es war schlimm. Er will bleiben, bis es ihm wieder einfällt."], ["„Warum nachts?“", "„Tagsüber ist es hier immer so voll.“"], ["„Und Ihr Hausarzt?“", "„Der hat gesagt, ich soll zum Arzt gehen.“"]],
+    ["„Ich hab gegoogelt. Es ist entweder ein Schnupfen oder etwas Tropisches.“", ["„Waren Sie in den Tropen?“", "„Im Gartencenter.“"], ["„Ein Schnupfen.“", "„Das sagt Google auch. Aber Google ist kein Arzt.“ Du gleich auch nicht mehr."], ["„Etwas Tropisches.“", "Er strahlt. Endlich nimmt ihn jemand ernst. Er ruft seine Mutter an. Um drei."]],
+    ["„Ich brauche nur eine Krankmeldung. Für letzte Woche.“", ["„Waren Sie letzte Woche krank?“", "„Nein. Aber müde.“ Du verstehst ihn besser, als dir lieb ist."], ["„Das geht nicht rückwirkend.“", "„Dann für nächste Woche.“ Er plant voraus. Respekt."], ["„Für mich bitte auch eine.“", "Er lacht. Du nicht."]],
+    ["„Mein Finger. Schauen Sie.“ Du schaust. Es ist ein Finger.", ["„Was ist damit?“", "„Eben. Früher hat der wehgetan.“"], ["„Sieht gut aus.“", "„Das sagen alle. Deshalb bin ich ja hier.“"], ["Den Finger fotografieren", "Er hat schon 40 Fotos. Er zeigt sie dir. Alle. Chronologisch."]]],
+  N: [["„Bett 7 klingelt seit einer Stunde. Ich hab gesagt, der Arzt kommt gleich. Das war um zehn.“", ["„Was will Bett 7?“", "„Wissen, wann der Arzt kommt.“"], ["„Ich komme gleich.“", "Sie schreibt es auf. Mit Uhrzeit. Zum vierten Mal."], ["„Ich war nie hier.“", "„Das sagen Sie jede Nacht.“"]],
+    ["„Nur kurz abzeichnen: 41 Kurven, die Betäubungsmittel, und hier, das ist eine Glückwunschkarte.“", ["Alles unterschreiben", "Du hast gerade Tante Renate zum 80. gratuliert. Herzlich. Mit Stempel."], ["„Wer hat Geburtstag?“", "„Niemand. Die Karte ist für die Kündigung von Schwester Biggi.“"], ["Nur die Karte unterschreiben", "Sie seufzt. Die Kurven warten. Die Kurven warten immer."]]],
+  F: [["„Wir haben nur drei Fragen. Erstens: Warum ist es hier nachts so dunkel?“", ["„Weil es Nacht ist.“", "Sie notieren es. „Zweitens: Wer hat das entschieden?“"], ["„Sparmaßnahme.“", "„Das dachten wir uns.“ Sie fotografieren die Lampe."], ["„Was ist die dritte Frage?“", "„Die kommt nach der zweiten.“ Die zweite hat Unterpunkte."]],
+    ["„Opa sagt, ihm geht es gut. Das macht uns Sorgen.“", ["„Das ist doch schön.“", "„So ist er sonst nie.“ Alle sieben nicken."], ["„Soll ich nach ihm sehen?“", "„Nein, er schläft. Wir wollten es nur mal gesagt haben.“ Um halb vier."], ["„Mir geht es auch gut.“", "Jetzt machen sie sich auch um dich Sorgen. Zu Recht."]]],
+  C: [["„Ah. Sie sind ja noch da. Gut. Ich hätte da einen Gedanken zur Visitenkultur.“ Es ist fünf Uhr.", ["Zuhören", "Der Gedanke hat eine Einleitung. Und ein Fazit. Dazwischen liegt Davos."], ["„Um diese Zeit?“", "„Die besten Ideen habe ich im Stehen.“ Er hat sie alle im Stehen. Vor dir."], ["„Ich bin eigentlich im Notfall.“", "„Das hier ist wichtiger.“ Es ist nicht wichtiger."]]],
+  g: [["„Ich suche meinen Feierabend. Hast du ihn gesehen? 2009 war er noch da.“", ["„Nein. Meinen auch nicht.“", "Er nickt langsam. „Dann suchen wir zusammen.“ Bitte nicht."], ["„Vielleicht im Keller?“", "„Da komme ich ja her.“"], ["„Geh nach Hause, Ewig.“", "„Ich BIN zu Hause.“ Das ist das Traurigste, was du heute gehört hast."]]],
+};
+function foundTalk(e) {
+  const t = TYPES[e.type], pool = FOUND_TALKS[e.type] || FOUND_TALKS[e.type === "O" ? "C" : "Q"], [text, ...ans] = pick(pool);
+  openDialog({ sp: e.person.sp, av: t.av, color: t.color, name: e.name, role: (t.role || t.label) + " · hat dich gefunden", text,
+    options: ans.map(([label, reply]) => opt(label, () => say(reply))), onClose: () => { player.inv = 4; } });
 }
 /* night shift: whoever finds you counts. Three times and the night is over. */
 /* while you treat an emergency (from the alarm to the last compression, while you tend to a patient, and a few seconds after) nobody hunts you */
@@ -923,19 +947,21 @@ function nightCaught(e) {
   player.inv = 4; e.stun = 6; e.aw = 0; e.state = "idle"; e.hunter = false;
   { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; } // they shuffle off somewhere else
   if (n >= 3) { mode = "dying"; clearInputs(); setTimeout(() => showGameOver(), 1500); }
-  else setMsg(n === 2 ? "Noch einmal gefunden, und die Nacht ist vorbei." : "Gefunden. Versteck dich. Sie vergessen schnell. Du nicht.", 4, true);
+  else setTimeout(() => { if (run && run.mode === "night" && mode === "play") foundTalk(e); }, 1550); // and now they tell you why they were looking for you
+  if (n < 3) setMsg(n === 2 ? "Noch einmal gefunden, und die Nacht ist vorbei." : "Gefunden. Versteck dich. Sie vergessen schnell. Du nicht.", 4, true);
   updateHud();
 }
 function nightHorror() {
-  const opts = ["phone", "steps", "whisper"]; if (nightER()) opts.push("er", "er"); const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
+  const opts = ["phone", "steps", "whisper", "pa"]; if (nightER()) opts.push("er", "er"); const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
   if (far.length) opts.push("slam", "slam");
   const k = pick(opts);
   if (k === "er") { const v = pick([
-      ["pa", "Durchsage: „Nummer 312, bitte.“ Nummer 312 steht hinter dir. Glaubst du."], ["door", "Die Schiebetür geht auf. Kalte Luft. Niemand kommt herein. Sie geht nicht wieder zu."],
+      ["pa", "„Nummer 312, bitte.“ (Nummer 312 steht hinter dir. Glaubst du.)"], ["door", "Die Schiebetür geht auf. Kalte Luft. Niemand kommt herein. Sie geht nicht wieder zu."],
       ["step", "Ein Rollstuhl rollt allein durch den Flur. Er bremst vor dir. Er wartet."], ["ring", "Das rote Telefon im Schockraum klingelt. Es ist seit 2016 nicht angeschlossen."],
-      ["pa", "Durchsage: „Der Fahrer des Rettungswagens wird gebeten, seinen Patienten wieder mitzunehmen.“"], ["whisper", "Alle Wartenden drehen gleichzeitig den Kopf. Zu dir."]]);
-    if (v[0] === "pa") sfx.pa(); else if (v[0] === "door") { noise(0, 1.2, 500, .8, .05); tone(180, 0, 1.1, "sine", .02, 140); } else if (v[0] === "step") { for (let i = 0; i < 5; i++) setTimeout(() => noise(0, .08, 900, 3, .03), i * 300); } else if (v[0] === "ring") sfx.ring(); else sfx.whisper();
+      ["pa", "„Der Fahrer des Rettungswagens wird gebeten, seinen Patienten wieder mitzunehmen.“"], ["whisper", "Alle Wartenden drehen gleichzeitig den Kopf. Zu dir."]]);
+    if (v[0] === "pa") { sfx.pa(); paBanner(v[1]); return; } else if (v[0] === "door") { noise(0, 1.2, 500, .8, .05); tone(180, 0, 1.1, "sine", .02, 140); } else if (v[0] === "step") { for (let i = 0; i < 5; i++) setTimeout(() => noise(0, .08, 900, 3, .03), i * 300); } else if (v[0] === "ring") sfx.ring(); else sfx.whisper();
     setMsg(v[1], 4.5, true); }
+  else if (k === "pa") { sfx.pa(); paBanner(pick(NIGHT_PA)); }
   else if (k === "phone") { sfx.ring(); setMsg("Irgendwo klingelt ein Telefon. In einem leeren Zimmer.", 3.5, true); }
   else if (k === "steps") { for (let i = 0; i < 4; i++) setTimeout(() => sfx.step(), i * 420); setMsg("Schritte. Hinter dir. Du drehst dich um. Nichts.", 3.5, true); }
   else if (k === "whisper") { sfx.whisper(); blackout = Math.max(blackout, 1.2); setMsg("… hat da jemand deinen Namen geflüstert?", 3.5, true); }

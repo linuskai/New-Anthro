@@ -152,13 +152,19 @@ function updateRouteChip() {
 }
 
 // ---------- hospital announcements ----------
+/* what the loudspeaker just said, in writing: the trombone alone tells you nothing */
+function paBanner(text) {
+  const old = document.getElementById("paBanner"); if (old) old.remove();
+  const d = document.createElement("div"); d.id = "paBanner"; d.innerHTML = `<i>📢</i><span><small>Durchsage</small><b>${esc(text)}</b></span>`;
+  document.body.appendChild(d); setTimeout(() => d.classList.add("out"), 6500); setTimeout(() => d.remove(), 7100);
+}
 function missionTick(dt) {
   if (run.mode !== "mission") return;
   run.announceT -= dt;
   if (run.announceT <= 0 && toastT <= 0 && quiet(25000)) {
     run.announceT = 190 + Math.random() * 80;
     tone(660, 0, .35, "sine", .05); tone(523, .4, .5, "sine", .05);
-    sfx.pa && sfx.pa(); showToast("📢", "#2d3f8f", "Durchsage · Klinikleitung", "„" + pick(ANNOUNCE) + "“", []);
+    sfx.pa && sfx.pa(); paBanner("„" + pick(ANNOUNCE) + "“");
   }
 }
 
