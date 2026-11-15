@@ -178,7 +178,7 @@ function act() {
   else if (f.type === "vent") player.channel = { t: 0, total: 2.4, label: "Hebel umlegen…", done: () => { run.flags.add("vent"); sfx.power(); showToast("🌬️", "#7a9a3a", "Operation Frischluft", pick(["Die Lüftung röchelt, hustet, läuft. Zum ersten Mal seit 2017 riecht die Station nach… Station.", "Ein Brummen. Dann ein Luftzug. Ein Gastroenterologe ruft: „Was ist das für ein komischer Geruch?“ Es ist frische Luft."]), [good("Lüftung an")]); updateHud(); } };
   else if (f.type === "spa") player.channel = { t: 0, total: 2.2, label: "Entspannen…", done: () => { f.ref.used = true; run.spa++; run.flags.add("spa"); sfx.spa(); showToast("🧖", "#f6c1d4", "Wellness-Liege", "Gurkenscheiben auf den Augen. Du vergisst kurz, dass du Ärztin oder Arzt bist.", gain({ energy: 40, nerves: 1 })); updateHud(); } };
   else if (f.type === "sofa" && run.mode === "night") player.channel = { t: 0, total: 3, label: "Schlafen…", done: () => { f.ref.room.restT = run.minutes + 85; run.minutes += 25; sfx.spa(); showToast("😴", "#2d3f8f", "Powernap", pick(["Du schläfst 25 Minuten. Der Pager schläft nicht. Er wartet nur.", "Du träumst vom Feierabend. Im Traum klingelt das Telefon. Auch in echt.", "Augen zu. Irgendwo flüstert jemand „Kurven…“. Augen wieder auf."]), gain({ energy: 45, nerves: 1 }).concat([{ text: "+25 Min" }])); updateHud(); } };
-  else if (f.type === "nighttask") player.channel = { t: 0, total: 2.2, label: "Versorgen…", done: () => completeTask() };
+  else if (f.type === "nighttask") player.channel = { t: 0, total: 3, label: "Versorgen…", task: true, done: () => completeTask() };
   else if (f.type === "sofa") player.channel = { t: 0, total: 3, label: "Ausruhen…", done: () => { f.ref.room.rested = true; sfx.spa(); showToast("🛋️", "#c9a77a", "Durchatmen", pick(["Fünf Minuten Augen zu. Niemand kommt rein. Hier ist ja Arbeit.", "Du starrst an die Decke. Sie starrt zurück. Es ist schön.", "Im Radio läuft „Stayin' Alive“. Du lachst. Dann weinst du kurz. Dann geht's wieder."]), gain({ energy: 35, nerves: 1 })); updateHud(); } };
   else if (f.type === "ticket") ticketDialog();
   else if (f.type === "barrier") {
@@ -412,6 +412,11 @@ function updateEnemy(e, dt) {
     if (e.leaving <= 0 || !e.moving) { e.gone = true; e.mesh.visible = false; if (e.cone) e.cone.visible = false; }
     return;
   }
+  if (nightTruce()) { // a real emergency: everyone lets you work, and whoever is close shuffles off
+    e.aw = 0; e.state = "idle"; e.frozen = e.type === "J";
+    if (e.type !== "J" && Math.hypot(player.x - e.x, player.y - e.y) < 7) { if (!e.backTo) e.backTo = farthestTile(); walkTo(e, e.backTo[0], e.backTo[1], Math.max(1.2, (t.walk || 1) * 1.4), dt); } else e.moving = false;
+    return;
+  } else e.backTo = null;
   if (e.type === "J") { updateHildegard(e, t, dt); return; }
   if (e.stun > 0) { e.stun -= dt; e.aw = Math.max(0, e.aw - dt); return; }
   const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy) || .001;
@@ -613,6 +618,7 @@ function startRea(x, y, timeout, mandatory) {
   reaLight.position.set((x + .5) * S, 2, (y + .5) * S);
   sfx.alarm(); naviT = 0;
   setMsg("REA-ALARM! Patient ohne Puls. Folge dem Wegpunkt.", 4, true);
+  if (run.mode === "night") { reaScene(g); showToast("🚨", "#e2483d", "Reanimationsalarm", "Patient kollabiert. Du hast " + Math.round(timeout) + " Sekunden, sonst stirbt er. Solange du dich darum kümmerst, lässt dich jeder in Ruhe. Sogar Hildegard.", [{ text: "Niemand stirbt heute Nacht" }]); return; }
   showToast("🚨", "#e2483d", "Reanimationsalarm", mandatory ? "Im CT. Du bist der nächste Arzt. Das Notfallteam wurde 2021 eingespart. Lauf!" : "Patient kollabiert. Du hast " + Math.round(timeout) + " Sekunden.", [{ text: "Leben retten" }]);
 }
 function randomReaTile() {
@@ -638,6 +644,9 @@ function cprPress() {
 $("cprBtn").addEventListener("pointerdown", e => { e.preventDefault(); cprPress(); });
 function finishCpr() {
   const ok = cpr.score >= (settings.diff === "easy" ? 8 : 10); cpr = null; $("cpr").hidden = true; mode = "play";
+  if (!ok && run.mode === "night") { // nobody else is coming: again, until the pulse is back
+    showToast("🫀", "#e2483d", "Kein Puls. Nochmal!", "Der Rhythmus war eher Techno als Bee Gees. Niemand sonst ist da. Drück weiter.", pen({ energy: 6 })); updateHud(); if (run.energy > 0) setTimeout(() => { if (run && run.rea && mode === "play") startCpr(); }, 1300); return; }
+  if (run.mode === "night") run.truceT = 6;
   if (LEVELS[run.idx].reaScript) run.flags.add("rea3");
   clearRea(); naviT = 0;
   if (ok) { run.lives++; showToast("💓", "#1f9d55", "ROSC!", "Puls ist zurück. Der Patient fragt als Erstes, wann er heim darf.", gain({ nerves: 1, energy: 15, text: "Leben gerettet" }).concat(pen({ mins: 10 }))); }
@@ -700,7 +709,8 @@ function update(dt) {
   const L = LEVELS[run.idx];
   if (run.reaScriptT != null) { run.reaScriptT -= dt; if (run.reaScriptT <= 0) { run.reaScriptT = null; startRea(level.reaSpot[0], level.reaSpot[1], 999, true); } }
   if (run.reaRandomT != null) { run.reaRandomT -= dt; if (run.reaRandomT <= 0) { run.reaRandomT = null; const t = randomReaTile(); if (t) startRea(t[0], t[1], 50, false); } }
-  if (run.rea && !run.rea.mandatory) { run.rea.t -= dt; if (run.rea.t <= 0) { clearRea(); run.reaFail = true; showToast("🫀", "#7b8a85", "Zu spät", "Jemand anderes war schneller. Trotzdem: schlechtes Gewissen.", pen({ nerves: 1 })); updateHud(); checkDeath(); } }
+  if (run.rea && !run.rea.mandatory && run.mode === "night") { run.rea.t -= dt; if (run.rea.t <= 0) { nightDeath(); return; } if (run.rea.t < 20 && (run.reaWarn = (run.reaWarn || 0) - dt) <= 0) { run.reaWarn = 5; setMsg("Noch " + Math.ceil(run.rea.t) + " Sekunden! Lauf!", 2.5, true); sfx.beep(); } }
+  else if (run.rea && !run.rea.mandatory) { run.rea.t -= dt; if (run.rea.t <= 0) { clearRea(); run.reaFail = true; showToast("🫀", "#7b8a85", "Zu spät", "Jemand anderes war schneller. Trotzdem: schlechtes Gewissen.", pen({ nerves: 1 })); updateHud(); checkDeath(); } }
   if ((L.blackouts || run.nightBlackouts) && !run.flags.has("power")) {
     if (blackout > 0) { blackout -= dt; if (blackout <= 0) setMsg("Licht ist wieder da. Sowas wie Licht.", 2); }
     else { run.nextBlackout -= dt; if (run.nextBlackout <= 0) { blackout = 5; run.nextBlackout = 22 + Math.random() * 12; sfx.powerDown(); setMsg("Stromausfall.", 3, true); } }
@@ -841,18 +851,34 @@ function wakeWatcher() {
   const e = spawnEnemy(level, "Q", w.x, w.y); e.label.visible = false; sfx.whisper && sfx.whisper();
   setMsg("In der Wartehalle steht jemand auf. „Nummer 312?“ Niemand hat aufgerufen.", 4, true); return true;
 }
+/* someone is actually there when the pager sends you: a patient on a stretcher with a monitor, waiting. Patiently. */
+function taskScene(t) {
+  const g = new THREE.Group(), st = stretcher(); g.add(st);
+  const p = makePerson({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: rnd(["short", "messy", "long", "bald"]), gown: true, shirt: 0x9cc6e6, noShadow: true, lowDetail: true, mood: rnd(["worried", "tired", "angry"]) });
+  p.group.rotation.x = -Math.PI / 2; p.group.position.set(0, 1.02, .88); p.group.scale.setScalar(.96); g.add(p.group);
+  g.add(at(boxMesh(.34, .26, .08, 0x22262a), .62, 1.25, -.5)); g.add(at(boxMesh(.3, .2, .01, 0x0a2a14), .62, 1.25, -.455)); g.add(at(mesh(GEO.cyl, phong(0x9aa3a6, 70), .02, 1.1, .02), .62, .55, -.5));
+  g.add(at(sprite(labelTex("📟 WARTET AUF DICH", "#a6e38f", "#10221a"), 1.3, .22), 0, 1.9, 0));
+  g.position.set((t.x + .5) * S, 0, (t.y + .5) * S); g.rotation.y = Math.random() * 6.28; level.group.add(g); t.mesh = g;
+}
+/* a resuscitation looks like one: crash cart, a monitor with a flat line, a nurse who has already started and is very glad to see you */
+function reaScene(g) {
+  g.add(at(boxMesh(.5, .9, .4, 0xc0322a), -.75, .45, .2)); g.add(at(boxMesh(.36, .22, .3, 0xf2c300), -.75, 1.02, .2)); for (const [a, b] of [[-.2, -.15], [.2, -.15], [-.2, .15], [.2, .15]]) g.add(at(mesh(GEO.cyl, lambert(0x1b1b1b), .04, .05, .04), -.75 + a, .03, .2 + b));
+  g.add(at(boxMesh(.4, .3, .08, 0x22262a), .7, 1.3, .9)); const scr = at(boxMesh(.34, .22, .01, 0x061a0c), .7, 1.3, .945); g.add(scr); g.add(at(boxMesh(.3, .012, .012, 0x3dff8a), .7, 1.3, .952)); g.add(at(mesh(GEO.cyl, phong(0x9aa3a6, 70), .02, 1.15, .02), .7, .58, .9));
+  const n = makePerson({ skin: rnd(SKIN), hair: rnd(HAIR), hairStyle: "bun", scrubs: true, shirt: 0x4fb3a9, pants: 0x4fb3a9, noShadow: true, lowDetail: true, mood: "worried" }); n.group.position.set(.55, 0, .25); n.group.rotation.y = -Math.PI / 2; g.add(n.group);
+  g.add(at(sprite(labelTex("„ENDLICH! ICH DRÜCKE SEIT ZEHN MINUTEN!“", "#ffffff", "#c0322a"), 2, .22), .55, 2.25, .25));
+}
 function newTask() {
   const doors = level.doors.filter(d => !d.safe && d.num); if (!doors.length) return;
   const d = pick(doors), inner = DIRS.map(([dx, dy]) => [d.x + dx, d.y + dy]).find(([x, y]) => level.zone[y * GW + x] === 2 && !solidMove(cell(x, y)));
   if (!inner) { run.taskT = 3; return; }
-  if (run.hour >= 1 && !run.rea && Math.random() < (nightER() ? .25 : .15)) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
+  if (run.hour >= 1 && !run.rea && Math.random() < (nightER() ? .25 : .15)) { startRea(inner[0], inner[1], (nightER() ? 95 : 75) * (settings.diff === "easy" ? 1.25 : 1), false); run.taskT = 30; return; }
   // the pager asks first: you may accept the job or palm it off (with consequences)
   const named = LEVELS[run.idx].plates && d.plate, t = { x: inner[0], y: inner[1], room: named ? d.plate : d.num, text: pick(named && NIGHT_TASKS_ROOM[d.plate] || (nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS)) };
   // most pages are about a patient: say so, instead of starting in the middle of the sentence
   if (/^(will|hat|ist|singt|hält) /.test(t.text)) t.text = pick(["Ein Patient ", "Eine Patientin "]) + t.text; else if (/^(wollen|haben) /.test(t.text)) t.text = "Die Angehörigen " + t.text;
   run.taskT = 9999; sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440);
   startCall({ from: "Pager · " + nightRoom(t.room), sub: nightPlace(), av: "📟", text: t.text + ". 72 Minuten.",
-    onAccept: () => { run.declineRow = 0; run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
+    onAccept: () => { run.declineRow = 0; run.task = Object.assign(t, { deadline: run.minutes + 72 }); taskScene(run.task); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
     onDecline: () => {
       run.taskT = 36 + Math.random() * 18; run.nightDeclined = (run.nightDeclined || 0) + 1; run.declineRow = (run.declineRow || 0) + 1;
       if (run.declineRow >= 2) { // twice in a row: now somebody comes to fetch you in person
@@ -866,6 +892,7 @@ function newTask() {
     } });
 }
 function completeTask() {
+  if (run.task.mesh) level.group.remove(run.task.mesh); run.truceT = 6;
   run.nightDone++; run.task = null; run.taskT = 30 + Math.random() * 18; sfx.ding();
   // what a finished job is worth: energy, a stretch of undisturbed rest in the safe room, and every third one makes them forget they found you once
   run.campT = Math.min(run.campT || 0, 0) - 40; run.campW = 0;
@@ -875,14 +902,18 @@ function completeTask() {
   updateHud();
 }
 function failTask() {
-  const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 28 + Math.random() * 14;
+  const room = run.task.room; if (run.task.mesh) level.group.remove(run.task.mesh); run.nightFail++; run.task = null; run.taskT = 28 + Math.random() * 14;
   // a missed page sends the night nurse looking for you
   setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
   showToast("⏰", "#c0322a", "Zu spät · " + nightRoom(room), pick([nightRoom(room) + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
   updateHud(); checkDeath();
 }
 /* night shift: whoever finds you counts. Three times and the night is over. */
+/* while you treat an emergency (from the alarm to the last compression, while you tend to a patient, and a few seconds after) nobody hunts you */
+const nightTruce = () => !!run && run.mode === "night" && ((run.rea && !run.rea.done) || !!(player.channel && player.channel.task) || (run.truceT || 0) > 0);
+function nightDeath() { if (mode === "dying" || mode === "over") return; clearRea(); run.died = true; mode = "dying"; clearInputs(); sfx.stinger(); setMsg("Zu spät. Der Monitor zeigt eine Linie. Sie ist gerade.", 3, true); setTimeout(() => showGameOver(), 1600); }
 function nightCaught(e) {
+  if (nightTruce()) return;
   run.found = (run.found || 0) + 1; const n = run.found, t = TYPES[e.type];
   flash("zap"); sfx.stinger(); sfx.hit(); noise(0, .45, 1400, .7, .22); tone(70, 0, .6, "sawtooth", .08, 40);
   if (navigator.vibrate) try { navigator.vibrate([90, 40, 180]); } catch (_) {}
@@ -912,7 +943,7 @@ function nightHorror() {
 }
 /* nobody hides in the safe room all night: first a knock, then a key in the lock, then you are found */
 function updateCamping(dt) {
-  if (run.minutes >= NIGHT_END) return;
+  if (run.minutes >= NIGHT_END || nightTruce()) return;
   const k = settings.diff === "easy" ? 1.4 : 1;
   if (playerSafe()) run.campT = (run.campT || 0) + dt; else { if (run.campT > 0) run.campT = Math.max(0, run.campT - dt * 2); if (run.campT < 10) run.campW = 0; } // below zero = rest you earned with finished jobs
   const t = run.campT / k, w = run.campW || 0;
@@ -922,6 +953,7 @@ function updateCamping(dt) {
     const e = spawnFar("N"); if (e) { e.name = "Nachtschwester"; nightCaught(e); setTimeout(() => setMsg(nightSafe() + ": gefunden. Hier schläft niemand eine ganze Nacht. Schon gar kein Arzt.", 4.5, true), 1600); } }
 }
 function updateNight(dt) {
+  if (run.truceT > 0) run.truceT -= dt;
   updateCamping(dt);
   if (level.watchers && level.watchers.length) for (const w of level.watchers) { // their heads, and the rest, turn after you. Slowly.
     const g = w.p.group, want = Math.atan2(player.x - w.x, player.y - w.y); let d = want - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); g.rotation.y += d * Math.min(1, dt * .9); }
@@ -956,7 +988,7 @@ function updateHildegard(e, t, dt) {
   walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (level.hildeFast ? 1.25 : 1) * (settings.diff === "easy" ? .8 : 1), dt);
   e.moving = false; e.tyaw = Math.atan2(dx, dy);
   if (d < 8 && Math.random() < dt * 1.2) tone(160 + Math.random() * 40, 0, .06, "sine", .03);
-  if (d < .75 && player.inv <= 0) hildegardCatch(e);
+  if (d < .75 && player.inv <= 0 && !nightTruce()) hildegardCatch(e);
 }
 
 // ---------- active protection: what is working right now ----------
@@ -965,6 +997,7 @@ function updateBuffs() {
   const B = []; // [icon, label, seconds left (or null), share left (or null), screen effect]
   if (player.busy > 0) B.push(["📋", "Unsichtbar", player.busy, player.busy / 12, "invis"]);
   if (player.hidden) B.push(["🙈", "Versteckt", null, null, "hidden"]);
+  if (nightTruce()) B.push(["🚨", "Notfall: Alle lassen dich in Ruhe", run.truceT > 0 && !(run.rea && !run.rea.done) ? run.truceT : null, null, null]);
   if (player.noroT > 0) B.push(["😷", "Alle halten Abstand", player.noroT, player.noroT / 15, "noro"]);
   if (player.phoneT > 0) B.push(["📱", "Telefonat: Personal dreht ab", player.phoneT, player.phoneT / 10, "phone"]);
   if (player.civil) B.push(["🥼", "Ohne Kittel: Personal erkennt dich nicht", null, null, null]);

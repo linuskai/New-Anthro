@@ -13,7 +13,8 @@ const labelFor = (t, done) => labelTex(done || t.label, done ? "#7b8a85" : t.col
 
 function spawnEnemy(lv, type, x, y, r) {
   const t = TYPES[type];
-  const e = { type, name: t.who(), x, y, tx: Math.floor(x), ty: Math.floor(y), hx: Math.floor(x), hy: Math.floor(y), yaw: (r ? r() : Math.random()) * 6.28, tyaw: 0,
+  let nm = t.who(); const fam = n => n.split(",")[0]; for (let k = 0; k < 12 && lv.enemies.some(o => fam(o.name) === fam(nm)); k++) nm = t.who(); // no two people with the same name on one floor
+  const e = { type, name: nm, x, y, tx: Math.floor(x), ty: Math.floor(y), hx: Math.floor(x), hy: Math.floor(y), yaw: (r ? r() : Math.random()) * 6.28, tyaw: 0,
     state: "idle", aw: 0, stun: 0, pause: r ? r() * 2 : Math.random() * 2, done: false, gone: false, lookT: 0 };
   e.tyaw = e.yaw;
   const g = new THREE.Group();

@@ -211,6 +211,7 @@ function showGameOver() {
     $("endText").textContent = (run.found || 0) >= 3 ? `Um ${fmtTime(run.minutes)} haben sie dich zum dritten Mal gefunden. Du bist jetzt einer von ihnen. Du schlurfst über den Flur. Deine Augen leuchten rot. Morgen früh fragt der Frühdienst: „Ruhige Nacht?“ ${run.nightDone} Pager-Aufgaben erledigt.` : `Um ${fmtTime(run.minutes)} bist du eingeschlafen. Auf dem Flur. Ein Schlafwandler hat dich zugedeckt. ${run.nightDone} Aufgaben erledigt. Schwester Hildegard hat die Kurven für dich abgezeichnet. Mit deinem Namen.`;
     fillStats(); $("endRank").textContent = (run.found || 0) >= 3 ? "Neuer Schlafwandler" : "Eingeschlafen"; $("stOver").textContent = "Nachtdienst bis " + fmtTime(run.minutes); $("endBest").hidden = true; $("endTicker").hidden = true; $("endScore").hidden = true; $("btnShare").hidden = $("btnNightNow").hidden = true; $("btnAgain").firstElementChild.textContent = "Noch eine Nacht";
     mode = "over";
+    if (run.died) { $("endTitle").textContent = "Nicht alle haben die Nacht überlebt"; $("endRank").textContent = "Zu spät gekommen"; $("endText").textContent = `Um ${fmtTime(run.minutes)} kam der Reanimationsalarm. Du warst nicht rechtzeitig da. Niemand sonst war im Haus. Der Frühdienst fragt: „Ruhige Nacht?“ Du sagst nichts. ${run.lives} Leben gerettet, ${run.nightDone} Pager-Aufgaben erledigt.`; showGameOverCard("Ein Patient ist gestorben.", "Jede Reanimation ist Pflicht: Lauf sofort los, wenn der Alarm kommt. Solange du dich um den Notfall kümmerst, lässt dich jeder in Ruhe."); return; }
     if ((run.found || 0) >= 3) showGameOverCard("Dreimal gefunden.", "Die Nachtgestalten haben dich dreimal erwischt. Bleib im Dunkeln, Lampe aus, und behalte Hildegard im Blick.");
     else showGameOverCard("Eingeschlafen: Deine Energie ist auf 0 %.", "Schreck, Laufen und verpasste Pager-Aufgaben kosten Energie. Im " + nightSafe() + " lädst du sie wieder auf.");
     return;
@@ -232,7 +233,7 @@ function showNightEnd() {
   const isBest = !(best >= run.nightDone); if (isBest) try { localStorage.setItem(NIGHT_BEST, String(run.nightDone)); } catch (e) {}
   submitNight(run.place, run.nightDone); typeof track === "function" && track("night_win", { place: run.place, tasks: run.nightDone });
   endOverBanner(); $("endEyebrow").textContent = nightPlace() + " · 07:30"; $("endTitle").textContent = "Übergabe";
-  $("endText").textContent = `Du hast die Nacht überlebt. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
+  $("endText").textContent = `Du hast die Nacht überlebt. Und alle anderen auch: ${run.lives} Leben gerettet, niemand gestorben. ${run.nightDone} Pager-Aufgaben erledigt, ${run.nightFail} verpasst. Der Frühdienst fragt: „Ruhige Nacht?“ Du lachst. Es klingt ein bisschen wie Hildegard.`;
   fillStats(); $("stOver").textContent = "9 h (Nachtdienst)"; $("stTasks").textContent = run.nightDone;
   $("endRank").textContent = run.nightDone >= 10 ? "Nachtschicht-Legende" : run.nightDone >= 6 ? "Unkaputtbar" : run.nightDone >= 3 ? "Hat überlebt. Irgendwie." : "Hat sich im " + nightSafe() + " versteckt";
   $("endTicker").hidden = true; $("endBest").hidden = false; $("endBest").textContent = isBest ? "Neuer Nachtdienst-Rekord." : "Bester Nachtdienst: " + best + " Aufgaben";
@@ -292,7 +293,7 @@ function mapTap(ev) {
     if (p.kind === "brew") C.push([p.x, p.y, 1, "☕ <b>Kaffeemaschine</b> · füllt Energie auf"]);
     if (p.kind === "sofa") C.push([p.x, p.y, 1, `🛋️ <b>${p.bed ? "Bereitschaftsliege" : "Sofa"}</b> · ausruhen füllt Energie auf, kostet aber Zeit`]); }
   if (run.task) C.push([run.task.x + .5, run.task.y + .5, 1.4, `📟 <b>Pager-Aufgabe</b> · ${esc(nightRoom(run.task.room))}: ${esc(run.task.text)}`]);
-  if (run.rea && !run.rea.done) C.push([run.rea.x + .5, run.rea.y + .5, 1.5, "🚨 <b>Reanimation</b> · hin und drücken, sonst wird es teuer"]);
+  if (run.rea && !run.rea.done) C.push([run.rea.x + .5, run.rea.y + .5, 1.5, run.mode === "night" ? "🚨 <b>Reanimation</b> · Pflicht: Wer nicht rechtzeitig da ist, verliert die Nacht. Bis du fertig bist, lässt dich jeder in Ruhe" : "🚨 <b>Reanimation</b> · hin und drücken, sonst wird es teuer"]);
   if (level.exit) C.push([level.exit[0] + .5, level.exit[1] + .5, 1.2, `🚪 <b>Treppenhaus</b> · ${exitOpen() ? "offen" : "noch zu: erst die Aufgaben dieses Stockwerks"}`]);
   for (const d of level.doors) if (seen(d.x, d.y)) C.push([d.x + .5, d.y + .5, .8, d.safe ? "🚪 <b>Sicherer Raum</b> · hier findet dich erst mal niemand" : `🚪 <b>${esc(d.plate || "Zimmer")}</b> · ${esc(d.num || "")}`]);
   let best = null; for (const k of C) { const dd = Math.hypot(k[0] - mx, k[1] - my); if (dd <= k[2] && (!best || dd < best[4])) best = [...k, dd]; }
