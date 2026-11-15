@@ -435,7 +435,7 @@ function updateEnemy(e, dt) {
   // protection really protects: whoever comes close while it works gives up and turns away (with a visible reaction)
   const shield = run.mode === "mission" ? protectedFrom(e) : null;
   if (shield && d < 2.4 && (e.state === "spot" || e.state === "sus" || d < 1.2)) { e.aw = 0; e.state = "idle"; e.stun = 1.2; if (!(e.shieldCd > level.t)) { e.shieldCd = level.t + 4; emote(e, shield); } if (player.noroT > 0) e.investigate = { x: e.hx + .5, y: e.hy + .5, t: 5 }; return; }
-  if (d < .72 && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { if (run.mode === "night") nightCaught(e); else hostileDialog(e); return; }
+  if (d < (run.mode === "night" ? .43 : .72) && player.inv <= 0 && !player.hidden && !playerSafe() && player.busy <= 0 && (e.state === "spot" || e.state === "sus")) { if (run.mode === "night") nightCaught(e); else hostileDialog(e); return; }
   if (t.ghost) {
     if (e.state === "spot") { chase(e, t, dx, dy, d, dt, t.approach * (blackout > 0 ? 1.5 : 1)); if (Math.random() < dt * .4) sfx.whisper(); }
     else patrol(e, t, dt);
@@ -1014,7 +1014,7 @@ function updateHildegard(e, t, dt) {
   walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (level.hildeFast ? 1.25 : 1) * (settings.diff === "easy" ? .8 : 1), dt);
   e.moving = false; e.tyaw = Math.atan2(dx, dy);
   if (d < 8 && Math.random() < dt * 1.2) tone(160 + Math.random() * 40, 0, .06, "sine", .03);
-  if (d < .75 && player.inv <= 0 && !nightTruce()) hildegardCatch(e);
+  if (d < .45 && player.inv <= 0 && !nightTruce()) hildegardCatch(e);
 }
 
 // ---------- active protection: what is working right now ----------
