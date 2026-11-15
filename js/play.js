@@ -910,7 +910,10 @@ function failTask() {
 }
 /* found: they did not look for you all night for nothing. A short talk about the emergency that is none. It changes nothing; that is the point. */
 const NIGHT_PA = ["„Der Besitzer des weißen Kittels in der Kantine wird gebeten, ihn abzuholen. Er bewegt sich.“", "„Achtung: Die Nachtruhe beginnt um 22 Uhr. Für Patienten. Für alle anderen: nie.“", "„Der diensthabende Arzt bitte auf alle Stationen. Gleichzeitig.“",
-  "„Es wurde ein Feierabend gefunden. Er kann an der Pforte abgeholt werden. Gültig bis 2011.“", "„Das Licht im Flur 3 wurde aus Kostengründen durch Ihre Vorstellungskraft ersetzt.“", "„Schwester Hildegard bitte NICHT an die Information. Sie ist schon da.“", "„Wir bitten um Verständnis.“ (Mehr kam nicht.)"];
+  "„Es wurde ein Feierabend gefunden. Er kann an der Pforte abgeholt werden. Gültig bis 2011.“", "„Das Licht im Flur 3 wurde aus Kostengründen durch Ihre Vorstellungskraft ersetzt.“", "„Schwester Hildegard bitte NICHT an die Information. Sie ist schon da.“", "„Wir bitten um Verständnis.“ (Mehr kam nicht.)",
+  "„An den Nachtdienst: Sie sind heute allein für das ganze Haus zuständig. Die Geschäftsführung nennt das Vertrauen.“", "„Der Hintergrunddienst ist erreichbar. Er bittet darum, das nicht auszuprobieren.“",
+  "„Schlafen im Dienst ist untersagt. Schlafen nach dem Dienst lässt der Dienstplan nicht zu.“", "„Es ist drei Uhr. Die Geschäftsführung schläft tief und dankt Ihnen für Ihre Flexibilität.“",
+  "„Die zweite Nachtwache wurde eingespart. Bitte seien Sie ab sofort an zwei Orten.“", "„Ihr Nachtdienst zählt als Bereitschaft. Bezahlt werden nur die Minuten, in denen jemand stirbt.“"];
 const FOUND_TALKS = {
   Q: [["„Herr Doktor … ich kann nicht schlafen.“ Er schlafwandelt. Er schläft gerade.", ["„Sie schlafen doch.“", "„Ach so.“ Er schläft weiter. Im Stehen. Vor dir."], ["„Zählen Sie Schäfchen.“", "Er zählt. Laut. Bei 4.000 ist Frühdienst."], ["„Ich auch nicht.“", "Ihr schweigt gemeinsam. Es ist der schönste Moment der Nacht."]],
     ["„Mein Bettnachbar atmet.“", ["„Das ist gut.“", "„Aber so LAUT.“ Er macht es vor. Es ist wirklich laut."], ["„Soll er aufhören?“", "Er überlegt lange. „Nur nachts.“"], ["Ohrstöpsel versprechen", "Du hast keine. Du versprichst sie trotzdem. Lieferzeit laut Einkauf: 2031."]],
