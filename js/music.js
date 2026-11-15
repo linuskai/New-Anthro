@@ -61,26 +61,23 @@ function updateMusic(dt) {
   musicPad(0); // no background music: only danger gets music
   // spotted: no chase music any more, only a very quiet submarine dive alarm from far away, every few seconds while they are after you
   MUS.alarmT = (MUS.alarmT || 0) - dt;
-  if (live && chase > .25 && MUS.alarmT <= 0 && !(typeof fightOn !== "undefined" && fightOn) && !bossMus) { subAlarm(); MUS.alarmT = 4.5; }
+  if (live && chase > .25 && MUS.alarmT <= 0 && !(typeof fightOn !== "undefined" && fightOn) && !bossMus) { subAlarm(); MUS.alarmT = 14; }
+  // your own heartbeat, in every mode: faster the closer someone is who has noticed you
+  let near = 99; if (live && level && mode === "play") for (const e of level.enemies) if (!e.gone && !e.done && !TYPES[e.type].static && (e.state === "spot" || e.state === "sus" || (e.type === "J" && run.mode === "night"))) near = Math.min(near, Math.hypot(e.x - player.x, e.y - player.y));
+  if (near < 8 && !(typeof nightTruce === "function" && nightTruce()) && (MUS.hbT = (MUS.hbT || 0) - dt) <= 0) { MUS.hbT = .35 + near * .09; const hv = run.mode === "night" ? 1 : .6; tone(52, 0, .11, "sine", .16 * hv); tone(46, .15, .1, "sine", .12 * hv); }
   const want = MUS.tension > .05, period = 175;
   if (want && (!MUS.t || MUS.period !== period)) { clearInterval(MUS.t); MUS.period = period; MUS.t = setInterval(musicTick, period); }
   else if (!want && MUS.t) { clearInterval(MUS.t); MUS.t = null; MUS.step = 0; }
 }
 
-// the dive klaxon of an old submarine: "aa-OOO-gah", twice, muffled as if through a steel hull. Deliberately very quiet.
+// spotted: two soft, low notes, like a pager far away. Quiet, once, and not again for a while.
 function subAlarm() {
   if (!actx || !settings.sound) return;
   const mv = settings.mus ?? .7; if (mv < .05) return;
   try {
-    const out = actx.createBiquadFilter(); out.type = "lowpass"; out.frequency.value = 900; out.Q.value = 2; out.connect(master);
-    for (const at of [0, .85]) {
-      const t0 = actx.currentTime + at, g = actx.createGain(); g.connect(out);
-      g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.022 * mv, t0 + .08); g.gain.setValueAtTime(.022 * mv, t0 + .5); g.gain.exponentialRampToValueAtTime(.0001, t0 + .7);
-      for (const [type, mul] of [["sawtooth", 1], ["square", .5]]) {
-        const o = actx.createOscillator(); o.type = type; o.frequency.setValueAtTime(150 * mul, t0); o.frequency.exponentialRampToValueAtTime(330 * mul, t0 + .45); o.frequency.setValueAtTime(330 * mul, t0 + .7);
-        o.connect(g); o.start(t0); o.stop(t0 + .75);
-      }
-    }
+    const out = actx.createBiquadFilter(); out.type = "lowpass"; out.frequency.value = 700; out.connect(master);
+    [[311, 0], [233, .42]].forEach(([f, at]) => { const t0 = actx.currentTime + at, o = actx.createOscillator(), g = actx.createGain(); o.type = "triangle"; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.014 * mv, t0 + .05); g.gain.exponentialRampToValueAtTime(.0001, t0 + .55); o.connect(g).connect(out); o.start(t0); o.stop(t0 + .6); });
   } catch (e) {}
 }
 

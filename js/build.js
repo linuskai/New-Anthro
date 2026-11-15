@@ -370,6 +370,7 @@ function roughUpDoctorsRoom(lv, reg) {
 }
 
 // ---------- career routes: props on the way and the ride home ----------
+let RING_LIGHT_GEO = null;
 function routeModel(obj) {
   const g = new THREE.Group();
   if (obj === "fax") {
@@ -390,7 +391,14 @@ function routeModel(obj) {
     g.add(at(rmesh(.7, .04, .32, .015, 0x8a6a4a), 0, 1.0, .17)); for (const sx of [-1, 1]) g.add(at(boxMesh(.03, .2, .25, 0x5a4a3a), sx * .3, .9, .14));
     if (obj === "binder") { g.add(at(rmesh(.08, .32, .26, .01, 0xc0322a), -.1, 1.18, .17)); g.add(at(rmesh(.08, .32, .26, .01, 0x2d3f8f), .02, 1.18, .17)); }
     if (obj === "lanyard") { const t = new THREE.Mesh(GEO.torus, lambert(0x1f9d55)); t.scale.set(.18, .3, .4); t.position.set(0, 1.35, .05); g.add(t); g.add(at(boxMesh(.12, .16, .01, 0xffffff), 0, 1.08, .06)); }
-    if (obj === "ringlight") { const t = new THREE.Mesh(GEO.torus, basic(0xfff6e0)); t.scale.set(.5, .5, .5); t.position.set(0, 1.45, .17); g.add(t); g.add(at(mesh(GEO.pole, lambert(0x222222), .5, .4, .5), 0, 1.15, .17)); }
+    if (obj === "ringlight") { // a thin glowing ring on a small tripod, a phone clamped in the middle, the way influencers carry them
+      const ringGeo = RING_LIGHT_GEO || (RING_LIGHT_GEO = new THREE.TorusGeometry(.17, .016, 10, 40));
+      const ring = new THREE.Mesh(ringGeo, basic(0xfff3d6)); ring.position.set(0, 1.42, .17); g.add(ring);
+      const back = new THREE.Mesh(ringGeo, lambert(0x1b1b1b)); back.scale.set(1.08, 1.08, 1.4); back.position.set(0, 1.42, .155); g.add(back);
+      const gl = sprite(glowTex("rgba(255,236,190,1)"), .7, .7); gl.material = gl.material.clone(); gl.material.blending = THREE.AdditiveBlending; gl.material.depthWrite = false; gl.material.opacity = .5; gl.position.set(0, 1.42, .2); g.add(gl);
+      g.add(at(mesh(GEO.cyl, lambert(0x1b1b1b), .012, .2, .012), 0, 1.14, .17)); g.add(at(rmesh(.07, .13, .012, .008, 0x111418), 0, 1.42, .172)); g.add(at(boxMesh(.05, .1, .002, 0x3a6ad8), 0, 1.42, .18));
+      for (let i = 0; i < 3; i++) { const leg = mesh(GEO.cyl, lambert(0x1b1b1b), .008, .12, .008), a = i * 2.094; leg.position.set(Math.sin(a) * .04, 1.06, .17 + Math.cos(a) * .04); leg.rotation.set(Math.cos(a) * .5, 0, -Math.sin(a) * .5); g.add(leg); }
+    }
     if (obj === "lunchbox") { g.add(at(rmesh(.3, .12, .2, .03, 0x6fcf97), 0, 1.08, .17)); g.add(at(plate(stickyTex("NICHT|ESSEN!!", "#fff59a"), .14, .14), 0, 1.1, .275)); }
     if (obj === "helmet") { const h = mesh(GEO.cap, lambert(0xe8a33a), .18, .14, .2); h.position.set(0, 1.03, .17); g.add(h); }
   } else if (obj === "suitcase") {

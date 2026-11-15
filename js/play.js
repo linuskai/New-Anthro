@@ -995,8 +995,7 @@ function updateNight(dt) {
   else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }
   run.horrorT -= dt; if (run.horrorT <= 0) { run.horrorT = 16 + Math.random() * 20; nightHorror(); }
   // your own heartbeat: faster the closer something is that has noticed you; sleepwalkers groan nearby
-  let near = 99; for (const e of level.enemies) if (!e.gone && !e.done && (e.state === "spot" || e.state === "sus" || e.type === "J")) near = Math.min(near, Math.hypot(e.x - player.x, e.y - player.y));
-  if (near < 8 && (run.hbT = (run.hbT || 0) - dt) <= 0) { run.hbT = .35 + near * .09; tone(52, 0, .11, "sine", .16); tone(46, .15, .1, "sine", .12); }
+  // (the heartbeat lives in music.js now, for all modes)
   if (Math.random() < dt * .25) { const z = level.enemies.find(e => e.type === "Q" && !e.gone && Math.hypot(e.x - player.x, e.y - player.y) < 7); if (z) { tone(90 + Math.random() * 30, 0, .9, "sawtooth", .018, 60); noise(0, .8, 300, 2, .03); } }
   if (run.zT != null) { run.zT -= dt; if (run.zT <= 0) { run.zT = 28; if (level.enemies.filter(e => e.type === "Z" && !e.done).length < 4) spawnFar("Z"); } }
 }

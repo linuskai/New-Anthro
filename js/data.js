@@ -71,7 +71,7 @@ const LEVELS = [
       { id: "spa", title: "Gurkenscheiben-Protokoll", text: "Bei Dr. Glatt melden (oder auf eine Wellness-Liege)", main: true, at: "friend:e",
         brief: "Die Dermatologie ist die einzige Abteilung mit Feierabend. Dr. Glatt besteht auf einer Behandlung, bevor du weiterdarfst. Medizinisch notwendig, sagt sie." }],
     lock: "Dr. Glatt besteht auf Wellness. Ohne Gurkenscheibe kein Weiterkommen.",
-    map: ["#################################", "#:::::::#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:R:+:#:W:W:W:#", "#:::::::#:::::::#:::::::#:::R:::#", "####d#######d#######d#######d####", "#S.!.....$...R.......i...R......^", "######d#########d######.####d####", "#:::::::::::#:::::::###E#:::::::#", "#:+:::e::R::#:::W:::#####::W:W::#", "#:::::::::::#:::::::#####:::R:::#", "#################################"] },
+    map: ["#################################", "#:::::::#:::::::#:::::::#:::::::#", "#::W::::#::W:W::#:+:R:+:#:W:W:W:#", "#:::::::#:::::::#:::::::#:::R:::#", "####d#######d#######d#######d####", "#S.!.....$...R.......i...R......^", "#...............................#", "######d#########d######.####d####", "#:::::::::::#:::::::###E#:::::::#", "#:+:::e::R::#:::W:::#####::W:W::#", "#:::::::::::#:::::::#####:::R:::#", "#################################"] },
   { key: "cellar", short: "UG · KELLER", name: "Keller · Pathologie & Archiv", floor: "UG", room: 0, env: "cellar", envOn: "cellarOn",
     safeNames: [["WERKSTATT", "Hausmeister Schraube · Zutritt nur mit Bier"]],
     tip: "Das Treppenhaus ins EG ist gesperrt (Brandschutzbegehung seit 2021). Der Weg führt durch den Keller. Strom: weg. Wartung: gestrichen. Und Dr. Ewig ist noch da.",

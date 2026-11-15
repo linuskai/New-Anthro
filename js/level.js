@@ -461,8 +461,8 @@ function buildLevel(idx) {
     const free = [];
     for (let y = 1; y < GH - 1; y++) for (let x = 1; x < GW - 1; x++) if (grid[y][x] === "." && lv.zone[y * GW + x] === 1 && !(lv.start && Math.abs(x - lv.start[0]) + Math.abs(y - lv.start[1]) < 3)) free.push([x, y]);
     const gloss = c => new THREE.MeshStandardMaterial({ color: c, roughness: .25, metalness: .05 });
-    for (let n = 0; n < 8 && free.length; n++) {
-      const [x, y] = free.splice(Math.floor(r() * free.length), 1)[0], tube = r() < .4, g = new THREE.Group(), ox = (r() - .5) * 1.3, oz = (r() - .5) * 1.3;
+    for (let n = 0; n < 6 && free.length; n++) { // six spots on a corridor that is two lanes wide: there is always a way around
+      const [x, y] = free.splice(Math.floor(r() * free.length), 1)[0], tube = r() < .25, g = new THREE.Group(), ox = (r() - .5) * 1.3, oz = (r() - .5) * 1.3;
       if (tube) {
         const body = new THREE.Mesh(new THREE.CylinderGeometry(.045, .055, .26, 10), gloss(0xf4f6fa)); body.rotation.z = Math.PI / 2; body.position.y = .05; g.add(body);
         const cap = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .05, 8), gloss(0x2d6fd8)); cap.rotation.z = Math.PI / 2; cap.position.set(.15, .05, 0); g.add(cap);
