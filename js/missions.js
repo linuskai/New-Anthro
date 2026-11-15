@@ -164,8 +164,8 @@ function missionTick(dt) {
 
 // ---------- choosing a mission (or where to spend the night) ----------
 const NIGHT_PLACES = [
-  { k: "ward", av: "🛏️", color: "#2d3f8f", name: "Station 5B", title: "Station bei Nacht", tag: "Zwei Ringflure, Patientenzimmer, Wäschekammer. Schlafwandler mit roten Augen, Nachtschwestern, Hildegard." },
-  { k: "er", av: "🚑", color: "#7a1f1a", name: "Notaufnahme", title: "ZNA bei Nacht", tag: "Wartehalle, Behandlungskabinen mit Vorhängen, Schockraum. Die Wartenden sind im Stehen eingeschlafen. Mit offenen Augen." }];
+  { k: "er", av: "🚑", color: "#7a1f1a", name: "Notaufnahme", title: "ZNA bei Nacht", tag: "Die große Karte: Wartehalle, Kabinen, Schockraum, Notfall-CT, Gipsraum, Ausnüchterung. Die Wartenden sind im Stehen eingeschlafen. Manche wachen auf." },
+  { k: "ward", av: "🛏️", color: "#2d3f8f", name: "Station 5B", title: "Station bei Nacht", tag: "Zwei Ringflure, Patientenzimmer, Wäschekammer. Schlafwandler mit roten Augen, Nachtschwestern, Hildegard." }];
 function showNightSelect() {
   mode = "select"; hidePopups(); let nb = null; try { nb = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
   $("selTitle").textContent = "Wo verbringst du die Nacht?"; $("selSub").textContent = "22:00 bis 07:30. Lass dich von niemandem finden. Dreimal gefunden, und die Nacht ist vorbei.";

@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🚑 Nachtdienst Notaufnahme viel größer: Wartehalle, Notfall-CT, Gipsraum, Ausnüchterung, Röntgen", "👀 Die Wartenden schauen dir nach. Manche wachen auf", "🚪 Verstecken geht nicht mehr ewig: Erst klopft es, dann dreht sich ein Schlüssel", "📟 Zweimal ablehnen, und die Nachtschwester kommt dich holen", "🖼️ Grafik in vier Stufen, einstellbar unter Einstellungen → Grafik"];
+const NEWS = ["🗺️ Lageplan antippen: Wer ist der Punkt, was ist hinter der Tür?", "📟 Nachtdienst: weniger Pager, dafür lohnen sie sich (Energie, Ruhe, jeder dritte streicht einen Fund)", "🚑 Notaufnahme bei Nacht viel größer, mit Notfall-CT und Wartehalle", "🚪 Verstecken geht nicht mehr ewig", "🕯️ Schwester Hildegard ist etwas langsamer"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

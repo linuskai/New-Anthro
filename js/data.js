@@ -465,7 +465,7 @@ TYPES.Q = { label: "SCHLAFWANDLER", role: "Patient · schläft (eigentlich)", wh
   walk: .32, approach: .72, range: 5, fov: .35, detect: .62, barks: ["Herr… Doktor…", "Ist… schon… Frühstück?", "Bleib… da…", "Mmmh… Schlaftablette…"] };
 TYPES.J = { label: "SCHW. HILDEGARD", role: "Nachtwache · seit 1978", who: () => "Schwester Hildegard", av: "🕯️", color: "#e8e4d0",
   spec: () => ({ skin: 0xd8d0c8, hair: 0xf2f2f2, hairStyle: "bun", shirt: 0xf2efe6, pants: 0xf2efe6, robe: true, shoes: 0xf2f2f2, mood: "neutral", acc: "chart", scale: .97 }),
-  walk: 0, approach: 2.3, range: 99, fov: -1, detect: 0, barks: ["…", "Kurven…", "Abzeichnen…"] };
+  walk: 0, approach: 1.9, range: 99, fov: -1, detect: 0, barks: ["…", "Kurven…", "Abzeichnen…"] }; // faster than you walk, slower than you run, even at dawn
 LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nachtdienst", floor: "5. OG", room: 5, env: "night", final: true, night: true,
   safeNames: [["ARZTZIMMER 5B", "Hier bist du sicher. Fast."]],
   tip: "Überlebe bis 07:30, ohne dass dich jemand findet. Die Patienten schlafwandeln mit roten Augen über die Flure, die Nachtschwestern machen Runde. Wer dich erwischt, zählt: Dreimal gefunden, und die Nacht ist vorbei. Der Pager schickt dich trotzdem in die Zimmer.",

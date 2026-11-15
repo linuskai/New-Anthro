@@ -1284,6 +1284,10 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 .set-more { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; } .set-more .btn { margin: 0; min-height: 44px; padding: 8px 12px; font-size: 13px; }
 body.set-title .set-more { display: none; }
 @media (orientation: landscape) and (max-height: 520px) { .card.settings { max-width: 760px; } .set-pane { min-height: 96px; } .set-more { grid-template-columns: repeat(3, 1fr); } .set-tabs button { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 7px 4px; font-size: 16px; } }
+#mapView { align-content: center; gap: 8px; } #mapView .map-legend { position: static; font-size: 11px; opacity: .7; }
+#mapView .map-info { box-sizing: border-box; width: min(92vw, 80vh); background: #f6f4ea; color: #1d2622; border-radius: 10px; padding: 9px 12px; font: 600 14px/1.35 var(--display); min-height: 40px; }
+#mapView .map-info i { font-style: normal; font-weight: 800; } #mapView .map-info .bad { color: #c0322a; } #mapView .map-info .warn { color: #a86a00; } #mapView .map-info .ok { color: #1f7a45; }
+@media (orientation: landscape) and (max-height: 520px) { #mapView { grid-template-columns: auto minmax(0, 300px); grid-template-rows: auto auto; align-items: center; } #mapView canvas { grid-row: 1 / 3; width: min(60vw, 88vh); height: min(60vw, 88vh); } #mapView .map-info { width: auto; align-self: end; } #mapView .map-legend { align-self: start; text-align: left; } }
 </style>
 </head>
 <body>
@@ -1349,7 +1353,7 @@ body.set-title .set-more { display: none; }
   <div id="frostFx" aria-hidden="true"></div>
 
   <div id="mcard" hidden><div id="mcEyebrow">Mission</div><div id="mcTitle"></div><div id="mcSub"></div></div>
-  <div id="mapView" hidden><canvas id="mapBig" width="720" height="720" aria-label="Lageplan"></canvas><button class="btn ghost map-close" id="btnMapClose" type="button"><span>Schließen</span><span>✕</span></button><div class="map-legend">◆ Ziel · grün = freundlich · gelb/rot = Gefahr · braun = Tür · beige = sicherer Raum</div></div>
+  <div id="mapView" hidden><canvas id="mapBig" width="720" height="720" aria-label="Lageplan"></canvas><button class="btn ghost map-close" id="btnMapClose" type="button"><span>Schließen</span><span>✕</span></button><div class="map-info" id="mapInfo" aria-live="polite"></div><div class="map-legend">◆ Ziel · grün = freundlich · gelb/rot = Gefahr · braun = Tür · beige = sicherer Raum</div></div>
   <div id="toast" hidden><div id="toastAvatar"></div><div id="toastWho"></div><div id="toastLine"></div><div id="toastStamps"></div></div>
   <div id="lab" hidden></div>
   <div id="call" hidden>

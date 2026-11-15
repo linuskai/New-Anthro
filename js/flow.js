@@ -275,9 +275,34 @@ $("btnQuit").addEventListener("click", () => { saveNow(); hidePopups(); endCall(
 $("mission").addEventListener("click", () => { if (!$("mission").classList.contains("open")) { freshNote(); sfx.tick(); } else if (run.mode === "mission") openMC(); });
 $("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
 if (settings.hudmin) document.body.classList.add("hudmin"); // landscape only (the portrait HUD is compact anyway)
-function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); $("mapView").hidden = false; drawBigMap(); }
+let mapSel = null;
+function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); mapSel = null; $("mapInfo").innerHTML = "👆 Tipp auf einen Punkt, eine Tür oder einen Raum: Dann steht hier, wer oder was das ist."; $("mapView").hidden = false; drawBigMap(); }
+/* tap the map: who is that dot, what is behind that door, what does this room do for you */
+function mapTap(ev) {
+  const cv = $("mapBig"), rc = cv.getBoundingClientRect(), W = cv.width, c = W / Math.max(GW, GH), oy = (W - GH * c) / 2;
+  const mx = (ev.clientX - rc.left) / rc.width * W / c, my = ((ev.clientY - rc.top) / rc.height * W - oy) / c;
+  const fog = LEVELS[run.idx].fogOfWar && !run.flags.has("power"), seen = (x, y) => !fog || nearVisited(Math.floor(x), Math.floor(y));
+  const C = []; // [x, y, reach, html]
+  for (const e of level.enemies) { if (e.gone || e.done || TYPES[e.type].ghost) continue; if (!e.static && Math.hypot(e.x - player.x, e.y - player.y) > 8) continue; const t = TYPES[e.type];
+    C.push([e.x, e.y, 1.3, `${t.av} <b>${esc(e.name)}</b> · ${esc(t.role || t.label)} · ${e.static ? "steht dir im Weg" : e.state === "spot" ? "<i class='bad'>hat dich entdeckt</i>" : e.state === "sus" ? "<i class='warn'>ist misstrauisch</i>" : "hat dich nicht bemerkt"}`]); }
+  for (const f of level.friends) if (seen(f.x, f.y)) { const F = FRIENDS[f.kind]; C.push([f.x, f.y, 1.3, `${F.av} <b>${esc(F.name)}</b> · ${esc(F.role)} · <i class='ok'>hilft dir</i>`]); }
+  for (const it of level.items) if (!it.taken && seen(it.x, it.y)) { const I = ITEMS[it.kind]; C.push([it.wx, it.wy, 1.1, `${I.emoji} <b>${esc(I.name)}</b> · ${esc((I.desc || "").split(". ")[0].replace(/\.$/, ""))}.`]); }
+  for (const p of level.props) { if (!seen(p.x, p.y)) continue;
+    if (p.kind === "lift") C.push([p.x, p.y, 1.2, "🛗 <b>Aufzug</b> · bringt dich ins nächste Stockwerk, dauert aber"]);
+    if (p.kind === "brew") C.push([p.x, p.y, 1, "☕ <b>Kaffeemaschine</b> · füllt Energie auf"]);
+    if (p.kind === "sofa") C.push([p.x, p.y, 1, `🛋️ <b>${p.bed ? "Bereitschaftsliege" : "Sofa"}</b> · ausruhen füllt Energie auf, kostet aber Zeit`]); }
+  if (run.task) C.push([run.task.x + .5, run.task.y + .5, 1.4, `📟 <b>Pager-Aufgabe</b> · ${esc(nightRoom(run.task.room))}: ${esc(run.task.text)}`]);
+  if (run.rea && !run.rea.done) C.push([run.rea.x + .5, run.rea.y + .5, 1.5, "🚨 <b>Reanimation</b> · hin und drücken, sonst wird es teuer"]);
+  if (level.exit) C.push([level.exit[0] + .5, level.exit[1] + .5, 1.2, `🚪 <b>Treppenhaus</b> · ${exitOpen() ? "offen" : "noch zu: erst die Aufgaben dieses Stockwerks"}`]);
+  for (const d of level.doors) if (seen(d.x, d.y)) C.push([d.x + .5, d.y + .5, .8, d.safe ? "🚪 <b>Sicherer Raum</b> · hier findet dich erst mal niemand" : `🚪 <b>${esc(d.plate || "Zimmer")}</b> · ${esc(d.num || "")}`]);
+  let best = null; for (const k of C) { const dd = Math.hypot(k[0] - mx, k[1] - my); if (dd <= k[2] && (!best || dd < best[4])) best = [...k, dd]; }
+  if (!best) { const rg = level.safeRooms.find(r => r.tiles.some(([x, y]) => x === Math.floor(mx) && y === Math.floor(my)));
+    if (rg) best = [mx, my, 0, `🛋️ <b>${esc(rg.name[0])}</b> · sicher${run.mode === "night" ? ", aber nicht ewig: nach einer Weile klopft es. Erledigte Aufgaben verlängern die Ruhe" : ""}`];
+    else if (Math.hypot(player.x - mx, player.y - my) < 1.3) best = [player.x, player.y, 0, "▲ <b>Du</b> · der helle Keil zeigt, wohin du schaust"]; }
+  mapSel = best ? [best[0], best[1]] : null; $("mapInfo").innerHTML = best ? best[3] : "Hier ist nichts Besonderes. Nur Flur."; drawBigMap();
+}
 function closeMap() { if (mode !== "map") return; $("mapView").hidden = true; mode = "play"; }
-$("mini").addEventListener("click", openMap); $("btnMapClose").addEventListener("click", closeMap); $("mapView").addEventListener("click", e => { if (e.target.id === "mapView") closeMap(); });
+$("mini").addEventListener("click", openMap); $("btnMapClose").addEventListener("click", closeMap); $("mapBig").addEventListener("click", mapTap); $("mapView").addEventListener("click", e => { if (e.target.id === "mapView") closeMap(); });
 function applyShadows() {
   renderer.shadowMap.enabled = !!settings.shadows;
   const dark = run && ENV[LEVELS[run.idx].env].dark;
@@ -388,6 +413,7 @@ function drawBigMap() {
   if (level.exit) { ctx.fillStyle = exitOpen() ? "#1f9d55" : "#7b8a85"; ctx.fillRect(level.exit[0] * c, level.exit[1] * c, c, c); ctx.fillStyle = "#fff"; ctx.font = `800 ${c * .6}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("↓", (level.exit[0] + .5) * c, (level.exit[1] + .5) * c); }
   for (const rg of level.safeRooms) { const [x, y] = rg.tiles[0]; ctx.fillStyle = "#2a1c00"; ctx.font = `700 ${Math.max(10, c * .32)}px sans-serif`; ctx.textAlign = "left"; ctx.fillText(rg.name[0], x * c + 3, y * c + c * .4); }
   mapMarks(ctx, c, fog, true, 1);
+  if (mapSel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mapSel[0] * c, mapSel[1] * c, c * .85, 0, 7); ctx.stroke(); ctx.strokeStyle = "#f2b33d"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mapSel[0] * c, mapSel[1] * c, c * 1.05, 0, 7); ctx.stroke(); }
   if (naviTarget) { ctx.save(); ctx.translate(naviTarget[0] * c, naviTarget[1] * c); ctx.rotate(Math.PI / 4); ctx.fillStyle = "#f2b33d"; ctx.fillRect(-c * .35, -c * .35, c * .7, c * .7); ctx.restore(); }
   const px = player.x * c, py = player.y * c, fx = -Math.sin(player.yaw), fy = -Math.cos(player.yaw);
   ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.beginPath(); ctx.moveTo(px, py); const a = Math.atan2(fy, fx); ctx.arc(px, py, c * 3, a - .6, a + .6); ctx.closePath(); ctx.fill();

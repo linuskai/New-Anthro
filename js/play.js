@@ -848,11 +848,13 @@ function newTask() {
   if (run.hour >= 1 && !run.rea && Math.random() < (nightER() ? .25 : .15)) { startRea(inner[0], inner[1], 60, false); run.taskT = 30; return; }
   // the pager asks first: you may accept the job or palm it off (with consequences)
   const named = LEVELS[run.idx].plates && d.plate, t = { x: inner[0], y: inner[1], room: named ? d.plate : d.num, text: pick(named && NIGHT_TASKS_ROOM[d.plate] || (nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS)) };
+  // most pages are about a patient: say so, instead of starting in the middle of the sentence
+  if (/^(will|hat|ist|singt|hält) /.test(t.text)) t.text = pick(["Ein Patient ", "Eine Patientin "]) + t.text; else if (/^(wollen|haben) /.test(t.text)) t.text = "Die Angehörigen " + t.text;
   run.taskT = 9999; sfx.beep(); setTimeout(() => sfx.beep(), 220); setTimeout(() => sfx.beep(), 440);
   startCall({ from: "Pager · " + nightRoom(t.room), sub: nightPlace(), av: "📟", text: t.text + ". 72 Minuten.",
     onAccept: () => { run.declineRow = 0; run.task = Object.assign(t, { deadline: run.minutes + 72 }); naviT = 0; showToast("📟", "#a6e38f", "Übernommen · " + nightRoom(t.room), t.text + ". Du hast 72 Minuten.", []); updateHud(); },
     onDecline: () => {
-      run.taskT = 20 + Math.random() * 15; run.nightDeclined = (run.nightDeclined || 0) + 1; run.declineRow = (run.declineRow || 0) + 1;
+      run.taskT = 36 + Math.random() * 18; run.nightDeclined = (run.nightDeclined || 0) + 1; run.declineRow = (run.declineRow || 0) + 1;
       if (run.declineRow >= 2) { // twice in a row: now somebody comes to fetch you in person
         run.declineRow = 0; const h = spawnFar("N");
         if (h) { h.hunter = true; h.huntT = 50; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; }
@@ -864,12 +866,16 @@ function newTask() {
     } });
 }
 function completeTask() {
-  run.nightDone++; run.task = null; run.taskT = 8 + Math.random() * 16; sfx.ding();
-  showToast("✅", "#1f9d55", "Erledigt", pick(["Es war nichts. Es ist nie etwas. Außer wenn doch.", "„Danke, Herr Doktor.“ Es ist 3 Uhr. Du bist gerührt.", "Problem gelöst. Ein neues ist schon unterwegs.", "Der Patient schläft wieder. Du nicht.", "Du schreibst es auf. Niemand wird es je lesen."]), gain({ energy: 5, text: "Aufgabe " + run.nightDone }));
+  run.nightDone++; run.task = null; run.taskT = 30 + Math.random() * 18; sfx.ding();
+  // what a finished job is worth: energy, a stretch of undisturbed rest in the safe room, and every third one makes them forget they found you once
+  run.campT = Math.min(run.campT || 0, 0) - 40; run.campW = 0;
+  const forgiven = run.nightDone % 3 === 0 && (run.found || 0) > 0; if (forgiven) run.found--;
+  setTimeout(() => { if (run && run.mode === "night") setMsg(forgiven ? "Dritte Aufgabe erledigt: Ein Fund ist vergessen. Du bist wieder bei " + (run.found || 0) + "/3." : "Verdient: 40 Sekunden ungestörte Ruhe " + nightSafeIn() + "." + (run.nightDone % 3 ? " Noch " + (3 - run.nightDone % 3) + " bis ein Fund gestrichen wird." : ""), 5); }, 2600);
+  showToast("✅", "#1f9d55", "Erledigt", pick(["Es war nichts. Es ist nie etwas. Außer wenn doch.", "„Danke, Herr Doktor.“ Es ist 3 Uhr. Du bist gerührt.", "Problem gelöst. Ein neues ist schon unterwegs.", "Der Patient schläft wieder. Du nicht.", "Du schreibst es auf. Niemand wird es je lesen."]), gain({ energy: 12, text: "Aufgabe " + run.nightDone }));
   updateHud();
 }
 function failTask() {
-  const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 8 + Math.random() * 12;
+  const room = run.task.room; run.nightFail++; run.task = null; run.taskT = 28 + Math.random() * 14;
   // a missed page sends the night nurse looking for you
   setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
   showToast("⏰", "#c0322a", "Zu spät · " + nightRoom(room), pick([nightRoom(room) + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
@@ -908,7 +914,7 @@ function nightHorror() {
 function updateCamping(dt) {
   if (run.minutes >= NIGHT_END) return;
   const k = settings.diff === "easy" ? 1.4 : 1;
-  if (playerSafe()) run.campT = (run.campT || 0) + dt; else { run.campT = Math.max(0, (run.campT || 0) - dt * 2); if (run.campT < 10) run.campW = 0; }
+  if (playerSafe()) run.campT = (run.campT || 0) + dt; else { if (run.campT > 0) run.campT = Math.max(0, run.campT - dt * 2); if (run.campT < 10) run.campW = 0; } // below zero = rest you earned with finished jobs
   const t = run.campT / k, w = run.campW || 0;
   if (t > 35 && w < 1) { run.campW = 1; for (let i = 0; i < 3; i++) setTimeout(() => sfx.knock(), i * 260); setMsg("Es klopft. Dreimal. „Herr Doktor? Sind Sie da drin?“ Du atmest nicht.", 4.5, true); }
   else if (t > 52 && w < 2) { run.campW = 2; noise(0, .25, 3200, 3, .06); noise(.35, .2, 2600, 3, .06); tone(900, .6, .05, "square", .03); setMsg("Ein Schlüssel im Schloss. Sie hat einen Generalschlüssel. Raus hier!", 4.5, true); sfx.stinger(); }
@@ -947,7 +953,7 @@ function updateHildegard(e, t, dt) {
   if (seen) { e.moving = false; if (!e.wasSeen) { e.wasSeen = true; if (d < 6) sfx.stinger(); } return; }
   e.wasSeen = false;
   if (playerSafe() || player.hidden) return;
-  walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (level.hildeFast ? 1.35 : 1) * (settings.diff === "easy" ? .8 : 1), dt);
+  walkTo(e, Math.floor(player.x), Math.floor(player.y), t.approach * (level.hildeFast ? 1.25 : 1) * (settings.diff === "easy" ? .8 : 1), dt);
   e.moving = false; e.tyaw = Math.atan2(dx, dy);
   if (d < 8 && Math.random() < dt * 1.2) tone(160 + Math.random() * 40, 0, .06, "sine", .03);
   if (d < .75 && player.inv <= 0) hildegardCatch(e);
