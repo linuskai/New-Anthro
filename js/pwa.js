@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["💬 Nachtdienst: Wer dich findet, erzählt dir jetzt auch, warum er dich gesucht hat", "📢 Durchsagen stehen jetzt lesbar auf dem Bildschirm", "🕊️ Nach einem Notfall hast du länger Ruhe", "🚨 Reanimationen sind Pflicht: Heute stirbt niemand"];
+const NEWS = ["📢 Durchsagen mit mehr Biss: schärfere Texte und viele neue, am Tag und im Nachtdienst"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

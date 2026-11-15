@@ -156,7 +156,8 @@ function updateRouteChip() {
 function paBanner(text) {
   const old = document.getElementById("paBanner"); if (old) old.remove();
   const d = document.createElement("div"); d.id = "paBanner"; d.innerHTML = `<i>📢</i><span><small>Durchsage</small><b>${esc(text)}</b></span>`;
-  document.body.appendChild(d); setTimeout(() => d.classList.add("out"), 6500); setTimeout(() => d.remove(), 7100);
+  const ms = Math.max(6500, Math.min(12000, text.length * 60)); // long announcements stay long enough to read
+  document.body.appendChild(d); setTimeout(() => d.classList.add("out"), ms); setTimeout(() => d.remove(), ms + 600);
 }
 function missionTick(dt) {
   if (run.mode !== "mission") return;
