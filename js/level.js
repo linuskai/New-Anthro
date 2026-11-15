@@ -94,7 +94,7 @@ function buildLevel(idx) {
   const wallMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, WALL_H, S), lambert(0xffffff, wallTex(theme)), walls.length);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Matrix4();
   walls.forEach(([x, y], i) => wallMesh.setMatrixAt(i, m4.makeTranslation(x * S + S / 2, WALL_H / 2, y * S + S / 2)));
-  if (!wallMesh.material.bumpMap) { wallMesh.material.bumpMap = plasterTex(); wallMesh.material.bumpScale = .006; wallMesh.material.needsUpdate = true; }
+  if (!wallMesh.material.bumpMap) { wallMesh.material.bumpMap = wallBumpTex(theme); wallMesh.material.bumpScale = .022; wallMesh.material.roughness = .78; wallMesh.material.needsUpdate = true; }
   wallMesh.receiveShadow = true; group.add(wallMesh); lv.wallMesh = wallMesh; lv.wallIdx = new Map(walls.map(([x, y], i) => [x + "," + y, i]));
 
   // wall faces → handrails + skirting (instanced)
@@ -170,6 +170,20 @@ function buildLevel(idx) {
     const pools = new THREE.InstancedMesh(GEO.plane, pm, panelsOk.length);
     panelsOk.forEach(([x, y], i) => pools.setMatrixAt(i, q4.makeRotationX(-Math.PI / 2).multiply(m4.makeScale(S * 1.25, S * 1.25, 1)).setPosition(x * S + S / 2, .012, y * S + S / 2)));
     pools.renderOrder = 1; group.add(pools); lv.pools = pools;
+  }
+  // glow: a soft halo on the ceiling around every working lamp, and from "Hoch" on a faint shaft of light hanging in the dusty air
+  lv.glow = [];
+  if (Q.detail >= 1 && panelsOk.length) {
+    const hm = new THREE.MeshBasicMaterial({ map: haloTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: env.dark ? .3 : .55, toneMapped: false, color: env.lamp, fog: false }); lv.perMat.push(hm);
+    const halos = new THREE.InstancedMesh(GEO.plane, hm, panelsOk.length);
+    panelsOk.forEach(([x, y], i) => halos.setMatrixAt(i, q4.makeRotationX(Math.PI / 2).multiply(m4.makeScale(3.4, 2.5, 1)).setPosition(x * S + S / 2, WALL_H - .07, y * S + S / 2)));
+    halos.renderOrder = 2; group.add(halos); lv.glow.push(halos);
+    if (Q.detail >= 2) {
+      const sm = new THREE.MeshBasicMaterial({ map: shaftTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: env.dark ? .1 : .075, toneMapped: false, color: env.lamp, side: THREE.DoubleSide }); lv.perMat.push(sm);
+      for (const rot of [0, Math.PI / 2]) { const sh = new THREE.InstancedMesh(GEO.plane, sm, panelsOk.length);
+        panelsOk.forEach(([x, y], i) => sh.setMatrixAt(i, q4.makeRotationY(rot).multiply(m4.makeScale(rot ? 1.5 : 2.4, WALL_H - .1, 1)).setPosition(x * S + S / 2, (WALL_H - .1) / 2, y * S + S / 2)));
+        sh.renderOrder = 2; group.add(sh); lv.glow.push(sh); }
+    }
   }
   const brokenMat = lambert(0x3a3e3b);
   for (const [x, y] of panelsBroken) {
@@ -414,7 +428,7 @@ function buildLevel(idx) {
     } else if (ch === "o") {
       const pm = new THREE.MeshStandardMaterial({ color: theme === "cellar" ? 0x22302e : 0x9fb8c4, roughness: .04, metalness: .3, transparent: true, opacity: .75, specular: 0xffffff }); lv.perMat.push(pm);
       const p = new THREE.Mesh(GEO.puddle, pm); p.rotation.x = -Math.PI / 2; p.scale.set(1.2, .9, 1); p.position.set(wx, .015, wz); group.add(p);
-      if (theme !== "cellar") { const ws = wetSign(); ws.position.set(wx + 1, 0, wz - .8); group.add(ws); }
+      if (theme !== "cellar") { const ws = wetSign(); ws.position.set(wx + 1, 0, wz - .8); group.add(ws); if (Q.detail) { const pd = puddle(1.5); pd.position.x = wx + .5; pd.position.z = wz - .5; group.add(pd); dyn(pd); } }
       lv.hazards.push({ kind: "o", x: x + .5, y: y + .5, cd: 0 });
     } else if (ch === "u") {
       group.add(at(mesh(GEO.bucket, lambert(0x2b7bb9), 1), wx + .6, .16, wz - .4));
@@ -467,7 +481,7 @@ function buildLevel(idx) {
     if (theme === "cellar") { const b = boxMesh(.6, .5, .6, 0x8a6f52); b.position.set(wx, .25, wz); b.rotation.y = r() * 3; group.add(b); }
     else if (theme === "derma") { group.add(at(mesh(GEO.pot, lambert(0xe8e2d8), 1), wx, .2, wz)); group.add(at(mesh(GEO.leaf, lambert(0x5aa05a), 1), wx, .6, wz)); }
     else if (kind < .4) { group.add(at(mesh(GEO.pole, lambert(0xb9c1bc), 1), wx, .95, wz)); group.add(at(boxMesh(.18, .28, .06, 0xd8eef8), wx + .1, 1.75, wz)); group.add(at(mesh(GEO.ball, lambert(0x444444), .1, .03, .1), wx, .03, wz)); }
-    else if (kind < .7) { const ws = wetSign(); ws.position.set(wx, 0, wz); ws.rotation.y = r() * 3; group.add(ws); }
+    else if (kind < .7) { const ws = wetSign(); ws.position.set(wx, 0, wz); ws.rotation.y = r() * 3; group.add(ws); if (Q.detail) { const pd = puddle(1.1 + r() * .6); pd.position.x = wx + .35; pd.position.z = wz + .3; group.add(pd); dyn(pd); } }
     else { const ch2 = new THREE.Group(); ch2.add(at(boxMesh(.55, .06, .55, 0x2b2f33), 0, .5, 0)); ch2.add(at(boxMesh(.55, .55, .05, 0x2b2f33), 0, .8, -.27)); for (const s of [-1, 1]) { const wh = mesh(GEO.wheel, lambert(0x777777), .9, .3, .9); wh.rotation.z = Math.PI / 2; wh.position.set(s * .32, .3, 0); ch2.add(wh); } ch2.position.set(wx, 0, wz); ch2.rotation.y = r() * 3; group.add(ch2); }
   }
 

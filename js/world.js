@@ -65,14 +65,44 @@ const settings = { sens: 1, invert: false, sound: true, bob: true, look: "swipe"
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || "{}")); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
 
+// ---------- graphics quality: four levels, picked to fit the device, or set by hand in the settings ----------
+/* pr = pixel ratio of the 3D view · ts = texture scale for walls, floors, ceilings, doors · ts2 = for everything else · cap = largest texture edge
+   shadow = shadow map size (0 = off) · aniso = texture sharpness at flat angles · detail = how much extra geometry and decoration is built (0-3) */
+const GFX_TIERS = {
+  low: { id: "low", name: "Leicht", pr: 1, ts: 1, ts2: 1, cap: 512, shadow: 0, aniso: 2, detail: 0 },
+  mid: { id: "mid", name: "Mittel", pr: 1.5, ts: 2, ts2: 1, cap: 512, shadow: 1024, aniso: 4, detail: 1 },
+  high: { id: "high", name: "Hoch", pr: 2, ts: 2, ts2: 1.5, cap: 1024, shadow: 1024, aniso: 8, detail: 2 },
+  ultra: { id: "ultra", name: "Top", pr: 3, ts: 4, ts2: 2, cap: 2048, shadow: 2048, aniso: 16, detail: 3 },
+};
+const GFX_ORDER = ["low", "mid", "high", "ultra"];
+function guessTier() {
+  try {
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1, mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 4, dpr = window.devicePixelRatio || 1;
+    if (!mobile) return cores >= 8 && (!mem || mem >= 8) ? "ultra" : cores >= 4 ? "high" : "mid";
+    if ((mem && mem <= 3) || cores <= 2) return "low";
+    if (mem && mem <= 4) return "mid";
+    return dpr >= 3 ? "high" : "mid"; // phones with a 3x screen are the recent, fast ones; whoever stutters is stepped down while playing
+  } catch (e) { return "mid"; }
+}
+if (!GFX_TIERS[settings.gfx] && settings.gfx !== "auto") settings.gfx = "auto";
+if (!GFX_TIERS[settings.autoTier]) settings.autoTier = guessTier();
+const gfxId = () => settings.gfx === "auto" ? settings.autoTier : settings.gfx;
+let Q = GFX_TIERS[gfxId()];
+settings.shadows = Q.shadow > 0; settings.hires = Q.pr > 1.25; // older code reads these two
+
 // ---------- textures ----------
 const texCache = new Map();
+/* every texture is drawn in its own small coordinate system and rendered larger on better graphics levels: the same drawing, more pixels */
+const SURF_TEX = /^(wall|wbump|floor|fbump|frough|roomfloor|ceil|door|plaster)/;
 function canvasTex(w, h, draw, key) {
-  if (key && texCache.has(key)) return texCache.get(key);
-  const c = document.createElement("canvas"); c.width = w; c.height = h;
-  draw(c.getContext("2d"), w, h);
-  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
-  if (key) texCache.set(key, t);
+  const ck = key ? key + "@" + Q.id : null;
+  if (ck && texCache.has(ck)) return texCache.get(ck);
+  const s = Math.max(1, Math.min(key && SURF_TEX.test(key) ? Q.ts : Q.ts2, Q.cap / Math.max(w, h)));
+  const c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
+  const g = c.getContext("2d"); if (s !== 1) g.scale(c.width / w, c.height / h);
+  draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = Q.aniso;
+  if (ck) texCache.set(ck, t);
   return t;
 }
 const SF = '"Helvetica Neue", Arial, sans-serif';
@@ -126,7 +156,64 @@ function drawWall(g, w, h, theme) {
   g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, h * .6, w, h * .02);
   for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(0,0,0,${r() * .05})`; g.fillRect(r() * w, r() * h * .6, 3, 3); }
   if (theme !== "derma") { g.fillStyle = "rgba(120,90,40,.12)"; g.beginPath(); g.ellipse(r() * w, h * .05, 30, 18, 0, 0, 7); g.fill(); g.fillStyle = "rgba(60,50,40,.08)"; g.fillRect(r() * w, h * .64, 30, 4); }
+  wallDetail(g, w, h, theme, r);
 }
+const TILED = t => t === "er" || t === "gastro" || t === "ortho";
+/* the fine layer: plaster grain, hairline cracks, tile joints, the bumper rail with its screws and scratches, rubber marks from beds, a skirting board */
+function wallDetail(g, w, h, theme, r) {
+  for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(${r() < .55 ? "0,0,0" : "255,255,255"},${.02 + r() * .05})`; g.fillRect(r() * w, r() * h, .4 + r() * .9, .4 + r() * .9); }       // grain
+  g.strokeStyle = "rgba(40,40,35,.22)"; g.lineWidth = .6;                                                                                                                              // hairline cracks
+  for (let c = 0; c < 2; c++) { let x = r() * w, y = r() * h * .2; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 9; k++) { x += (r() - .5) * 14; y += 4 + r() * 12; g.lineTo(x, y); if (r() < .25) { g.lineTo(x + (r() - .5) * 16, y + r() * 8); g.moveTo(x, y); } } g.stroke(); }
+  { const x = r() * w, gr = g.createLinearGradient(0, 0, 0, h * .45); gr.addColorStop(0, "rgba(110,90,50,.22)"); gr.addColorStop(1, "rgba(110,90,50,0)"); g.fillStyle = gr; g.fillRect(x, 0, 5 + r() * 9, h * .45); }   // a water stain running down
+  const y0 = h * .62;
+  if (TILED(theme)) { // wall tiles below the rail: joints with a light edge, every tile a touch different, one or two chipped
+    for (let ty = y0 + 6; ty < h - 12; ty += 26) for (let tx = 0; tx < w; tx += 32) { g.fillStyle = `rgba(${r() < .5 ? "255,255,255" : "0,0,0"},${r() * .05})`; g.fillRect(tx + 1, ty + 1, 30, 24); const gl = g.createLinearGradient(tx, ty, tx + 20, ty + 16); gl.addColorStop(0, "rgba(255,255,255,.1)"); gl.addColorStop(.5, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fillRect(tx + 1, ty + 1, 30, 24); }
+    g.fillStyle = "rgba(70,70,60,.4)"; for (let ty = y0 + 6; ty < h - 10; ty += 26) g.fillRect(0, ty, w, 1.1); for (let tx = 0; tx < w; tx += 32) g.fillRect(tx, y0 + 6, 1.1, h - y0 - 18);
+    g.fillStyle = "rgba(255,255,255,.2)"; for (let ty = y0 + 6; ty < h - 10; ty += 26) g.fillRect(0, ty + 1.1, w, .7); for (let tx = 0; tx < w; tx += 32) g.fillRect(tx + 1.1, y0 + 6, .7, h - y0 - 18);
+    for (let i = 0; i < 2; i++) { const tx = Math.floor(r() * 8) * 32, ty = y0 + 6 + Math.floor(r() * 3) * 26; g.fillStyle = "rgba(90,85,70,.45)"; g.beginPath(); g.moveTo(tx + 1, ty + 1); g.lineTo(tx + 9 + r() * 6, ty + 1); g.lineTo(tx + 1, ty + 7 + r() * 5); g.fill(); }
+  } else { g.strokeStyle = "rgba(255,255,255,.035)"; g.lineWidth = 3; for (let x = 6; x < w; x += 11 + r() * 8) { g.beginPath(); g.moveTo(x, y0 + 8); g.lineTo(x + (r() - .5) * 3, h - 14); g.stroke(); } }           // roller streaks in the paint
+  // bumper rail: a rounded plastic band, light on top, shadow underneath, screws, scratches from a thousand beds
+  const ry = h * .585, rh = h * .05, rg = g.createLinearGradient(0, ry, 0, ry + rh); rg.addColorStop(0, "rgba(255,255,255,.55)"); rg.addColorStop(.25, "rgba(215,205,185,.9)"); rg.addColorStop(.8, "rgba(150,140,120,.9)"); rg.addColorStop(1, "rgba(90,84,70,.9)");
+  g.fillStyle = rg; g.fillRect(0, ry, w, rh); g.fillStyle = "rgba(0,0,0,.28)"; g.fillRect(0, ry + rh, w, 2.5); g.fillStyle = "rgba(0,0,0,.1)"; g.fillRect(0, ry + rh + 2.5, w, 4);
+  for (let x = 32; x < w; x += 64) { g.fillStyle = "rgba(60,60,58,.8)"; g.beginPath(); g.arc(x, ry + rh / 2, 1.8, 0, 7); g.fill(); g.fillStyle = "rgba(255,255,255,.6)"; g.fillRect(x - 1.2, ry + rh / 2 - .3, 2.4, .6); }
+  g.strokeStyle = "rgba(60,50,40,.35)"; g.lineWidth = .5; for (let i = 0; i < 16; i++) { const x = r() * w, y = ry + 2 + r() * (rh - 4); g.beginPath(); g.moveTo(x, y); g.lineTo(x + 6 + r() * 26, y + (r() - .5) * 2); g.stroke(); }
+  // black rubber marks and scuffs at bed height
+  for (let i = 0; i < 7; i++) { const x = r() * w, y = h * (.7 + r() * .2), l = 14 + r() * 46; g.strokeStyle = `rgba(20,20,20,${.1 + r() * .18})`; g.lineWidth = 1 + r() * 2.5; g.lineCap = "round"; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y + (r() - .5) * 5, x + l, y + (r() - .5) * 3); g.stroke(); }
+  // skirting board
+  g.fillStyle = "rgba(70,74,72,.9)"; g.fillRect(0, h - 13, w, 13); g.fillStyle = "rgba(255,255,255,.3)"; g.fillRect(0, h - 13, w, 1.2); g.fillStyle = "rgba(0,0,0,.3)"; g.fillRect(0, h - 3, w, 3);
+  for (let i = 0; i < 10; i++) { g.fillStyle = "rgba(20,18,14,.35)"; g.fillRect(r() * w, h - 11 + r() * 6, 3 + r() * 14, 1 + r() * 2); }
+}
+/* relief for the walls: grain, recessed tile joints, raised rail and skirting, cracks */
+const wallBumpTex = theme => canvasTex(256, 272, (g, w, h) => {
+  const r = rng(53), y0 = h * .62; g.fillStyle = "#808080"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 9000; i++) { const v = 118 + r() * 22; g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.arc(r() * w, r() * h, .4 + r() * .9, 0, 7); g.fill(); }
+  if (theme === "cellar") { g.fillStyle = "#3a3a3a"; for (let y = 0; y < h; y += 34) { g.fillRect(0, y, w, 2.5); for (let x = (y / 34) % 2 ? 0 : 32; x < w; x += 64) g.fillRect(x, y, 2.5, 34); } return; }
+  if (theme === "park") return;
+  if (TILED(theme)) { g.fillStyle = "#a8a8a8"; g.fillRect(0, y0 + 6, w, h - y0 - 18); g.fillStyle = "#404040"; for (let ty = y0 + 6; ty < h - 10; ty += 26) g.fillRect(0, ty, w, 1.8); for (let tx = 0; tx < w; tx += 32) g.fillRect(tx, y0 + 6, 1.8, h - y0 - 18); }
+  const ry = h * .585, rh = h * .05, rg = g.createLinearGradient(0, ry, 0, ry + rh); rg.addColorStop(0, "#909090"); rg.addColorStop(.5, "#f0f0f0"); rg.addColorStop(1, "#909090"); g.fillStyle = rg; g.fillRect(0, ry, w, rh);
+  g.fillStyle = "#d0d0d0"; g.fillRect(0, h - 13, w, 13);
+}, "wbump:" + theme);
+/* floors: relief (joints, grain) and a gloss map: polished lanes, dull joints, a few wet-looking patches */
+const floorBumpTex = theme => { const t = canvasTex(256, 256, (g, w, h) => {
+  const r = rng(71); g.fillStyle = "#808080"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 5000; i++) { const v = 112 + r() * 34; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(r() * w, r() * h, .6 + r() * 1.4, .6 + r() * 1.4); }
+  if (theme === "derma") { g.fillStyle = "#484848"; for (let y = 0; y < h; y += 32) { g.fillRect(0, y, w, 1.6); g.fillRect((y * 7) % w, y, 1.6, 32); } return; }
+  if (theme === "cellar" || theme === "park") { g.strokeStyle = "#505050"; g.lineWidth = 1; for (let i = 0; i < 5; i++) { let x = r() * w, y = r() * h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 8; k++) { x += (r() - .5) * 40; y += (r() - .5) * 40; g.lineTo(x, y); } g.stroke(); } return; }
+  g.strokeStyle = "#3c3c3c"; g.lineWidth = 2.4; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+}, "fbump:" + theme); return t; };
+const floorRoughTex = theme => canvasTex(256, 256, (g, w, h) => {
+  const r = rng(91), dull = theme === "cellar" || theme === "park", base = dull ? 215 : theme === "derma" ? 120 : 84;
+  g.fillStyle = `rgb(${base},${base},${base})`; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2600; i++) { const v = base + (r() - .5) * 70; g.fillStyle = `rgba(${v},${v},${v},.5)`; g.fillRect(r() * w, r() * h, 1 + r() * 3, 1 + r() * 2); }
+  if (dull) { for (let i = 0; i < 3; i++) { const x = r() * w, y = r() * h, rad = 20 + r() * 40, gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, "rgba(30,30,30,.9)"); gr.addColorStop(.7, "rgba(30,30,30,.6)"); gr.addColorStop(1, "rgba(30,30,30,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } return; } // oily puddles on concrete
+  for (let i = 0; i < 9; i++) { g.save(); g.translate(r() * w, r() * h); g.rotate(r() * 3); const gr = g.createLinearGradient(0, -8, 0, 8); gr.addColorStop(0, "rgba(40,40,40,0)"); gr.addColorStop(.5, "rgba(40,40,40,.5)"); gr.addColorStop(1, "rgba(40,40,40,0)"); g.fillStyle = gr; g.fillRect(-70, -8, 140, 16); g.restore(); }   // lanes of the polishing machine
+  for (let i = 0; i < 14; i++) { g.save(); g.translate(r() * w, r() * h); g.rotate(r() * 3); g.fillStyle = "rgba(190,190,190,.5)"; g.fillRect(0, 0, 14 + r() * 30, 1.2); g.restore(); }   // dull scratches
+  if (theme !== "derma") { g.strokeStyle = "rgb(200,200,200)"; g.lineWidth = 3; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke(); }
+}, "frough:" + theme);
+/* a puddle: almost a mirror, lying on the floor next to the yellow sign that warns about it */
+const puddleTex = () => canvasTex(128, 128, (g, w) => { const r = rng(17); g.fillStyle = "rgba(40,55,60,.55)"; for (let i = 0; i < 7; i++) { g.beginPath(); g.ellipse(64 + (r() - .5) * 44, 64 + (r() - .5) * 36, 16 + r() * 22, 12 + r() * 16, r() * 3, 0, 7); g.fill(); } g.fillStyle = "rgba(255,255,255,.2)"; g.beginPath(); g.ellipse(52, 50, 14, 5, -.5, 0, 7); g.fill(); }, "puddle");
+let puddleMat = null;
+function puddle(size = 1.2) { if (!puddleMat) puddleMat = new THREE.MeshStandardMaterial({ map: puddleTex(), transparent: true, depthWrite: false, roughness: .03, metalness: .1, envMapIntensity: 2.4, color: 0xdfe8ea, polygonOffset: true, polygonOffsetFactor: -2 }); const m = new THREE.Mesh(GEO.plane, puddleMat); m.scale.set(size, size * .8, 1); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6; m.position.y = .012; return m; }
 /* baked ambient occlusion: walls darken into the ceiling corner and towards the floor */
 function wallAO(g, w, h) {
   let gr = g.createLinearGradient(0, 0, 0, h * .22); gr.addColorStop(0, "rgba(0,0,0,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h * .22);
@@ -134,6 +221,9 @@ function wallAO(g, w, h) {
   gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, "rgba(0,0,0,.1)"); gr.addColorStop(.12, "rgba(0,0,0,0)"); gr.addColorStop(.88, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.1)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
 }
 const wallTex = theme => canvasTex(256, 272, (g, w, h) => { drawWall(g, w, h, theme); wallAO(g, w, h); }, "wall:" + theme);
+/* the glow around a ceiling lamp and the faint shaft of light under it */
+const haloTex = () => canvasTex(128, 128, (g, w) => { const gr = g.createRadialGradient(64, 64, 6, 64, 64, 64); gr.addColorStop(0, "rgba(255,252,240,.85)"); gr.addColorStop(.3, "rgba(255,250,235,.35)"); gr.addColorStop(.65, "rgba(255,250,235,.1)"); gr.addColorStop(1, "rgba(255,250,235,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "halo");
+const shaftTex = () => canvasTex(64, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(255,250,235,.5)"); gr.addColorStop(.5, "rgba(255,250,235,.14)"); gr.addColorStop(1, "rgba(255,250,235,0)"); g.fillStyle = gr; g.beginPath(); g.moveTo(w * .28, 0); g.lineTo(w * .72, 0); g.lineTo(w, h); g.lineTo(0, h); g.fill(); const e = g.createLinearGradient(0, 0, w, 0); e.addColorStop(0, "rgba(0,0,0,1)"); e.addColorStop(.3, "rgba(0,0,0,0)"); e.addColorStop(.7, "rgba(0,0,0,0)"); e.addColorStop(1, "rgba(0,0,0,1)"); g.globalCompositeOperation = "destination-out"; g.fillStyle = e; g.fillRect(0, 0, w, h); }, "shaft");
 const poolTex = () => canvasTex(128, 128, (g, w) => { const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,250,235,.55)"); gr.addColorStop(.45, "rgba(255,250,235,.2)"); gr.addColorStop(1, "rgba(255,250,235,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, w); }, "pool");
 const aoTex = () => canvasTex(16, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(0,0,0,.5)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, "ao");
 const FLOOR_COL = { gastro: "#d4d0b8", cellar: "#6d706a", park: "#7a7a74", radio: "#3e434a", ortho: "#c9d6df", er: "#dcd8c2", ward: "#cfdcd3" };
@@ -151,6 +241,12 @@ const floorTex = theme => canvasTex(256, 256, (g, w, h) => {
   g.strokeStyle = "rgba(40,50,45,.28)"; g.lineWidth = 3; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
   for (let i = 0; i < 4; i++) { g.fillStyle = `rgba(0,0,0,${.02 + r() * .04})`; g.fillRect((i % 2) * w / 2 + 2, Math.floor(i / 2) * h / 2 + 2, w / 2 - 4, h / 2 - 4); }
   g.fillStyle = "rgba(0,0,0,.05)"; for (let i = 0; i < 12; i++) { g.save(); g.translate(r() * w, r() * h); g.rotate(r() * 3); g.fillRect(0, 0, 20 + r() * 30, 2); g.restore(); }
+  // the fine layer: terrazzo chips, a light bevel along the joints, hairline scratches, old stains, a strip of tape someone forgot
+  const chips = ["70,90,84", "255,255,255", "120,150,140", "40,50,48", "190,170,130"];
+  for (let i = 0; i < 2400; i++) { g.fillStyle = `rgba(${chips[Math.floor(r() * 5)]},${.1 + r() * .25})`; g.beginPath(); g.ellipse(r() * w, r() * h, .3 + r() * 1.1, .3 + r() * .8, r() * 3, 0, 7); g.fill(); }
+  g.strokeStyle = "rgba(255,255,255,.22)"; g.lineWidth = .8; g.beginPath(); g.moveTo(w / 2 + 2.2, 0); g.lineTo(w / 2 + 2.2, h); g.moveTo(0, h / 2 + 2.2); g.lineTo(w, h / 2 + 2.2); g.moveTo(2.4, 0); g.lineTo(2.4, h); g.moveTo(0, 2.4); g.lineTo(w, 2.4); g.stroke();
+  g.lineWidth = .5; for (let i = 0; i < 22; i++) { const x = r() * w, y = r() * h, l = 10 + r() * 50, a = r() * 6.28; g.strokeStyle = `rgba(${r() < .5 ? "30,36,34" : "255,255,255"},${.1 + r() * .14})`; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l / 2 + (r() - .5) * 8, y + Math.sin(a) * l / 2 + (r() - .5) * 8, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  for (let i = 0; i < 2; i++) { const x = r() * w, y = r() * h, rad = 10 + r() * 18, gr = g.createRadialGradient(x, y, rad * .5, x, y, rad); gr.addColorStop(0, "rgba(110,90,50,.06)"); gr.addColorStop(.8, "rgba(110,90,50,.14)"); gr.addColorStop(1, "rgba(110,90,50,0)"); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); } // dried coffee rings
 }, "floor:" + theme);
 const ceilTex = theme => canvasTex(128, 128, (g, w, h) => {
   const r = rng(3), conc = theme === "cellar" || theme === "park";
@@ -261,7 +357,7 @@ const calcTex = () => canvasTex(64, 96, (g, w, h) => { g.fillStyle = "#5a6a7a"; 
 // ---------- three ----------
 const canvas = $("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-const applyRes = () => renderer.setPixelRatio(Math.min(settings.hires ? 2 : 1.25, window.devicePixelRatio || 1)); applyRes();
+const applyRes = () => renderer.setPixelRatio(Math.min(Q.pr, window.devicePixelRatio || 1)); applyRes();
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .9;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xcbd8d1);
@@ -272,7 +368,7 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x7f9a90, .55); scene.add(hemi)
 const amb = new THREE.AmbientLight(0xffffff, .25); scene.add(amb);
 const sun = new THREE.DirectionalLight(0xffffff, .3); sun.position.set(3, 10, 2); scene.add(sun); scene.add(sun.target);
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 40 }); sun.shadow.bias = -.0006; sun.shadow.normalBias = .03;
+sun.shadow.mapSize.set(Q.shadow || 1024, Q.shadow || 1024); sun.shadow.radius = Q.detail >= 2 ? 3.5 : 2; Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 40 }); sun.shadow.bias = -.0006; sun.shadow.normalBias = .03;
 const lampLight = new THREE.PointLight(0xe8f4ff, 0, 10, 1.6); scene.add(lampLight);
 /* a handful of real point lights hop between the ceiling panels closest to the player: local light, falloff, depth */
 const ceilLights = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xfff6e8, 0, 8.5, 2); scene.add(l); return l; });
@@ -329,6 +425,8 @@ function makePerson(sp) {
   // materials with surface detail: woven fabric on clothes, pores on skin, strands in hair
   const skinC = sp.skin || SKIN[0], hairC = sp.hair || 0x333333, cloth = new Set([sp.shirt, sp.pants, sp.jacket, 0xf4f4f0, 0x9cc6e6, 0x4a5568].filter(v => v != null));
   const M = c => sp.ghost && ghostMat ? ghostMat : sp.shadowFig ? lambert(0x050505) : sp.lowDetail ? lambert(c) : lambert(c, c === skinC ? skinTex() : c === hairC ? hairTex() : cloth.has(c) ? fabricTex() : null);
+  const fine = Q.detail >= 2 && !sp.lowDetail && !sp.ghost && !sp.shadowFig; // "Hoch" and "Top": fingers with joints, creases in the clothes, a face that shows more
+  if (fine) for (const c of cloth) { const m = M(c); if (m.map && !m.bumpMap) { m.bumpMap = m.map; m.bumpScale = .0012; m.roughness = .9; m.needsUpdate = true; } }
   const add = (geo, c, sx, sy, sz, x, y, z, parent = body) => { const m = mesh(geo, M(c), sx, sy, sz); m.position.set(x, y, z); parent.add(m); return m; };
   const shade = (c, k) => new THREE.Color(c).multiplyScalar(k).getHex(), warm = c => new THREE.Color(c).lerp(new THREE.Color(0xe07a6a), .14).getHex();
   const build = sp.build || "normal";
@@ -353,6 +451,10 @@ function makePerson(sp) {
     if (!sp.lowDetail) { // laces and a trouser crease
       add(GEO.box, 0xe8e6e0, sw * .45, .012, .07, 0, -.402, .075, knee);
       if (!sp.gown && !sp.robe) { add(GEO.box, shade(pants, .78), .007, .4, .006, 0, -.21, .074 * limbR, hip); add(GEO.box, shade(pants, .78), .006, .38, .006, 0, -.2, .058 * limbR, knee); }
+    }
+    if (fine && !sp.gown && !sp.robe) { // the trousers crease behind the knee and bunch up over the shoe
+      for (let i = 0; i < 2; i++) add(GEO.ball, shade(pants, .82), .066 * limbR, .007, .066 * limbR, 0, -.05 - i * .03, -.006, knee);
+      for (let i = 0; i < 2; i++) add(GEO.ball, shade(pants, .86), .069 * limbR, .009, .069 * limbR, 0, -.365 - i * .025, .004, knee);
     }
     legs.push(hip); knees.push(knee);
   }
@@ -417,6 +519,12 @@ function makePerson(sp) {
     face.up = add(GEO.ball, lipC, .026, .007, .008, 0, -.052, .115, head); face.lo = add(GEO.ball, warm(shade(skin, .9)), .022, .008, .008, 0, -.063, .113, head);
     for (const sx of [-1, 1]) { const c = add(GEO.ball, shade(lipC, .75), .012, .006, .007, sx * .028, -.05, .111, head); c.userData.sx = sx; face.corners.push(c); }
     face.o = add(GEO.ball, 0x3a1414, .019, .024, .006, 0, -.058, .115, head); face.o.visible = false;
+    if (fine) { // more to read in a face: teeth when they smile, lines on the forehead when they worry or rage, lashes, laugh lines
+      face.teeth = add(GEO.ball, 0xf4f1e6, .017, .0045, .004, 0, -.0555, .1175, head); face.teeth.visible = false;
+      face.lines = [0, 1].map(i => add(GEO.box, shade(skin, .8), .07 - i * .012, .0028, .004, 0, .078 + i * .014, .1 - i * .008, head)); for (const l of face.lines) l.visible = false;
+      face.folds = [-1, 1].map(sx => { const f = add(GEO.box, shade(skin, .82), .003, .03, .004, sx * .036, -.036, .108, head); f.rotation.z = sx * -.35; f.visible = false; return f; });
+      for (const sx of [-1, 1]) add(GEO.box, 0x1a1414, .03, .0035, .004, sx * .041, .0255, .1135, head);
+    }
     if (!sp.lowDetail) { // nostrils, chin, lashes, ear lobes, and on some a five-o'clock shadow
       for (const sx of [-1, 1]) { add(GEO.ball, shade(skin, .5), .006, .005, .004, sx * .009, -.027, .126, head); add(GEO.ball, shade(skin, .92), .012, .014, .01, sx * .114, -.035, .004, head); }
       add(GEO.ball, shade(skin, .97), .045, .028, .035, 0, -.098, .074, head);
@@ -456,7 +564,11 @@ function makePerson(sp) {
     add(GEO.ball, skin, .046 * Math.max(1, limbR * .8), .055, .03 * Math.max(1, limbR * .9), 0, -.3, 0, el);
     const th = add(GEO.ball, skin, .016, .03, .016, side * -.03, -.29, .022, el); th.rotation.z = side * .5;
     if (!sp.lowDetail && !sp.ghost && !sp.shadowFig) {
-      for (let i = 0; i < 3; i++) add(GEO.taper, skin, .011, .036, .011, (i - 1) * .015, -.35, .008, el); // fingers
+      if (fine) { // four fingers with two joints each, slightly curled, and knuckles
+        for (let i = 0; i < 4; i++) { const fx = (i - 1.5) * .0135, len = i === 0 || i === 3 ? .026 : .032; add(GEO.taper, skin, .0092, len, .0092, fx, -.338, .006, el); const tip = add(GEO.taper, skin, .0082, len * .8, .0082, fx, -.338 - len + .003, .008, el); tip.rotation.x = .4; add(GEO.ball, shade(skin, .93), .008, .006, .008, fx, -.336, .013, el); }
+        if (fore !== skin) for (let i = 0; i < 2; i++) add(GEO.ball, shade(fore, .93), .0445 * limbR, .004, .0445 * limbR, 0, -.025 - i * .024, .003, el); // creases at the elbow
+        if (fore !== skin) add(GEO.cyl, shade(fore, .9), .0445 * limbR, .014, .0445 * limbR, 0, -.262, 0, el);                                           // cuff
+      } else for (let i = 0; i < 3; i++) add(GEO.taper, skin, .011, .036, .011, (i - 1) * .015, -.35, .008, el); // fingers
       if (side === -1 && !sp.short) { add(GEO.cyl, 0x22252a, .046 * limbR, .022, .046 * limbR, 0, -.235, 0, el); add(GEO.box, 0xc8ccd0, .022, .012, .02, 0, -.235, .046 * limbR, el); } // a watch
     }
     arms.push(sh); elbows.push(el);
@@ -503,6 +615,7 @@ function setExpression(p, name) {
   if (f.up) { f.up.scale.set(.026 * e.up[0], .007 * e.up[1], .008); f.up.position.y = -.052 + (e.skew ? .003 : 0); f.up.rotation.z = e.skew ? .2 : 0; f.lo.position.y = e.lo; f.lo.visible = !e.o || name === "happy"; }
   for (const c of f.corners) { const sx = c.userData.sx; c.visible = e.cv; c.position.y = e.cy + (e.skew && sx > 0 ? .006 : 0); c.rotation.z = sx * e.cr; }
   if (f.o) f.o.visible = e.o;
+  if (f.teeth) { f.teeth.visible = name === "smile" || name === "happy"; for (const l of f.lines) l.visible = ["worried", "angry", "surprised", "disgust"].includes(name); for (const l of f.folds) l.visible = ["smile", "happy", "angry", "disgust"].includes(name); }
 }
 function animatePerson(p, dt, moving, speed) {
   p.amp += ((moving ? 1 : 0) - p.amp) * Math.min(1, dt * 8);
@@ -564,23 +677,42 @@ function animatePerson(p, dt, moving, speed) {
 }
 
 // ---------- items as 3D objects ----------
+/* the things you pick up, as small models: glazed china, brushed metal, printed labels, crumbs */
+const itemPaperTex = () => canvasTex(96, 128, (g, w, h) => { g.fillStyle = "#fbfaf4"; g.fillRect(0, 0, w, h); g.fillStyle = "#2d3f8f"; g.fillRect(8, 8, 44, 7); g.fillStyle = "rgba(40,40,40,.55)"; for (let y = 24; y < h - 20; y += 7) g.fillRect(8, y, 50 + ((y * 13) % 30), 2); g.strokeStyle = "#2d3f8f"; g.lineWidth = 2; g.beginPath(); g.moveTo(50, h - 12); g.bezierCurveTo(60, h - 22, 66, h - 4, 86, h - 14); g.stroke(); }, "paper");
+const certTex = () => canvasTex(96, 128, (g, w, h) => { g.fillStyle = "#f3ecd6"; g.fillRect(0, 0, w, h); g.strokeStyle = "#a8905a"; g.lineWidth = 3; g.strokeRect(5, 5, w - 10, h - 10); g.fillStyle = "#3a3020"; g.font = `800 11px ${SF}`; g.textAlign = "center"; g.fillText("ZEUGNIS", w / 2, 26); g.fillStyle = "rgba(40,30,20,.5)"; for (let y = 38; y < 92; y += 7) g.fillRect(14, y, w - 28, 1.6); }, "cert");
 function itemModel(k) {
-  const g = new THREE.Group(), A = (geo, c, sx, sy, sz, x, y, z, map) => { const m = new THREE.Mesh(geo, map ? lambert(0xffffff, map) : lambert(c)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); g.add(m); return m; };
+  const g = new THREE.Group(), fine = Q.detail >= 1;
+  const A = (geo, c, sx, sy, sz, x, y, z, map) => { const m = new THREE.Mesh(geo, map ? lambert(0xffffff, map) : typeof c === "object" ? c : lambert(c)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); g.add(m); return m; };
+  const china = phong(0xf6f6f2, 75), steel = phong(0xc0c4c8, 90), black = phong(0x1b1b1b, 60), gold = phong(0xd8a83a, 90);
   switch (k) {
-    case "1": A(GEO.cyl, 0xf4f4f0, .12, .015, .12, 0, .008, 0); A(GEO.cyl, 0xf4f4f0, .07, .1, .07, 0, .065, 0); A(GEO.cyl, 0x4a2a14, .062, .005, .062, 0, .113, 0); A(GEO.torus, 0xf4f4f0, .03, .03, .03, .075, .07, 0).rotation.y = Math.PI / 2; break;
-    case "0": A(GEO.cyl, 0, .045, .15, .045, 0, .075, 0, canTex()); A(GEO.cyl, 0xc0c4c8, .042, .01, .042, 0, .155, 0); break;
-    case "$": A(GEO.cyl, 0xf4f4f0, .13, .01, .13, 0, .005, 0); A(GEO.torus, 0xc98a4a, .065, .065, .09, 0, .035, 0).rotation.x = Math.PI / 2; A(GEO.torus, 0xf27aa8, .066, .066, .05, 0, .05, 0).rotation.x = Math.PI / 2; break;
-    case "+": A(GEO.cyl, 0xf6c1d4, .07, .08, .07, 0, .04, 0); A(GEO.cyl, 0xf4f4f0, .074, .025, .074, 0, .092, 0); break;
-    case "2": A(GEO.box, 0x8a6f52, .22, .012, .3, 0, .006, 0); A(GEO.box, 0xffffff, .19, .004, .24, 0, .014, .015); A(GEO.box, 0x9aa0a6, .08, .02, .03, 0, .02, -.13); break;
-    case "3": A(GEO.cyl, 0x3f8fb3, .04, .18, .04, 0, .09, 0); A(GEO.box, 0xf4f4f0, .03, .04, .05, 0, .2, .015); break;
-    case "4": A(GEO.box, 0x1b1b1b, .08, .025, .05, 0, .013, 0); A(GEO.box, 0x6fcf97, .05, .004, .025, 0, .027, 0); break;
-    case "5": A(GEO.cyl, 0x2b2b2b, .02, .16, .02, 0, .08, 0); A(GEO.ball, 0x9aa0a6, .04, .04, .04, 0, .18, 0); A(GEO.cyl, 0x2b2b2b, .1, .015, .1, 0, .008, 0); break;
-    case "6": A(GEO.cyl, 0x7a5fae, .05, .2, .05, 0, .1, 0); A(GEO.cyl, 0x1b1b1b, .052, .04, .052, 0, .21, 0); break;
-    case "7": A(GEO.box, 0, .16, .04, .22, 0, .02, 0, bookTex()); break;
-    case "8": A(GEO.box, 0, .1, .02, .16, 0, .01, 0, calcTex()); break;
-    case "9": A(GEO.cyl, 0x1b1b1b, .03, .1, .03, 0, .05, 0); A(GEO.cyl, 0xc98a4a, .012, .015, .012, 0, .108, 0); A(GEO.cyl, 0xd8a83a, .031, .02, .031, 0, .09, 0); break;
-    case "&": A(GEO.box, 0xf3ecd6, .22, .006, .3, 0, .003, 0); A(GEO.cyl, 0xc0322a, .03, .008, .03, .06, .01, .1); break;
+    case "1": A(GEO.cyl, china, .12, .012, .12, 0, .006, 0); A(GEO.cyl, china, .075, .006, .075, 0, .015, 0); A(GEO.cyl, china, .07, .1, .07, 0, .068, 0); A(GEO.cyl, phong(0x3a1f0e, 85), .062, .004, .062, 0, .117, 0);
+      A(GEO.torus, china, .03, .03, .03, .078, .07, 0).rotation.y = Math.PI / 2;
+      if (fine) { A(GEO.cyl, phong(0x8a5a30, 40), .03, .003, .03, .012, .1195, -.01); const sp = A(GEO.box, steel, .012, .004, .1, -.09, .016, .02); sp.rotation.y = .5; A(GEO.ball, steel, .014, .004, .02, -.112, .016, .06).rotation.y = .5;
+        for (let i = 0; i < 2; i++) { const st = sprite(glowTex("rgba(255,255,255,.5)"), .09, .16); st.material = st.material.clone(); st.material.opacity = .22; st.material.depthWrite = false; st.position.set((i - .5) * .03, .2 + i * .05, 0); g.add(st); } } break;
+    case "0": A(GEO.cyl, 0, .045, .15, .045, 0, .078, 0, canTex()); A(GEO.cyl, steel, .046, .006, .046, 0, .156, 0); A(GEO.cyl, steel, .04, .004, .04, 0, .003, 0);
+      if (fine) { A(GEO.cyl, phong(0x8a8f94, 90), .036, .003, .036, 0, .1595, 0); A(GEO.box, steel, .014, .003, .03, 0, .162, .008); A(GEO.cyl, black, .008, .004, .008, 0, .162, -.012); } break;
+    case "$": A(GEO.cyl, china, .13, .01, .13, 0, .005, 0); A(GEO.torus, phong(0xc98a4a, 30), .065, .065, .09, 0, .037, 0).rotation.x = Math.PI / 2; A(GEO.torus, phong(0xf27aa8, 80), .066, .066, .05, 0, .052, 0).rotation.x = Math.PI / 2;
+      if (fine) for (let i = 0; i < 14; i++) { const a = i * 2.4, sp = A(GEO.box, [0xffffff, 0x3d8af2, 0xf2d03d, 0x3db85a, 0xe2483d][i % 5], .012, .004, .004, Math.cos(a) * .066, .071, Math.sin(a) * .066); sp.rotation.y = a * 3; } break;
+    case "+": A(GEO.cyl, phong(0xf6c1d4, 85), .07, .08, .07, 0, .04, 0); A(GEO.cyl, gold, .074, .025, .074, 0, .092, 0); A(GEO.cyl, china, .0715, .03, .0715, 0, .04, 0);
+      if (fine) { A(GEO.cyl, gold, .076, .004, .076, 0, .079, 0); A(GEO.ball, phong(0xffffff, 90), .02, .006, .012, .03, .106, .02); } break;
+    case "2": A(GEO.box, phong(0x8a6f52, 35), .22, .012, .3, 0, .006, 0); A(GEO.box, 0xffffff, .19, .004, .25, 0, .014, .012, itemPaperTex()).rotation.y = Math.PI; A(GEO.box, steel, .09, .018, .03, 0, .022, -.13); A(GEO.cyl, steel, .012, .1, .012, 0, .034, -.135).rotation.z = Math.PI / 2;
+      if (fine) { A(GEO.box, 0xfdfcf6, .19, .003, .25, .004, .011, .014); const pn = A(GEO.cyl, phong(0x2d3f8f, 80), .006, .14, .006, .085, .024, .02); pn.rotation.x = Math.PI / 2; A(GEO.cyl, steel, .0065, .02, .0065, .085, .024, -.05).rotation.x = Math.PI / 2; } break;
+    case "3": A(GEO.cyl, phong(0x3f8fb3, 80), .04, .16, .04, 0, .08, 0); A(GEO.cyl, china, .0405, .06, .0405, 0, .07, 0); A(GEO.cyl, china, .018, .03, .018, 0, .175, 0); A(GEO.box, china, .03, .035, .06, 0, .205, .012); A(GEO.box, phong(0xc0322a, 60), .012, .04, .014, 0, .185, .04);
+      if (fine) { A(GEO.cyl, phong(0xc0322a, 60), .008, .012, .008, 0, .21, .046).rotation.x = Math.PI / 2; A(GEO.box, 0x2d3f8f, .05, .012, .001, 0, .085, .0405); A(GEO.box, 0xc0322a, .03, .02, .001, 0, .06, .0405); } break;
+    case "4": A(GEO.box, black, .09, .026, .056, 0, .013, 0); A(GEO.box, basic(0x6fcf97), .056, .002, .024, -.008, .0272, -.006); A(GEO.box, black, .03, .01, .058, .03, .008, 0);
+      if (fine) { for (let i = 0; i < 3; i++) A(GEO.cyl, phong(0x9aa0a6, 70), .005, .003, .005, -.03 + i * .018, .028, .019); A(GEO.cyl, basic(0xff3020), .004, .003, .004, .034, .028, -.018); A(GEO.box, phong(0x55595e, 70), .09, .004, .012, 0, -.002, -.02); } break;
+    case "5": A(GEO.cyl, black, .1, .015, .1, 0, .008, 0); A(GEO.cyl, steel, .012, .15, .012, 0, .09, 0); A(GEO.ball, phong(0x9aa0a6, 85), .04, .045, .04, 0, .19, 0); A(GEO.cyl, black, .042, .012, .042, 0, .165, 0);
+      if (fine) { A(GEO.cyl, basic(0xff3020), .008, .004, .008, .06, .017, .04); for (let i = 0; i < 3; i++) A(GEO.torus, phong(0x6a7076, 80), .041 - i * .006, .041 - i * .006, .012, 0, .19 + (i - 1) * .016, 0).rotation.x = Math.PI / 2; } break;
+    case "6": A(GEO.cyl, new THREE.MeshStandardMaterial({ color: 0x9a7fd0, transparent: true, opacity: .55, roughness: .08, metalness: 0 }), .05, .2, .05, 0, .1, 0); A(GEO.cyl, 0xe8d8b8, .046, .09, .046, 0, .05, 0); A(GEO.cyl, black, .052, .04, .052, 0, .215, 0);
+      if (fine) { A(GEO.cyl, black, .02, .02, .02, .02, .242, 0); for (let i = 0; i < 4; i++) A(GEO.box, 0xffffff, .014, .002, .001, 0, .05 + i * .035, .0505); } break;
+    case "7": A(GEO.box, 0, .16, .04, .22, 0, .02, 0, bookTex()); if (fine) { A(GEO.box, 0xf4efe0, .15, .032, .214, .006, .02, 0); A(GEO.box, 0xa02828, .16, .04, .008, 0, .02, -.108); A(GEO.box, 0xf2c300, .012, .002, .09, .03, .0405, .15); } break;
+    case "8": A(GEO.box, 0, .1, .02, .16, 0, .01, 0, calcTex()); if (fine) { A(GEO.box, phong(0x3a4650, 60), .104, .016, .164, 0, .008, 0); A(GEO.box, basic(0xb8d8a8), .08, .003, .03, 0, .0215, -.055); } break;
+    case "9": A(GEO.cyl, black, .03, .1, .03, 0, .05, 0); A(GEO.cyl, gold, .031, .022, .031, 0, .09, 0); A(GEO.cyl, steel, .012, .012, .012, 0, .106, 0);
+      if (fine) { A(GEO.cyl, steel, .028, .003, .028, 0, .0015, 0); A(GEO.box, 0xffffff, .012, .003, .001, 0, .06, .0305); A(GEO.box, 0xffffff, .003, .012, .001, 0, .06, .0305); } break;
+    case "&": A(GEO.box, 0xffffff, .22, .006, .3, 0, .003, 0, certTex()).rotation.y = Math.PI; A(GEO.cyl, phong(0xc0322a, 70), .03, .008, .03, .06, .01, .1);
+      if (fine) { for (const s of [-1, 1]) { const rb = A(GEO.box, 0xc0322a, .014, .003, .06, .06 + s * .012, .008, .135); rb.rotation.y = s * .25; } A(GEO.cyl, gold, .018, .009, .018, .06, .011, .1); } break;
   }
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
   g.scale.setScalar(1.6);
   return g;
 }

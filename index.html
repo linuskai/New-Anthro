@@ -1270,6 +1270,20 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 .end-free[hidden] { display: none; } .end-free b { font: 900 italic 30px/1 var(--display); color: #ffe27a; text-shadow: 0 3px 0 #0a3a20; letter-spacing: .02em; } .end-free small { font: 600 13px/1.25 var(--display); opacity: .9; text-align: center; }
 .ef-stars { display: flex; gap: 6px; } .ef-stars i { font-size: 40px; }
 @media (orientation: landscape) and (max-height: 520px) { #freeFx .ff-mid { top: 3%; } #freeFx .ff-title { font-size: clamp(40px, 16vh, 80px); } #freeFx .ff-stars i { font-size: clamp(30px, 11vh, 56px); } }
+/* v36: settings in four tabs */
+.card.settings { max-width: 520px; } .card.settings h2 { margin-bottom: 10px; }
+.set-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.set-tabs button { appearance: none; border: 0; border-radius: 12px; background: rgba(255,255,255,.07); color: #cfe0d8; padding: 8px 4px 7px; font-size: 20px; line-height: 1; cursor: pointer; display: grid; gap: 4px; justify-items: center; touch-action: manipulation; }
+.set-tabs button span { font: 800 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.set-tabs button.on { background: #a6e38f; color: #10221a; }
+.set-pane { display: none; min-height: 150px; } .set-pane.on { display: block; }
+.card.settings .setting span small { display: block; font: 500 12px/1.25 var(--display); opacity: .65; letter-spacing: 0; text-transform: none; margin-top: 2px; }
+.card.settings select { max-width: 58%; }
+.set-hint { margin: 8px 0 0; font: 500 13px/1.4 var(--display); color: #cfe0d8; } .set-hint.dim { opacity: .6; font-family: var(--mono); font-size: 11px; }
+.set-keys { margin-top: 8px; } .set-keys summary { cursor: pointer; font: 700 13px/1.3 var(--display); color: #a6e38f; padding: 6px 0; } .set-keys .keys { margin-top: 4px; }
+.set-more { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; } .set-more .btn { margin: 0; min-height: 44px; padding: 8px 12px; font-size: 13px; }
+body.set-title .set-more { display: none; }
+@media (orientation: landscape) and (max-height: 520px) { .card.settings { max-width: 760px; } .set-pane { min-height: 96px; } .set-more { grid-template-columns: repeat(3, 1fr); } .set-tabs button { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 7px 4px; font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -1410,6 +1424,7 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
         <button class="t-ghost" id="btnBoard" type="button">🏆 Bestenliste</button>
         <button class="t-ghost" id="btnGuide" type="button">🎒 Items</button>
         <button class="t-ghost" id="profChip" type="button">🧑‍⚕️ Profil</button>
+        <button class="t-ghost" id="btnSettingsTitle" type="button">⚙️ Einstellungen</button>
         <button class="t-ghost t-legal" id="btnLegal" type="button">Datenschutz &amp; Impressum</button>
         <button class="t-ghost" id="btnFeedback" type="button">💡 Vorschlag</button>
         <button class="t-ghost" id="btnInstall" type="button" hidden>📲 Als App</button>
@@ -1596,28 +1611,45 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
     </div>
   </section>
   <section class="overlay" id="ovPause" hidden>
-    <div class="card dark">
-      <div class="eyebrow">Pause · Pager auf lautlos</div>
+    <div class="card dark settings">
+      <div class="eyebrow" id="pauseEyebrow">Pause · Pager auf lautlos</div>
       <h2>Einstellungen</h2>
-      <label class="setting" for="setDiff"><span>Schwierigkeit</span><select id="setDiff"><option value="easy">Leicht</option><option value="normal">Brutal · normaler Stationsalltag</option></select></label>
-      <label class="setting" for="setLook"><span>Umsehen</span><select id="setLook"><option value="swipe">Wischen (direkt)</option><option value="stick">Joystick (halten)</option></select></label>
-      <label class="setting" for="setSens"><span>Empfindlichkeit</span><input type="range" id="setSens" min="0.4" max="2.2" step="0.1" value="1"></label>
-      <label class="setting" for="setInvert"><span>Blick vertikal umkehren</span><input type="checkbox" id="setInvert"></label>
-      <label class="setting" for="setNavi"><span>Pfeile am Boden</span><input type="checkbox" id="setNavi" checked></label>
-      <label class="setting" for="setSound"><span>Ton</span><input type="checkbox" id="setSound" checked></label>
-      <label class="setting" for="setVol"><span>Lautstärke Geräusche</span><input type="range" id="setVol" min="0" max="1" step="0.05" value="0.9"></label>
-      <label class="setting" for="setMus"><span>Lautstärke Musik (Verfolgung, Kämpfe)</span><input type="range" id="setMus" min="0" max="1" step="0.05" value="0.7"></label>
-      <label class="setting" for="setHires"><span>Hohe Auflösung (schärfer, braucht mehr Leistung)</span><input type="checkbox" id="setHires" checked></label>
-      <label class="setting" for="setShadows"><span>Schatten (schöner, braucht mehr Leistung)</span><input type="checkbox" id="setShadows" checked></label>
-      <label class="setting" for="setBob"><span>Kopfwippen</span><input type="checkbox" id="setBob" checked></label>
-      <p class="keys">iPhone: unten links laufen (leicht = schleichen) · überall sonst tippen und ziehen = umsehen · SCHLEICHEN / RENNEN · gelber Knopf Aktion (auch Türen) · Radar antippen = Lageplan · Pager antippen = HUD klein · LAMPE antippen<br>Tastatur: WASD · Maus (ins Bild klicken) oder ←/→ · C schleichen · Shift rennen · E Aktion · F Lampe · 1–6 Inventar · J/N Anruf · Tab Flucht-Zentrale · M Lageplan · B Whiteboard · P Pause</p>
+      <div class="set-tabs" id="setTabs" role="tablist">
+        <button type="button" role="tab" data-p="game" class="on">🎮<span>Spiel</span></button>
+        <button type="button" role="tab" data-p="ctrl">🕹️<span>Steuerung</span></button>
+        <button type="button" role="tab" data-p="sound">🔊<span>Ton</span></button>
+        <button type="button" role="tab" data-p="gfx">🖼️<span>Grafik</span></button>
+      </div>
+      <div class="set-pane on" data-p="game">
+        <label class="setting" for="setDiff"><span>Schwierigkeit<small>Brutal: mehr Leute, schärfere Augen, weniger Zeit im Treppenhaus</small></span><select id="setDiff"><option value="easy">Leicht</option><option value="normal">Brutal · normaler Stationsalltag</option></select></label>
+        <label class="setting" for="setNavi"><span>Pfeile am Boden<small>Zeigen den Weg zum nächsten Ziel</small></span><input type="checkbox" id="setNavi" checked></label>
+        <label class="setting" for="setBob"><span>Kopfwippen<small>Aus, wenn dir beim Laufen flau wird</small></span><input type="checkbox" id="setBob" checked></label>
+      </div>
+      <div class="set-pane" data-p="ctrl">
+        <label class="setting" for="setLook"><span>Umsehen</span><select id="setLook"><option value="swipe">Wischen (direkt)</option><option value="stick">Joystick (halten)</option></select></label>
+        <label class="setting" for="setSens"><span>Empfindlichkeit</span><input type="range" id="setSens" min="0.4" max="2.2" step="0.1" value="1"></label>
+        <label class="setting" for="setInvert"><span>Blick vertikal umkehren</span><input type="checkbox" id="setInvert"></label>
+        <details class="set-keys"><summary>Alle Gesten und Tasten</summary><p class="keys">iPhone: unten links laufen (leicht = schleichen) · überall sonst tippen und ziehen = umsehen · SCHLEICHEN / RENNEN · gelber Knopf Aktion (auch Türen) · Radar antippen = Lageplan · Pager antippen = HUD klein · LAMPE antippen<br>Tastatur: WASD · Maus (ins Bild klicken) oder ←/→ · C schleichen · Shift rennen · E Aktion · F Lampe · 1–6 Inventar · J/N Anruf · Tab Flucht-Zentrale · M Lageplan · B Whiteboard · P Pause</p></details>
+      </div>
+      <div class="set-pane" data-p="sound">
+        <label class="setting" for="setSound"><span>Ton</span><input type="checkbox" id="setSound" checked></label>
+        <label class="setting" for="setVol"><span>Geräusche<small>Türen, Schritte, Durchsagen</small></span><input type="range" id="setVol" min="0" max="1" step="0.05" value="0.9"></label>
+        <label class="setting" for="setMus"><span>Musik<small>Kämpfe, Fanfaren, Alarm</small></span><input type="range" id="setMus" min="0" max="1" step="0.05" value="0.7"></label>
+      </div>
+      <div class="set-pane" data-p="gfx">
+        <label class="setting" for="setGfx"><span>Qualität</span><select id="setGfx"><option value="auto">Automatisch</option><option value="low">Leicht</option><option value="mid">Mittel</option><option value="high">Hoch</option><option value="ultra">Top</option></select></label>
+        <p class="set-hint" id="gfxHint"></p>
+        <p class="set-hint dim" id="gfxFps"></p>
+      </div>
       <button class="btn" id="btnResume" type="button"><span>Weiter</span><span>▶</span></button>
-      <button class="btn ghost" id="btnPlan" type="button"><span>Mission Control</span><span>🎯</span></button>
-      <button class="btn ghost" id="btnTour" type="button"><span>Tour: So geht's</span><span>👆</span></button>
-      <button class="btn ghost" id="btnGuidePause" type="button"><span>Ausrüstung erklärt</span><span>🎒</span></button>
-      <button class="btn ghost" id="btnAcctPause" type="button"><span>Profil &amp; Konto</span><span>👤</span></button>
-      <button class="btn ghost" id="btnFeedbackPause" type="button"><span>Verbesserung vorschlagen</span><span>💡</span></button>
-      <button class="btn ghost" id="btnQuit" type="button"><span>Zum Titel · Stand wird gespeichert</span><span>💾</span></button>
+      <div class="set-more">
+        <button class="btn ghost" id="btnPlan" type="button"><span>Mission Control</span><span>🎯</span></button>
+        <button class="btn ghost" id="btnTour" type="button"><span>Tour: So geht's</span><span>👆</span></button>
+        <button class="btn ghost" id="btnGuidePause" type="button"><span>Ausrüstung</span><span>🎒</span></button>
+        <button class="btn ghost" id="btnAcctPause" type="button"><span>Profil &amp; Konto</span><span>👤</span></button>
+        <button class="btn ghost" id="btnFeedbackPause" type="button"><span>Vorschlag</span><span>💡</span></button>
+        <button class="btn ghost" id="btnQuit" type="button"><span>Zum Titel (speichert)</span><span>💾</span></button>
+      </div>
     </div>
   </section>
 

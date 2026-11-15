@@ -254,8 +254,18 @@ function showEndScreen(key, n) {
 }
 
 // ---------- pause & settings ----------
-function pause() { if (mode !== "play") return; saveCheckpoint(); mode = "pause"; clearInputs(); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
-function resume() { if (mode !== "pause") return; show(null); mode = "play"; }
+function pause() { if (mode !== "play") return; saveCheckpoint(); mode = "pause"; clearInputs(); openSettingsUi(false); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
+function resume() { if (mode === "settings") { document.body.classList.remove("set-title"); mode = "title"; show("ovTitle"); refreshTitle(); return; } if (mode !== "pause") return; show(null); mode = "play"; }
+/* the same settings card serves the pause menu and the title screen */
+let fpsNow = 0;
+function openSettingsUi(fromTitle) {
+  document.body.classList.toggle("set-title", fromTitle);
+  $("pauseEyebrow").textContent = fromTitle ? "Klinikum St. Sparen · Haustechnik" : "Pause · Pager auf lautlos";
+  $("btnResume").firstElementChild.textContent = fromTitle ? "Fertig" : "Weiter";
+  syncGfx(); $("gfxFps").textContent = fpsNow ? `Zuletzt gemessen: ${Math.round(fpsNow)} Bilder pro Sekunde · 3D-Auflösung ${renderer.domElement.width}×${renderer.domElement.height}` : "";
+}
+$("setTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; for (const x of $("setTabs").children) x.classList.toggle("on", x === b); for (const pn of document.querySelectorAll(".set-pane")) pn.classList.toggle("on", pn.dataset.p === b.dataset.p); });
+$("btnSettingsTitle").addEventListener("click", () => { if (mode !== "title") return; mode = "settings"; openSettingsUi(true); show("ovPause"); $("ovPause").scrollTop = 0; });
 $("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
 $("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
 $("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 50); });
@@ -275,8 +285,7 @@ function applyShadows() {
   scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); });
 }
 const bindSet = (id, key, prop = "checked", cast = v => v) => { const el = $(id); el[prop] = settings[key]; el.addEventListener(prop === "checked" ? "change" : "input", () => { settings[key] = cast(el[prop]); saveSettings(); if (key === "sound" && master) master.gain.value = settings.sound ? 1 : 0; if (key === "navi") naviT = 0; }); };
-bindSet("setShadows", "shadows"); $("setShadows").addEventListener("change", applyShadows);
-bindSet("setHires", "hires"); $("setHires").addEventListener("change", () => { applyRes(); resize(); });
+$("setGfx").addEventListener("change", () => { settings.gfx = $("setGfx").value; if (settings.gfx === "auto") settings.autoTier = guessTier(); applyGfx(); });
 bindSet("setVol", "vol", "value", Number); bindSet("setMus", "mus", "value", Number); $("setVol").addEventListener("input", syncSound); $("setVol").addEventListener("change", () => sfx.ding && sfx.ding());
 bindSet("setSens", "sens", "value", Number); bindSet("setInvert", "invert"); bindSet("setSound", "sound"); bindSet("setBob", "bob"); bindSet("setNavi", "navi");
 // sound on/off from the HUD and the title (the pause menu has the same switch)
@@ -440,20 +449,37 @@ function friendNeeds(f) {
     default: return f.talked === 0;
   }
 }
-const GFX = { t: 0, n: 0, step: 0 };
+/* graphics level: applied at once for resolution and shadows; finer surfaces and extra detail are built with the next floor.
+   On "Automatisch" the game watches the frame rate and steps down one level at a time if the device cannot keep up. */
+let gfxDirty = false;
+function applyGfx(silent) {
+  const old = Q; Q = GFX_TIERS[gfxId()]; settings.shadows = Q.shadow > 0; settings.hires = Q.pr > 1.25;
+  applyRes(); resize();
+  if (sun.shadow.mapSize.x !== (Q.shadow || 1024)) { sun.shadow.mapSize.set(Q.shadow || 1024, Q.shadow || 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  sun.shadow.radius = Q.detail >= 2 ? 3.5 : 2; applyShadows(); saveSettings();
+  if (old.ts !== Q.ts || old.ts2 !== Q.ts2 || old.detail !== Q.detail) gfxDirty = !!(run && level && mode !== "title" && mode !== "settings");
+  syncGfx(); if (!silent) GFX.t = GFX.n = 0;
+}
+function syncGfx() {
+  const sel = $("setGfx"); if (!sel) return; sel.value = settings.gfx;
+  sel.options[0].textContent = "Automatisch (jetzt: " + GFX_TIERS[settings.autoTier].name + ")";
+  const d = { low: "Am flüssigsten. Keine Schatten, einfache Oberflächen.", mid: "Schatten, feinere Wände und Böden, Lichtschein.", high: "Volle Auflösung, weiche Schatten, Lichtkegel, mehr Details an Figuren.", ultra: "Alles auf Anschlag: schärfste Oberflächen, größte Schatten. Braucht ein schnelles Gerät." }[Q.id];
+  $("gfxHint").textContent = d + (settings.gfx === "auto" ? " Passt sich an, wenn es ruckelt." : "") + (gfxDirty ? " Oberflächen und Details gelten ab dem nächsten Stockwerk." : "");
+}
+const GFX = { t: 0, n: 0, good: 0 };
 function autoGraphics(dt) {
-  if (mode !== "play" || settings.gfxAuto === false || GFX.step >= 2) return;
+  if (mode !== "play" || settings.gfx !== "auto") return;
   GFX.t += dt; GFX.n++;
   if (GFX.t < 6) return;
-  const fps = GFX.n / GFX.t; GFX.t = 0; GFX.n = 0;
-  if (fps >= 27) { GFX.step = 2; return; } // fast enough: leave it alone
-  if (GFX.step === 0 && settings.hires) { settings.hires = false; $("setHires").checked = false; applyRes(); resize(); setMsg("Grafik auf „Leicht“ gestellt, damit es flüssiger läuft. Ändern im Pausenmenü.", 4); }
-  else if (settings.shadows) { settings.shadows = false; $("setShadows").checked = false; applyShadows(); setMsg("Schatten aus, damit es flüssiger läuft.", 3); GFX.step = 2; }
-  GFX.step++; saveSettings(); typeof track === "function" && track("gfx_auto", { fps: Math.round(fps) });
+  const fps = GFX.n / GFX.t, i = GFX_ORDER.indexOf(settings.autoTier); GFX.t = 0; GFX.n = 0;
+  if (fps >= 27 || i <= 0) return;
+  settings.autoTier = GFX_ORDER[i - 1]; applyGfx(true);
+  setMsg("Grafik auf „" + Q.name + "“ gestellt, damit es flüssiger läuft. Ändern: Pause → Grafik.", 4);
+  typeof track === "function" && track("gfx_auto", { fps: Math.round(fps), to: settings.autoTier });
 }
 function render(time, dt) {
   if (!level) return;
-  autoGraphics(dt);
+  autoGraphics(dt); if (dt > 0) fpsNow += (1 / dt - fpsNow) * .05;
   const bob = settings.bob && mode === "play" ? Math.sin(player.bob) * (player.moveMag === .5 ? .025 : .05) : 0, shake = player.stun > 0 ? (Math.random() - .5) * .06 : 0;
   const crouch = mode === "play" && player.moveMag === .5 ? .18 : 0;
   camera.position.set(player.x * S + shake, EYE + bob - crouch - (player.hidden ? .7 : 0), player.y * S);

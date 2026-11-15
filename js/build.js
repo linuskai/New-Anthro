@@ -27,6 +27,11 @@ const roomFloorTex = theme => canvasTex(256, 256, (g, w, h) => {
   g.fillStyle = base; g.fillRect(0, 0, w, h);
   for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? "0,0,0" : "255,255,255"},${Math.random() * .08})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
   g.strokeStyle = "rgba(0,0,0,.12)"; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke(); }
+  // linoleum: a fine marbling, a light edge on every lane, scratches where the chairs roll
+  const r = rng(29);
+  for (let i = 0; i < 1800; i++) { g.fillStyle = `rgba(${r() < .5 ? "70,60,40" : "255,250,235"},${.05 + r() * .12})`; g.beginPath(); g.ellipse(r() * w, r() * h, .4 + r() * 2.2, .3 + r() * .7, r() * 3, 0, 7); g.fill(); }
+  g.fillStyle = "rgba(255,255,255,.14)"; for (let i = 0; i <= 4; i++) g.fillRect(i * 64 + 1.4, 0, .8, h);
+  g.lineWidth = .5; for (let i = 0; i < 16; i++) { const x = r() * w, y = r() * h, a = r() * 6.28, l = 8 + r() * 30; g.strokeStyle = `rgba(30,26,20,${.08 + r() * .12})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
 }, "roomfloor" + theme);
 
 const LOCKED = [
@@ -87,9 +92,10 @@ function buildFloors(lv, theme) {
   const glossy = !["cellar", "park", "derma"].includes(theme);
   const ft = floorTex(theme), rt = roomFloorTex(theme), wt = floorTex("derma");
   const mats = {
-    1: new THREE.MeshStandardMaterial({ map: ft, bumpMap: ft, bumpScale: .012, color: glossy ? 0xd2d8d4 : 0xe4e4e4, roughness: glossy ? .3 : .85, metalness: 0 }),
-    2: new THREE.MeshStandardMaterial({ map: rt, bumpMap: rt, bumpScale: .01, roughness: .5, metalness: 0 }),
-    3: new THREE.MeshStandardMaterial({ map: wt, bumpMap: wt, bumpScale: .015, roughness: .55, metalness: 0 }),
+    // relief from its own map (joints, grain), gloss from a gloss map: polished lanes shine, joints and scratches stay dull
+    1: new THREE.MeshStandardMaterial({ map: ft, bumpMap: floorBumpTex(theme), bumpScale: .018, color: glossy ? 0xd2d8d4 : 0xe4e4e4, roughness: Q.detail ? 1 : glossy ? .3 : .85, roughnessMap: Q.detail ? floorRoughTex(theme) : null, metalness: 0, envMapIntensity: glossy ? 1.25 : .6 }),
+    2: new THREE.MeshStandardMaterial({ map: rt, bumpMap: floorBumpTex("room"), bumpScale: .012, roughness: Q.detail ? 1.25 : .5, roughnessMap: Q.detail ? floorRoughTex("room") : null, metalness: 0 }),
+    3: new THREE.MeshStandardMaterial({ map: wt, bumpMap: floorBumpTex("derma"), bumpScale: .02, roughness: Q.detail ? 1 : .55, roughnessMap: Q.detail ? floorRoughTex("derma") : null, metalness: 0, envMapIntensity: 1.1 }),
   };
   const m4 = new THREE.Matrix4();
   for (const k of [1, 2, 3]) {

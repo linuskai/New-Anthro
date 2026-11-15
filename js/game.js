@@ -25,7 +25,7 @@ const floorLabel = i => LEVELS[i].short.split(" · ")[1] || LEVELS[i].short;
 const playerSafe = () => cell(Math.floor(player.x), Math.floor(player.y)) === "_";
 
 function loadFloor(idx) {
-  clearRea();
+  clearRea(); if (typeof gfxDirty !== "undefined") gfxDirty = false;
   const L = LEVELS[idx];
   renderer.shadowMap.enabled = !!settings.shadows; sun.castShadow = !!settings.shadows && !ENV[L.env].dark; flashlight.castShadow = !!settings.shadows && !!ENV[L.env].dark;
   buildLevel(idx);
@@ -67,7 +67,7 @@ function applyEnv(force) {
   flashlight.intensity = need && player.lampOn ? (player.lamp > 0 ? 1.7 : (Math.random() < .3 ? .4 : .1)) : 0;
   fpHand.visible = need;
   if (fpHand.userData.glow) { const on = flashlight.intensity > .3; fpHand.userData.glow.visible = false; /* no glowing bulb: you never see the lens from behind */ if (fpHand.userData.beam) fpHand.userData.beam.visible = on; fpHand.userData.lens.material.color.setHex(on ? 0xfff6dd : 0x3a3a3a); }
-  if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); }
+  if (level && (force || bo !== level.lastBo)) { level.lastBo = bo; level.panelMat.color.setHex(bo || cellarDark() ? 0x2a2d2b : env.lamp); for (const gl of level.glow || []) gl.visible = !(bo || cellarDark()); }
   if (level && level.windowMat) level.windowMat.color.setHex(boltT > 0 ? 0xffffff : 0x8a9ab0);
   if (level && level.outsideMat) { // first light behind the windows: the night skyline gives way to a pink-orange morning
     if (dawn > .3 && !level.dawnSky) { level.dawnSky = true; level.outsideMat.map = skylineTex(true); level.outsideMat.needsUpdate = true; }

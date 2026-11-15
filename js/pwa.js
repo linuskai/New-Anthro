@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["⚔️ Jeder Endgegner hat eigene Attacken, eigene Arena und eigene Witze", "🧥 Kitteltasche im Kampf: Kaffee, Donut & Co. füllen KP auf", "🪜 Treppenhaus: Richtig ist jetzt, was die Klinik hören will", "🎺 Mission geschafft: Fanfare, Sterne und die Fahrt in die Sonne", "💬 Neue Gespräche mit Kolleginnen und Kollegen"];
+const NEWS = ["🖼️ Grafik in vier Stufen: passt sich dem Gerät an oder von Hand wählbar (bis „Top“)", "🧱 Feinere Wände und Böden: Fliesen, Fugen, Kratzer, Glanz, Pfützen", "💡 Lichtschein und Lichtkegel an den Lampen, weichere Schatten", "🧴 Items und Figuren mit mehr Details", "⚙️ Einstellungen neu sortiert, jetzt auch vom Startbildschirm"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;
