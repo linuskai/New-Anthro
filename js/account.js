@@ -1,6 +1,9 @@
 /* Hospital Escape 3D · an optional account by e-mail (Supabase Auth, a code by e-mail, no password).
    The account owns the player: sign in on any device and the progress is there. Playing without an account stays the default. */
 const AUTH_KEY = "hospital-escape-auth";
+/* the owner's address is not written in the code, only a checksum of it */
+const hashMail = m => { let h = 2166136261; for (const c of m.trim().toLowerCase()) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
+const OWNER_HASH = "3e5e0fe8";
 let auth = store.get(AUTH_KEY); // { access_token, refresh_token, expires_at, email }
 async function authCall(path, body, bearer) {
   const r = await fetch(`${SB.url}/auth/v1/${path}`, { method: "POST", headers: { apikey: SB.key, "Content-Type": "application/json", ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) }, body: JSON.stringify(body || {}) });
@@ -34,6 +37,8 @@ async function afterLogin() {
 function renderAcct() {
   const on = !!auth;
   if (on) $("acctMail").textContent = auth.email || "dein Konto";
+  $("lnkAdmin").hidden = !(on && typeof OWNER_HASH !== "undefined" && auth.email && OWNER_HASH === hashMail(auth.email)); // only the owner sees the way to the stats page
+
   $("acctTitle").textContent = on ? `Hallo, ${displayName()}` : "Du bist angemeldet";
   if (typeof refreshTitle === "function") refreshTitle();
 }
@@ -97,7 +102,7 @@ $("btnAcctSend").addEventListener("click", async () => {
   try {
     await authCall("otp?redirect_to=" + encodeURIComponent(location.origin + location.pathname), { email, create_user: true });
     $("acctMailStep").hidden = true; $("acctCodeRow").hidden = false; $("acctSentTo").textContent = email; $("acctCode").value = ""; setTimeout(() => $("acctCode").focus(), 100);
-    acctNote("✓ E-Mail ist unterwegs.", "ok");
+    acctNote("✓ E-Mail ist unterwegs. Steht ein 6-stelliger Code drin: hier eingeben. Steht nur ein Link drin: auf diesem Gerät antippen, dann bist du angemeldet.", "ok");
   } catch (e) { acctNote("✗ Das hat nicht geklappt: " + e.message + ". Später nochmal versuchen.", "bad"); }
 });
 $("btnAcctVerify").addEventListener("click", async () => {

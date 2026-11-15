@@ -1288,6 +1288,15 @@ body.set-title .set-more { display: none; }
 #mapView .map-info { box-sizing: border-box; width: min(92vw, 80vh); background: #f6f4ea; color: #1d2622; border-radius: 10px; padding: 9px 12px; font: 600 14px/1.35 var(--display); min-height: 40px; }
 #mapView .map-info i { font-style: normal; font-weight: 800; } #mapView .map-info .bad { color: #c0322a; } #mapView .map-info .warn { color: #a86a00; } #mapView .map-info .ok { color: #1f7a45; }
 @media (orientation: landscape) and (max-height: 520px) { #mapView { grid-template-columns: auto minmax(0, 300px); grid-template-rows: auto auto; align-items: center; } #mapView canvas { grid-row: 1 / 3; width: min(60vw, 88vh); height: min(60vw, 88vh); } #mapView .map-info { width: auto; align-self: end; } #mapView .map-legend { align-self: start; text-align: left; } }
+/* v39: about */
+button.t-sign { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px; } button.t-sign:active { transform: scale(.96); }
+#ovAbout { display: grid; place-items: center; padding: 20px; overflow-y: auto; background: #0b1210ee; } #ovAbout[hidden] { display: none; }
+.card.about { max-width: 560px; text-align: left; } .card.about h2 { margin: 2px 0 6px; } .card.about p { font-size: 14px; line-height: 1.5; }
+.ab-sign { font-size: 34px; letter-spacing: 4px; } .ab-lead { font: 700 17px/1.35 var(--display) !important; }
+.ab-facts { margin: 10px 0; padding: 10px 12px 10px 28px; background: rgba(15,138,74,.08); border-radius: 10px; font-size: 13.5px; line-height: 1.5; }
+.ab-note { font-size: 12.5px !important; opacity: .75; border-left: 3px solid #f2b33d; padding-left: 10px; }
+.ab-legal { display: block; margin: 14px auto 0; appearance: none; border: 0; background: none; color: inherit; opacity: .45; font: 500 10.5px/1 var(--display); text-decoration: underline; cursor: pointer; padding: 6px; }
+.acct-admin { display: block; margin: 10px auto 0; font: 700 13px/1.3 var(--display); color: #a6e38f; }
 </style>
 </head>
 <body>
@@ -1393,12 +1402,12 @@ body.set-title .set-more { display: none; }
   <section class="overlay" id="ovTitle">
     <div class="title-wrap">
       <header class="t-head">
-        <div class="t-sign" aria-hidden="true">
+        <button type="button" class="t-sign" id="btnAbout" aria-label="Über Hospital Escape">
           <svg viewBox="0 0 120 72" width="96" height="58"><rect x="1.5" y="1.5" width="117" height="69" rx="6" fill="#0f8a4a" stroke="#f3f8f1" stroke-width="3"/>
             <rect x="74" y="12" width="32" height="48" fill="none" stroke="#f3f8f1" stroke-width="4"/><path d="M80 60V18h20" fill="none" stroke="#f3f8f1" stroke-width="3" opacity=".5"/>
             <circle cx="46" cy="16" r="6" fill="#f3f8f1"/><path d="M44 24l-12 8 4 5 9-5 3 12-12 14 5 4 13-14 9 13 6-3-11-18-3-12 9 6 9-2-1-6-8 1-12-8z" fill="#f3f8f1"/>
             <path d="M14 36h14l-5-5M28 36l-5 5" fill="none" stroke="#f3f8f1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+        </button>
         <div class="t-clock" aria-label="Dienstende 17 Uhr"><span class="t-led"><span id="tClock">16:59</span></span><small>Dienstende</small></div>
       </header>
       <h1 class="t-word">Hospital<br><span>Escape</span></h1>
@@ -1429,7 +1438,6 @@ body.set-title .set-more { display: none; }
         <button class="t-ghost" id="btnGuide" type="button">🎒 Items</button>
         <button class="t-ghost" id="profChip" type="button">🧑‍⚕️ Profil</button>
         <button class="t-ghost" id="btnSettingsTitle" type="button">⚙️ Einstellungen</button>
-        <button class="t-ghost t-legal" id="btnLegal" type="button">Datenschutz &amp; Impressum</button>
         <button class="t-ghost" id="btnFeedback" type="button">💡 Vorschlag</button>
         <button class="t-ghost" id="btnInstall" type="button" hidden>📲 Als App</button>
         <button class="t-ghost snd" id="btnSoundTitle" type="button" aria-label="Ton an oder aus">🔊</button>
@@ -1534,6 +1542,7 @@ body.set-title .set-more { display: none; }
         <p class="small" id="codeMsg" aria-live="polite"></p>
       </details>
       <details class="code-box ach-box" open><summary id="achHead">🏆 Erfolge</summary><ul class="ach-list" id="achList"></ul></details>
+      <a class="acct-admin" id="lnkAdmin" href="admin.html" target="_blank" rel="noopener" hidden>📊 Admin-Bereich: Statistik &amp; Vorschläge</a>
       <button type="button" class="wl-link" id="btnLegal2">Datenschutz &amp; Impressum</button>
       <button type="button" class="wl-link" id="btnAcctClose">‹ Zurück</button>
     </div>
@@ -1578,6 +1587,25 @@ body.set-title .set-more { display: none; }
         <button type="button" class="wl-link" id="btnWelProf2">👤 Name &amp; Avatar ändern</button>
         <button type="button" class="wl-link wl-out" id="btnAcctOut">Abmelden</button>
       </div>
+    </div>
+  </section>
+  <section class="overlay" id="ovAbout" hidden>
+    <div class="card sheet about">
+      <div class="ab-sign" aria-hidden="true">🏥🏃‍♀️➡️🚪</div>
+      <div class="eyebrow">Über uns · Klinikum St. Sparen</div>
+      <h2>Hospital Escape</h2>
+      <p class="ab-lead">Ein Spiel über den ältesten Traum der Medizin: pünktlich nach Hause gehen.</p>
+      <p>Das Klinikum St. Sparen wurde 2009 gegründet, um zu beweisen, dass ein Krankenhaus mit einem Arzt, drei Kaffeemaschinen (eine davon funktioniert) und 412 Formularen auskommt. Der Beweis läuft noch.</p>
+      <p>Du spielst die Ärztin oder den Arzt, die oder der um 17:00 Uhr Feierabend hat. Theoretisch. Praktisch stehen zwischen dir und dem Ausgang: ein Oberarzt mit „nur einer ganz kurzen Frage“, Orthopäden mit Bizeps, ein Controlling mit Gefühlen, eine Hygienefachkraft ohne, und Schwester Hildegard. Niemand weiß, seit wann Schwester Hildegard da ist. Niemand fragt.</p>
+      <ul class="ab-facts">
+        <li><b>Betten:</b> 400 laut Plan · 612 laut Flur</li>
+        <li><b>Wartezeit Notaufnahme:</b> ja</li>
+        <li><b>Leitbild:</b> „Wir sind eine Familie.“ (Dienstplan siehe Familie)</li>
+        <li><b>Auszeichnungen:</b> Bester Kaffee 1998 (Station 4, später abgeschafft)</li>
+      </ul>
+      <p class="ab-note">Alles hier ist erfunden und maßlos übertrieben. Das Klinikum St. Sparen, seine Menschen und ihre Vorfälle haben keinerlei Bezug zu einem echten Krankenhaus, einer echten Person oder einem echten Dienstplan. Reine Parodie. Kein medizinischer Rat. Sollte dir trotzdem etwas bekannt vorkommen: Das tut uns leid. Ehrlich.</p>
+      <button class="btn" id="btnAboutClose" type="button"><span>Zurück zum Dienst</span><span>←</span></button>
+      <button type="button" class="ab-legal" id="btnLegal">Impressum &amp; Datenschutz</button>
     </div>
   </section>
   <section class="overlay" id="ovLegal" hidden>

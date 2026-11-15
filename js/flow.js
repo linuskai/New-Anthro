@@ -1,5 +1,5 @@
 /* Hospital Escape 3D · story intro, briefing, level flow, endings, settings, rendering and boot. */
-const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall", "ovAccount", "ovWelcome", "ovLegal"];
+const OVERLAYS = ["ovTitle", "ovSelect", "ovBrief", "ovIntro", "ovPause", "ovEnd", "ovMC", "ovBoard", "ovGuide", "ovFeedback", "ovInstall", "ovAccount", "ovWelcome", "ovLegal", "ovAbout"];
 function show(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; }
 function hidePopups() { for (const id of ["toast", "lab", "hideVeil", "prompt", "dlg", "cpr", "tired", "wp", "story", "hint"]) $(id).hidden = true; toastT = labT = 0; }
 
@@ -329,7 +329,9 @@ $("setDiffTitle").addEventListener("click", ev => { const b = ev.target.closest(
 setDiff(settings.diff);
 $("btnStart").addEventListener("click", () => { initAudio(); showSelect(); });
 let legalReturn = "title";
-function openLegal() { legalReturn = mode; mode = "legal"; show("ovLegal"); $("ovLegal").scrollTop = 0; }
+function openLegal() { legalReturn = mode === "about" ? "title" : mode; mode = "legal"; show("ovLegal"); $("ovLegal").scrollTop = 0; }
+$("btnAbout").addEventListener("click", () => { if (mode !== "title") return; mode = "about"; show("ovAbout"); $("ovAbout").scrollTop = 0; });
+$("btnAboutClose").addEventListener("click", () => { mode = "title"; show("ovTitle"); refreshTitle(); });
 $("btnLegal").addEventListener("click", openLegal); $("btnLegal2").addEventListener("click", openLegal);
 $("btnLegalClose").addEventListener("click", () => { if (legalReturn === "account") openAccount(acctReturn); else { mode = "title"; show("ovTitle"); refreshTitle(); } });
 $("btnNight").addEventListener("click", () => { initAudio(); showNightSelect(); });
