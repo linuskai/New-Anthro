@@ -88,6 +88,17 @@ function battleSprite(sp, back, key) {
     spriteCache.set(k, url); return url;
   } catch (e) { return null; }
 }
+/* Jonas, the PJ student: big coat, small salary, clipboard, endless motivation */
+const PJ_SP = { skin: SKIN[4], hair: HAIR[3], hairStyle: "messy", coat: true, shirt: 0xf2f2f2, pants: 0x4a6a9a, acc: "clipboard", glasses: true, pens: true, badge: true, mood: "happy", scale: .9 };
+const PJ_HELP = [
+  { n: "LOGBUCH ABZEICHNEN", fx: "paper", skip: true, txt: ["Jonas hält dem Gegner sein PJ-Logbuch hin: „Können Sie mir schnell 14 Punkte abzeichnen? Blutentnahme, Naht, Gips …“", "Der Gegner unterschreibt alles. Auch einen Organspendeausweis. Er ist so verwirrt, dass er eine Runde aussetzt!"] },
+  { n: "DOKTORARBEIT", fx: "slides", skip: true, txt: ["Jonas erzählt von seiner Doktorarbeit: „Der Einfluss von Rotlicht auf Mäuse mit Fernweh.“ Seit 2019. Noch keine Ergebnisse.", "Nach Folie 3 von 140 schläft der Gegner im Stehen ein. Er setzt eine Runde aus!"] },
+  { n: "UNGEFRAGT BLUTDRUCK", fx: "needle", dmg: 18, weaken: true, txt: ["Jonas legt dem Gegner ungefragt eine Blutdruckmanschette an. Pumpt. Pumpt weiter. Der Bizeps sprengt die Manschette.", "Zweiter Versuch: 190 zu 110. Jonas, laut: „Ist das normal?“ Der Gegner wird blass. Sein Angriff sinkt!"] },
+  { n: "KAFFEE BRINGEN", fx: "coffee", heal: 22, txt: ["Jonas bringt dir einen Kaffee. Er hat ihn vier Stockwerke hochgetragen. Die Hälfte ist auf seinem Kittel.", "Die andere Hälfte ist in der Tasse. Lauwarm. Mit Liebe. KP +22!"] },
+  { n: "VOLLSTÄNDIGE ANAMNESE", fx: "bubbles", dmg: 22, txt: ["Jonas erhebt beim Gegner eine vollständige Anamnese. Allergien, Impfungen, Stuhlgang, Familienanamnese bis zur Uroma.", "Der Gegner: „Ich bin nicht der Patient!“ Jonas: „Das sagen alle.“ Es ist sehr effektiv!"] },
+  { n: "„DARF ICH MIT IN DEN OP?“", fx: "pj", skip: true, txt: ["Jonas, mit leuchtenden Augen, zum Gegner: „Darf ich mal mit in den OP? Bitte, bitte?“", "Der Gegner ist so gerührt, dass er Jonas zeigt, wie man Haken hält. Fünfzehn Minuten lang. Er setzt eine Runde aus!"] },
+];
+const PJ_DOWN = ["Jonas wirft sich dazwischen. Im PJ lernt man: Der Kleinste kriegt es ab. Jonas ist besiegt!", "Jonas fängt den Treffer ab und bittet sofort um eine Bescheinigung darüber. Jonas ist besiegt!", "Jonas geht zu Boden. Er murmelt: „Zählt das als Fehltag?“ Jonas ist besiegt!", "Jonas springt in den Treffer. Für 0 € im Monat. Er hat sich das irgendwie anders vorgestellt. Jonas ist besiegt!"];
 const PLAYER_SP = { skin: SKIN[0], hair: 0x5a3a22, hairStyle: "short", coat: true, shirt: 0x9fc0e0, pants: 0x2f3440, steth: true, mood: "tired" };
 
 // ---------- moves ----------
@@ -95,33 +106,36 @@ const PLAYER_SP = { skin: SKIN[0], hair: 0x5a3a22, hairStyle: "short", coat: tru
    the hygiene inspector with bare hands. se = hits where it hurts (×1.6), weak = bounces off (×.6). Two of the pool are drawn per battle,
    plus the quiz move and the coffee break. */
 const ORTHO_POOL = [
-  { n: "MRT-BEFUND VORLESEN", fx: "scan", t: "DIAGNOSTIK", se: 1, p: 48, pp: 5, txt: "liest seinen MRT-Befund vor: „Degenerative Veränderungen, altersentsprechend.“ Altersentsprechend! Er ist 38!" },
-  { n: "LEG-DAY ANSPRECHEN", fx: "legs", t: "PSYCHE", p: 36, pp: 6, weaken: 1, txt: "fragt nach seinem letzten Leg-Day. Er schaut auf seine Waden. Lange Stille. Sein Angriff sinkt." },
-  { n: "LEBERWERTE ZEIGEN", fx: "lab", t: "DIAGNOSTIK", se: 1, p: 54, pp: 3, txt: "zeigt ihm seine Leberwerte vom Betriebsarzt. GGT 340. Er wird blass. Unter der Bräune." },
-  { n: "INTERNISTISCHES KONSIL", fx: "paper", t: "PAPIER", p: 34, pp: 6, txt: "schickt ein internistisches Konsil. Drei Seiten Freitext, keine Stichpunkte. Er muss es lesen. Ganz." },
-  { n: "RÖNTGEN VERKEHRT HERUM", fx: "xray", t: "PSYCHE", p: 40, pp: 4, txt: "hängt sein Röntgenbild verkehrt herum auf. Er merkt es nicht. Die ganze Station schon." },
-  { n: "„ERST MAL KONSERVATIV“", fx: "pill", t: "DIAGNOSTIK", se: 1, p: 46, pp: 4, txt: "schlägt konservative Therapie vor. Physio statt OP. Er muss sich an der Hantelbank festhalten." },
-  { n: "SHAKE VERSTECKEN", fx: "hide", t: "PSYCHE", p: 20, pp: 3, weaken: 1, txt: "versteckt seinen Proteinshake im Medikamentenkühlschrank. Er sucht. Er zittert. Sein Angriff sinkt." },
-  { n: "EKG KLEBEN", fx: "ekg", t: "DIAGNOSTIK", p: 42, pp: 4, txt: "klebt ihm ein EKG. Auf die Brustbehaarung. Und reißt es wieder ab. Sinusrhythmus. Mit Schrei." },
-  { n: "DIFFERENZIALDIAGNOSE", fx: "bubbles", t: "DIAGNOSTIK", p: 38, pp: 5, txt: "nennt zwölf Differenzialdiagnosen. Er kennt zwei: „gebrochen“ und „nicht gebrochen“. Ihm wird schwindelig." },
-  { n: "KALIUM NACHFRAGEN", fx: "lab", t: "DIAGNOSTIK", p: 44, pp: 4, txt: "fragt: „Wie war eigentlich das Kalium?“ Er schaut, als hättest du nach dem Wetter auf dem Mars gefragt." },
+  { n: "ARZTBRIEF, 14 SEITEN", fx: "paper", t: "PAPIER", se: 1, p: 50, pp: 4, txt: "überreicht einen Arztbrief. 14 Seiten. Die Diagnose steht auf Seite 13. Er hat noch nie einen Arztbrief bis Seite 2 gelesen. Er schwitzt." },
+  { n: "AUSKULTATION", fx: "steth", t: "DIAGNOSTIK", p: 42, pp: 5, txt: "hört seinen Bizeps ab. Lange. Sehr lange. Dann, ernst: „Hm.“ Nur „Hm.“ Er wird nie erfahren, was das „Hm“ bedeutet." },
+  { n: "BMI AUSRECHNEN", fx: "lab", t: "PSYCHE", p: 30, pp: 5, weaken: 1, txt: "rechnet seinen BMI aus. 31. „Adipositas Grad I.“ Es sind Muskeln. Dem BMI ist das egal. Sein Angriff sinkt." },
+  { n: "„UND DIE NIERE?“", fx: "bubbles", t: "DIAGNOSTIK", se: 1, p: 48, pp: 4, txt: "fragt: „Und was macht die Niere?“ Er weiß nicht genau, wo die Niere ist. Er tastet suchend an seinem Knie." },
+  { n: "23 DIFFERENZIALDIAGNOSEN", fx: "bubbles", t: "DIAGNOSTIK", p: 40, pp: 5, txt: "nennt 23 Differenzialdiagnosen für seinen Muskelkater. Platz 23: Porphyrie. Er googelt Porphyrie. Er hat jetzt Angst." },
+  { n: "VISITE IN ZEITLUPE", fx: "calendar", t: "PSYCHE", p: 26, pp: 4, weaken: 1, txt: "nimmt ihn mit auf internistische Visite. 47 Minuten pro Patient. In der Zeit hätte er drei Knie gemacht. Sein Wille sinkt." },
+  { n: "LANGZEIT-EKG", fx: "ekg", t: "DIAGNOSTIK", p: 44, pp: 4, txt: "klebt ihm ein Langzeit-EKG. 24 Stunden. Kein Bankdrücken, keine Dusche, kein Spiegel-Selfie. Er wimmert leise." },
+  { n: "KALTES SONO-GEL", fx: "gel", t: "DIAGNOSTIK", p: 38, pp: 5, txt: "schallt seinen Bauch. Das Gel kommt direkt aus dem Kühlschrank. Er quietscht in einer Tonlage, die nur Hunde hören." },
+  { n: "BLUTGASANALYSE", fx: "lab", t: "WISSEN", p: 42, pp: 4, txt: "liest ihm seine Blutgasanalyse vor. pH, pCO₂, Basenüberschuss. Er dachte, pH sei eine Proteinmarke. Er bestellt sie trotzdem." },
+  { n: "„ERST MAL KONSERVATIV“", fx: "pill", t: "DIAGNOSTIK", se: 1, p: 46, pp: 4, txt: "empfiehlt: „Erst mal konservativ. Physio, Geduld, abwarten.“ Abwarten! Er hat in seinem Leben noch nie abgewartet. Er zuckt." },
+  { n: "ZUTATENLISTE VORLESEN", fx: "hide", t: "PSYCHE", p: 24, pp: 3, weaken: 1, txt: "liest die Zutatenliste seines Proteinshakes vor. Ganz. Inklusive „Aroma, naturidentisch“. Er sieht den Shake nie wieder gleich an. Sein Angriff sinkt." },
 ];
 const MOVE_QUIZ = { n: "FACHFRAGE", fx: "quiz", t: "WISSEN", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." };
 const MOVE_HEAL = { n: "KAFFEEPAUSE", fx: "coffee", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern. Mit Haut drauf." };
 const pickMoves = kit => { const pool = (kit ? kit.my : ORTHO_POOL).slice().sort(() => Math.random() - .5); return [MOVE_QUIZ, pool[0], pool[1], MOVE_HEAL]; };
 const FOES = {
   U: { type: "KRAFT", lvl: 52, quiz: "ortho", moves: [
-    { n: "REFLEXHAMMER", fx: "hammer", p: 22, txt: "schwingt den REFLEXHAMMER! Patellarsehne getroffen! Dein Bein tritt von selbst. Sehr peinlich." },
-    { n: "BIZEPS-FLEX", fx: "flex", buff: 1, txt: "setzt BIZEPS-FLEX ein und schaut dabei in den Spiegel der Glastür! Sein ANGRIFF steigt stark!" },
-    { n: "PROTEINWOLKE", fx: "cloud", debuff: 1, txt: "schüttelt seinen Shake ohne Deckel. Eine PROTEINWOLKE! Deine Genauigkeit sinkt!" },
-    { n: "„IST DOCH NUR EIN KNIE“", fx: "bubbles", p: 18, txt: "sagt „Ist doch nur ein Knie, das macht die Innere!“ Du bekommst drei Konsile. Es tut weh." },
-    { n: "OP-PLAN GEÄNDERT", fx: "calendar", p: 20, txt: "ändert den OP-PLAN! Dein Patient ist jetzt um 22:00 dran. Mit dir als Assistenz." },
-    { n: "BANKDRÜCKEN-ANEKDOTE", fx: "bubbles", p: 16, txt: "erzählt von seinem Bankdrücken. 140 Kilo. Dreimal. Mit Videobeweis. Du verlierst den Lebenswillen." },
-    { n: "PRÄVENTIVER GIPS", fx: "cast", p: 10, stun: "DU steckst im Gips und kannst dich nicht bewegen! Er macht ein Foto für Instagram.", txt: "legt dir einen GIPS an. Präventiv. „Sicher ist sicher.“ Du setzt eine Runde aus!" },
-    { n: "SCHRAUBEN-SALVE", fx: "screws", p: 7, multi: 3, txt: "wirft mit Titanschrauben. Übrig vom letzten Knie. Und vom vorletzten." },
-    { n: "HIGH FIVE", fx: "hand", p: 24, txt: "gibt dir ein HIGH FIVE. Mit voller Kraft. Deine Hand ist jetzt ein Fall für die Handchirurgie." },
-    { n: "„INTERNISTISCH ABKLÄREN“", fx: "paper", p: 19, txt: "schreibt „Bitte internistisch abklären“ auf einen Zettel. Ohne Fragestellung. Ohne Patient. Mit Stempel." },
-    { n: "FACHFRAGE", quiz: true, txt: "stellt dir eine orthopädische Frage! Mit Blickkontakt!" }] },
+    { n: "BAUMARKT-REFLEXHAMMER", fx: "hammer", p: 22, txt: "zückt den Reflexhammer. Zu klein. Er nimmt den aus dem Baumarkt. Patellarsehne getroffen! Dein Bein tritt von selbst. Bis zum Parkplatz." },
+    { n: "BIZEPS-FLEX", fx: "flex", buff: 1, txt: "spannt den Bizeps an. Ein Kittelknopf fliegt quer durch den Raum und trifft eine Neonröhre. Sein ANGRIFF steigt stark!" },
+    { n: "PROTEINWOLKE", fx: "cloud", debuff: 1, txt: "schüttelt seinen Shake ohne Deckel. Eine PROTEINWOLKE, Geschmack Vanille! Deine Genauigkeit sinkt!" },
+    { n: "„MACHT DIE INNERE“", fx: "bubbles", p: 18, txt: "zeigt auf dich: „Das macht die Innere.“ Was? Alles. Sieben Patienten wechseln die Station. Einer davon ist sein Opa." },
+    { n: "SÄGE ANWERFEN", fx: "saw", p: 24, txt: "wirft die oszillierende Säge an. „Nur zum Aufwärmen.“ Sie kreischt. Du wirst sie heute Nacht im Traum hören." },
+    { n: "AKKUBOHRER", fx: "drill", p: 8, multi: 3, txt: "holt den Akkubohrer. 18 Volt. Er bohrt dreimal in die Luft. Nur um zu zeigen, dass er es kann." },
+    { n: "GANZKÖRPERGIPS", fx: "cast", p: 10, stun: "DU steckst bis zum Hals im Gips! Er signiert ihn. Mit Herzchen. Du setzt eine Runde aus.", txt: "gipst dich ein. Komplett. „Sicher ist sicher.“ Du bist jetzt eine Skulptur. Titel: „Internist, ratlos“." },
+    { n: "RÖNTGEN ZUR SICHERHEIT", fx: "xray", p: 12, acc: 1, txt: "röntgt dich. Zwölfmal. Zur Sicherheit. Du leuchtest leicht grünlich. Deine Genauigkeit sinkt." },
+    { n: "IKEA-KNIE", fx: "screws", p: 7, multi: 3, txt: "baut ein Kniegelenk nach IKEA-Anleitung. Drei Schrauben bleiben übrig. Er wirft sie nach dir. Alle drei." },
+    { n: "HIGH FIVE", fx: "hand", p: 24, txt: "gibt dir ein High Five. Mit voller Kraft. Deine Hand ist jetzt ein Fall für die Handchirurgie. Die hat erst nächsten Dienstag Zeit." },
+    { n: "KONSIL: „KALIUM?“", fx: "paper", p: 19, txt: "schickt dir ein Konsil. Fragestellung: „Kalium?“ Kein Patient, kein Zimmer, kein Wert. Nur das Fragezeichen. Es verfolgt dich." },
+    { n: "BANKDRÜCKEN-STORY", fx: "bubbles", p: 16, txt: "erzählt von seinem Bankdrücken. 140 Kilo. Dreimal. Er zeigt das Video. In Zeitlupe. Mit Musik. Du verlierst den Lebenswillen." },
+    { n: "FACHFRAGE", quiz: true, txt: "stellt dir eine orthopädische Frage! Mit Blickkontakt! Und Bizeps!" }] },
 };
 /* the six end bosses: each with its own arena, its own attacks, and your own answers to exactly this person */
 const BOSS_KIT = {
@@ -281,13 +295,13 @@ function pokeBattle(e, done, o = {}) {
   ov.innerHTML = `<div class="pb-field">
       <div class="pb-box foe"><b>${esc(name)}</b><span class="lv">Lv${foe.lvl}</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="ty">${esc(ftype)}</small></div>
       <div class="pb-plat foe"></div><div class="pb-mon foe">${fs ? `<img src="${fs}" alt="">` : `<span>${esc(e.person && TYPES[e.type] ? TYPES[e.type].av : "💪")}</span>`}</div>
-      <div class="pb-plat me"></div><div class="pb-mon me">${ps ? `<img src="${ps}" alt="">` : "<span>🧑‍⚕️</span>"}</div>
+      <div class="pb-plat me"></div><div class="pb-mon pj gone"></div><div class="pb-mon me">${ps ? `<img src="${ps}" alt="">` : "<span>🧑‍⚕️</span>"}</div>
       <div class="pb-box me"><b>DU</b><span class="lv">Lv31</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="num">100/100</small><div class="exp"><div></div></div></div>
     </div>
     <div class="pb-bottom"><div class="pb-text"></div><div class="pb-menu"></div></div>`;
   ov.classList.add(isBoss ? "arena-boss" : "arena-gym"); if (isBoss) ov.classList.add("arena-" + kit.arena);
   document.body.appendChild(ov); mode = "dialog"; fightOn = true; clearInputs(); if (!isBoss) gymMusic(true);
-  const textEl = ov.querySelector(".pb-text"), menu = ov.querySelector(".pb-menu"), foeMon = ov.querySelector(".pb-mon.foe"), meMon = ov.querySelector(".pb-mon.me");
+  const textEl = ov.querySelector(".pb-text"), menu = ov.querySelector(".pb-menu"), foeMon = ov.querySelector(".pb-mon.foe"), meMon = ov.querySelector(".pb-mon.me"), pjMon = ov.querySelector(".pb-mon.pj");
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   let skip = false; ov.querySelector(".pb-text").addEventListener("pointerdown", () => { skip = true; });
   const say = async (t, hold = 650) => { skip = false; textEl.textContent = ""; for (let i = 0; i <= t.length; i += 2) { if (skip) { textEl.textContent = t; break; } textEl.textContent = t.slice(0, i); await sleep(16); } textEl.textContent = t; await sleep(skip ? 150 : hold); };
@@ -313,7 +327,7 @@ function pokeBattle(e, done, o = {}) {
   const flashField = color => { const d = spawn("", 0, 0, "flash"); d.style.background = color; d.animate([{ opacity: .85 }, { opacity: 0 }], { duration: 380 }).onfinish = () => d.remove(); };
   async function fx(kind, from) {
     if (!kind) return;
-    const A = ctr(from === "foe" ? foeMon : meMon), B = ctr(from === "foe" ? meMon : foeMon);
+    const A = ctr(from === "foe" ? foeMon : from === "pj" ? pjMon : meMon), B = ctr(from === "foe" ? meMon : foeMon);
     const volley = (e, n, gap, ms, arc, spin, size) => Promise.all(Array.from({ length: n }, (_, i) => fly(e, A, B, ms, i * gap, arc, spin, size)));
     if (kind === "scan") { flashField("rgba(120,180,255,.5)"); await burst("🩻", B, 1, 0, 600); await burst("📉", B, 4, B[2] * .7, 600); }
     else if (kind === "legs") { await burst("🦵", B, 2, B[2] * .5, 500); await burst("🐔", B, 3, B[2] * .8, 700); }
@@ -335,6 +349,10 @@ function pokeBattle(e, done, o = {}) {
     else if (kind === "quiz") { flashField("rgba(255,240,120,.6)"); tone(1200, 0, .08, "square", .04); await burst("❓", B, 6, B[2] * .8, 700); }
     else if (kind === "rings") { await Promise.all([0, 1, 2].map(i => new Promise(res => setTimeout(() => { const d = spawn("", A[0], A[1] - 30, "ring"); d.animate([{ transform: "translate(-50%,-50%) scale(.3)", opacity: 1 }, { transform: `translate(calc(-50% + ${B[0] - A[0]}px), calc(-50% + ${B[1] - A[1]}px)) scale(1.6)`, opacity: .2 }], { duration: 650, easing: "ease-out" }).onfinish = () => { d.remove(); res(); }; tone(300 - i * 40, 0, .3, "sine", .04); }, i * 160)))); }
     else if (kind === "coffee") { await burst("☕", A, 1, 0, 700); await burst("✨", A, 7, A[2] * .8, 800); }
+    else if (kind === "steth") { await volley("🩺", 1, 0, 520, 60, 0, 1.6); for (let i = 0; i < 3; i++) tone(70, i * .35, .18, "sine", .06); await burst("💓", B, 3, B[2] * .5, 600); await burst("❓", B, 2, B[2] * .6, 500); }
+    else if (kind === "gel") { await volley("🧴", 1, 0, 450, 50, 200, 1.4); await burst("🧊", B, 4, B[2] * .6, 500); tone(1800, 0, .25, "sine", .03, 2400); }
+    else if (kind === "saw") { for (let i = 0; i < 6; i++) tone(320 + (i % 2) * 90, i * .08, .08, "sawtooth", .035); await volley("🪚", 1, 0, 520, 30, 1080, 1.6); flashField("rgba(255,255,255,.5)"); }
+    else if (kind === "drill") { tone(180, 0, .8, "sawtooth", .03, 520); await volley("🪛", 3, 110, 380, 20, 1440, 1.1); }
     else if (kind === "hammer") { await volley("🔨", 1, 0, 420, 120, 720, 1.5); flashField("rgba(255,255,255,.6)"); }
     else if (kind === "flex") { await burst("💪", A, 3, A[2] * .6, 600); }
     else if (kind === "cloud") { await volley("☁️", 3, 140, 650, 20, 0, 1.4); }
@@ -425,9 +443,31 @@ function pokeBattle(e, done, o = {}) {
     await say(`DU ${{ "1": "trinkst den KAFFEE. Er ist kalt. Er wirkt trotzdem.", "0": "kippst den ENERGYDRINK. Dein Herz macht ein Geräusch.", "$": "isst den DONUT vom Pharmavertreter. Ethisch fragwürdig, kalorisch eindeutig.", "+": "cremst dich mit WUNDERCREME ein. Du glänzt. Auch innerlich.", "6": "trinkst den PROTEINSHAKE. Vanille. Dein Bizeps meldet sich zum ersten Mal." }[k] || "benutzt " + it.name.toUpperCase() + "."} KP +${heal}!`);
   }
   async function jonas() {
-    if (!S.jonas) { await say("Jonas ist schon besiegt. Er liegt im Bereitschaftsraum und weint."); return; }
-    S.jonas = false; await say("Jonas, ich wähle dich!"); await say("Jonas, der PJler, springt dazwischen. Er hat 0 € und 100 % Motivation."); S.shield = true;
+    if (!S.jonas) { await say(S.jonasDown ? "Jonas liegt im Bereitschaftsraum und schreibt eine E-Mail an das Studiendekanat." : "Jonas steht schon neben dir. Er winkt. Mehr Jonas gibt es nicht."); return; }
+    S.jonas = false; await say("Jonas, ich wähle dich!", 350);
+    const js = battleSprite(PJ_SP, true, "pj"); pjMon.innerHTML = (js ? `<img src="${js}" alt="">` : "<span>🧑‍🎓</span>") + `<b class="pj-tag">JONAS · PJ</b>`;
+    pjMon.classList.remove("gone"); pjMon.classList.add("runin"); tone(520, 0, .1, "square", .04); tone(660, .12, .1, "square", .04); tone(880, .24, .18, "square", .04);
+    await sleep(700); pjMon.classList.remove("runin");
+    await say("Jonas, der PJler, kommt angerannt. Kittel zwei Nummern zu groß, drei Kugelschreiber, 0 € im Monat, 100 % Motivation.", 500);
+    const h = pick(PJ_HELP.filter(x => !(x.heal && S.me > 85))); callout("JONAS: " + h.n, false);
+    pjMon.classList.remove("lunge"); void pjMon.offsetWidth; pjMon.classList.add("lunge");
+    await say(h.txt[0], 500); await fx(h.fx, h.heal ? "me" : "pj");
+    if (h.dmg) hit("foe", h.dmg);
+    if (h.heal) { S.me = Math.min(100, S.me + h.heal); hpUi(); pop("me", "+" + h.heal, "heal"); sfx.spa(); }
+    if (h.weaken) S.foeAtk *= .85;
+    if (h.skip) S.foeSkip = true;
+    await say(h.txt[1], 550);
+    if (h.weaken) await arrows("foe", false);
+    S.shield = true; await say("Jonas bleibt neben dir stehen. Den nächsten Treffer fängt er ab. Hofft er.", 400);
   }
+  /* Jonas takes the hit: a short flash, then he tips over and is carried off */
+  async function jonasDown(line) {
+    S.shield = false; S.jonasDown = true;
+    pjMon.classList.remove("hit"); void pjMon.offsetWidth; pjMon.classList.add("hit"); sfx.knock(); await sleep(450);
+    pjMon.classList.add("faint"); burst("😭", ctr(pjMon), 3, 40, 700);
+    await say(line || pick(PJ_DOWN), 600); setTimeout(() => { pjMon.classList.add("gone"); pjMon.classList.remove("faint"); }, 700);
+  }
+
   async function flee() {
     if (isBoss) { await say("Vor einem Endkampf kann man nicht fliehen! Hinter dir ist nur die Klinik."); return false; }
     if (S.fakeEscape || Math.random() < .45) { await say("Du bist entkommen!"); finish(false, true); return true; }
@@ -444,10 +484,11 @@ function pokeBattle(e, done, o = {}) {
     await say(`${name} ist wütend! Die Neonröhren flackern rot.`, 600); S.foeAtk *= 1.2; await say(`Der ANGRIFF von ${name} steigt! Jetzt wird es ernst.`, 500);
   }
   async function foeTurn(again) {
+    if (S.foeSkip) { S.foeSkip = false; await say(`${name} ist noch mit Jonas beschäftigt und kommt nicht zum Angreifen.`, 500); return; }
     if (isBoss && !S.phase2 && S.foe <= 50) await rage();
     if (isBoss && (S.phase2 ? Math.random() < .4 : Math.random() < .15)) {
       await say(`${name} setzt ${sig.n} ein! ${name} ${sig.txt}`, 500); lunge("foe"); await fx(sig.fx, "foe");
-      if (S.shield) { S.shield = false; await say("Jonas wirft sich in den Weg. Jonas ist besiegt! Respekt, Jonas."); }
+      if (S.shield) await jonasDown("Jonas wirft sich in den Weg. Respekt, Jonas. Jonas ist besiegt!");
       else { for (let h = 0; h < (sig.multi || 1); h++) { hit("me", Math.round(sig.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1))); await sleep(260); if (S.me <= 0) break; } if (sig.multi) await say(`${sig.multi} Treffer!`, 400); }
       if (sig.acc) S.myAcc *= .8; if (sig.stun) S.stunned = sig.stun;
     } else await foeMove();
@@ -458,8 +499,8 @@ function pokeBattle(e, done, o = {}) {
     callout(mv.n, true); await say(`${name} ${mv.txt}`, 450); lunge("foe"); await fx(mv.fx, "foe");
     if (mv.buff) { S.foeAtk *= 1.3; await arrows("foe", true); return; }
     if (mv.debuff) { S.myAcc *= .8; await arrows("me", false); return; }
-    if (mv.quiz) { const ok = await quiz(qpool); if (ok) { await say(`Richtig! ${name} ist verwirrt. Er trifft sich selbst!`); hit("foe", 10); } else { if (S.shield) { S.shield = false; await say("Jonas wirft sich dazwischen und beantwortet sie falsch. Jonas ist besiegt!"); return; } hit("me", 22); await say("Falsch! Die Blamage tut weh. Sehr effektiv!"); } return; }
-    if (S.shield) { S.shield = false; await say(`Jonas fängt den Treffer ab! Jonas ist besiegt! Er war sowieso unterbezahlt.`); return; }
+    if (mv.quiz) { const ok = await quiz(qpool); if (ok) { await say(`Richtig! ${name} ist verwirrt. Er trifft sich selbst!`); hit("foe", 10); } else { if (S.shield) { await jonasDown("Jonas ruft dazwischen: „Ich weiß es! Ich weiß es!“ Er weiß es nicht. Die Blamage trifft ihn statt dich. Jonas ist besiegt!"); return; } hit("me", 22); await say("Falsch! Die Blamage tut weh. Sehr effektiv!"); } return; }
+    if (S.shield) { await jonasDown(); return; }
     if (mv.zero) { await say(pick(["Es ist nicht sehr effektiv …", "Es ist überhaupt nicht effektiv. Wie immer.", "Du fühlst dich wertgeschätzt. Für 0,3 Sekunden."]), 600); return; }
     if (mv.stun) S.stunned = mv.stun;
     if (mv.multi) { for (let h = 0; h < mv.multi; h++) { hit("me", Math.round(mv.p * S.foeAtk * (settings.diff === "easy" ? .75 : 1))); await sleep(240); if (S.me <= 0) break; } await say(`${mv.multi} Treffer!`, 400); return; }

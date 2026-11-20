@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🛠️ Stabiler: Startet die App mit einer alten Version aus dem Speicher, repariert sie sich jetzt selbst", "🕯️ Nachtdienst: zwei Regeln, klar gesagt. Nicht gefunden werden. Niemand stirbt.", "🚨 Weniger Notfälle auf einmal: keine Pager während einer Reanimation, danach echte Pause", "🕯️ Hildegard zählt jetzt als gefunden. Ein Kaffee lässt sie es vergessen.", "📢 Durchsagen: seltener und deutlich absurder"];
+const NEWS = ["🥊 Duell Internist gegen Orthopäde: komplett neue Attacken auf beiden Seiten (Sono-Gel, Arztbrief, Akkubohrer, Ganzkörpergips …)", "🧑‍🎓 Jonas, der PJler, kommt jetzt sichtbar angerannt, macht etwas Absurdes und fängt den nächsten Treffer ab"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;
