@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · statistics and feedback: a session heartbeat with play time, game events (missions, nights, battles),
    every script error with where it happened, and improvement suggestions. Sent to Supabase in small batches. */
-const GAME_VERSION = "45";
+const GAME_VERSION = HX_BUILD;
 const SESSION = (crypto.randomUUID && crypto.randomUUID()) || "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches));
 let tq = [], playSec = 0, lastVis = performance.now(), errCount = 0;
@@ -16,6 +16,13 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { pla
 setInterval(() => flushTrack(), 30000);
 track("session_start", { ref: (document.referrer || "").slice(0, 80), w: innerWidth, h: innerHeight });
 setTimeout(() => flushTrack(), 4000);
+// a crash leaves no error behind (iOS simply kills the page): a heartbeat in localStorage, reported on the next start if it did not end cleanly
+const BEAT_KEY = "hx-beat";
+try { const b = JSON.parse(localStorage.getItem(BEAT_KEY) || "null"); if (b && !b.end && Date.now() - b.t < 15 * 60000) track("crash_prev", b); } catch (e) {}
+const beat = end => { try { localStorage.setItem(BEAT_KEY, JSON.stringify({ t: Date.now(), v: GAME_VERSION, mode: typeof mode === "string" ? mode : "", lvl: run && run.idx, night: !!(run && run.mode === "night"), sec: Math.round(playSec + (performance.now() - lastVis) / 1000), gfx: typeof settings === "object" ? settings.gfx : "", end: !!end })); } catch (e) {} };
+setInterval(() => { if (!document.hidden) beat(false); }, 4000);
+addEventListener("pagehide", () => beat(true)); document.addEventListener("visibilitychange", () => beat(document.hidden));
+if (window.HX_HEALING) track("heal", { why: String(window.HX_HEALING) });
 // every script error, with file:line and what the player was doing
 const where = () => ({ mode: typeof mode === "string" ? mode : "", route: run && run.route, idx: run && run.idx });
 addEventListener("error", e => { if (errCount++ > 25) return; track("error", { msg: String(e.message || "Fehler").slice(0, 200), at: String(e.filename || "").split("/").pop() + ":" + e.lineno + ":" + e.colno, ...where() }); flushTrack(); });

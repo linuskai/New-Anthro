@@ -357,6 +357,16 @@ const calcTex = () => canvasTex(64, 96, (g, w, h) => { g.fillStyle = "#5a6a7a"; 
 // ---------- three ----------
 const canvas = $("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+/* the graphics chip ran out of memory and dropped the 3D picture: say so, report it, and offer a clean restart (progress is saved) */
+canvas.addEventListener("webglcontextlost", e => {
+  e.preventDefault(); try { typeof track === "function" && track("gl_lost", { mode: typeof mode === "string" ? mode : "", lvl: run && run.idx, gfx: settings && settings.gfx }); typeof flushTrack === "function" && flushTrack(); } catch (_) {}
+  try { typeof saveNow === "function" && saveNow(); } catch (_) {}
+  if (document.getElementById("glLost")) return;
+  const d = document.createElement("div"); d.id = "glLost";
+  d.style.cssText = "position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:rgba(5,10,9,.94);color:#fff;font:600 16px/1.4 system-ui;padding:24px;text-align:center";
+  d.innerHTML = '<div><div style="font-size:42px">🖥️💤</div><p style="max-width:320px">Die Grafik ist ausgestiegen. Das passiert auf dem Handy, wenn der Speicher knapp wird. Dein Spielstand ist gespeichert.</p><button type="button" style="font:800 16px system-ui;padding:12px 22px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Neu laden</button><p style="opacity:.7;font-size:13px;max-width:320px">Tipp: In den Einstellungen unter Grafik eine niedrigere Stufe wählen.</p></div>';
+  d.querySelector("button").onclick = () => location.reload(); document.body.appendChild(d);
+}, false);
 const applyRes = () => renderer.setPixelRatio(Math.min(Q.pr, window.devicePixelRatio || 1)); applyRes();
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .9;
 const scene = new THREE.Scene();
