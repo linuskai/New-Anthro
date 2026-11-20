@@ -121,6 +121,10 @@ $("btnAcctOut").addEventListener("click", async () => {
 });
 // coming back from the link in the e-mail: #access_token=…&refresh_token=…
 (async () => {
+  if (/error_code=|error=/.test(location.hash)) { // expired or already used link: tell the player what to do
+    const h = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, "", location.pathname + location.search);
+    renderAcct(); const why = h.get("error_code") === "otp_expired" ? "Der Link in der E-Mail ist abgelaufen oder wurde schon benutzt." : "Die Anmeldung über den Link hat nicht geklappt.";
+    setTimeout(() => { if (mode === "title" || mode === "welcome") { openWelcome(mode, "email"); acctNote("✗ " + why + " Gib deine E-Mail nochmal ein: Du bekommst einen neuen Code.", "bad"); } }, 600); return; }
   if (!/access_token=/.test(location.hash)) { renderAcct(); return; }
   const h = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, "", location.pathname + location.search);
   try {

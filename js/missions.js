@@ -153,7 +153,11 @@ function updateRouteChip() {
 
 // ---------- hospital announcements ----------
 /* what the loudspeaker just said, in writing: the trombone alone tells you nothing */
+/* any two announcements are at least this far apart (seconds), whatever kind they are */
+const PA_GAP = 150;
+const paReady = () => !run || !run.paAt || (performance.now() - run.paAt) / 1000 > (run.mode === "night" ? PA_GAP * .7 : PA_GAP);
 function paBanner(text) {
+  if (run) run.paAt = performance.now();
   const old = document.getElementById("paBanner"); if (old) old.remove();
   const d = document.createElement("div"); d.id = "paBanner"; d.innerHTML = `<i>📢</i><span><small>Durchsage</small><b>${esc(text)}</b></span>`;
   const ms = Math.max(6500, Math.min(12000, text.length * 60)); // long announcements stay long enough to read
@@ -162,8 +166,8 @@ function paBanner(text) {
 function missionTick(dt) {
   if (run.mode !== "mission") return;
   run.announceT -= dt;
-  if (run.announceT <= 0 && toastT <= 0 && quiet(25000)) {
-    run.announceT = 190 + Math.random() * 80;
+  if (run.announceT <= 0 && toastT <= 0 && quiet(25000) && paReady()) {
+    run.announceT = 320 + Math.random() * 140;
     tone(660, 0, .35, "sine", .05); tone(523, .4, .5, "sine", .05);
     sfx.pa && sfx.pa(); paBanner("„" + pick(ANNOUNCE) + "“");
   }
@@ -175,8 +179,8 @@ const NIGHT_PLACES = [
   { k: "ward", av: "🛏️", color: "#2d3f8f", name: "Station 5B", title: "Station bei Nacht", tag: "Zwei Ringflure, Patientenzimmer, Wäschekammer. Schlafwandler mit roten Augen, Nachtschwestern, Hildegard." }];
 function showNightSelect() {
   mode = "select"; hidePopups(); let nb = null; try { nb = parseInt(localStorage.getItem(NIGHT_BEST), 10); } catch (e) {}
-  $("selTitle").textContent = "Wo verbringst du die Nacht?"; $("selSub").textContent = "22:00 bis 07:30. Lass dich von niemandem finden. Dreimal gefunden, und die Nacht ist vorbei.";
-  $("selList").innerHTML = NIGHT_PLACES.map(p => `<button type="button" class="sel-card" data-night="${p.k}" style="--mc:${p.color}"><span class="sel-av">${p.av}</span><span class="sel-body"><span class="sel-kind">Nachtdienst · ${esc(p.name)}</span><b>${esc(p.title)}</b><small>${esc(p.tag)}</small><span class="sel-meta"><span>⏱ 22:00 bis 07:30</span><span>👁 3× gefunden = vorbei</span></span>${nb >= 0 ? `<em>Rekord: ${nb} Pager-Aufgaben</em>` : ""}</span></button>`).join("");
+  $("selTitle").textContent = "Wo verbringst du die Nacht?"; $("selSub").textContent = "22:00 bis 07:30. Zwei Regeln: 1. Lass dich nicht finden (dreimal gefunden = vorbei). 2. Niemand stirbt (Reanimation verpasst = vorbei).";
+  $("selList").innerHTML = NIGHT_PLACES.map(p => `<button type="button" class="sel-card" data-night="${p.k}" style="--mc:${p.color}"><span class="sel-av">${p.av}</span><span class="sel-body"><span class="sel-kind">Nachtdienst · ${esc(p.name)}</span><b>${esc(p.title)}</b><small>${esc(p.tag)}</small><span class="sel-meta"><span>⏱ 22:00 bis 07:30</span><span>👁 nicht gefunden werden</span><span>🫀 niemand stirbt</span></span>${nb >= 0 ? `<em>Rekord: ${nb} Pager-Aufgaben</em>` : ""}</span></button>`).join("");
   show("ovSelect"); $("ovSelect").scrollTop = 0;
 }
 function showSelect() {

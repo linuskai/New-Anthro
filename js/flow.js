@@ -40,7 +40,7 @@ function endStory() {
   if (!story) return;
   story = null; $("story").hidden = true; storyPhone(null); $("storyCount").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
-  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Pager-Aufgaben erledigen · ${nightSafe()} ist sicher · Hildegard nie aus den Augen lassen`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
+  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Regel 1: nicht gefunden werden · Regel 2: niemand stirbt (🚨 sofort hin) · ${nightSafe()} ist sicher`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
   if (run.quick) { beginMission(); return; } // played before: the fly-in says it all
   showBrief(false);
 }

@@ -646,7 +646,7 @@ function finishCpr() {
   const ok = cpr.score >= (settings.diff === "easy" ? 8 : 10); cpr = null; $("cpr").hidden = true; mode = "play";
   if (!ok && run.mode === "night") { // nobody else is coming: again, until the pulse is back
     showToast("🫀", "#e2483d", "Kein Puls. Nochmal!", "Der Rhythmus war eher Techno als Bee Gees. Niemand sonst ist da. Drück weiter.", pen({ energy: 6 })); updateHud(); if (run.energy > 0) setTimeout(() => { if (run && run.rea && mode === "play") startCpr(); }, 1300); return; }
-  if (run.mode === "night") run.truceT = 10;
+  if (run.mode === "night") { run.truceT = 10; run.reaCool = 120; run.taskT = Math.max(run.taskT || 0, 45 + Math.random() * 20); }
   if (LEVELS[run.idx].reaScript) run.flags.add("rea3");
   clearRea(); naviT = 0;
   if (ok) { run.lives++; showToast("💓", "#1f9d55", "ROSC!", "Puls ist zurück. Der Patient fragt als Erstes, wann er heim darf.", gain({ nerves: 1, energy: 15, text: "Leben gerettet" }).concat(pen({ mins: 10 }))); }
@@ -871,7 +871,8 @@ function newTask() {
   const doors = level.doors.filter(d => !d.safe && d.num); if (!doors.length) return;
   const d = pick(doors), inner = DIRS.map(([dx, dy]) => [d.x + dx, d.y + dy]).find(([x, y]) => level.zone[y * GW + x] === 2 && !solidMove(cell(x, y)));
   if (!inner) { run.taskT = 3; return; }
-  if (run.hour >= 1 && !run.rea && Math.random() < (nightER() ? .25 : .15)) { startRea(inner[0], inner[1], (nightER() ? 95 : 75) * (settings.diff === "easy" ? 1.25 : 1), false); run.taskT = 30; return; }
+  const reaOk = run.hour >= 1 && !run.rea && !(run.reaCool > 0) && (run.reaCount || 0) < (nightER() ? 3 : 2);
+  if (reaOk && Math.random() < (nightER() ? .25 : .15)) { run.reaCount = (run.reaCount || 0) + 1; startRea(inner[0], inner[1], (nightER() ? 95 : 75) * (settings.diff === "easy" ? 1.25 : 1), false); run.taskT = 30; return; }
   // the pager asks first: you may accept the job or palm it off (with consequences)
   const named = LEVELS[run.idx].plates && d.plate, t = { x: inner[0], y: inner[1], room: named ? d.plate : d.num, text: pick(named && NIGHT_TASKS_ROOM[d.plate] || (nightER() ? NIGHT_TASKS_ER : NIGHT_TASKS)) };
   // most pages are about a patient: say so, instead of starting in the middle of the sentence
@@ -893,7 +894,7 @@ function newTask() {
 }
 function completeTask() {
   if (run.task.mesh) level.group.remove(run.task.mesh); run.truceT = 10;
-  run.nightDone++; run.task = null; run.taskT = 30 + Math.random() * 18; sfx.ding();
+  run.nightDone++; run.task = null; run.taskT = 42 + Math.random() * 22; sfx.ding();
   // what a finished job is worth: energy, a stretch of undisturbed rest in the safe room, and every third one makes them forget they found you once
   run.campT = Math.min(run.campT || 0, 0) - 40; run.campW = 0;
   const forgiven = run.nightDone % 3 === 0 && (run.found || 0) > 0; if (forgiven) run.found--;
@@ -902,18 +903,23 @@ function completeTask() {
   updateHud();
 }
 function failTask() {
-  const room = run.task.room; if (run.task.mesh) level.group.remove(run.task.mesh); run.nightFail++; run.task = null; run.taskT = 28 + Math.random() * 14;
+  const room = run.task.room; if (run.task.mesh) level.group.remove(run.task.mesh); run.nightFail++; run.task = null; run.taskT = 38 + Math.random() * 18;
   // a missed page sends the night nurse looking for you
   setTimeout(() => { if (!run || run.mode !== "night" || mode !== "play") return; const h = spawnFar("N"); if (!h) return; h.hunter = true; h.huntT = 45; h.label.material.map = labelTex("NACHTSCHWESTER · SUCHT DICH", "#c0322a", "#fff"); h.label.material.needsUpdate = true; setMsg("Die Nachtschwester sucht dich. Zi. " + room + " wartet noch.", 4, true); }, 2500);
   showToast("⏰", "#c0322a", "Zu spät · " + nightRoom(room), pick([nightRoom(room) + " hat beim Chefarzt angerufen. Privat. Um 3 Uhr.", "Die Angehörigen haben eine Google-Bewertung geschrieben. Live.", "Der Patient hat sich selbst versorgt. Mit dem Defibrillator. Er ist okay. Der Defi nicht."]), pen({ nerves: 1 }));
   updateHud(); checkDeath();
 }
 /* found: they did not look for you all night for nothing. A short talk about the emergency that is none. It changes nothing; that is the point. */
-const NIGHT_PA = ["„Der Besitzer des weißen Kittels in der Kantine wird gebeten, ihn abzuholen. Er bewegt sich.“", "„Achtung: Die Nachtruhe beginnt um 22 Uhr. Für Patienten. Für alle anderen: nie.“", "„Der diensthabende Arzt bitte auf alle Stationen. Gleichzeitig.“",
-  "„Es wurde ein Feierabend gefunden. Er kann an der Pforte abgeholt werden. Gültig bis 2011.“", "„Das Licht im Flur 3 wurde aus Kostengründen durch Ihre Vorstellungskraft ersetzt.“", "„Schwester Hildegard bitte NICHT an die Information. Sie ist schon da.“", "„Wir bitten um Verständnis.“ (Mehr kam nicht.)",
-  "„An den Nachtdienst: Sie sind heute allein für das ganze Haus zuständig. Die Geschäftsführung nennt das Vertrauen.“", "„Der Hintergrunddienst ist erreichbar. Er bittet darum, das nicht auszuprobieren.“",
-  "„Schlafen im Dienst ist untersagt. Schlafen nach dem Dienst lässt der Dienstplan nicht zu.“", "„Es ist drei Uhr. Die Geschäftsführung schläft tief und dankt Ihnen für Ihre Flexibilität.“",
-  "„Die zweite Nachtwache wurde eingespart. Bitte seien Sie ab sofort an zwei Orten.“", "„Ihr Nachtdienst zählt als Bereitschaft. Bezahlt werden nur die Minuten, in denen jemand stirbt.“"];
+const NIGHT_PA = ["„Der Besitzer des weißen Kittels in der Kantine wird gebeten, ihn abzuholen. Er bewegt sich. Er hat Hunger.“",
+  "„Der diensthabende Arzt bitte auf alle Stationen. Gleichzeitig. Wer sich teilen kann, bekommt eine Zulage.“",
+  "„Es wurde ein Feierabend gefunden. Er kann an der Pforte abgeholt werden. Er ist aus dem Jahr 2011 und sehr scheu.“",
+  "„Schwester Hildegard bitte NICHT an die Information. Sie ist schon da. Sie steht hinter der Person, die das hier liest.“",
+  "„Der Mond hat sich in der Notaufnahme angemeldet. Kategorie Grün. Er bittet um ein Bett mit Fenster.“",
+  "„Es ist drei Uhr. Die Uhren im Haus wurden aus Kostengründen gebeten, langsamer zu laufen. Sie haben zugestimmt.“",
+  "„Achtung: Ein Schaf aus Zimmer 9 zählt jetzt die Patienten. Bei 34 schläft es ein. Wir sind bei 33.“",
+  "„Der Hintergrunddienst ist erreichbar. Er schläft in einem Schrank im Keller. Klopfen Sie dreimal. Klopfen Sie nicht viermal.“",
+  "„Die Wartenummer 312 wird aufgerufen. Die Wartenummer 312 ist bereits da. Sie steht in jedem Raum gleichzeitig.“",
+  "„Wir bitten um Verständnis.“ (Mehr kam nicht. Das Mikrofon atmet noch.)"];
 const FOUND_TALKS = {
   Q: [["„Herr Doktor … ich kann nicht schlafen.“ Er schlafwandelt. Er schläft gerade.", ["„Sie schlafen doch.“", "„Ach so.“ Er schläft weiter. Im Stehen. Vor dir."], ["„Zählen Sie Schäfchen.“", "Er zählt. Laut. Bei 4.000 ist Frühdienst."], ["„Ich auch nicht.“", "Ihr schweigt gemeinsam. Es ist der schönste Moment der Nacht."]],
     ["„Mein Bettnachbar atmet.“", ["„Das ist gut.“", "„Aber so LAUT.“ Er macht es vor. Es ist wirklich laut."], ["„Soll er aufhören?“", "Er überlegt lange. „Nur nachts.“"], ["Ohrstöpsel versprechen", "Du hast keine. Du versprichst sie trotzdem. Lieferzeit laut Einkauf: 2031."]],
@@ -955,16 +961,16 @@ function nightCaught(e) {
   updateHud();
 }
 function nightHorror() {
-  const opts = ["phone", "steps", "whisper", "pa"]; if (nightER()) opts.push("er", "er"); const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
+  const opts = ["phone", "steps", "steps", "whisper", "pa"]; if (nightER()) opts.push("er", "er"); const far = level.doors.filter(d => d.open && Math.hypot(d.x - player.x, d.y - player.y) > 3 && !level.enemies.some(e => Math.floor(e.x) === d.x && Math.floor(e.y) === d.y));
   if (far.length) opts.push("slam", "slam");
   const k = pick(opts);
   if (k === "er") { const v = pick([
       ["pa", "„Nummer 312, bitte.“ (Nummer 312 steht hinter dir. Glaubst du.)"], ["door", "Die Schiebetür geht auf. Kalte Luft. Niemand kommt herein. Sie geht nicht wieder zu."],
       ["step", "Ein Rollstuhl rollt allein durch den Flur. Er bremst vor dir. Er wartet."], ["ring", "Das rote Telefon im Schockraum klingelt. Es ist seit 2016 nicht angeschlossen."],
       ["pa", "„Der Fahrer des Rettungswagens wird gebeten, seinen Patienten wieder mitzunehmen.“"], ["whisper", "Alle Wartenden drehen gleichzeitig den Kopf. Zu dir."]]);
-    if (v[0] === "pa") { sfx.pa(); paBanner(v[1]); return; } else if (v[0] === "door") { noise(0, 1.2, 500, .8, .05); tone(180, 0, 1.1, "sine", .02, 140); } else if (v[0] === "step") { for (let i = 0; i < 5; i++) setTimeout(() => noise(0, .08, 900, 3, .03), i * 300); } else if (v[0] === "ring") sfx.ring(); else sfx.whisper();
+    if (v[0] === "pa") { if (paReady()) { sfx.pa(); paBanner(v[1]); } else setMsg("Die Wartenummer-Anzeige springt auf 000. Niemand steht auf. Noch nicht.", 4, true); return; } else if (v[0] === "door") { noise(0, 1.2, 500, .8, .05); tone(180, 0, 1.1, "sine", .02, 140); } else if (v[0] === "step") { for (let i = 0; i < 5; i++) setTimeout(() => noise(0, .08, 900, 3, .03), i * 300); } else if (v[0] === "ring") sfx.ring(); else sfx.whisper();
     setMsg(v[1], 4.5, true); }
-  else if (k === "pa") { sfx.pa(); paBanner(pick(NIGHT_PA)); }
+  else if (k === "pa") { if (!paReady()) { sfx.whisper(); setMsg("… hat da jemand deinen Namen geflüstert?", 3.5, true); return; } sfx.pa(); paBanner(pick(NIGHT_PA)); }
   else if (k === "phone") { sfx.ring(); setMsg("Irgendwo klingelt ein Telefon. In einem leeren Zimmer.", 3.5, true); }
   else if (k === "steps") { for (let i = 0; i < 4; i++) setTimeout(() => sfx.step(), i * 420); setMsg("Schritte. Hinter dir. Du drehst dich um. Nichts.", 3.5, true); }
   else if (k === "whisper") { sfx.whisper(); blackout = Math.max(blackout, 1.2); setMsg("… hat da jemand deinen Namen geflüstert?", 3.5, true); }
@@ -994,8 +1000,9 @@ function updateNight(dt) {
   // 07:30: the morning shift arrives. You win once you make it to the handover in the doctors' room.
   if (run.minutes >= NIGHT_END) { if (playerSafe()) { nightWin(); return; } if ((run.handT = (run.handT || 0) - dt) <= 0) { run.handT = 5; setMsg(`07:30! Die Ablösung ist da. Ab ${nightSafeTo()} zur Übergabe!`, 4, true); sfx.beep(); } }
   if (h !== run.hour && h < NIGHT_HOURS.length) { run.hour = h; nightHour(h); }
+  if (run.reaCool > 0) run.reaCool -= dt;
   if (run.task) { if (run.minutes > run.task.deadline) failTask(); }
-  else { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); }
+  else if (!(run.rea && !run.rea.done)) { run.taskT -= dt * 1.25; if (run.taskT <= 0) newTask(); } // nothing new while you resuscitate
   run.horrorT -= dt; if (run.horrorT <= 0) { run.horrorT = 16 + Math.random() * 20; nightHorror(); }
   // your own heartbeat: faster the closer something is that has noticed you; sleepwalkers groan nearby
   // (the heartbeat lives in music.js now, for all modes)

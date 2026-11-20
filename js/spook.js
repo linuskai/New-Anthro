@@ -79,7 +79,8 @@ const SPOOKS = [
   { k: "monitor", w: 1, run() { tone(980, 0, .12, "sine", .03); tone(980, .9, .12, "sine", .03); tone(980, 1.8, 3.2, "sine", .03); setTimeout(() => mode === "play" && spookSay("monitor"), 1900); return true; } },
   { k: "whisper", w: 1, run() { sfx.whisper(); setTimeout(() => sfx.whisper(), 700); spookFx("cold"); spookSay("whisper"); return true; } },
   { k: "clock", w: 1, run() { run.glitchT = 1.4; tone(55, 0, 1.3, "sawtooth", .04, 40); spookFx(); setTimeout(() => mode === "play" && spookSay("clock"), 1500); return true; } },
-  { k: "pa", w: 2, run() {
+  { k: "pa", w: 1, run() {
+    if (!paReady()) return false;
     tone(392, 0, .5, "sine", .05, 370); tone(311, .5, .9, "sine", .05, 280);
     noise(.9, 1.6, 700, 2, .012); typeof wahWah === "function" && wahWah(6, 120, .03, 1.0); paBanner("„" + pick(CREEPY_ANNOUNCE) + "“");
     return true; } },
