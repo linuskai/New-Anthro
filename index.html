@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta name="hx-build" content="46">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Hospital Escape 3D</title>
 <meta name="description" content="Dein Dienst ist vorbei. Das Krankenhaus sieht das anders. Ein bissiges 3D-Fluchtspiel aus dem Klinikalltag.">
@@ -1717,7 +1718,7 @@ body.land #paBanner { top: calc(46px + env(safe-area-inset-top, 0px)); }
   </section>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
 <script>if (!window.THREE) { document.getElementById("loadErr").hidden = false; document.getElementById("btnStart").disabled = true; }</script>
 <script src="js/data.js"></script>
 <script src="js/world.js"></script>
@@ -1751,5 +1752,6 @@ body.land #paBanner { top: calc(46px + env(safe-area-inset-top, 0px)); }
 <script src="js/achieve.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/flow.js"></script>
+<script>/* new page, old scripts from a cache: same cure */ if (typeof HX_BUILD === "undefined" || HX_BUILD !== document.querySelector('meta[name="hx-build"]').content) { try { var n = +sessionStorage.getItem("hx-heal") || 0; if (n < 2) { sessionStorage.setItem("hx-heal", n + 1); (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve()).then(function () { location.replace(location.pathname + "?fresh=" + Date.now()); }); } } catch (e) {} }</script>
 </body>
 </html>

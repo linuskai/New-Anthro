@@ -1,4 +1,23 @@
 /* Hospital Escape 3D · game data (levels, people, items, dialogue content). Shared globals, loaded before world/level/game. */
+/* the version. When it changes, change it in three places: here, <meta name="hx-build"> in index.html, and CACHE in sw.js */
+const HX_BUILD = "46";
+/* the home-screen app sometimes starts with an old page from a cache while the scripts are new (or the other way round):
+   then buttons are missing and the game hangs at the start. Clear every cache and load fresh, at most twice per tab. */
+function hxHeal(why) {
+  let n = 9; try { n = +sessionStorage.getItem("hx-heal") || 0; sessionStorage.setItem("hx-heal", n + 1); } catch (e) {}
+  if (n >= 2) return false;
+  window.HX_HEALING = why || true;
+  const go = () => location.replace(location.pathname + "?fresh=" + Date.now());
+  Promise.all([window.caches ? caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))) : 0,
+    navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(rs => Promise.all(rs.map(r => r.update().catch(() => {})))) : 0]).then(go, go);
+  setTimeout(go, 2500); return true;
+}
+(() => {
+  const m = document.querySelector('meta[name="hx-build"]');
+  if (!m || m.content !== HX_BUILD) { hxHeal("page " + (m ? m.content : "old") + " / scripts " + HX_BUILD); return; }
+  try { sessionStorage.removeItem("hx-heal"); } catch (e) {}
+  if (/[?&]fresh=/.test(location.search)) history.replaceState(null, "", location.pathname);
+})();
 const S = 3, WALL_H = 3.2, EYE = 1.62, SHIFT_END = 17 * 60;
 const PLAYER_R = .22, PLAYER_SPEED = 1.85;
 
