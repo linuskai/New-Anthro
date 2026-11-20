@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="hx-build" content="46">
+<meta name="hx-build" content="47">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Hospital Escape 3D</title>
 <meta name="description" content="Dein Dienst ist vorbei. Das Krankenhaus sieht das anders. Ein bissiges 3D-Fluchtspiel aus dem Klinikalltag.">
@@ -704,6 +704,9 @@ body.land.hudmin .mission { display: none; }
 .pb-mon.lunge.me { animation: pbLungeMe .35s ease-out; } .pb-mon.lunge.foe { animation: pbLungeFoe .35s ease-out; }
 @keyframes pbLungeMe { 50% { transform: translate(18px, -10px); } } @keyframes pbLungeFoe { 50% { transform: translate(-18px, 10px); } }
 .pb-mon.faint { transition: transform .8s ease-in, opacity .8s; transform: translateY(60%); opacity: 0; }
+.pb-mon.pj { width: min(34vw, 34vh, 190px); height: min(34vw, 34vh, 190px); left: 36%; bottom: 4%; z-index: 0; }
+.pb-mon.pj .pj-tag { position: absolute; top: 2%; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 800 10px/1 var(--mono); letter-spacing: .08em; background: #fff; color: #203020; border: 2px solid #404040; border-radius: 4px; padding: 3px 5px; } .pb-mon.pj.gone { display: none; } .pb-mon.pj.runin { animation: pbRunIn .7s cubic-bezier(.2,.9,.3,1.1); } @keyframes pbRunIn { 0% { transform: translateX(-90vw) rotate(-8deg); } 70% { transform: translateX(10px) rotate(4deg); } 100% { transform: none; } }
+@media (orientation: portrait) { .pb-mon.pj { width: 27vw; height: 27vw; left: 41%; bottom: 0; } } .pb-mon.pj.lunge { animation: pbLungeMe .35s ease-out; } .pb-mon.pj.faint { transition: transform .7s ease-in, opacity .7s; transform: rotate(-80deg) translate(-10%, 30%); transform-origin: 50% 100%; opacity: 0; }
 .pb-box { position: absolute; z-index: 2; background: #f8f8e8; border: 3px solid #404040; border-radius: 10px 4px 10px 4px; padding: 6px 10px 8px; box-shadow: 4px 4px 0 rgba(0,0,0,.18); min-width: min(48vw, 240px); }
 .pb-box.foe { left: 4%; top: 6%; } .pb-box.me { right: 4%; bottom: 20%; }
 .pb-box b { font: 800 15px/1.1 var(--mono); letter-spacing: .02em; } .pb-box .lv { float: right; font: 800 14px/1.1 var(--mono); }
@@ -723,7 +726,7 @@ body.land.hudmin .mission { display: none; }
 .pb-quiz button.ok { background: #b8f0b8; border-color: #208020; } .pb-quiz button.bad { background: #f8c0b8; border-color: #c02020; }
 @media (max-width: 520px) { .pb-bottom { grid-template-columns: 1fr; } .pb-menu { padding: 6px 0 0; } .pb-text { min-height: 52px; } }
 @media (orientation: landscape) and (max-height: 520px) { .pb-box { min-width: 200px; padding: 4px 8px 5px; } .pb-box.me { bottom: 8%; }
-  .pb-mon.foe { width: 34vh; height: 34vh; top: 3%; right: 12%; } .pb-mon.me { width: 44vh; height: 44vh; left: 24%; bottom: 0; } .pb-plat.foe { top: 30%; right: 6%; width: 32%; } .pb-plat.me { left: 18%; width: 34%; } .pb-bottom { min-height: 96px; } .pb-menu button { min-height: 38px; padding: 5px 8px 5px 18px; } .pb-quiz { top: 46%; } }
+  .pb-mon.foe { width: 34vh; height: 34vh; top: 3%; right: 12%; } .pb-mon.me { width: 44vh; height: 44vh; left: 24%; bottom: 0; } .pb-mon.pj { width: 30vh; height: 30vh; left: 46%; bottom: 2%; } .pb-plat.foe { top: 30%; right: 6%; width: 32%; } .pb-plat.me { left: 18%; width: 34%; } .pb-bottom { min-height: 96px; } .pb-menu button { min-height: 38px; padding: 5px 8px 5px 18px; } .pb-quiz { top: 46%; } }
 
 /* guided tour */
 #tour { position: fixed; inset: 0; z-index: 9; }
