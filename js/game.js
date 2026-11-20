@@ -10,7 +10,7 @@ let call = null, lure = null, nerdLure = null, toastT = 0, labT = 0, blackout = 
 function newRun(m = "mission", route = "stay", place = "ward") {
   run = { idx: 0, step: 0, route, nerves: MAX_NERVES(), energy: 100, minutes: 0, tasks: [], tasksTotal: 0, duties: [], callsAcc: 0, callsDec: 0, papers: 0, lives: 0, talks: 0, coauthor: 0, spa: 0, reaFail: false,
     flags: new Set(), offers: new Set(), inv: { "2": 1, c: 1, p: 5, f: 3, m: 2 }, goodwill: {}, callbacks: [], pageT: null, picked: new Set(), nextCall: 75 + Math.random() * 30, rea: null, reaRandomT: null, reaScriptT: null, nextBlackout: 18, wasDark: false,
-    announceT: 130 + Math.random() * 40, lostMin: 0 };
+    announceT: 170 + Math.random() * 60, lostMin: 0 };
   run.mode = m;
   /* there is only one meter now: energy. "Nerves" in older content are 20 % steps of it. */
   Object.defineProperty(run, "nerves", { get() { return Math.ceil(run.energy / 20); }, set(v) { run.energy = Math.max(0, Math.min(100, v * 20)); }, configurable: true });
@@ -83,6 +83,7 @@ function objectives() {
     const left = Math.max(0, NIGHT_END - run.minutes), list = [];
     if (run.minutes >= NIGHT_END - 30) list.push({ id: "handover", title: "Übergabe 07:30", text: run.minutes >= NIGHT_END ? `Jetzt ${nightSafeTo()}: Übergabe!` : `Um 07:30 ${nightSafeIn()} sein (Übergabe)`, main: true, at: "safe", done: false, how: "Sicherer Raum mit braunem Holzboden (Arztzimmer / Personalraum)" });
     if (run.task) list.push({ id: "task", title: "Pager · " + nightRoom(run.task.room), text: run.task.text + " (" + Math.max(0, Math.ceil(run.task.deadline - run.minutes)) + " Min.)", main: true, at: "task", done: false });
+    list.push({ id: "alive", title: "Niemand stirbt", text: run.rea && !run.rea.done ? "🚨 Reanimation läuft: sofort hin!" : `Bei Reanimationsalarm sofort hin · ${run.lives || 0} gerettet`, main: true, done: false, brief: "Regel 2: Kommst du bei einem Reanimationsalarm zu spät, ist die Nacht vorbei. Solange du reanimierst, lässt dich jeder in Ruhe." });
     list.push({ id: "hide", title: "Unentdeckt bleiben", text: `Niemand darf dich finden · gefunden ${run.found || 0}/3`, main: true, done: false, brief: "Patienten mit roten Augen, Nachtschwestern, Hildegard: Wer dich erwischt, zählt. Dreimal, und die Nacht ist vorbei." });
     list.push({ id: "survive", title: "Überleben bis 07:30", text: `Überlebe bis 07:30 (noch ${Math.floor(left / 60)} h ${String(Math.floor(left % 60)).padStart(2, "0")})`, main: true, done: false, brief: "Erledige die Pager-Aufgaben, bevor die Zeit abläuft. Versteck dich im Arztzimmer, wenn es zu viel wird." });
     return list;

@@ -298,13 +298,20 @@ TALKS.Cn = [
 ];
 function hildegardCatch(e) {
   flash(); sfx.stinger(); sfx.hit();
-  openDialog({ sp: e.person.sp, av: "🕯️", color: "#e8e4d0", name: "Schwester Hildegard", role: "Nachtwache · seit 1978 · steht direkt hinter dir",
-    text: pick(["„Haben Sie die Kurven abgezeichnet? … Nein? … Dann zeichne ich SIE ab.“", "„Ruhige Nacht, nicht wahr? … Ruhig ist es nur, wenn man nicht hinsieht.“", "„Sie haben die Klingel in 5.07 nicht gehört. Ich höre ALLES.“", "„Früher hatten wir drei Nachtschwestern. Ich bin alle drei.“"]),
+  // night shift: she counts like everyone else. Only a coffee makes her forget she saw you.
+  const night = run.mode === "night"; if (night) run.found = (run.found || 0) + 1;
+  const n = run.found || 0, tag = night ? ` · GEFUNDEN ${n}/3` : "";
+  openDialog({ sp: e.person.sp, av: "🕯️", color: "#e8e4d0", name: "Schwester Hildegard", role: "Nachtwache · seit 1978 · steht direkt hinter dir" + tag,
+    text: pick(["„Haben Sie die Kurven abgezeichnet? … Nein? … Dann zeichne ich SIE ab.“", "„Ruhige Nacht, nicht wahr? … Ruhig ist es nur, wenn man nicht hinsieht.“", "„Sie haben die Klingel in 5.07 nicht gehört. Ich höre ALLES.“", "„Früher hatten wir drei Nachtschwestern. Ich bin alle drei.“"])
+      + (night ? (n >= 3 ? " Das war das dritte Mal." : " Das zählt. " + (n === 2 ? "Noch einmal, und die Nacht ist vorbei." : "Ein Kaffee würde sie es vergessen lassen.")) : ""),
     options: [
       opt("„Ja, Schwester Hildegard.“", () => say("Sie nickt langsam. Die Kerze flackert. Als du blinzelst, ist sie weg.", pen({ nerves: 1 }))),
       opt("Wegrennen", () => say("Du rennst. Hinter dir: nichts. Vor dir: eine Haube. Du rennst anders herum.", pen({ energy: 20 }))),
-      opt("Ihr deinen Kaffee anbieten", () => { takeItem("1"); return say("Sie trinkt ihn in einem Zug. Kalt. Sie lächelt. Zum ersten Mal seit 1978. Dann ist sie weg.", [good("Verschont")]); }, () => hasItem("1") ? "☕ abgeben" : "braucht ☕", () => !hasItem("1"))],
-    onClose: () => { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; e.stun = 6; player.inv = 3; } });
+      opt("Ihr deinen Kaffee anbieten", () => { takeItem("1"); if (night) run.found = Math.max(0, (run.found || 0) - 1);
+        return say("Sie trinkt ihn in einem Zug. Kalt. Sie lächelt. Zum ersten Mal seit 1978. Dann ist sie weg." + (night ? " Sie hat dich nie gesehen." : ""), [good(night ? "Zählt nicht" : "Verschont")]); }, () => hasItem("1") ? "☕ abgeben" : "braucht ☕", () => !hasItem("1"))],
+    onClose: () => { const [x, y] = farthestTile(); e.x = x + .5; e.y = y + .5; e.tx = x; e.ty = y; e.stun = 6; player.inv = 3;
+      if (night && (run.found || 0) >= 3) { mode = "dying"; clearInputs(); setTimeout(() => showGameOver(), 900); } } });
+  if (night) updateHud();
 }
 
 // ---------- gastroenterologists: they stopped smelling it in 2018 ----------
