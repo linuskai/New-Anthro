@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="hx-build" content="47">
+<meta name="hx-build" content="48">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Hospital Escape 3D</title>
 <meta name="description" content="Dein Dienst ist vorbei. Das Krankenhaus sieht das anders. Ein bissiges 3D-Fluchtspiel aus dem Klinikalltag.">
@@ -1256,6 +1256,25 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 #battle { overflow: hidden; max-width: 100vw; } .pb-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } .pb-menu { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .pb-menu button { min-width: 0; }
 .pb-box { max-width: 92vw; } .pb-box b { display: inline-block; max-width: calc(100% - 52px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 #battle.boss .pb-text { border-color: #1c2430; }
+/* the bottom bar keeps one height, so the field above never jumps; the move list and the coat pocket get the whole width */
+.pb-bottom { height: 150px; min-height: 0; box-sizing: border-box; }
+.pb-bottom .pb-text, .pb-bottom .pb-menu { min-height: 0; overflow: hidden; }
+.pb-bottom[data-view="busy"] .pb-menu { display: none; } .pb-bottom[data-view="busy"] .pb-text { grid-column: 1 / -1; }
+.pb-bottom[data-view="moves"] .pb-text, .pb-bottom[data-view="bag"] .pb-text { display: none; }
+.pb-bottom[data-view="moves"] .pb-menu, .pb-bottom[data-view="bag"] .pb-menu { grid-column: 1 / -1; }
+.pb-bottom[data-view="bag"] .pb-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow-y: auto; align-content: start; } .pb-bottom[data-view="moves"] .pb-menu { overflow-y: auto; }
+@media (orientation: landscape) and (max-height: 520px) { .pb-bottom { height: 118px; } .pb-menu button { min-height: 30px; } .pb-bottom[data-view="bag"] .pb-menu button b { font-size: 18px; } .pb-bottom[data-view="bag"] .pb-menu button { padding-top: 2px; padding-bottom: 2px; } }
+@media (max-width: 520px) { .pb-bottom { height: 236px; grid-template-rows: minmax(0, 1fr) auto; } .pb-bottom[data-view="menu"] .pb-text { min-height: 0; }
+  .pb-bottom[data-view="moves"] .pb-menu, .pb-bottom[data-view="bag"] .pb-menu { grid-row: 1 / -1; align-content: stretch; }
+  .pb-bottom[data-view="moves"] .pb-menu { grid-template-columns: minmax(0, 1fr); } .pb-bottom[data-view="moves"] .pb-menu button b, .pb-bottom[data-view="bag"] .pb-menu button b { font-size: 21px; }
+  .pb-bottom[data-view="bag"] .pb-menu { grid-template-columns: minmax(0, 1fr); align-content: start; } .pb-bottom[data-view="bag"] .pb-menu button { min-height: 34px; padding-top: 3px; padding-bottom: 3px; } }
+/* in the move list and the coat pocket the name and the small print sit on one line, so rows never overlap */
+.pb-bottom[data-view="moves"] .pb-menu button:not(.back), .pb-bottom[data-view="bag"] .pb-menu button:not(.back) { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 0; padding-top: 4px; padding-bottom: 4px; }
+.pb-bottom[data-view="moves"] .pb-menu button b, .pb-bottom[data-view="bag"] .pb-menu button b { flex: 0 1 auto; min-width: 0; }
+.pb-bottom[data-view="moves"] .pb-menu button small, .pb-bottom[data-view="bag"] .pb-menu button small { flex: 0 4 auto; min-width: 0; margin: 0; text-align: right; }
+.pb-bottom[data-view="moves"] .pb-menu .back, .pb-bottom[data-view="bag"] .pb-menu .back { min-height: 0; padding: 2px; }
+/* call-outs and interruptions wrap instead of running off the screen */
+.pb-call b { max-width: 92vw; box-sizing: border-box; white-space: normal; text-align: center; font-size: clamp(18px, 5.2vw, 34px); line-height: 1.05; padding: 8px 28px; }
 @media (max-width: 520px) { .pb-bottom { grid-template-columns: minmax(0, 1fr); } }
 @media (orientation: landscape) and (max-height: 520px) { #battle.arena-boss .pb-plat.foe::before { top: -150%; } #battle.arena-boss .pb-field::before { top: 22%; } }
 /* v35: you are free */

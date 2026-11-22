@@ -23,6 +23,16 @@ const beat = end => { try { localStorage.setItem(BEAT_KEY, JSON.stringify({ t: D
 setInterval(() => { if (!document.hidden) beat(false); }, 4000);
 addEventListener("pagehide", () => beat(true)); document.addEventListener("visibilitychange", () => beat(document.hidden));
 if (window.HX_HEALING) track("heal", { why: String(window.HX_HEALING) });
+if (window.HX_CRASH) { const c = window.HX_CRASH, nm = id => (GFX_TIERS[id] || {}).name || id; track("crash_step", c);
+  setTimeout(() => {
+    const d = document.createElement("div"); d.id = "crashNote";
+    d.style.cssText = "position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;width:min(92vw,460px);box-sizing:border-box;background:#fff8e6;color:#2a2210;border:2px solid #e0a83a;border-radius:14px;padding:12px 14px;font:500 14px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.35)";
+    d.innerHTML = `<b style="display:block;font-size:15px;margin-bottom:4px">📱💥 Die App ist eben abgestürzt</b>`
+      + (c.same ? "Dem Handy ist der Speicher ausgegangen, obwohl die Grafik schon auf der niedrigsten Stufe ist. Schließ am besten andere Apps und starte neu."
+        : `Dem Handy ist der Grafikspeicher ausgegangen. Die Grafik steht jetzt auf <b>${nm(c.to)}</b> statt „${nm(c.from)}“, damit das nicht wieder passiert. Ändern kannst du das unter Einstellungen → Grafik.`)
+      + (c.night ? " Der Nachtdienst beginnt leider von vorn." : "") + `<button type="button" style="display:block;margin:10px 0 0 auto;font:800 14px system-ui;padding:8px 16px;border-radius:10px;border:0;background:#1f9d55;color:#fff">Verstanden</button>`;
+    d.querySelector("button").onclick = () => d.remove(); document.body.appendChild(d);
+  }, 1200); }
 // every script error, with file:line and what the player was doing
 const where = () => ({ mode: typeof mode === "string" ? mode : "", route: run && run.route, idx: run && run.idx });
 addEventListener("error", e => { if (errCount++ > 25) return; track("error", { msg: String(e.message || "Fehler").slice(0, 200), at: String(e.filename || "").split("/").pop() + ":" + e.lineno + ":" + e.colno, ...where() }); flushTrack(); });

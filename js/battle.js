@@ -120,7 +120,39 @@ const ORTHO_POOL = [
 ];
 const MOVE_QUIZ = { n: "FACHFRAGE", fx: "quiz", t: "WISSEN", p: 75, pp: 5, quiz: true, txt: "stellt eine Fachfrage." };
 const MOVE_HEAL = { n: "KAFFEEPAUSE", fx: "coffee", t: "KOFFEIN", heal: 30, pp: 3, txt: "trinkt lauwarmen Stationskaffee von gestern. Mit Haut drauf." };
-const pickMoves = kit => { const pool = (kit ? kit.my : ORTHO_POOL).slice().sort(() => Math.random() - .5); return [MOVE_QUIZ, pool[0], pool[1], MOVE_HEAL]; };
+/* the joker: one absurd move per battle that works on anybody. Hospital life, slightly exaggerated. */
+const WILD_POOL = [
+  { n: "FAX SENDEN", fx: "paper", t: "ANALOG", p: 44, pp: 3, txt: "schickt ihm ein Fax. Es kommt nie an. Er wartet trotzdem darauf. Neben dem Gerät. Für immer." },
+  { n: "„SCHON IMMER SO“", fx: "law", t: "TRADITION", se: 1, p: 46, pp: 2, txt: "spricht den heiligen Satz: „Das haben wir schon immer so gemacht.“ Dagegen kommt niemand an. Seit 1953 nicht." },
+  { n: "PIEPER WEITERREICHEN", fx: "phone", t: "LIST", p: 42, pp: 3, txt: "drückt ihm den Dienst-Pieper in die Hand und geht. Er piept sofort. Es ist die Notaufnahme. Es ist immer die Notaufnahme." },
+  { n: "DIENSTPLAN 2027", fx: "calendar", t: "HORROR", se: 1, p: 48, pp: 2, txt: "zeigt ihm den Dienstplan für 2027. Er steht an Weihnachten drin. Und Silvester. Und an seinem eigenen Geburtstag. Zweimal." },
+  { n: "KONFETTI-KANONE", fx: "confetti", t: "PARTY", p: 34, pp: 3, weaken: 1, txt: "feuert die Konfetti-Kanone vom Stationsfest 2014 ab. Sie hat zehn Jahre auf diesen Moment gewartet. Sein Angriff sinkt vor Rührung." },
+  { n: "ANRUF VON MAMA", fx: "phone", t: "FAMILIE", se: 1, p: 44, pp: 2, txt: "stellt seine Mutter durch, auf Lautsprecher: „Isst du auch genug, Schatz?“ Vor allen Kollegen." },
+  { n: "POWERPOINT, 140 FOLIEN", fx: "slides", t: "PAPIER", p: 46, pp: 3, txt: "startet eine Präsentation. 140 Folien. Folie 1: „Agenda“. Folie 2: „Agenda (Fortsetzung)“. Er altert sichtbar." },
+  { n: "FEUERALARM-PROBE", fx: "alarm", t: "CHAOS", p: 44, pp: 2, txt: "drückt den Feueralarm. Probealarm. Alle gehen raus. Er steht allein im Flur und weiß nicht mehr, wofür er kämpft." },
+  { n: "DRUCKER REPARIEREN", fx: "paper", t: "TECHNIK", p: 40, pp: 3, txt: "repariert den Stationsdrucker. Er druckt jetzt nur noch Katzenfotos. In Endlosschleife. Auf den Gegner." },
+  { n: "WINDOWS-UPDATE", fx: "spinner", t: "TECHNIK", p: 42, pp: 3, txt: "startet auf seinem PC ein Update. 1 von 347. „Schalten Sie den Computer nicht aus.“ Er traut sich nicht mehr, sich zu bewegen." },
+  { n: "VIERFACH-ESPRESSO", fx: "coffee", t: "KOFFEIN", p: 44, pp: 3, txt: "kippt einen Vierfach-Espresso und redet danach so schnell, dass er nur noch nicken kann. Zu allem. Auch zu Wochenenddiensten." },
+  { n: "TEAMBUILDING", fx: "heart", t: "PSYCHE", p: 40, pp: 3, txt: "zwingt ihn zum Teambuilding. Vertrauensfall. DU fängst ihn nicht. Das war Absicht." },
+];
+/* $F = the opponent's name */
+const BATTLE_EVENTS = [
+  { icon: "🧹", t: "Eine Reinigungskraft wischt zwischen euch durch. Ohne aufzusehen. Beide rutschen aus. Beide stehen würdevoll wieder auf, als wäre nichts gewesen." },
+  { icon: "🛏️", t: "Ein Patient rast im Bett mit Blaulicht vorbei und winkt. Er hat das Bett selbst gesteuert. Er hat sich auch selbst entlassen." },
+  { icon: "🐧", t: "Ein Pinguin aus der Notaufnahme watschelt vorbei. Kategorie Gelb. Er wartet seit sechs Stunden. Er schaut euch an. Ihr schaut euch schuldig an." },
+  { icon: "🧑‍💼", t: "Der Chefarzt läuft durchs Bild, sieht euch kämpfen, sagt „Weitermachen“ und geht. Beide fühlen sich kurz gesehen." },
+  { icon: "📯", t: "Durchsage: „Der Kampf auf dem Flur wird gebeten, leiser zu sein. Station 4 versucht zu schlafen. Station 4 ist die Intensivstation.“" },
+  { icon: "🧪", foeHeal: 10, t: "Aus der Rohrpost fällt ein Laborbefund von 2009. Kalium normal. $F ist so erleichtert, dass er sich erholt. +10 KP. Für ihn." },
+  { icon: "☕", meHeal: 12, t: "Im Nebenraum explodiert die Kaffeemaschine. Leise. Es riecht nach verbranntem Filterkaffee. DU erholst dich allein vom Geruch. +12 KP!" },
+  { icon: "📋", t: "Jemand vom Controlling zählt euch und notiert: „Personalschlüssel: 2 Ärzte zu 0 Patienten. Endlich effizient.“ Er geht zufrieden." },
+  { icon: "🖨️", foeHit: 8, t: "Der Drucker im Stationszimmer druckt von selbst. 400 Seiten. Auf jeder steht „DRINGEND“. Ein Stapel trifft $F am Kopf." },
+  { icon: "💡", t: "Das Licht geht aus. Sparmaßnahme. Nach drei Sekunden geht es wieder an. In diesen drei Sekunden war alles friedlich. Ihr vermisst es beide." },
+  { icon: "🦽", meHit: 6, t: "Ein leerer Rollstuhl rollt von allein vorbei und fährt DIR über den Fuß. Er entschuldigt sich nicht. Er hat keinen Mund." },
+  { icon: "🎂", meHeal: 8, foeHeal: 8, t: "Die Pflege bringt Kuchen. Jemand hat Geburtstag. Niemand weiß wer. Beide essen ein Stück. Kurz ist Frieden. +8 KP für beide." },
+  { icon: "🚁", t: "Draußen landet der Rettungshubschrauber. Beide hören auf und schauen aus dem Fenster wie Kinder. Dann kämpft ihr weiter. Etwas peinlich berührt." },
+  { icon: "📠", t: "Das Faxgerät piept. Ein Fax für $F. Absender: er selbst, von 2011. Inhalt: „Bitte um Rückruf.“ Er ist kurz sehr nachdenklich." },
+];
+const pickMoves = kit => { const pool = (kit ? kit.my : ORTHO_POOL).slice().sort(() => Math.random() - .5); return [MOVE_QUIZ, pool[0], pool[1], pick(WILD_POOL)]; };
 const FOES = {
   U: { type: "KRAFT", lvl: 52, quiz: "ortho", moves: [
     { n: "BAUMARKT-REFLEXHAMMER", fx: "hammer", p: 22, txt: "zückt den Reflexhammer. Zu klein. Er nimmt den aus dem Baumarkt. Patellarsehne getroffen! Dein Bein tritt von selbst. Bis zum Parkplatz." },
@@ -298,7 +330,7 @@ function pokeBattle(e, done, o = {}) {
       <div class="pb-plat me"></div><div class="pb-mon pj gone"></div><div class="pb-mon me">${ps ? `<img src="${ps}" alt="">` : "<span>🧑‍⚕️</span>"}</div>
       <div class="pb-box me"><b>DU</b><span class="lv">Lv31</span><div class="hp"><i>KP</i><div class="hpbar"><div class="hpfill"></div></div></div><small class="num">100/100</small><div class="exp"><div></div></div></div>
     </div>
-    <div class="pb-bottom"><div class="pb-text"></div><div class="pb-menu"></div></div>`;
+    <div class="pb-bottom" data-view="busy"><div class="pb-text"></div><div class="pb-menu"></div></div>`;
   ov.classList.add(isBoss ? "arena-boss" : "arena-gym"); if (isBoss) ov.classList.add("arena-" + kit.arena);
   document.body.appendChild(ov); mode = "dialog"; fightOn = true; clearInputs(); if (!isBoss) gymMusic(true);
   const textEl = ov.querySelector(".pb-text"), menu = ov.querySelector(".pb-menu"), foeMon = ov.querySelector(".pb-mon.foe"), meMon = ov.querySelector(".pb-mon.me"), pjMon = ov.querySelector(".pb-mon.pj");
@@ -353,6 +385,9 @@ function pokeBattle(e, done, o = {}) {
     else if (kind === "gel") { await volley("🧴", 1, 0, 450, 50, 200, 1.4); await burst("🧊", B, 4, B[2] * .6, 500); tone(1800, 0, .25, "sine", .03, 2400); }
     else if (kind === "saw") { for (let i = 0; i < 6; i++) tone(320 + (i % 2) * 90, i * .08, .08, "sawtooth", .035); await volley("🪚", 1, 0, 520, 30, 1080, 1.6); flashField("rgba(255,255,255,.5)"); }
     else if (kind === "drill") { tone(180, 0, .8, "sawtooth", .03, 520); await volley("🪛", 3, 110, 380, 20, 1440, 1.1); }
+    else if (kind === "confetti") { tone(300, 0, .15, "square", .05, 900); flashField("rgba(255,255,255,.5)"); await burst("🎉", A, 2, A[2] * .4, 400); await volley("🎊", 5, 60, 520, 80, 360, 1); await burst("✨", B, 6, B[2] * .8, 600); }
+    else if (kind === "alarm") { for (let i = 0; i < 4; i++) tone(i % 2 ? 660 : 880, i * .22, .2, "square", .04); for (let i = 0; i < 3; i++) { flashField("rgba(255,40,30,.45)"); await sleep(220); } await burst("🚨", B, 3, B[2] * .6, 600); }
+    else if (kind === "spinner") { await volley("💻", 1, 0, 500, 40, 0, 1.4); await burst("⏳", B, 3, B[2] * .5, 700); await burst("🔄", B, 2, B[2] * .4, 600); }
     else if (kind === "hammer") { await volley("🔨", 1, 0, 420, 120, 720, 1.5); flashField("rgba(255,255,255,.6)"); }
     else if (kind === "flex") { await burst("💪", A, 3, A[2] * .6, 600); }
     else if (kind === "cloud") { await volley("☁️", 3, 140, 650, 20, 0, 1.4); }
@@ -379,21 +414,23 @@ function pokeBattle(e, done, o = {}) {
     ov.appendChild(qb);
     qb.addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; const ok = +b.dataset.i === q.a; b.classList.add(ok ? "ok" : "bad"); if (!ok) qb.querySelector(`[data-i="${q.a}"]`).classList.add("ok"); sfx[ok ? "ding" : "knock"](); setTimeout(() => { qb.remove(); res(ok); }, 900); });
   });
-  const showMenu = () => {
+  const view = v => { ov.querySelector(".pb-bottom").dataset.view = v; };
+  const showMenu = () => { view("menu");
     S.busy = false; textEl.textContent = "Was soll DU tun?";
     menu.innerHTML = `<button type="button" data-m="fight">KAMPF</button><button type="button" data-m="bag">KITTELTASCHE</button><button type="button" data-m="mates">KOLLEGEN</button><button type="button" data-m="run">FLUCHT</button>`;
   };
-  const showMoves = () => {
+  const showMoves = () => { view("moves");
     const ult = isBoss && S.foe <= 35 && !S.ultUsed ? `<button type="button" class="ult" data-ult="1"><b>KÜNDIGUNG</b><small>EINMALIG · ENDGÜLTIG ★★★</small></button>` : "";
     menu.innerHTML = ult + MOVES.map((m, i) => `<button type="button" data-mv="${i}" ${S.pp[i] ? "" : "disabled"}><b>${m.n}</b><small>AP ${S.pp[i]}/${m.pp} · ${m.t}${m.se ? " ★" : ""}</small></button>`).join("") + `<button type="button" class="back" data-m="back">◀ ZURÜCK</button>`;
   };
   /* the coat pocket: everything that gives energy in the corridors gives KP here (same numbers), plus two tricks. And there is always one old glucose tablet. */
   const HEALS = { "1": 35, "0": 55, "$": 30, "+": 75, "6": 25 };
   const bagItems = () => [["1", "KAFFEE"], ["0", "ENERGYDRINK"], ["$", "DONUT"], ["+", "WUNDERCREME"], ["6", "PROTEINSHAKE"], ["3", "DESINFEKTION"], ["f", "FAKE-TELEFONAT"]].filter(([k]) => hasItem(k));
-  const bagHint = k => k === "6" && !isBoss ? "Er gibt sofort auf" : HEALS[k] ? `+${HEALS[k]} KP` : k === "3" ? "Angriff sinkt" : isBoss ? "wirkt hier nicht" : "Flucht klappt sicher";
-  const showBag = () => {
+  const bagHint = k => k === "6" && !isBoss ? "Er gibt sofort auf" : HEALS[k] ? `+${HEALS[k]} KP` : k === "3" ? "Angriff sinkt" : isBoss ? "wirkt hier nicht" : "Flucht sicher";
+  const showBag = () => { view("bag");
     const items = bagItems();
     menu.innerHTML = items.map(([k, n]) => `<button type="button" data-it="${k}"><b>${ITEMS[k].emoji} ${n}</b><small>${bagHint(k)} · ×${run.inv[k]}</small></button>`).join("")
+      + ((S.coffee ?? 3) > 0 ? `<button type="button" data-it="coffee"><b>☕ KAFFEEPAUSE</b><small>+30 KP · noch ${S.coffee ?? 3}×</small></button>` : "")
       + (S.sugar ? "" : `<button type="button" data-it="sugar"><b>🍬 TRAUBENZUCKER</b><small>+15 KP · von 2021</small></button>`)
       + (!items.length && S.sugar ? `<button type="button" disabled><b>LEER</b><small>Nur Fusseln und ein Kassenbon</small></button>` : "") + `<button type="button" class="back" data-m="back">◀ ZURÜCK</button>`;
     textEl.textContent = "KITTELTASCHE: Was Energie gibt, gibt hier KP.";
@@ -403,7 +440,7 @@ function pokeBattle(e, done, o = {}) {
     if (b.dataset.m === "fight") return showMoves();
     if (b.dataset.m === "bag") return showBag();
     if (b.dataset.m === "back") return showMenu();
-    S.busy = true; menu.innerHTML = "";
+    S.busy = true; menu.innerHTML = ""; view("busy"); S.turn = (S.turn || 0) + 1;
     if (S.stunned) { const t = S.stunned; S.stunned = false; await say(typeof t === "string" ? t : "DU kannst dich nicht bewegen!"); }
     else if (b.dataset.ult) await ultimate();
     else if (b.dataset.mv != null) await myMove(+b.dataset.mv);
@@ -414,8 +451,21 @@ function pokeBattle(e, done, o = {}) {
     if (S.foe <= 0) return win();
     await foeTurn();
     if (S.me <= 0) return lose();
+    if (S.turn >= 2 && S.turn - (S.lastEvent || 0) >= 2 && Math.random() < .3) { S.lastEvent = S.turn; await absurdEvent(); }
     showMenu();
   });
+  /* the hospital does not stop for a fight: someone mops through, a bed with a blue light overtakes, the chief walks past */
+  async function absurdEvent() {
+    const ev = pick(BATTLE_EVENTS.filter(e => !S.seenEv || !S.seenEv.has(e)));
+    if (!ev) return; (S.seenEv = S.seenEv || new Set()).add(ev);
+    callout("ZWISCHENFALL!", false); tone(523, 0, .12, "square", .04); tone(392, .14, .2, "square", .04);
+    if (ev.icon) { const w = field.clientWidth, y = field.clientHeight * (.45 + Math.random() * .2); await fly(ev.icon, [-40, y], [w + 40, y - 20], 1400, 0, 30, ev.spin || 0, 2.2); }
+    await say(ev.t.replace(/\$F/g, name), 900);
+    if (ev.meHeal) { S.me = Math.min(100, S.me + ev.meHeal); hpUi(); pop("me", "+" + ev.meHeal, "heal"); sfx.spa(); await sleep(400); }
+    if (ev.foeHeal) { S.foe = Math.min(100, S.foe + ev.foeHeal); hpUi(); pop("foe", "+" + ev.foeHeal, "heal"); await sleep(400); }
+    if (ev.foeHit) { hit("foe", ev.foeHit); await sleep(400); if (S.foe <= 0) S.foe = 1; }
+    if (ev.meHit) { hit("me", ev.meHit); await sleep(400); if (S.me <= 0) S.me = 1; hpUi(); }
+  }
   async function myMove(i) {
     const m = MOVES[i]; S.pp[i]--;
     callout(m.n, false); await say(`DU setzt ${m.n} ein!`, 350); lunge("me"); await fx(m.fx, "me");
@@ -434,6 +484,7 @@ function pokeBattle(e, done, o = {}) {
     if (mult > 1) { flashField("rgba(255,255,255,.7)"); await say(pick(["Es ist sehr effektiv!", "Es ist sehr effektiv! Das Controlling notiert einen Mehrerlös.", "Sehr effektiv! Irgendwo weint eine Kostenstelle."]), 500); } else if (mult < 1) await say(pick(["Es ist nicht sehr effektiv …", "Nicht sehr effektiv. Wie die letzte Umstrukturierung."]), 500);
   }
   async function useBag(k) {
+    if (k === "coffee") { S.coffee = (S.coffee ?? 3) - 1; await fx("coffee", "me"); S.me = Math.min(100, S.me + 30); hpUi(); pop("me", "+30", "heal"); sfx.spa(); await say(pick(["DU trinkst lauwarmen Stationskaffee von gestern. Mit Haut drauf. KP +30!", "DU trinkst Kaffee aus der Tasse „World's Best Doctor“. Sie gehört niemandem. KP +30!", "DU trinkst den Kaffee, den die Pflege für sich gemacht hat. Riskant. Lecker. KP +30!"])); return; }
     if (k === "sugar") { S.sugar = true; await fx("coffee", "me"); S.me = Math.min(100, S.me + 15); hpUi(); pop("me", "+15", "heal"); sfx.spa(); await say("DU findest TRAUBENZUCKER in der Kitteltasche. Von 2021. Leicht pelzig. KP +15!"); return; }
     takeItem(k); const it = ITEMS[k];
     if (k === "6" && !isBoss) { await say(`DU gibst ${name} einen PROTEINSHAKE.`); await say(`${name} trinkt ihn in einem Zug. „Vanille. Respekt.“ Er will nicht mehr kämpfen!`); S.foe = 0; hpUi(); return; }
