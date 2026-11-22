@@ -482,7 +482,7 @@ function friendNeeds(f) {
    On "Automatisch" the game watches the frame rate and steps down one level at a time if the device cannot keep up. */
 let gfxDirty = false;
 function applyGfx(silent) {
-  const old = Q; Q = GFX_TIERS[gfxId()]; settings.shadows = Q.shadow > 0; settings.hires = Q.pr > 1.25;
+  const old = Q; Q = tierQ(gfxId()); settings.shadows = Q.shadow > 0; settings.hires = Q.pr > 1.25;
   applyRes(); resize();
   if (sun.shadow.mapSize.x !== (Q.shadow || 1024)) { sun.shadow.mapSize.set(Q.shadow || 1024, Q.shadow || 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   sun.shadow.radius = Q.detail >= 2 ? 3.5 : 2; applyShadows(); saveSettings();

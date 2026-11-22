@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🥊 Duell Internist gegen Orthopäde: komplett neue Attacken auf beiden Seiten (Sono-Gel, Arztbrief, Akkubohrer, Ganzkörpergips …)", "🧑‍🎓 Jonas, der PJler, kommt jetzt sichtbar angerannt, macht etwas Absurdes und fängt den nächsten Treffer ab"];
+const NEWS = ["📱 Weniger Abstürze auf dem iPhone: Die Grafik bleibt im Speicher des Handys. Und wenn doch etwas passiert, erfährst du warum.", "🥊 Kämpfe: Joker-Attacke in jedem Kampf (Fax senden, Dienstplan 2027, Anruf von Mama …) und absurde Zwischenfälle", "📐 Kampf im Hoch- und Querformat aufgeräumt: nichts springt, nichts wird abgeschnitten", "🐧 Im Klinikum passieren ab und zu Dinge, die niemand erklärt"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

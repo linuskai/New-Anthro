@@ -87,7 +87,24 @@ function guessTier() {
 if (!GFX_TIERS[settings.gfx] && settings.gfx !== "auto") settings.gfx = "auto";
 if (!GFX_TIERS[settings.autoTier]) settings.autoTier = guessTier();
 const gfxId = () => settings.gfx === "auto" ? settings.autoTier : settings.gfx;
-let Q = GFX_TIERS[gfxId()];
+const IS_PHONE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+/* on phones every level stays inside the graphics memory: at most 2x resolution, textures up to 1024 px, shadows up to 1024 px.
+   "Top" on an iPhone with the big night map used to make the graphics chip give up within seconds. */
+const tierQ = id => { const t = GFX_TIERS[id] || GFX_TIERS.mid; return IS_PHONE ? { ...t, pr: Math.min(t.pr, 2), ts: Math.min(t.ts, 2), ts2: Math.min(t.ts2, 1.5), cap: Math.min(t.cap, 1024), shadow: Math.min(t.shadow, 1024), aniso: Math.min(t.aniso, 8) } : t; };
+/* the app crashed last time (iOS closed it, or the graphics chip gave up): one graphics level lower, and say so on the title screen */
+(() => {
+  try {
+    const b = JSON.parse(localStorage.getItem("hx-beat") || "null"), gl = localStorage.getItem("hx-gl-lost");
+    const crashed = (b && !b.end && Date.now() - b.t < 15 * 60000 && /play|dialog|cpr|pause/.test(b.mode || "")) || !!gl;
+    if (!crashed) return;
+    localStorage.removeItem("hx-gl-lost");
+    const cur = gfxId(), i = GFX_ORDER.indexOf(cur), to = GFX_ORDER[Math.max(0, i - 1)];
+    if (settings.gfx === "auto") settings.autoTier = to; else settings.gfx = to;
+    window.HX_CRASH = { from: cur, to, night: !!(b && b.night), gl: !!gl, same: to === cur };
+    saveSettings();
+  } catch (e) {}
+})();
+let Q = tierQ(gfxId());
 settings.shadows = Q.shadow > 0; settings.hires = Q.pr > 1.25; // older code reads these two
 
 // ---------- textures ----------
@@ -361,10 +378,11 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 canvas.addEventListener("webglcontextlost", e => {
   e.preventDefault(); try { typeof track === "function" && track("gl_lost", { mode: typeof mode === "string" ? mode : "", lvl: run && run.idx, gfx: settings && settings.gfx }); typeof flushTrack === "function" && flushTrack(); } catch (_) {}
   try { typeof saveNow === "function" && saveNow(); } catch (_) {}
+  try { localStorage.setItem("hx-gl-lost", String(Date.now())); } catch (_) {}
   if (document.getElementById("glLost")) return;
   const d = document.createElement("div"); d.id = "glLost";
   d.style.cssText = "position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:rgba(5,10,9,.94);color:#fff;font:600 16px/1.4 system-ui;padding:24px;text-align:center";
-  d.innerHTML = '<div><div style="font-size:42px">🖥️💤</div><p style="max-width:320px">Die Grafik ist ausgestiegen. Das passiert auf dem Handy, wenn der Speicher knapp wird. Dein Spielstand ist gespeichert.</p><button type="button" style="font:800 16px system-ui;padding:12px 22px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Neu laden</button><p style="opacity:.7;font-size:13px;max-width:320px">Tipp: In den Einstellungen unter Grafik eine niedrigere Stufe wählen.</p></div>';
+  d.innerHTML = `<div><div style="font-size:42px">🖥️💤</div><p style="max-width:330px"><b>Dem Handy ist der Grafikspeicher ausgegangen.</b> Das ist kein Fehler von dir: Die 3D-Grafik war für dieses Gerät zu aufwendig.</p><p style="max-width:330px">Beim Neuladen stellt sich die Grafik automatisch eine Stufe niedriger. ${typeof run !== "undefined" && run && run.mode === "night" ? "Den Nachtdienst musst du neu beginnen." : "Deine Mission ist gespeichert und geht dort weiter."}</p><button type="button" style="font:800 16px system-ui;padding:12px 22px;border-radius:12px;border:0;background:#1f9d55;color:#fff">Neu laden</button><p style="opacity:.7;font-size:13px;max-width:330px">Hilft auch: andere Apps schließen.</p></div>`;
   d.querySelector("button").onclick = () => location.reload(); document.body.appendChild(d);
 }, false);
 const applyRes = () => renderer.setPixelRatio(Math.min(Q.pr, window.devicePixelRatio || 1)); applyRes();

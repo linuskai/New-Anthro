@@ -163,8 +163,33 @@ function paBanner(text) {
   const ms = Math.max(6500, Math.min(12000, text.length * 60)); // long announcements stay long enough to read
   document.body.appendChild(d); setTimeout(() => d.classList.add("out"), ms); setTimeout(() => d.remove(), ms + 600);
 }
+/* the hospital is a little absurd, every few minutes: things happen around you that nobody explains */
+const ABSURD = [
+  ["🛏️", "Überholt", "Ein Patient überholt dich im Bett. Mit Blaulicht. Er hupt. Woher hat das Bett eine Hupe?"],
+  ["🐧", "Notaufnahme", "Ein Pinguin watschelt Richtung Radiologie. Er hat einen Überweisungsschein. Er ist korrekt ausgefüllt. Als einziger heute."],
+  ["🧑‍💼", "Controlling", "Ein Mann im Anzug misst mit dem Zollstock, wie breit der Flur ist. „Da passen noch zwei Betten rein. Quer.“"],
+  ["🎻", "Beruhigungsprogramm", "Im Treppenhaus spielt ein Streichquartett. Bezahlt vom Förderverein. Für die Stimmung. Gegenüber wird reanimiert."],
+  ["🦆", "Hygiene", "Eine Gummiente schwimmt im Desinfektionsmittelspender. Niemand weiß, seit wann. Alle desinfizieren trotzdem."],
+  ["🏆", "Auszeichnung", "Die Klinik hat einen Preis gewonnen: „Beste Wartezeit-Kommunikation“. Die Urkunde hängt im Wartezimmer. Man hat Zeit, sie zu lesen."],
+  ["🤖", "Digitalisierung", "Der neue Pflegeroboter fährt gegen die Wand. Dreht um. Fährt gegen die andere Wand. Er hat mehr gekostet als die Station."],
+  ["🥗", "Kantine", "Die Kantine schickt einen Boten: Das vegetarische Gericht ist heute Leberkäse. „Ohne Fleischstücke.“"],
+  ["📠", "Neuigkeiten", "Das Faxgerät hat sich verliebt. In den Drucker. Es schickt ihm alle 3 Minuten ein Herz. Der Drucker antwortet mit Papierstau."],
+  ["🦴", "Orthopädie", "Ein Orthopäde trägt ein Skelett unter dem Arm. „Für die Lehre.“ Das Skelett trägt einen Proteinshake."],
+  ["🧘", "Wohlbefinden", "Die Personalabteilung hat einen Ruheraum eingerichtet. Er ist 1,2 m² groß. Es ist der Aufzug. Er fährt."],
+  ["🎈", "Feier", "Station 3 feiert 100 Tage ohne Krankmeldung. Die Luftballons hat jemand mit Fieber aufgeblasen."],
+];
+function absurdTick(dt) {
+  if (run.absurdT == null) run.absurdT = 150 + Math.random() * 90;
+  run.absurdT -= dt;
+  if (run.absurdT > 0 || toastT > 0 || !quiet(15000) || mode !== "play") return;
+  run.absurdT = 240 + Math.random() * 150;
+  const left = ABSURD.filter(a => !(run.absurdSeen || []).includes(a[2])); if (!left.length) return;
+  const a = pick(left); (run.absurdSeen = run.absurdSeen || []).push(a[2]);
+  tone(784, 0, .1, "triangle", .05); tone(1046, .12, .16, "triangle", .05); showToast(a[0], "#6a4ab8", a[1], a[2], []);
+}
 function missionTick(dt) {
   if (run.mode !== "mission") return;
+  absurdTick(dt);
   run.announceT -= dt;
   if (run.announceT <= 0 && toastT <= 0 && quiet(25000) && paReady()) {
     run.announceT = 320 + Math.random() * 140;
