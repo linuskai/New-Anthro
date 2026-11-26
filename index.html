@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="hx-build" content="48">
+<meta name="hx-build" content="49">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Hospital Escape 3D</title>
 <meta name="description" content="Dein Dienst ist vorbei. Das Krankenhaus sieht das anders. Ein bissiges 3D-Fluchtspiel aus dem Klinikalltag.">
@@ -359,8 +359,11 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
   .card h1 { font-size: 34px; } .overlay .card { padding: 14px 16px; }
   #tasks { top: calc(env(safe-area-inset-top, 0px) + 40px); max-height: calc(100% - 60px); }
 }
-body.land.hudmin .pager .energy, body.land.hudmin .pager .chips, body.land.hudmin #hudMsg { display: none; }
-body.land.hudmin .mission { display: none; }
+body.hudmin .pager .chips, body.hudmin .mission, body.hudmin .pager .energy em { display: none; }
+body.hudmin .pager { padding-top: 3px; padding-bottom: 4px; } body.hudmin .hud-left { max-width: min(62vw, 300px); }
+body.hudmin #hudMsg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+body.land.hudmin #hudMsg { display: none; }
+.pager { pointer-events: auto; cursor: pointer; position: relative; } .pager::after { content: "▴"; position: absolute; right: 6px; bottom: 2px; font-size: 10px; opacity: .55; color: #a6e38f; } body.hudmin .pager::after { content: "▾"; }
 
 #mini { border-radius: 50%; pointer-events: auto; cursor: pointer; }
 #mcard { position: absolute; left: 0; right: 0; top: 24%; text-align: center; pointer-events: none; z-index: 4; padding: 0 20px; }
@@ -1707,7 +1710,7 @@ body.land #paBanner { top: calc(46px + env(safe-area-inset-top, 0px)); }
         <button class="btn ghost" id="btnGuidePause" type="button"><span>Ausrüstung</span><span>🎒</span></button>
         <button class="btn ghost" id="btnAcctPause" type="button"><span>Profil &amp; Konto</span><span>👤</span></button>
         <button class="btn ghost" id="btnFeedbackPause" type="button"><span>Vorschlag</span><span>💡</span></button>
-        <button class="btn ghost" id="btnQuit" type="button"><span>Zum Titel (speichert)</span><span>💾</span></button>
+        <button class="btn ghost" id="btnQuit" type="button"><span id="btnQuitT">Speichern und zum Hauptmenü</span><span>💾</span></button>
       </div>
     </div>
   </section>

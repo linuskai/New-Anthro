@@ -147,16 +147,48 @@ const stinkTex = (v = 0) => canvasTex(256, 256, (g, w, h) => {
   for (let i = 0; i < 7; i++) { const x = 70 + r() * 116, y = 80 + r() * 96, rad = 10 + r() * 16, gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, "rgba(215,240,120,.2)"); gr.addColorStop(1, "rgba(215,240,120,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); } // sickly bright cores
 }, "stink" + v);
 function ambulanceModel() {
-  const g = new THREE.Group(), white = new THREE.MeshStandardMaterial({ color: 0xf4f4ef, roughness: .35, metalness: .1 });
-  g.add(at(rmesh(1.9, 1.75, 1.9, .12, white), 0, 1.25, -.45));
-  g.add(at(rmesh(1.85, 1.15, 1.0, .12, white), 0, .95, .95));
-  g.add(at(rmesh(1.7, .5, .06, .04, new THREE.MeshStandardMaterial({ color: 0x141b24, roughness: .05, metalness: .6 })), 0, 1.25, 1.44)).rotation.x = 0;
-  for (const s of [-1, 1]) { g.add(at(rmesh(.02, .22, 2.9, .01, basic(0xd42b2b)), s * .965, .85, .05)); g.add(at(rmesh(.02, .5, .6, .02, new THREE.MeshStandardMaterial({ color: 0x141b24, roughness: .05, metalness: .6 })), s * .93, 1.3, .95)); }
-  const sign = plate(textTex(["RETTUNGSDIENST"], "#f4f4ef", "#d42b2b", 512, 90, 50), 1.6, .28); sign.position.set(0, 1.65, -1.405); sign.rotation.y = Math.PI; g.add(sign);
-  for (const x of [-.6, .6]) g.add(at(rmesh(.3, .12, .2, .05, basic(0x3a7aff)), x, 2.18, .3));
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); dyn(g); // animated: never merged into the static floor
+  const white = new THREE.MeshStandardMaterial({ color: 0xf4f4ef, roughness: .35, metalness: .1 }), glass = new THREE.MeshStandardMaterial({ color: 0x141b24, roughness: .05, metalness: .6 });
+  body.add(at(rmesh(1.9, 1.75, 1.9, .12, white), 0, 1.25, -.45));
+  body.add(at(rmesh(1.85, 1.15, 1.0, .12, white), 0, .95, .95));
+  body.add(at(rmesh(1.7, .5, .06, .04, glass), 0, 1.25, 1.44));
+  for (const s of [-1, 1]) { body.add(at(rmesh(.02, .22, 2.9, .01, basic(0xd42b2b)), s * .965, .85, .05)); body.add(at(rmesh(.02, .5, .6, .02, glass), s * .93, 1.3, .95)); }
+  const sign = plate(textTex(["RETTUNGSDIENST"], "#f4f4ef", "#d42b2b", 512, 90, 50), 1.4, .24); sign.position.set(0, 2.0, -1.41); sign.rotation.y = Math.PI; body.add(sign);
+  // the inside, seen when the doors open: dim light, a stretcher
+  body.add(at(boxMesh(1.7, 1.5, 1.6, 0x2a3036), 0, 1.2, -.5));
+  const inLight = sprite(glowTex("rgba(200,230,255,1)"), 1.4, 1.1); inLight.material = inLight.material.clone(); inLight.material.blending = THREE.AdditiveBlending; inLight.material.depthWrite = false; inLight.material.opacity = 0; inLight.position.set(0, 1.3, -1.3); body.add(inLight);
+  const cot = typeof stretcher === "function" ? stretcher() : boxMesh(.6, .2, 1.6, 0xd8dde0); cot.scale.setScalar(.62); cot.rotation.y = Math.PI / 2; cot.position.set(0, .55, -.6); body.add(cot);
+  // two rear doors on hinges
+  const doors = [-1, 1].map(s => { const hinge = new THREE.Group(); hinge.position.set(s * .93, 1.2, -1.42); const d = at(rmesh(.92, 1.6, .05, .03, white), -s * .46, 0, 0); hinge.add(d); hinge.add(at(rmesh(.6, .45, .02, .02, glass), -s * .46, .35, -.03)); hinge.add(at(rmesh(.04, .2, .02, .01, basic(0xd42b2b)), -s * .82, -.5, -.03)); body.add(hinge); return { hinge, s }; });
+  // blue lights on the roof and in the grille, each with a glow that sweeps
+  const blue = [], lights = [[-.6, 2.18, .3], [.6, 2.18, .3], [-.5, .75, 1.46], [.5, .75, 1.46]];
+  lights.forEach(([x, y, z], i) => {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1a2a66 }), m = at(rmesh(i < 2 ? .3 : .16, i < 2 ? .12 : .08, i < 2 ? .2 : .04, .04, mat), x, y, z); body.add(m);
+    const gl = sprite(glowTex("rgba(80,140,255,1)"), i < 2 ? 1.6 : .9, i < 2 ? 1.6 : .9); gl.material = gl.material.clone(); gl.material.blending = THREE.AdditiveBlending; gl.material.depthWrite = false; gl.material.opacity = 0; gl.position.set(x, y + (i < 2 ? .1 : 0), z + (i < 2 ? 0 : .05)); body.add(gl);
+    blue.push({ mat, gl, phase: i % 2 });
+  });
+  // headlights
+  for (const x of [-.65, .65]) { body.add(at(rmesh(.28, .14, .03, .03, basic(0xfff6d8)), x, .62, 1.46)); const h = sprite(glowTex("rgba(255,244,210,1)"), .7, .45); h.material = h.material.clone(); h.material.blending = THREE.AdditiveBlending; h.material.depthWrite = false; h.material.opacity = .45; h.position.set(x, .62, 1.52); body.add(h); }
+  // a blue pool of light on the floor, pulsing with the lights
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 6.2), new THREE.MeshBasicMaterial({ map: glowTex("rgba(60,110,255,1)"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); pool.rotation.x = -Math.PI / 2; pool.position.y = .03; g.add(pool);
   for (const [x, z] of [[-.85, -.95], [.85, -.95], [-.85, .95], [.85, .95]]) { const w = mesh(GEO.cyl, lambert(0x161718), .34, .24, .34); w.rotation.z = Math.PI / 2; w.position.set(x, .34, z); g.add(w); }
-  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  // exhaust puffs from the back, low on the right
+  const puffs = Array.from({ length: 5 }, (_, i) => { const p = sprite(glowTex("rgba(190,195,200,1)"), .3, .3); p.material = p.material.clone(); p.material.depthWrite = false; p.material.opacity = 0; g.add(p); return { s: p, t: i / 5 }; });
+  g.traverse(o => { if (o.isMesh && o.material && !o.material.blending) o.castShadow = true; });
+  g.userData.amb = { body, doors, blue, pool, puffs, cot, inLight, t: Math.random() * 20, cycle: 14 + Math.random() * 8 };
   return g;
+}
+/* one frame of ambulance life. The doors open about every 15-20 s, the stretcher rolls out and back. Nobody is on it. Nobody ever is. */
+function ambulanceTick(a, time, dt) {
+  a.t += dt; const k = a.t % a.cycle, open = k < 4.5 ? Math.min(1, k / .7) * Math.min(1, (4.5 - k) / .7) : 0;
+  a.body.position.y = Math.sin(time * 38) * .006 + Math.sin(time * 2.1) * .004; a.body.rotation.z = Math.sin(time * 27) * .0025; // the engine is running
+  for (const d of a.doors) d.hinge.rotation.y = d.s * open * 1.75;
+  a.cot.position.z = -.6 - open * 1.1; a.inLight.material.opacity = open * .55;
+  const ph = Math.floor(time * 6) % 4; // double flash, left then right
+  let pulse = 0;
+  for (const b of a.blue) { const on = (ph === 0 || ph === 1) ? b.phase === 0 && (time * 12 % 2 < 1) : b.phase === 1 && (time * 12 % 2 < 1); b.mat.color.setHex(on ? 0x6fa0ff : 0x1a2a66); b.gl.material.opacity = on ? .95 : 0; if (on) pulse++; }
+  a.pool.material.opacity = Math.min(.5, pulse * .14);
+  for (const p of a.puffs) { p.t = (p.t + dt * .45) % 1; p.s.position.set(.55 + p.t * .3, .3 + p.t * .5, -1.5 - p.t * .9); const sc = .2 + p.t * .7; p.s.scale.set(sc, sc, 1); p.s.material.opacity = .32 * (1 - p.t) * Math.min(1, p.t * 6); }
 }
 function ventSwitch() {
   const g = new THREE.Group(), metal = phong(0x9aa3a6, 70);

@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · game data (levels, people, items, dialogue content). Shared globals, loaded before world/level/game. */
 /* the version. When it changes, change it in three places: here, <meta name="hx-build"> in index.html, and CACHE in sw.js */
-const HX_BUILD = "48";
+const HX_BUILD = "49";
 /* the home-screen app sometimes starts with an old page from a cache while the scripts are new (or the other way round):
    then buttons are missing and the game hangs at the start. Clear every cache and load fresh, at most twice per tab. */
 function hxHeal(why) {
