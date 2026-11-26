@@ -378,7 +378,7 @@ function buildLevel(idx) {
       group.add(at(mesh(GEO.cyl, lambert(0xf2f2ee), .045, .1, .045), wx + .85, 1.11, wz - .2));
       if (!lv.deskSign) { lv.deskSign = true; group.add(at(sprite(textTex([idx === 0 ? "ARZTZIMMER" : "STATIONSZIMMER", idx === 0 ? "Bitte nicht stören (stört trotzdem jeder)" : "Bitte klingeln (bringt nichts)"], "#2b7bb9", "#fff", 512, 140, 46), 2.3, .63), wx, 2.7, wz)); }
     } else if (ch === "%") {
-      const g = ambulanceModel(); g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g);
+      const g = ambulanceModel(); g.position.set(wx, 0, wz); g.rotation.y = alongZ ? 0 : Math.PI / 2; group.add(g); (lv.ambulances = lv.ambulances || []).push(g.userData.amb);
       group.add(at(sprite(labelTex("LIEGENDANFAHRT", "#c0322a", "#fff"), 1.6, .26), wx, 3.1, wz));
     } else if (ch === "y") {
       const g = ventSwitch(); g.position.set(wx, 0, wz); group.add(g); lv.ventFan = g.userData.fan;

@@ -289,17 +289,30 @@ function startPlaying() {
 
 // ---------- Mission Control (pauses the game) ----------
 let mcReturn = "play";
+/* the night shift has no exit list: its sheet is the two rules, where you stand, and what helps */
+function nightSheet() {
+  const left = Math.max(0, NIGHT_END - run.minutes), rea = run.rea && !run.rea.done;
+  let h = `<div class="ms-head" style="--mc:#3a1d4a"><span class="ms-av">🕯️</span><div><small>Nachtdienst · ${esc(nightPlace())}</small><b>Überleb bis 07:30</b><span>Allein im Haus. Fast.</span></div></div>`;
+  h += `<div class="ms-clock"><div><small>Jetzt</small><b>${fmtTime(run.minutes)}</b></div><div><small>Übergabe</small><b>07:30</b></div><div class="${left < 60 ? "warn" : ""}"><small>Noch</small><b>${fmtSpan(left)}</b></div></div>`;
+  h += `<h3>Zwei Regeln</h3><ul class="ms-goals">`
+    + `<li><span class="ck">👁</span><span><b>Lass dich nicht finden</b> · gefunden ${run.found || 0} von 3<small>Patienten mit roten Augen, Nachtschwestern, Hildegard. Beim dritten Mal ist die Nacht vorbei. Jede dritte erledigte Pager-Aufgabe streicht einen Fund.</small></span></li>`
+    + `<li><span class="ck">🫀</span><span><b>Niemand stirbt</b> · ${rea ? "JETZT: Reanimation läuft!" : (run.lives || 0) + " gerettet"}<small>Bei Reanimationsalarm sofort hin. Solange du reanimierst, lässt dich jeder in Ruhe.</small></span></li></ul>`;
+  if (run.task) h += `<h3>Pager</h3><ul class="ms-goals"><li><span class="ck">📟</span><span><b>${esc(nightRoom(run.task.room))}</b> · ${esc(run.task.text)}<small>Noch ${Math.max(0, Math.ceil(run.task.deadline - run.minutes))} Minuten</small></span></li></ul>`;
+  h += `<h3>Was hilft</h3><ul class="ms-kit"><li><span class="kit-ico">🔦</span><span><b>Lampe aus</b><small>Im Dunkeln sieht dich niemand so leicht. Mit Lampe siehst du mehr, und alle sehen dich.</small></span></li><li><span class="kit-ico">🚪</span><span><b>${esc(nightSafe())}</b><small>Dort ist es sicher. Aber nicht ewig: Wer zu lange bleibt, hört es klopfen.</small></span></li><li><span class="kit-ico">🕯️</span><span><b>Hildegard</b><small>Bewegt sich nur, wenn du nicht hinsiehst. Ein Kaffee lässt sie vergessen, dass sie dich gesehen hat.</small></span></li></ul>`;
+  return h;
+}
 function openMC() {
-  if (!run || run.mode !== "mission" || !["play", "pause"].includes(mode)) return;
+  if (!run || !["play", "pause"].includes(mode)) return;
   mcReturn = mode; mode = "mc"; clearInputs(); hidePopups();
-  $("mcBody").innerHTML = missionSheet(true); $("mcHowBody").innerHTML = HOW_HTML;
+  $("mcBody").innerHTML = run.mode === "night" ? nightSheet() : missionSheet(true); $("mcHowBody").innerHTML = HOW_HTML;
+  $("btnMCSave").hidden = run.mode === "night";
   show("ovMC"); $("ovMC").scrollTop = 0; sfx.tick();
 }
 function closeMC() { if (mode !== "mc") return; if (mcReturn === "pause") { mode = "pause"; show("ovPause"); } else { show(null); mode = "play"; } }
 $("btnMCClose").addEventListener("click", closeMC);
 $("btnMCSave").addEventListener("click", () => { saveCheckpoint(); $("btnMCSave").lastElementChild.textContent = "✓"; setTimeout(() => { $("btnMCSave").lastElementChild.textContent = "💾"; }, 1500); });
 $("mcBody").addEventListener("click", ev => { if (ev.target.closest(".task-x")) setTimeout(() => { $("mcBody").innerHTML = missionSheet(true); }, 50); });
-$("btnMC").addEventListener("click", openMC);
+onTap($("btnMC"), openMC);
 
 // ---------- failing ----------
 function missionFailed() {
@@ -331,25 +344,35 @@ const TOUR = [
   { el: "mini", t: "Radar", d: "Rote Punkte = jemand hat dich bemerkt. Antippen = großer Lageplan.", g: "tap" },
   { el: "btnMC", t: "Mission Control", d: "Pausiert das Spiel: Geschichte, Frist, Checkliste, Ausrüstung. Und Speichern.", g: "tap" },
 ];
+const TOUR_NIGHT = [
+  { el: "touch", rect: () => ({ left: innerWidth * .1, top: innerHeight * .3, width: innerWidth * .8, height: innerHeight * .3 }), t: "Nachtdienst: zwei Regeln", d: "1. Lass dich nicht finden. Dreimal gefunden, und die Nacht ist vorbei. 2. Niemand stirbt. Kommt ein Reanimationsalarm, rennst du hin. Verpasst du ihn, ist die Nacht auch vorbei.", g: "none" },
+  TOUR[0], TOUR[1], TOUR[2],
+  { el: "btnAct", t: "Aktion", d: "Türen, Gegenstände, Verstecke. In Wäschewagen und hinter Vorhängen bist du unsichtbar. Der Knopf zeigt, was gerade geht.", g: "tap" },
+  { el: "chipLamp", t: "Lampe", d: "Im Dunkeln erscheint hier die Lampe. Mit Lampe siehst du mehr. Und alle sehen dich.", g: "tap" },
+  { el: "energyBox", t: "Energie", d: "Schreck, Rennen und verpasste Pager kosten Energie. Bei 0 % schläfst du ein. Im sicheren Raum lädst du auf.", g: "none" },
+  { el: "touch", rect: () => ({ left: innerWidth * .1, top: innerHeight * .3, width: innerWidth * .8, height: innerHeight * .3 }), t: "Der Pager", d: "Der Pager schickt dich in Zimmer. Annehmen oder ablehnen. Zweimal abgelehnt, und die Nachtschwester holt dich persönlich. Jede dritte erledigte Aufgabe streicht einen Fund.", g: "none" },
+  { el: "mission", t: "Was jetzt?", d: "Dein Ziel und wie oft du schon gefunden wurdest. Tipp auf den Pager oben links: Er wird klein und gibt den Blick frei.", g: "none" },
+  { el: "btnMC", t: "Mission Control", d: "Pausiert: die Regeln, die Uhrzeit, der aktuelle Pager-Auftrag, was gegen Hildegard hilft.", g: "tap" },
+];
 let tour = null;
-function startTour() {
-  if (mode !== "play") return; tour = { i: 0 }; mode = "tour"; clearInputs(); hidePopups();
+function startTour(steps) {
+  if (mode !== "play") return; tour = { i: 0, steps: Array.isArray(steps) ? steps : TOUR, night: steps === TOUR_NIGHT }; mode = "tour"; clearInputs(); hidePopups();
   const ov = document.createElement("div"); ov.id = "tour";
   ov.innerHTML = `<div class="tr-ring"></div><div class="tr-hand">👆</div><div class="tr-card"><small></small><b></b><p></p><div class="tr-btns"><button type="button" class="tr-skip">Überspringen</button><button type="button" class="tr-next">Weiter</button></div></div>`;
   document.body.appendChild(ov);
-  ov.querySelector(".tr-next").addEventListener("click", () => { tour.i++; tour.i >= TOUR.length ? endTour() : tourStep(); });
+  ov.querySelector(".tr-next").addEventListener("click", () => { tour.i++; tour.i >= tour.steps.length ? endTour() : tourStep(); });
   ov.querySelector(".tr-skip").addEventListener("click", endTour);
   tourStep();
 }
 function tourStep() {
-  const s = TOUR[tour.i], ov = $("tour"), el = $(s.el);
-  if ((s.portrait && document.body.classList.contains("land")) || (!s.rect && (!el || el.hidden || !el.getBoundingClientRect().width))) { tour.i++; return tour.i >= TOUR.length ? endTour() : tourStep(); } // not on screen in this layout
+  const s = tour.steps[tour.i], ov = $("tour"), el = $(s.el);
+  if ((s.portrait && document.body.classList.contains("land")) || (!s.rect && (!el || el.hidden || !el.getBoundingClientRect().width))) { tour.i++; return tour.i >= tour.steps.length ? endTour() : tourStep(); } // not on screen in this layout
   const r = s.rect ? s.rect() : el && !el.hidden ? el.getBoundingClientRect() : { left: innerWidth / 2 - 40, top: innerHeight / 2 - 40, width: 80, height: 80 };
   const ring = ov.querySelector(".tr-ring"), pad = 6;
   Object.assign(ring.style, { left: r.left - pad + "px", top: r.top - pad + "px", width: r.width + pad * 2 + "px", height: r.height + pad * 2 + "px" });
   const hand = ov.querySelector(".tr-hand"); hand.className = "tr-hand " + s.g; hand.hidden = s.g === "none";
   Object.assign(hand.style, { left: r.left + r.width / 2 + "px", top: r.top + r.height / 2 + "px" });
-  const card = ov.querySelector(".tr-card"); card.querySelector("small").textContent = `So geht's · ${tour.i + 1} von ${TOUR.length}`; card.querySelector("b").textContent = s.t; card.querySelector("p").textContent = s.d;
-  card.classList.toggle("top", r.top > innerHeight * .55); ov.querySelector(".tr-next").textContent = tour.i === TOUR.length - 1 ? "Los geht's!" : "Weiter"; sfx.tick();
+  const card = ov.querySelector(".tr-card"); card.querySelector("small").textContent = `So geht's · ${tour.i + 1} von ${tour.steps.length}`; card.querySelector("b").textContent = s.t; card.querySelector("p").textContent = s.d;
+  card.classList.toggle("top", r.top > innerHeight * .55); ov.querySelector(".tr-next").textContent = tour.i === tour.steps.length - 1 ? "Los geht's!" : "Weiter"; sfx.tick();
 }
-function endTour() { const ov = $("tour"); if (ov) ov.remove(); tour = null; try { localStorage.setItem("hospital-escape-tour", "1"); } catch (e) {} if (mode === "tour") { mode = "play"; run.clockSeen = run.minutes; } }
+function endTour() { const ov = $("tour"); if (ov) ov.remove(); const night = tour && tour.night; tour = null; try { localStorage.setItem(night ? "hospital-escape-tour-night" : "hospital-escape-tour", "1"); } catch (e) {} if (mode === "tour") { mode = "play"; run.clockSeen = run.minutes; } }

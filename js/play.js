@@ -97,7 +97,7 @@ sprintBtn.addEventListener("pointerup", sprintOff); sprintBtn.addEventListener("
 function toggleSneak() { player.sneak = !player.sneak; $("btnSneak").classList.toggle("on", player.sneak); $("btnSneak").setAttribute("aria-pressed", player.sneak); }
 function toggleLamp() { if (!inDarkness()) return; player.lampOn = !player.lampOn; sfx.tick(); setMsg(player.lampOn ? "Taschenlampe an. Du siehst mehr. Man sieht dich auch: von viel weiter weg, und wen du anleuchtest, der sieht dich sofort." : "Taschenlampe aus. Fast unsichtbar. Du siehst nur noch die roten Augen.", 3.5); updateEnergy(); }
 $("btnSneak").addEventListener("pointerdown", e => { e.preventDefault(); if (mode === "play") toggleSneak(); });
-$("chipLamp").addEventListener("click", () => { if (mode === "play") toggleLamp(); });
+onTap($("chipLamp"), () => { if (mode === "play") toggleLamp(); });
 $("btnAct").addEventListener("pointerdown", e => { e.preventDefault(); if (mode === "play") act(); });
 function moveInput() {
   let f = 0, s = 0;
@@ -588,7 +588,14 @@ function missCall(c, verb) {
   updateHud();
 }
 function declineCall() { if (!call) return; const c = call.def; if (c.onDecline) { endCall(); c.onDecline(); return; } missCall(c, "abgelehnt"); }
-$("btnAccept").addEventListener("click", acceptCall); $("btnDecline").addEventListener("click", declineCall);
+/* iOS gives no "click" to a second finger while the first one steers: these react to the finger lifting instead, once */
+function onTap(el, fn) {
+  let lastUp = -1e9, lastFire = -1e9;
+  const fire = e => { const now = performance.now(); if (now - lastFire < 250) return; lastFire = now; fn(e); };
+  el.addEventListener("pointerup", e => { if (e.pointerType === "mouse") return; lastUp = performance.now(); if (e.cancelable) e.preventDefault(); fire(e); });
+  el.addEventListener("click", e => { if (performance.now() - lastUp < 1500) return; fire(e); }); // the click that follows a finger was already handled
+}
+onTap($("btnAccept"), acceptCall); onTap($("btnDecline"), declineCall);
 function updateCalls(dt) {
   if (call && call.def.onAccept) { call.t += dt; if (call.t > 20) acceptCall(); return; } // pager jobs: silence counts as yes
   if (LEVELS[run.idx].safe || run.mode === "night" || isLastFloor()) return;

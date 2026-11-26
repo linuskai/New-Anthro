@@ -40,7 +40,7 @@ function endStory() {
   if (!story) return;
   story = null; $("story").hidden = true; storyPhone(null); $("storyCount").hidden = true; document.body.classList.remove("cine");
   player.yaw = level.startYaw; player.pitch = 0;
-  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); const h = $("hint"); h.textContent = `Regel 1: nicht gefunden werden · Regel 2: niemand stirbt (🚨 sofort hin) · ${nightSafe()} ist sicher`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
+  if (run.mode === "night") { mode = "play"; blackout = 0; updateHud(); let seenN = false; try { seenN = !!localStorage.getItem("hospital-escape-tour-night"); } catch (e) {} if (!seenN) { setTimeout(() => { if (mode === "play") startTour(TOUR_NIGHT); }, 700); return; } const h = $("hint"); h.textContent = `Regel 1: nicht gefunden werden · Regel 2: niemand stirbt (🚨 sofort hin) · ${nightSafe()} ist sicher`; h.hidden = false; setTimeout(() => { h.hidden = true; }, 9000); return; }
   if (run.quick) { beginMission(); return; } // played before: the fly-in says it all
   showBrief(false);
 }
@@ -255,7 +255,7 @@ function showEndScreen(key, n) {
 }
 
 // ---------- pause & settings ----------
-function pause() { if (mode !== "play") return; saveCheckpoint(); mode = "pause"; clearInputs(); openSettingsUi(false); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
+function pause() { if (mode !== "play") return; { const t = $("btnQuitT"); if (t) t.textContent = run && run.mode === "night" ? "Nachtdienst beenden, zum Hauptmenü" : "Speichern und zum Hauptmenü"; } saveCheckpoint(); mode = "pause"; clearInputs(); openSettingsUi(false); show("ovPause"); try { if (document.exitPointerLock) document.exitPointerLock(); } catch (_) {} setTimeout(() => $("btnResume").focus({ preventScroll: true }), 30); }
 function resume() { if (mode === "settings") { document.body.classList.remove("set-title"); mode = "title"; show("ovTitle"); refreshTitle(); return; } if (mode !== "pause") return; show(null); mode = "play"; }
 /* the same settings card serves the pause menu and the title screen */
 let fpsNow = 0;
@@ -267,15 +267,17 @@ function openSettingsUi(fromTitle) {
 }
 $("setTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; for (const x of $("setTabs").children) x.classList.toggle("on", x === b); for (const pn of document.querySelectorAll(".set-pane")) pn.classList.toggle("on", pn.dataset.p === b.dataset.p); });
 $("btnSettingsTitle").addEventListener("click", () => { if (mode !== "title") return; mode = "settings"; openSettingsUi(true); show("ovPause"); $("ovPause").scrollTop = 0; });
-$("btnPause").addEventListener("click", pause); $("btnResume").addEventListener("click", resume);
+onTap($("btnPause"), pause); $("btnResume").addEventListener("click", resume);
 $("btnPlan").addEventListener("click", () => { if (run.mode === "mission") openMC(); });
-$("btnTour").addEventListener("click", () => { resume(); setTimeout(startTour, 50); });
+$("btnTour").addEventListener("click", () => { resume(); setTimeout(() => startTour(run && run.mode === "night" ? TOUR_NIGHT : TOUR), 50); });
 $("btnGuidePause").addEventListener("click", () => showItemGuide(null));
 $("btnGuide").addEventListener("click", () => showItemGuide(null));
-$("btnQuit").addEventListener("click", () => { saveNow(); hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
-$("mission").addEventListener("click", () => { if (!$("mission").classList.contains("open")) { freshNote(); sfx.tick(); } else if (run.mode === "mission") openMC(); });
-$("btnHud").addEventListener("click", () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); });
-if (settings.hudmin) document.body.classList.add("hudmin"); // landscape only (the portrait HUD is compact anyway)
+$("btnQuit").addEventListener("click", () => { if (run && run.mode === "night" && !confirm("Den Nachtdienst abbrechen? Ein Nachtdienst lässt sich nicht speichern.")) return; saveNow(); hidePopups(); endCall(); newRun(); loadFloor(0); mode = "title"; show("ovTitle"); refreshTitle(); });
+onTap($("mission"), () => { if (!$("mission").classList.contains("open")) { freshNote(); sfx.tick(); } else if (run.mode === "mission") openMC(); });
+const toggleHud = () => { document.body.classList.toggle("hudmin"); settings.hudmin = document.body.classList.contains("hudmin"); saveSettings(); sfx.tick && sfx.tick(); };
+onTap($("btnHud"), toggleHud);
+onTap(document.querySelector(".pager"), () => { if (mode === "play") toggleHud(); }); // tap the pager: small, tap again: big
+if (settings.hudmin) document.body.classList.add("hudmin");
 let mapSel = null;
 function openMap() { if (mode !== "play") return; mode = "map"; clearInputs(); mapSel = null; $("mapInfo").innerHTML = "👆 Tipp auf einen Punkt, eine Tür oder einen Raum: Dann steht hier, wer oder was das ist."; $("mapView").hidden = false; drawBigMap(); }
 /* tap the map: who is that dot, what is behind that door, what does this room do for you */
@@ -537,6 +539,7 @@ function render(time, dt) {
     for (const b of level.beacons || []) { const on = !vent && Math.sin(time * 9 + b.p) > 0; b.mat.color.setHex(on ? 0xff2a1a : 0x3a0e0a); }
     if (level.gasSign) level.gasSign.visible = !vent;
   }
+  if (level.ambulances) for (const a of level.ambulances) ambulanceTick(a, time, dt);
   if (level.rainTex) level.rainTex.offset.y += dt * 2.4;
   if (dust) updateDust(dt);
   if ((ceilT -= dt) <= 0) {

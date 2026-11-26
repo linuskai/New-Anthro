@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["📱 Weniger Abstürze auf dem iPhone: Die Grafik bleibt im Speicher des Handys. Und wenn doch etwas passiert, erfährst du warum.", "🥊 Kämpfe: Joker-Attacke in jedem Kampf (Fax senden, Dienstplan 2027, Anruf von Mama …) und absurde Zwischenfälle", "📐 Kampf im Hoch- und Querformat aufgeräumt: nichts springt, nichts wird abgeschnitten", "🐧 Im Klinikum passieren ab und zu Dinge, die niemand erklärt"];
+const NEWS = ["👆 Pager annehmen oder ablehnen geht jetzt auch, während du läufst", "📟 Tipp auf den Pager oben links: Er wird klein und gibt den Blick frei", "🎯 Mission Control jetzt auch im Nachtdienst, mit den zwei Regeln", "🚑 Die Rettungswagen in der Notaufnahme leben: Blaulicht, Motor, Türen, Trage", "🕯️ Erster Nachtdienst mit eigener kurzer Einführung"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;
