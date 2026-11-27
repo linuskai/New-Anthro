@@ -995,6 +995,7 @@ function updateCamping(dt) {
     const e = spawnFar("N"); if (e) { e.name = "Nachtschwester"; nightCaught(e); setTimeout(() => setMsg(nightSafe() + ": gefunden. Hier schläft niemand eine ganze Nacht. Schon gar kein Arzt.", 4.5, true), 1600); } }
 }
 function updateNight(dt) {
+  typeof creepTick === "function" && creepTick(dt); // things that move when you are not looking
   if (run.truceT > 0) run.truceT -= dt;
   updateCamping(dt);
   if (level.watchers && level.watchers.length) for (const w of level.watchers) { // their heads, and the rest, turn after you. Slowly.

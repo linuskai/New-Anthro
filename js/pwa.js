@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["👆 Pager annehmen oder ablehnen geht jetzt auch, während du läufst", "📟 Tipp auf den Pager oben links: Er wird klein und gibt den Blick frei", "🎯 Mission Control jetzt auch im Nachtdienst, mit den zwei Regeln", "🚑 Die Rettungswagen in der Notaufnahme leben: Blaulicht, Motor, Türen, Trage", "🕯️ Erster Nachtdienst mit eigener kurzer Einführung"];
+const NEWS = ["🩻 Nachtdienst: Auf manchen Röntgenbildern ist eine Hand. Schau weg. Schau wieder hin.", "👁️ Manchmal schaut jemand um die Ecke. Mit roten Augen. Nur kurz."];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;
