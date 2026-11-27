@@ -110,7 +110,7 @@ setTimeout(() => {
 }, 1600);
 
 // ---------- after an update: a small card "Neu in dieser Version" for players who have been here before ----------
-const NEWS = ["🩻 Nachtdienst: Auf manchen Röntgenbildern ist eine Hand. Schau weg. Schau wieder hin.", "👁️ Manchmal schaut jemand um die Ecke. Mit roten Augen. Nur kurz."];
+const NEWS = ["🩻 Nachtdienst: Röntgenbilder mit einer Hand. Schau weg. Schau wieder hin. Manchmal winkt sie.", "👁️ Manchmal steht jemand halb hinter der Wand. Schau weg, und er ist fort.", "😑 Rote Augen blinzeln. Nicht alle gleichzeitig.", "🚑 Notaufnahme: neuer Versorgungsgang mit Buchten und Wäschewagen zum Verstecken", "🕯️ Hildegard zeigt jetzt GEFUNDEN an", "👆 Durchsagen lassen sich wegwischen"];
 function showNews() {
   const seen = store.get("hospital-escape-news"); store.set("hospital-escape-news", GAME_VERSION);
   if (!seen || seen === GAME_VERSION || !store.get("hospital-escape-welcome") || mode !== "title") return;

@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · game data (levels, people, items, dialogue content). Shared globals, loaded before world/level/game. */
 /* the version. When it changes, change it in three places: here, <meta name="hx-build"> in index.html, and CACHE in sw.js */
-const HX_BUILD = "50";
+const HX_BUILD = "51";
 /* the home-screen app sometimes starts with an old page from a cache while the scripts are new (or the other way round):
    then buttons are missing and the game hangs at the start. Clear every cache and load fresh, at most twice per tab. */
 function hxHeal(why) {
@@ -160,7 +160,7 @@ const TYPES = {
        walk: .5, approach: 1.0, range: 5, fov: .45, detect: .65, barks: ["Riechen Sie das auch? Nein? Gut.", "Kurze Frage zum Stuhlgang!", "Haben Sie schon gegessen?"] },
   Z: { label: "NOTFALL?", role: "Pseudo-Notfall", who: () => rnd(["Hr. Schnupfen", "Fr. Zeckenbiss (2019)", "Hr. Rezept-nur-kurz", "Fr. Seit-gestern-komisch", "Hr. Seit-2004-Rücken", "Fr. Dr.-Google", "Hr. Nur-ein-Pflaster", "Fr. Ich-war-zuerst-da", "Hr. Krankenschein-für-Montag", "Fr. Hausarzt-hat-zu", "Hr. Kater-seit-Samstag", "Fr. Zweitmeinung-zur-Zweitmeinung"]), av: "🧟", color: "#a7c48a",
        spec: () => ({ skin: rnd([0xc9d6b0, 0xd8d0b0, 0xb8c8a0]), hair: rnd(HAIR), hairStyle: rnd(["messy", "bald", "long"]), robe: true, shirt: rnd([0x8a6fae, 0x6a8fae, 0xae6a6a, 0x7aa07a]), pants: 0x5a5a6a, pose: "zombie", lowDetail: true }),
-       walk: .25, approach: .55, range: 5, fov: .2, detect: .55, barks: ["Ist das… ein Arzt?", "Doktor… mein Knie… seit März…", "Ich hab seit Monaten Rücken…", "Krankmeldung… für letzte Woche…", "Ein Wehwehchen… von 2022…", "Nur… ganz… kurz…", "Rezept…"] },
+       walk: .25, approach: .55, range: 5, fov: .2, detect: .55, barks: ["Ist das… ein Arzt?", "Doktor… mein Knie… seit März…", "Ich hab seit Monaten Rücken…", "Krankmeldung… für letzte Woche…", "Ein Wehwehchen… von 2022…", "Nur… ganz… kurz…", "Rezept…", "Mein Hund… hat den Nachbarn gebissen… ich hab zugeschaut… Tollwut?", "Zu enger Schuh… Fuß tut weh… MRT…", "Ich hab… gegähnt… es hat geknackt…", "Meine Nase läuft… nur links…", "Ich hab Kopfweh… seit ich hier warte…"] },
   D: { label: "DR. PD PHIL", role: "Habilitand · stellt Statistikfragen", who: () => "Dr. PD Phil", av: "📊", color: "#ff7ab8",
        spec: () => ({ skin: SKIN[1], hair: 0xd9b26c, hairStyle: "spiky", coat: true, shirt: 0x4a7fd0, pants: 0x1f2a44, glasses: "sunTop", acc: "laptop", shoes: 0xb08850 }),
        walk: .9, approach: 1.5, range: 6, fov: .4, detect: .8, barks: ["Buddy! Kurze Statistikfrage!", "Impact Factor, Baby!", "Du wärst perfekter Co-Autor!"],
@@ -496,7 +496,7 @@ LEVELS.push({ key: "nightER", short: "ZNA · NACHTDIENST", name: "Zentrale Notau
   plates: ["Putzkammer", "Notfall-CT", "Putzkammer", "Schockraum", "Personalraum", "Gipsraum", "Schockraum", "Ausnüchterung", "Lager", "Röntgen", "Kinder-Notfall", "Angehörige", "Lager"],
   tip: "Die Notaufnahme bei Nacht: Liegendanfahrt, Wartehalle, sechs Kabinen, Schockraum, Notfall-CT, Gipsraum, Ausnüchterung. Die Wartenden sind eingeschlafen. Im Stehen. Mit roten Augen. Manche wachen auf. Im Personalraum bist du sicher, aber nicht lange: Wer sich zu lange versteckt, wird geholt.",
   objectives: [], exitText: "", lock: "Der Ausgang ist nachts verriegelt. Ablösung um 07:30.",
-  map: ["####################^####################", "#.......#......................#::::::::#", "#.%..%..#......................#:::m::::#", "#.......#......................#::::::::#", "#####...#.....Q.........TT.....#::::T:::#", "#:::d...#.................N....###d######", "#:::#...#.3....Q................S.......#", "##d##...####..########..########........#", "#..........Q............................#", "#.||#||#||#||#||#||####d#####d####d####.#", "#.:5#::#::#::#::#::#::::::::#___1#::::#.#", "#.::#::#::#::#::#::#::::::::#____#::::#.#", "#.B:#B:#B:#B:#B:#B:#:x::Y::B#___0#:Y:T#.#", "#.#######################d#############.#", "#.....x..........Q.........w............#", "#.###d####d#####..####d#####d######d###.#", "#.#::::::#:::::#..#:::::::#:::::#:::::#.#", "#.#:B::B:#:L:9:#..#::Y::x:#:B:::#:T:::#.#", "#.##########d###..#####################.#", "#.......x..............Q................#", "########M#######M#######L##############E#", "#########################################"] });
+  map: ["####################^####################", "#.......#......................#::::::::#", "#.%..%..#......................#:::m::::#", "#.......#......................#::::::::#", "#####...#.....Q.........TT.....#::::T:::#", "#:::d...#.................N....###d######", "#:::#...#.3....Q................S.......#", "##d##...####..########..########........#", "#..........Q............................#", "#.||#||#||#||#||#||####d#####d####d####.#", "#.:5#::#::#::#::#::#::::::::#___1#::::#.#", "#.::#::#::#::#::#::#::::::::#____#::::#.#", "#.B:#B:#B:#B:#B:#B:#:x::Y::B#___0#:Y:T#.#", "#.#######################d#############.#", "#.....x..........Q.........w............#", "#.###d####d#####..####d#####d######d###.#", "#.#::::::#:::::#..#:::::::#:::::#:::::#.#", "#.#:B::B:#:L:9:#..#::Y::x:#:B:::#:T:::#.#", "#.##########d###..#####################.#", "#.......x..............Q................#", "####d###M#######M#######L######d#######E#", "#w.#.w.#.w.#..w#.w.#..#.w.#.w.#.w.#.w.###", "#......................................##", "#########################################"] });
 const MISSION_LEVELS = 8; // legacy (night mode stats)
 const NIGHT_START = 300, NIGHT_END = 870, NIGHT_DAWN = 810; // 22:00 … 07:30 handover, first light at 06:30
 const STORY_NIGHT = [
@@ -526,6 +526,9 @@ const NIGHT_TASKS_ER = [
   "Wartenummer 312 fragt, wie lange noch (wartet seit 14 Uhr)", "Zeh gestoßen. Vor drei Wochen. Jetzt hat er Zeit", "will eine Krankmeldung. Für gestern", "hat Dr. Google gefragt: entweder nichts oder Ebola",
   "RTW bringt jemanden, der „nur mal gucken“ wollte", "Betrunkener singt im Schockraum. In Dur", "will das WLAN-Passwort. Um drei Uhr", "Fieber 37,9 °C, mit dem Taxi gekommen, Taxi wartet",
   "Schnitt am Finger, 40 Fotos davon auf dem Handy", "Monitor zeigt Asystolie (Elektrode ab)", "Bauchschmerzen seit 2017, heute Nacht besonders", "hat sich selbst eingewiesen. Wegen Langeweile",
+  "hat zugesehen, wie sein Hund den Nachbarn gebissen hat. Hat jetzt Angst vor Tollwut", "Schuh zu eng, Fuß tut weh. Will ein MRT. Vom Fuß. Und vom Schuh",
+  "hat eine Zecke gesehen. Im Fernsehen", "hat beim Gähnen Knacken im Kiefer gehört. Will ins CT", "Nase läuft. Nur links. Will wissen, warum nicht rechts",
+  "hat Ibuprofen genommen, jetzt tut nichts mehr weh. Sorgt sich deshalb", "will Blutabnahme, um zu sehen, ob das Blut noch rot ist", "hat sich an einem Blatt Papier geschnitten. Am Wochenende. Will eine Tetanusimpfung. Und eine Krankmeldung bis Mittwoch",
 ];
 /* night shift wording that depends on where you spend it */
 const nightER = () => !!(run && run.place === "er");
