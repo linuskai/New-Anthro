@@ -161,7 +161,8 @@ function paBanner(text) {
   const old = document.getElementById("paBanner"); if (old) old.remove();
   const d = document.createElement("div"); d.id = "paBanner"; d.innerHTML = `<i>📢</i><span><small>Durchsage</small><b>${esc(text)}</b></span>`;
   const ms = Math.max(6500, Math.min(12000, text.length * 60)); // long announcements stay long enough to read
-  document.body.appendChild(d); setTimeout(() => d.classList.add("out"), ms); setTimeout(() => d.remove(), ms + 600);
+  d.style.pointerEvents = "auto"; document.body.appendChild(d); if (typeof swipeAway === "function") swipeAway(d, () => d.remove()); // swipe or tap it away
+  setTimeout(() => d.classList.add("out"), ms); setTimeout(() => d.remove(), ms + 600);
 }
 /* the hospital is a little absurd, every few minutes: things happen around you that nobody explains */
 const ABSURD = [

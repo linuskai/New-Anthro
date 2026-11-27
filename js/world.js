@@ -526,9 +526,9 @@ function makePerson(sp) {
   for (const sx of [-1, 1]) {
     add(GEO.ball, skin, .022, .034, .018, sx * .112, -.005, 0, head);
     add(GEO.ball, shade(skin, .7), .011, .018, .008, sx * .118, -.005, .006, head);
-    if (sp.glowEyes) { add(GEO.ball, 0xff2010, .018, .012, .01, sx * .042, .015, .105, head).material = basic(0xff2010);
+    if (sp.glowEyes) { const re = add(GEO.ball, 0xff2010, .018, .012, .01, sx * .042, .015, .105, head); re.material = basic(0xff2010); (face.red = face.red || []).push(re);
       // a red halo that cuts through the dark corridor (not through walls)
-      const halo = sprite(glowTex("rgba(255,40,24,1)"), .11, .11); halo.material.fog = false; halo.material.blending = THREE.AdditiveBlending; halo.material.depthWrite = false; halo.position.set(sx * .042, .015, .12); head.add(halo); }
+      const halo = sprite(glowTex("rgba(255,40,24,1)"), .11, .11); halo.material.fog = false; halo.material.blending = THREE.AdditiveBlending; halo.material.depthWrite = false; halo.position.set(sx * .042, .015, .12); head.add(halo); face.red.push(halo); }
     else if (!sp.ghost) {
       add(GEO.ball, 0xf8f8f4, .023, .017, .012, sx * .041, .016, .1, head);
       add(GEO.ball, sp.pose === "zombie" ? 0x8a1a1a : eyeC, .0115, .0115, .006, sx * .041, .015, .11, head);

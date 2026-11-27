@@ -296,10 +296,20 @@ TALKS.Cn = [
     opt("„Ich zeige sie Ihnen um 7.“", () => say("„Um 7 bin ich beim Golf.“ Er nimmt dich mit zur Kurvenschau. 20 Minuten.", pen({ mins: 20 }))),
     opt("„Die hat Hildegard.“", () => free("Er schaut den Flur entlang. Eine Haube. Er geht zum Golf. Sofort."))] }]) },
 ];
-function hildegardCatch(e) {
+function hildegardCatch(e, shown) {
+  const night = run.mode === "night";
+  if (night && !shown) { // first the scare, like with everyone else, then she talks
+    player.inv = 5; e.stun = 6; clearInputs(); run.found = (run.found || 0) + 1; updateHud();
+    flash("zap"); sfx.stinger(); sfx.hit(); noise(0, .45, 1400, .7, .22); if (navigator.vibrate) try { navigator.vibrate([90, 40, 180]); } catch (_) {}
+    const sc = document.createElement("div"); sc.className = "jumpscare"; const url = typeof portraitFor === "function" ? portraitFor(e.person.sp) : null;
+    sc.innerHTML = `${url ? `<img src="${url}" alt="">` : `<span class="js-emo">🕯️</span>`}<b>GEFUNDEN ${run.found}/3</b><small>Schwester Hildegard: „${pick(["Abzeichnen.", "Ich sehe Sie.", "Seit 1978.", "Kurven…"])}“</small>`;
+    document.body.appendChild(sc); setTimeout(() => sc.remove(), 1500);
+    if (run.found >= 3) { mode = "dying"; clearInputs(); setTimeout(() => showGameOver(), 1500); return; } // the third time: the night is over, no talk
+    setTimeout(() => { if (run && run.mode === "night" && mode === "play") hildegardCatch(e, true); }, 1550);
+    return;
+  }
   flash(); sfx.stinger(); sfx.hit();
-  // night shift: she counts like everyone else. Only a coffee makes her forget she saw you.
-  const night = run.mode === "night"; if (night) run.found = (run.found || 0) + 1;
+  // night shift: she counts like everyone else (counted above). Only a coffee makes her forget she saw you.
   const n = run.found || 0, tag = night ? ` · GEFUNDEN ${n}/3` : "";
   openDialog({ sp: e.person.sp, av: "🕯️", color: "#e8e4d0", name: "Schwester Hildegard", role: "Nachtwache · seit 1978 · steht direkt hinter dir" + tag,
     text: pick(["„Haben Sie die Kurven abgezeichnet? … Nein? … Dann zeichne ich SIE ab.“", "„Ruhige Nacht, nicht wahr? … Ruhig ist es nur, wenn man nicht hinsieht.“", "„Sie haben die Klingel in 5.07 nicht gehört. Ich höre ALLES.“", "„Früher hatten wir drei Nachtschwestern. Ich bin alle drei.“"])
