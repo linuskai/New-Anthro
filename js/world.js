@@ -294,11 +294,47 @@ const posterTex = p => canvasTex(256, 352, (g, w, h) => {
   g.strokeStyle = "#c9ccc8"; g.lineWidth = 6; g.strokeRect(0, 0, w, h);
   g.fillStyle = "rgba(200,200,180,.8)"; g.fillRect(w / 2 - 30, -4, 60, 14);
 }, "poster:" + p.t + p.b[0]);
-const graffitiTex = text => canvasTex(512, 128, (g, w, h) => {
-  g.font = `italic 700 48px "Marker Felt","Comic Sans MS",${SF}`; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillStyle = "rgba(130,20,20,.85)"; g.save(); g.translate(w / 2, h / 2); g.rotate(-.04); g.fillText(text, 0, 0, w - 20); g.restore();
-  g.fillStyle = "rgba(130,20,20,.6)"; for (let i = 0; i < 5; i++) g.fillRect(60 + i * 90, h / 2 + 18, 3, 20 + i * 7);
-}, "graf:" + text);
+/* writing on the wall in blood: smeared with a finger (several passes, uneven pressure), drips running down from the letters,
+   spatter, now and then a hand print. Darker where it has dried, a wet sheen where it is fresh. */
+const graffitiTex = text => canvasTex(1024, 256, (g, w, h) => {
+  const r = rng([...text].reduce((a, c) => a * 31 + c.charCodeAt(0) >>> 0, 7)), big = text.length < 18;
+  const size = big ? 92 : text.length < 28 ? 70 : 56, cy = h * .4, tilt = (r() - .5) * .07;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  const font = `${big ? 900 : 800} ${size}px "Marker Felt","Chalkboard SE","Comic Sans MS",${SF}`;
+  // the letters, drawn into a mask first so we know where the blood is
+  const m = document.createElement("canvas"); m.width = w; m.height = h; const mg = m.getContext("2d");
+  mg.textAlign = "center"; mg.textBaseline = "middle"; mg.font = font; mg.save(); mg.translate(w / 2, cy); mg.rotate(tilt);
+  for (let k = 0; k < 5; k++) { mg.fillStyle = `rgba(0,0,0,${k ? .35 : 1})`; mg.fillText(text, (r() - .5) * 6, (r() - .5) * 5, w - 60); } // finger strokes: several shaky passes
+  mg.restore();
+  // a faint smear around the words, as if wiped
+  g.save(); g.globalAlpha = .18; g.filter = "blur(6px)"; g.drawImage(m, 0, 4); g.restore();
+  // the blood itself: dark dried edge, deep red body, a lighter wet core
+  const tint = (col, blur, dx, dy, a) => { const t = document.createElement("canvas"); t.width = w; t.height = h; const tg = t.getContext("2d"); tg.drawImage(m, 0, 0); tg.globalCompositeOperation = "source-in"; tg.fillStyle = col; tg.fillRect(0, 0, w, h); g.save(); g.globalAlpha = a; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(t, dx, dy); g.restore(); };
+  tint("#2a0303", 2, 2, 3, .9); tint("#6e0a08", 0, 0, 0, .95); tint("#9c140f", 1.5, -1, -1, .55);
+  // drips: from the bottom of the letters downwards, each with a fat drop at the end
+  const data = mg.getImageData(0, 0, w, h).data, bottoms = [];
+  for (let x = 30; x < w - 30; x += 3) { for (let y = h - 1; y > cy - size; y--) if (data[(y * w + x) * 4 + 3] > 200) { bottoms.push([x, y]); break; } }
+  const drips = Math.min(26, Math.round(bottoms.length / 9));
+  for (let k = 0; k < drips; k++) {
+    const [x, y] = bottoms[Math.floor(r() * bottoms.length)], len = 12 + Math.pow(r(), 1.6) * (h - y - 18), wd = 2 + r() * 3.5;
+    const gr = g.createLinearGradient(0, y, 0, y + len); gr.addColorStop(0, "rgba(110,10,8,.95)"); gr.addColorStop(.8, "rgba(90,8,6,.9)"); gr.addColorStop(1, "rgba(60,4,3,.95)");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x - wd / 2, y - 2); g.quadraticCurveTo(x - wd * .35, y + len * .6, x - wd * .25, y + len); g.lineTo(x + wd * .25, y + len); g.quadraticCurveTo(x + wd * .35, y + len * .6, x + wd / 2, y - 2); g.fill();
+    g.beginPath(); g.ellipse(x, y + len, wd * .75, wd * 1.05, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,190,180,.25)"; g.beginPath(); g.ellipse(x - wd * .2, y + len - wd * .2, wd * .2, wd * .3, 0, 0, 7); g.fill(); // wet highlight on the drop
+  }
+  // spatter
+  for (let k = 0; k < 40; k++) { const a = r() * 6.28, d = 30 + Math.pow(r(), .5) * 420, x = w / 2 + Math.cos(a) * d, y = cy + Math.sin(a) * d * .3, s = .8 + Math.pow(r(), 3) * 6; g.fillStyle = `rgba(${90 + r() * 40},8,6,${.5 + r() * .45})`; g.beginPath(); g.ellipse(x, y, s, s * (.7 + r() * .6), a, 0, 7); g.fill(); }
+  // sometimes a hand print beside the words, dragged down a little
+  if (r() < .35) {
+    const hx = r() < .5 ? 70 : w - 70, hy = cy + 10; g.save(); g.translate(hx, hy); g.rotate((r() - .5) * .5); g.fillStyle = "rgba(100,10,8,.75)";
+    g.beginPath(); g.ellipse(0, 10, 26, 30, 0, 0, 7); g.fill();
+    [[-22, -30, -.5], [-9, -44, -.15], [5, -46, .05], [19, -40, .25], [33, -6, 1.1]].forEach(([fx, fy, a]) => { g.save(); g.translate(fx, fy); g.rotate(a); g.beginPath(); g.ellipse(0, 0, 6.5, 17, 0, 0, 7); g.fill(); g.restore(); });
+    for (let k = 0; k < 4; k++) { const x = -18 + k * 12, L = 30 + r() * 60, gr = g.createLinearGradient(0, 28, 0, 28 + L); gr.addColorStop(0, "rgba(100,10,8,.55)"); gr.addColorStop(1, "rgba(100,10,8,0)"); g.fillStyle = gr; g.fillRect(x, 28, 7, L); } // dragged down the wall
+    g.restore();
+  }
+  // fresh where it is wet: a few bright glints along the letters
+  for (let k = 0; k < 60; k++) { const [x, y] = bottoms[Math.floor(r() * bottoms.length)] || [0, 0]; g.fillStyle = "rgba(255,170,160,.18)"; g.fillRect(x, y - 6 - r() * size * .6, 2, 2); }
+}, "graf2:" + text);
 const crackTex = () => canvasTex(256, 256, (g, w, h) => {
   g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 2; const r = rng(42);
   for (let k = 0; k < 4; k++) { g.beginPath(); let x = w / 2, y = h / 2; g.moveTo(x, y); for (let i = 0; i < 10; i++) { x += (r() - .5) * 50; y += (r() - .5) * 50; g.lineTo(x, y); } g.stroke(); }

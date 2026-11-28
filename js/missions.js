@@ -280,7 +280,7 @@ function beginMission() {
   typeof track === "function" && track("mission_start", { route: run.route, quick: !!run.quick }); store.set("hospital-escape-seen-" + run.route, 1); missionFlyIn(startPlaying);
 }
 function startPlaying() {
-  mode = "play"; run.clockSeen = run.minutes;
+  mode = "play"; run.clockSeen = run.minutes; { let t = false; try { t = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {} if (t) hudIntro(); }
   // played upright: one friendly nudge per session to turn the phone
   if (!document.body.classList.contains("land") && innerWidth < innerHeight && !window.__landHint) { window.__landHint = true; setTimeout(() => { if (mode !== "play") return; const h = $("hint"); h.textContent = "📱↔️ Tipp: Handy quer drehen, dann siehst du viel mehr vom Krankenhaus."; h.hidden = false; setTimeout(() => { h.hidden = true; }, 6000); }, 9000); }
   let seen = false; try { seen = !!localStorage.getItem("hospital-escape-tour"); } catch (e) {}
@@ -376,4 +376,4 @@ function tourStep() {
   const card = ov.querySelector(".tr-card"); card.querySelector("small").textContent = `So geht's · ${tour.i + 1} von ${tour.steps.length}`; card.querySelector("b").textContent = s.t; card.querySelector("p").textContent = s.d;
   card.classList.toggle("top", r.top > innerHeight * .55); ov.querySelector(".tr-next").textContent = tour.i === tour.steps.length - 1 ? "Los geht's!" : "Weiter"; sfx.tick();
 }
-function endTour() { const ov = $("tour"); if (ov) ov.remove(); const night = tour && tour.night; tour = null; try { localStorage.setItem(night ? "hospital-escape-tour-night" : "hospital-escape-tour", "1"); } catch (e) {} if (mode === "tour") { mode = "play"; run.clockSeen = run.minutes; } }
+function endTour() { setTimeout(() => typeof hudIntro === "function" && hudIntro(), 50); const ov = $("tour"); if (ov) ov.remove(); const night = tour && tour.night; tour = null; try { localStorage.setItem(night ? "hospital-escape-tour-night" : "hospital-escape-tour", "1"); } catch (e) {} if (mode === "tour") { mode = "play"; run.clockSeen = run.minutes; } }
