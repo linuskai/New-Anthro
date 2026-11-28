@@ -183,15 +183,15 @@ function blinkTick(dt) {
   const ps = []; for (const w of level.watchers || []) ps.push(w.p); for (const e of level.enemies) if (!e.gone && e.person) ps.push(e.person); if (peek) ps.push(peek.per);
   for (const p of ps) {
     const red = p.face && p.face.red; if (!red || !red.length) continue;
-    if (p.blinkT == null) p.blinkT = 2 + Math.random() * 7;
+    if (p.blinkT == null) p.blinkT = .5 + Math.random() * 4;
     p.blinkT -= dt;
     const closed = p.blinkT < 0 && p.blinkT > -.13 || (p.dbl && p.blinkT < -.26 && p.blinkT > -.38);
     for (const m of red) m.visible = !closed;
-    if (p.blinkT < -.45) { p.blinkT = 3 + Math.random() * 9; p.dbl = Math.random() < .25; }
+    if (p.blinkT < -.45) { p.blinkT = 1.2 + Math.random() * 4; p.dbl = Math.random() < .3; }
   }
   // never two at once: if someone else is mid-blink, the next one waits a moment
   let open = 0; for (const p of ps) if (p.blinkT != null && p.blinkT < 0 && p.blinkT > -.45) open++;
-  if (open > 1) for (const p of ps) if (p.blinkT != null && p.blinkT < 0 && p.blinkT > -.05) { p.blinkT = .4 + Math.random(); const red = p.face && p.face.red; if (red) for (const m of red) m.visible = true; if (--open <= 1) break; }
+  if (open > 2) for (const p of ps) if (p.blinkT != null && p.blinkT < 0 && p.blinkT > -.05) { p.blinkT = .4 + Math.random(); const red = p.face && p.face.red; if (red) for (const m of red) m.visible = true; if (--open <= 2) break; }
 }
 
 // ---------- the clock for both ----------

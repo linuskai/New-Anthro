@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="hx-build" content="51">
+<meta name="hx-build" content="52">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Hospital Escape 3D</title>
 <meta name="description" content="Dein Dienst ist vorbei. Das Krankenhaus sieht das anders. Ein bissiges 3D-Fluchtspiel aus dem Klinikalltag.">
@@ -359,7 +359,9 @@ body.cine .hud, body.cine .pad, body.cine #inv, body.cine .stick-base, body.cine
   .card h1 { font-size: 34px; } .overlay .card { padding: 14px 16px; }
   #tasks { top: calc(env(safe-area-inset-top, 0px) + 40px); max-height: calc(100% - 60px); }
 }
-body.hudmin .pager .chips, body.hudmin .mission, body.hudmin .pager .energy em { display: none; }
+.pager .chips, .hud-left .mission { transition: max-height .9s ease, opacity .8s ease, padding .9s ease, margin .9s ease, border-width .9s; max-height: 140px; }
+body.hudmin .pager .chips, body.hudmin .hud-left .mission { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: -6px; border-width: 0; overflow: hidden; pointer-events: none; }
+body.hudmin .pager .energy em { display: none; }
 body.hudmin .pager { padding-top: 3px; padding-bottom: 4px; } body.hudmin .hud-left { max-width: min(62vw, 300px); }
 body.hudmin #hudMsg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 body.land.hudmin #hudMsg { display: none; }
@@ -1276,6 +1278,9 @@ body.land .pm-phone { zoom: .6; } body.land .install > p.small { display: none; 
 .pb-bottom[data-view="moves"] .pb-menu button b, .pb-bottom[data-view="bag"] .pb-menu button b { flex: 0 1 auto; min-width: 0; }
 .pb-bottom[data-view="moves"] .pb-menu button small, .pb-bottom[data-view="bag"] .pb-menu button small { flex: 0 4 auto; min-width: 0; margin: 0; text-align: right; }
 .pb-bottom[data-view="moves"] .pb-menu .back, .pb-bottom[data-view="bag"] .pb-menu .back { min-height: 0; padding: 2px; }
+/* the pause menu's one bad moment */
+#ovPause.glitch .btn { color: #ff3b2f !important; text-shadow: 2px 0 #00e5ff, -2px 0 #ff00a8; animation: pgShake .12s steps(2) infinite; }
+#ovPause.glitch { animation: pgFlick .18s steps(2) 6; } @keyframes pgShake { 50% { transform: translate(2px, -1px) skewX(-6deg); } } @keyframes pgFlick { 50% { filter: invert(.85) hue-rotate(160deg); } }
 /* call-outs and interruptions wrap instead of running off the screen */
 .pb-call b { max-width: 92vw; box-sizing: border-box; white-space: normal; text-align: center; font-size: clamp(18px, 5.2vw, 34px); line-height: 1.05; padding: 8px 28px; }
 @media (max-width: 520px) { .pb-bottom { grid-template-columns: minmax(0, 1fr); } }

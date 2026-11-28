@@ -1,6 +1,6 @@
 /* Hospital Escape 3D · game data (levels, people, items, dialogue content). Shared globals, loaded before world/level/game. */
 /* the version. When it changes, change it in three places: here, <meta name="hx-build"> in index.html, and CACHE in sw.js */
-const HX_BUILD = "51";
+const HX_BUILD = "52";
 /* the home-screen app sometimes starts with an old page from a cache while the scripts are new (or the other way round):
    then buttons are missing and the game hangs at the start. Clear every cache and load fresh, at most twice per tab. */
 function hxHeal(why) {
@@ -58,7 +58,7 @@ const LEVELS = [
     tip: "Die Internisten hier sind Nerds: Wer dich erwischt, will Differentialdiagnosen hören. Ein seltener Fallbericht lenkt sie ab. Türen kannst du öffnen und hinter dir schließen.",
     objectives: [],
     reaRandom: true,
-    map: ["#########################", "#1__v#:B:B#:::#:B:B:#:L:#", "#_S__#::::#:k:#:::::#:::#", "#____#::$:#1::#::P::#:::#", "###d###d####d####d####d##", "#.........I.........x...#", "#.##d###.##d###.###d###.#", "#.#____#.#:::x#.#:::::#.#", "#b#_M__#F#:7::#O#:B:P:#.#", "#.#____#.#::::#.#:::::#.#", "#.###H##.###d##.##d##^###", "#..2.8.x...I...3....N..E#", "############l############"] },
+    map: ["#####################################", "#1__v#:B:B#:::#:B:B:#:L:#:B:B:#::B::#", "#_S__#::::#:k:#:::::#:::#::w::#:::x:#", "#____#::$:#1::#::P::#:::#:::1:#::$::#", "###d###d####d####d####d####d####d####", "#.........I.........x...............#", "#.##d###.##d###.###d###.###d####d##.#", "#.#____#.#:::x#.#:::::#.##:::#::::#.#", "#b#_M__#F#:7::#O#:B:P:#.##:B:d::w:#.#", "#.#____#.#::::#.#:::::#.##:::#:x::d.#", "#.###H##.###d##.##d##^#####d####d##.#", "#..2.8.x...I...3....N..E##:w:#:::B#.#", "############l########################"] },
   { key: "ortho", short: "4 · ORTHOPÄDIE", name: "Orthopädie · 4. OG", floor: "4. OG", room: 4, env: "ortho",
     safeNames: [["UMKLEIDE", "Riecht nach Deo und Verzweiflung"]],
     tip: "In der Orthopädie stehen die Orthopäden einfach im Flur herum, zwischen zwei Sätzen Bizeps-Curls. Lauchige Futzis wie Internisten lassen sie nicht durch. Beweise, dass du keiner bist: Proteinshake, Fachwissen, Liegestütze. Oder Schmeicheln.",
@@ -307,8 +307,8 @@ const POSTERS = [
   { bg: "#1f9d55", t: "FEEDBACK?", b: ["Kritik bitte schriftlich", "an die Geschäftsführung.", "Briefkasten: zugeklebt."], i: "📮" },
   { bg: "#c13584", t: "FOLGE UNS!", b: ["@klinikum.st.sparen", "Wir posten, was wir", "nicht bezahlen."], i: "📱" },
 ];
-const CREEPY_SCRAWL = ["DU GEHST NIE NACH HAUSE", "WIR SEHEN DEINE ÜBERSTUNDEN", "NICHT DOKUMENTIERT = NICHT PASSIERT", "Zimmer 13 ist frei. Für immer.", "Hier war Dr. Kurz · 2009 – ∞", "LAUF.", "Hinter dir: das Controlling", "Hildegard sieht alles", "Nur noch eine Aufnahme…"];
-const GRAFFITI = ["ER GEHT NIE HEIM", "Dr. Ewig war hier · 2009", "NUR KURZ", "FEIERABEND IST EINE LÜGE", "Hilfe. Bin noch im Dienst.", "Budget: 0 €", "Dreh dich nicht um."];
+const CREEPY_SCRAWL = ["DU GEHST NIE NACH HAUSE", "WIR SEHEN DEINE ÜBERSTUNDEN", "NICHT DOKUMENTIERT = NICHT PASSIERT", "Zimmer 13 ist frei. Für immer.", "Hier war Dr. Kurz · 2009 – ∞", "LAUF.", "Hinter dir: das Controlling", "Hildegard sieht alles", "Nur noch eine Aufnahme…", "ZÄHL DIE BETTEN. EINS ZU VIEL.", "DER PAGER LÜGT", "SCHLAF NICHT. SIE SCHLAFEN AUCH NICHT.", "WER DAS LIEST, HAT DIENST", "Übergabe 07:30. Welches Jahr?", "ICH WAR NUR KURZ WEG · 2011", "Sie zählen jetzt mit.", "DREH DICH NICHT UM. DOCH. ZU SPÄT."];
+const GRAFFITI = ["ER GEHT NIE HEIM", "Dr. Ewig war hier · 2009", "NUR KURZ", "FEIERABEND IST EINE LÜGE", "Hilfe. Bin noch im Dienst.", "Budget: 0 €", "Dreh dich nicht um.", "ÜBERSTUNDEN: JA", "KEINE STELLE. NUR STELLVERTRETUNG.", "Wir sind 0,5 Vollkräfte", "PAUSE? HAHAHA", "Hier endet die Tarifbindung"];
 const SAFE_NAMES = [["BEREITSCHAFTSRAUM", "Hier findet dich keiner"], ["STATIONSKÜCHE", "Kaffee: eingespart. Sofa: noch da."], ["ABSTELLKAMMER", "Perfekt zum Verstecken"], ["WÄSCHEKAMMER", "Riecht nach Station 4"]];
 
 /* Escape missions. Each one is its own evening: own story and intro, own floors, own sub-missions, own deadline (game minutes after 17:00),
@@ -490,7 +490,7 @@ LEVELS.push({ key: "night", short: "5B · NACHTDIENST", name: "Station 5B · Nac
   tip: "Überlebe bis 07:30, ohne dass dich jemand findet. Die Patienten schlafwandeln mit roten Augen über die Flure, die Nachtschwestern machen Runde. Wer dich erwischt, zählt: Dreimal gefunden, und die Nacht ist vorbei. Der Pager schickt dich trotzdem in die Zimmer.",
   objectives: [], exitText: "", lock: "Das Treppenhaus ist nachts verriegelt. Dienstende 07:00.",
   // a bigger ward with loops: two ring corridors, a cross corridor and side corridors, so you can always slip away (or get cornered)
-  map: ["###################################", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "#::::#::::#::::#::x:#::::#::::#:9:#", "#::::#::::#::$:#::::#::::#::::#:::#", "##d####d####d####d####d####d####d##", "#........w....o.....N...Q.........#", "#..###d#####d###..##############..#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_S___#:::::#..#:::::#:w::::#..#", "#..#_____#:::::#..#::3::#::::::#..#", "#E.#__1__#::1::#.N#:::::#::9:::#..^", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_____#::::M#..#::x::#::::w:#Q.#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#############..###d#####d####..#", "#.....u....Q................w.....#", "##d####d####d####d####d####d####d##", "#::::#::::#:Q::#::::#::::#::x:#:::#", "#::$:#::::#::::#::::#::::#::::#:1:#", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "###################################"] });
+  map: ["###################################", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "#::::#::::d::::#::x:d::::#::::d:9:#", "#::::#::::#::$:#::::#::::#::::#:::#", "##d####d####d####d####d####d####d##", "#........w....o.....N...Q.........#", "#..###d#####d###..##############..#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#_S___#:::::#..#:::::#:w::::#..#", "#..#_____#:::::#..#::3::d::::::#..#", "#E.#__1__#::1::#.N#:::::#::9:::#..^", "#..#_____#:::::d..#:::::#::::::#..#", "#..#_____#::::M#..#::x::#::::w:#Q.#", "#..#_____#:::::#..#:::::#::::::#..#", "#..#############..###d#####d####..#", "#.....u....Q................w.....#", "##d####d####d####d####d####d####d##", "#::::#::::#:Q::#::::#::::#::x:#:::#", "#::$:d::::#::::d::::#::::d::::#:1:#", "#B::B#B::B#B::B#B::B#B::B#B::B#B:B#", "##d#########d#########d#########d##", "#w....u.....w.....o.......w....w..#", "#.######d#########d#########d####.#", "#.#::::::::::#::::::Y:::#:::::::#.#", "#.d:L::B:::::d::::::1:::d:::L:::#.#", "#.#::Y:::::w:#:::::B::::#::::w::d.#", "#.##########################.####.#", "#................................w#", "###################################"] });
 LEVELS.push({ key: "nightER", short: "ZNA · NACHTDIENST", name: "Zentrale Notaufnahme · Nachtdienst", floor: "EG", room: 0, env: "night", final: true, night: true,
   safeNames: [["PERSONALRAUM", "Die Tür klemmt. Gut so."]],
   plates: ["Putzkammer", "Notfall-CT", "Putzkammer", "Schockraum", "Personalraum", "Gipsraum", "Schockraum", "Ausnüchterung", "Lager", "Röntgen", "Kinder-Notfall", "Angehörige", "Lager"],
